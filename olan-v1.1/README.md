@@ -1,10 +1,3 @@
-# install tap-windows6 
+# olan-v1.1
 
-download `resources/windows/tap-windows-9.21.2.exe`, and install it.
-
-# run by exe in powershell
-./main_win.exe
-
-# building in powershell
-
-go build main_win.go
+This version already implements by openlan-py, and now just rewrite cpe code for windows.

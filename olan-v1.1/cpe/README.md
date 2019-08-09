@@ -3,11 +3,11 @@
 download `resources/windows/tap-windows-9.21.2.exe`, and install it.
 
 # Run Binary Redirectly
-click `./main_win.exe` 
+click `./cpe.exe` 
 
 # Build in Powershell
 
-execute `go build main_win.go` 
+execute `go build -o cpe.exe cpe_win.go` 
 
 # Configure Windows TAP Device
 
