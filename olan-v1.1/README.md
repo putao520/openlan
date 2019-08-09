@@ -1,10 +1,10 @@
 # install tap-windows6 
 
-./resources/windows/tap-windows-9.21.2.exe
+download `resources/windows/tap-windows-9.21.2.exe`, and install it.
 
-# run on powershell
+# run by exe in powershell
+./main_win.exe
 
-go run main_win.go
+# building in powershell
 
-# build 
-
+go build main_win.go
