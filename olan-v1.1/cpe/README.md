@@ -2,10 +2,10 @@
 
 download `resources/windows/tap-windows-9.21.2.exe`, and install it.
 
-# Run Binary Redirectly in Powershell
+# Run Binary Redirectly
 click `./main_win.exe` 
 
-# Building in Powershell/CMD
+# Build in Powershell
 
 execute `go build main_win.go` 
 
