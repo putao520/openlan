@@ -83,12 +83,13 @@ func (this *TcpClient) recvn(buffer []byte) error {
 func (this *TcpClient) sendn(buffer []byte) error {
     offset := 0
     size := len(buffer)
+    left := size - offset
     if this.Verbose {
         fmt.Printf("sendn %d\n", size)
         fmt.Printf("Data: % x\n", buffer)
     }
 
-    for size - offset >= 1 {
+    for left > 0 {
         tmp := buffer[offset:]
         if this.Verbose {
             fmt.Printf("sendn tmp %d\n", len(tmp))
@@ -98,6 +99,7 @@ func (this *TcpClient) sendn(buffer []byte) error {
             return err 
         }
         offset += n
+        left = size - offset
     }
     return nil
 }
