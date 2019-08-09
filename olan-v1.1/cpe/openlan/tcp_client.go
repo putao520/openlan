@@ -19,15 +19,17 @@ type TcpClient struct {
 	conn net.Conn
 	maxsize uint32
 	minsize uint32
+	Verbose bool
 }
 
-func NewTcpClient(addr string, port uint16) (client *TcpClient, err error){
+func NewTcpClient(addr string, port uint16, verbose int) (client *TcpClient, err error){
 	client = &TcpClient{
 		addr: addr,
 		port: port,
 		conn: nil,
 		maxsize: 1514,
 		minsize: 15,
+		Verbose: verbose != 0,
 	}
 
 	err = client.Connect()
@@ -69,17 +71,28 @@ func (this *TcpClient) recvn(buffer []byte) error {
 		offset += n
 		left -= n 
 	}
+	
+	if this.Verbose {
+		fmt.Printf("recvn %d\n", len(buffer))
+		fmt.Printf("recvn Data: % x\n", buffer)
+	}
+
 	return nil
 }
 
 func (this *TcpClient) sendn(buffer []byte) error {
 	offset := 0
 	size := len(buffer)
-	// fmt.Printf("sendn %d\n", size)
-	// fmt.Printf("Data: % x\n", buffer)
+	if this.Verbose {
+		fmt.Printf("sendn %d\n", size)
+		fmt.Printf("Data: % x\n", buffer)
+	}
+
 	for size - offset >= 1 {
 		tmp := buffer[offset:]
-		// fmt.Printf("sendn tmp %d\n", len(tmp))
+		if this.Verbose {
+			fmt.Printf("sendn tmp %d\n", len(tmp))
+		}
 		n, err := this.conn.Write(tmp)
 		if err != nil {
 			return err 

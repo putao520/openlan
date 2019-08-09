@@ -21,10 +21,12 @@ func ifceLoop(client *openlan.TcpClient, ifce *water.Interface) {
 		}
 
 		frame = frame[:n]
-		log.Printf("i--Dst: %s\n", frame.Destination())
-		log.Printf("i--Src: %s\n", frame.Source())
-		log.Printf("i--Ethertype: % x\n", frame.Ethertype())
-		log.Printf("i--Payload: % x\n", frame.Payload())
+		if client.Verbose {
+			log.Printf("i--Dst: %s\n", frame.Destination())
+			log.Printf("i--Src: %s\n", frame.Source())
+			log.Printf("i--Ethertype: % x\n", frame.Ethertype())
+			log.Printf("i--Payload: % x\n", frame.Payload())
+		}
 
 		if err := client.SendMsg([]byte(frame)); err != nil {
 			log.Fatal(err)
@@ -43,11 +45,13 @@ func clientLoop(client *openlan.TcpClient, ifce *water.Interface) {
 		}
 
 		frame = frame[:n]
-		log.Printf("o--Dst: %s\n", frame.Destination())
-		log.Printf("o--Src: %s\n", frame.Source())
-		log.Printf("o--Ethertype: % x\n", frame.Ethertype())
-		log.Printf("o--Payload: % x\n", frame.Payload())
-		
+		if client.Verbose {
+			log.Printf("o--Dst: %s\n", frame.Destination())
+			log.Printf("o--Src: %s\n", frame.Source())
+			log.Printf("o--Ethertype: % x\n", frame.Ethertype())
+			log.Printf("o--Payload: % x\n", frame.Payload())
+		}
+
 		n, err = ifce.Write([]byte(frame))
 		if err != nil {
 			log.Fatal(err)
@@ -58,9 +62,11 @@ func clientLoop(client *openlan.TcpClient, ifce *water.Interface) {
 func main() {
 	var addr string
 	var port *int
+	var verbose *int
 
 	flag.StringVar(&addr, "addr", "openlan.net",  "the server address")
 	port = flag.Int("port", 10001, "the port number")
+	verbose = flag.Int("verbose", 0x00, "open verbose")
 
 	flag.Parse()
 
@@ -71,7 +77,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	client, err:= openlan.NewTcpClient(addr, uint16(*port))
+	client, err:= openlan.NewTcpClient(addr, uint16(*port), *verbose)
 	if err != nil {
 		log.Printf("connect failed: %s.", err);
 	}
@@ -79,8 +85,9 @@ func main() {
 	go ifceLoop(client, ifce)
 	go clientLoop(client, ifce)
 
+	fmt.Println("exit from process, press enter...")
 	fmt.Scanln()
-	fmt.Println("press enter to exit...")
+	fmt.Println("ensure exit from process, press enter...")
 	fmt.Scanln()
-    fmt.Println("done")
+    fmt.Println("existed!")
 }
