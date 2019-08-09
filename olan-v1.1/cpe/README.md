@@ -1,4 +1,4 @@
-# install tap-windows6 
+# Install tap-windows6 firstlly 
 
 download `resources/windows/tap-windows-9.21.2.exe`, and install it.
 
