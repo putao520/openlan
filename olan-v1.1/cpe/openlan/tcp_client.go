@@ -6,6 +6,7 @@ import (
     "errors"
     "encoding/binary"
     "bytes"
+    "log"
 )
 
 var (
@@ -17,22 +18,22 @@ type TcpClient struct {
     addr string
     port uint16
     conn net.Conn
-    maxsize uint32
-    minsize uint32
-    Verbose bool
+    maxsize int
+    minsize int
+    verbose int
 }
 
-func NewTcpClient(addr string, port uint16, verbose int) (client *TcpClient, err error){
-    client = &TcpClient{
+func NewTcpClient(addr string, port uint16, verbose int) (this *TcpClient, err error){
+    this = &TcpClient {
         addr: addr,
         port: port,
         conn: nil,
         maxsize: 1514,
         minsize: 15,
-        Verbose: verbose != 0,
+        verbose: verbose,
     }
 
-    err = client.Connect()
+    err = this.Connect()
     return 
 }
 
@@ -41,8 +42,11 @@ func (this *TcpClient) Connect() (err error) {
         return nil
     }
 
-    addr := fmt.Sprintf("%s:%d", this.addr, this.port)
-    this.conn, err = net.Dial("tcp", addr)
+    if this.IsVerbose() {
+        log.Printf("TcpClient.Connect to %s:%d\n", this.addr, this.port)
+    }
+
+    this.conn, err = net.Dial("tcp", fmt.Sprintf("%s:%d", this.addr, this.port))
     if err != nil {
         this.conn = nil
         return
@@ -72,9 +76,9 @@ func (this *TcpClient) recvn(buffer []byte) error {
         left -= n 
     }
     
-    if this.Verbose {
-        fmt.Printf("recvn %d\n", len(buffer))
-        fmt.Printf("recvn Data: % x\n", buffer)
+    if this.IsVerbose() {
+        log.Printf("TcpClient.recvn %d\n", len(buffer))
+        log.Printf("TcpClient.recvn Data: % x\n", buffer)
     }
 
     return nil
@@ -84,15 +88,15 @@ func (this *TcpClient) sendn(buffer []byte) error {
     offset := 0
     size := len(buffer)
     left := size - offset
-    if this.Verbose {
-        fmt.Printf("sendn %d\n", size)
-        fmt.Printf("Data: % x\n", buffer)
+    if this.IsVerbose() {
+        log.Printf("TcpClient.sendn %d\n", size)
+        log.Printf("TcpClient.sendn Data: % x\n", buffer)
     }
 
     for left > 0 {
         tmp := buffer[offset:]
-        if this.Verbose {
-            fmt.Printf("sendn tmp %d\n", len(tmp))
+        if this.IsVerbose() {
+            log.Printf("TcpClient.sendn tmp %d\n", len(tmp))
         }
         n, err := this.conn.Write(tmp)
         if err != nil {
@@ -128,7 +132,7 @@ func (this *TcpClient) RecvMsg(data []byte) (int, error) {
     }
 
     size := binary.BigEndian.Uint16(h[2:4])
-    if uint32(size) > this.maxsize || uint32(size) < this.minsize {
+    if int(size) > this.maxsize || int(size) < this.minsize {
         return -1, errors.New(fmt.Sprintf("Isn't right data size(%d)!", size))
     }
 
@@ -140,4 +144,20 @@ func (this *TcpClient) RecvMsg(data []byte) (int, error) {
     copy(data, d)
 
     return int(size), nil
+}
+
+func (this *TcpClient) IsVerbose() bool {
+    return this.verbose != 0
+}
+
+func (this *TcpClient) GetMaxSize() int {
+    return this.maxsize
+}
+
+func (this *TcpClient) SetMaxSize(value int) {
+    this.maxsize = value
+}
+
+func (this *TcpClient) GetMinSize() int {
+    return this.minsize
 }
