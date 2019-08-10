@@ -24,6 +24,7 @@ func NewTapWoker(ifce *water.Interface, ifmtu int, verbose int) (this *TapWroker
 }
 
 func (this *TapWroker) GoRecv(dorecv func([]byte)(error)) {
+	defer this.ifce.Close()
 	for {
 		data := make([]byte, this.ifmtu)
         n, err := this.ifce.Read(data)
@@ -49,6 +50,7 @@ func (this *TapWroker) DoSend(data []byte) error {
 }
 
 func (this *TapWroker) GoLoop() error {
+	defer this.ifce.Close()
 	for {
 		select {
 		case wdata := <- this.writechan:

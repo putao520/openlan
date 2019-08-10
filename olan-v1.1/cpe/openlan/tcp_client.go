@@ -42,21 +42,22 @@ func (this *TcpClient) Connect() (err error) {
         return nil
     }
 
-    if this.IsVerbose() {
-        log.Printf("TcpClient.Connect to %s:%d\n", this.addr, this.port)
-    }
+    log.Printf("TcpClient.Connect %s:%d\n", this.addr, this.port)
 
     this.conn, err = net.Dial("tcp", fmt.Sprintf("%s:%d", this.addr, this.port))
     if err != nil {
         this.conn = nil
         return
     }
+
     return nil
 }
 
 func (this *TcpClient) Close() {
     if this.conn != nil {
+        log.Printf("TcpClient.Close %s:%d\n", this.addr, this.port)
         this.conn.Close()
+        this.conn = nil
     }
 }
 
@@ -122,6 +123,10 @@ func (this *TcpClient) SendMsg(data []byte) error {
 }
 
 func (this *TcpClient) RecvMsg(data []byte) (int, error) {
+    if !this.IsOk() {
+        return -1, errors.New("Connection isn't okay!")
+    }
+
     h := make([]byte, HSIZE)
     if err := this.recvn(h); err != nil {
         return -1, err
@@ -160,4 +165,8 @@ func (this *TcpClient) SetMaxSize(value int) {
 
 func (this *TcpClient) GetMinSize() int {
     return this.minsize
+}
+
+func (this *TcpClient) IsOk() bool {
+    return this.conn != nil
 }

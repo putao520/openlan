@@ -2,6 +2,7 @@ package openlan
 
 import (
 	"log"
+	"time"
 )
 
 type TcpWroker struct {
@@ -25,11 +26,18 @@ func NewTcpWoker(client *TcpClient, maxSize int, verbose int) (this *TcpWroker) 
 }
 
 func (this *TcpWroker) GoRecv(dorecv func([]byte)(error)) {
+	defer this.client.Close()
 	for {
+		if !this.client.IsOk() {
+			time.Sleep(2 * time.Second) // sleep 2s to release cpu.
+			continue
+		}
+
 		data := make([]byte, this.maxSize)
         n, err := this.client.RecvMsg(data)
         if err != nil || n <= 0 {
 			log.Printf("Error|TcpWroker.GoRev: %s", err)
+			this.client.Close()
 			continue
 		}
 		if this.IsVerbose() {
@@ -50,6 +58,7 @@ func (this *TcpWroker) DoSend(data []byte) error {
 }
 
 func (this *TcpWroker) GoLoop() error {
+	defer this.client.Close()
 	for {
 		select {
 		case wdata := <- this.writechan:
