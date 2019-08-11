@@ -4,20 +4,13 @@ download `resources/windows/tap-windows-9.21.2.exe`, and install it. Next, click
 
 # Build in Powershell
 
-<<<<<<< HEAD
-[root@localhost olan-v1.1]# go get github.com/songgao/water
-
-[root@localhost olan-v1.1]# go get github.com/milosgajdos83/tenus
-[root@localhost olan-v1.1]# go get golang.org/x/sys
-
-[root@localhost olan-v1.1]# go build -o cpe.exe cpe_win.go
-=======
     [root@localhost olan-v1.1]# go get github.com/songgao/water
+
     [root@localhost olan-v1.1]# go get github.com/milosgajdos83/tenus
     [root@localhost olan-v1.1]# go get golang.org/x/sys
-    
-    [root@localhost olan-v1.1]# go build -o cpe.exe cpe_win.go
->>>>>>> ca78111c802a1f25dc317967f74104744895116b
+
+    [root@localhost olan-v1.1]# go build -o cpe.exe cpe.go
+
 
 # Configure Windows TAP Device
 
