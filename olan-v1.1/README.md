@@ -1,9 +1,6 @@
-# Install tap-windows6 firstlly 
+# Install tap-windows6
 
-download `resources/windows/tap-windows-9.21.2.exe`, and install it.
-
-# Run Binary Redirectly
-click `./cpe.exe` 
+download `resources/windows/tap-windows-9.21.2.exe`, and install it. Next, click `./cpe.exe` to run CPE in Windows. 
 
 # Build in Powershell
 
