@@ -1,10 +1,10 @@
 # Overview 
 
-refer to https://github.com/danieldin95/openlan-py 
+Refer to https://github.com/danieldin95/openlan-py 
 
 # Install tap-windows6
 
-download `resources/windows/tap-windows-9.21.2.exe`, and install it. Next, click `./cpe.exe` to run CPE in Windows. 
+Download `resources/windows/tap-windows-9.21.2.exe`, and install it. Next, click `./cpe.exe` to run CPE in Windows. 
 
 # Build in Powershell
 
@@ -18,6 +18,6 @@ download `resources/windows/tap-windows-9.21.2.exe`, and install it. Next, click
 
 # Configure Windows TAP Device
 
-goto `Control Panel\Network and Internet\Network Connections`, and find `Ethernet 2`, then you can configure IPAddress for it to access branch site. 
+Goto `Control Panel\Network and Internet\Network Connections`, and find `Ethernet 2`, then you can configure IPAddress for it to access branch site. 
 
 
