@@ -44,21 +44,16 @@ func NewIfce(devtype water.DeviceType) (ifce *water.Interface) {
 }
 
 func main() {
-    addr := flag.String("addr", "openlan.net",  "the server address")
-    port := flag.Int("port", 10001, "the port number")
+    addr := flag.String("addr", "openlan.net:10001",  "the server address")
     verbose := flag.Int("verbose", 0x00, "open verbose")
     ifmtu := flag.Int("ifmtu", 1514, "the interface MTU include ethernet")
 
     flag.Parse()
 
     ifce := NewIfce(water.TAP)
-
-    client, err:= openlan.NewTcpClient(*addr, uint16(*port), *verbose)
-    if err != nil {
-        log.Printf("Error|main.NewTcpClient: %s.", err);
-    }
-
+    client := openlan.NewTcpClient(*addr, *verbose)
     cpe := NewCpe(client, ifce, *ifmtu, *verbose)
+    
     cpe.Start()
 
     var input string

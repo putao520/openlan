@@ -3,29 +3,28 @@ package openlan
 import (
     "net"
     "fmt"
-    "errors"
     "log"
 )
 
 type TcpServer struct {
 	addr string
-	port string
-	conn net.Conn
+	listener *net.TCPListener
 	maxClient int
-	clients map[*Client]bool
-	onClients chan *Client
-	offClients chan *Client
+	clients map[*TcpClient]bool
+	onClients chan *TcpClient
+	offClients chan *TcpClient
+	verbose int
 }
 
-func NewTcpServer(addr string, port string) (this *TcpServer) {
+func NewTcpServer(addr string) (this *TcpServer) {
 	this = &TcpServer {
 		addr: addr,
-		port: port,
-		conn: nil,
+		listener: nil,
 		maxClient: 1024,
-		clients: make(map[*Client]bool),
-		onClients: make(*Client, 4),
-		offClients: make(*Client, 8),
+		clients: make(map[*TcpClient]bool),
+		onClients: make(chan *TcpClient, 4),
+		offClients: make(chan *TcpClient, 8),
+		verbose: 1,
 	}
 
 	this.Listen()
@@ -33,39 +32,46 @@ func NewTcpServer(addr string, port string) (this *TcpServer) {
 	return 
 }
 
-func (this *TcpServer) (Listen) (err error) {
-	log.Printf("TcpServer.Start %s:%d\n", this.addr, this.port)
+func (this *TcpServer) Listen() error {
+	log.Printf("TcpServer.Start %s\n", this.addr)
 
-	this.conn, err = net.Listen("tcp", fmt.Sprintf("%s:%d", this.addr, this.port))
+	laddr, err := net.ResolveTCPAddr("tcp", this.addr)
+    if err != nil {
+        return err
+	}
+	
+	listener, err := net.ListenTCP("tcp", laddr)
 	if err != nil {
 		log.Print("TcpServer.Listen: %s", err)
-		this.conn = nil
-        return
-    }
+		this.listener = nil
+        return err
+	}
+	this.listener = listener
+	return nil
 }
 
 func (this *TcpServer) GoAccept() error {
 	for {
-		conn, err := this.conn.Accept()
+		conn, err := this.listener.AcceptTCP()
 		if err != nil {
 			log.Print("TcpServer.GoAccept: %s", err)
 		}
 
-		this.onClients <- newClient(conn)
+		this.onClients <- NewTcpClientFromConn(conn, this.verbose)
 	}
 }
 
-func (this *TcpServer) GoLoop(client *Client) {
+func (this *TcpServer) GoLoop(client *TcpClient) {
 	for {
 		select {
 		case client := <- this.onClients:
 			log.Print("TcpServer.addClient %s", client.conn)
-			client.Open()
+			// client.Open()
 			this.clients[client] = true
 
 			go this.GoRecv(client)
 		case client := <- this.offClients:
-			if ok := manager.clients[client]; ok {
+			if ok := this.clients[client]; ok {
 				log.Print("TcpServer.delClient %s", client.conn)
 				client.Close()
 				delete(this.clients, client)
@@ -75,12 +81,12 @@ func (this *TcpServer) GoLoop(client *Client) {
 
 }
 
-func (this *TcpServer) GoRecv(client *Client) {
+func (this *TcpServer) GoRecv(client *TcpClient) {
     for {
         data := make([]byte, 4096)
         length, err := client.RecvMsg(data)
         if err != nil {
-            manager.offClients <- client
+            this.offClients <- client
             break
 		}
 		

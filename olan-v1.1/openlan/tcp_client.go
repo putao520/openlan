@@ -16,46 +16,60 @@ var (
 
 type TcpClient struct {
     addr string
-    port uint16
-    conn net.Conn
+    conn *net.TCPConn
     maxsize int
     minsize int
     verbose int
 }
 
-func NewTcpClient(addr string, port uint16, verbose int) (this *TcpClient, err error){
+func NewTcpClient(addr string, verbose int) (this *TcpClient) {
     this = &TcpClient {
         addr: addr,
-        port: port,
         conn: nil,
         maxsize: 1514,
         minsize: 15,
         verbose: verbose,
     }
 
-    err = this.Connect()
     return 
 }
 
-func (this *TcpClient) Connect() (err error) {
+func NewTcpClientFromConn(conn *net.TCPConn, verbose int) (this *TcpClient) {
+    this = &TcpClient {
+        addr: conn.RemoteAddr().String(),
+        conn: conn,
+        maxsize: 1514,
+        minsize: 15,
+        verbose: verbose,
+    }
+
+    return 
+}
+
+func (this *TcpClient) Connect() error {
     if this.conn != nil {
         return nil
     }
 
-    log.Printf("TcpClient.Connect %s:%d\n", this.addr, this.port)
+    log.Printf("TcpClient.Connect %s\n", this.addr)
+    raddr, err := net.ResolveTCPAddr("tcp", this.addr)
+    if err != nil {
+        return err
+    }
 
-    this.conn, err = net.Dial("tcp", fmt.Sprintf("%s:%d", this.addr, this.port))
+    conn, err := net.DialTCP("tcp", nil, raddr)
     if err != nil {
         this.conn = nil
-        return
+        return err
     }
+    this.conn = conn
 
     return nil
 }
 
 func (this *TcpClient) Close() {
     if this.conn != nil {
-        log.Printf("TcpClient.Close %s:%d\n", this.addr, this.port)
+        log.Printf("TcpClient.Close %s\n", this.addr)
         this.conn.Close()
         this.conn = nil
     }
