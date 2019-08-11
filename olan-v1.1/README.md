@@ -7,11 +7,11 @@ click `./cpe.exe`
 
 # Build in Powershell
 
-`[root@localhost olan-v1.1]# go get github.com/songgao/water
- [root@localhost olan-v1.1]# go get github.com/milosgajdos83/tenus
- [root@localhost olan-v1.1]# go get golang.org/x/sys
-
- [root@localhost olan-v1.1]# go build -o cpe.exe cpe_win.go`
+    [root@localhost olan-v1.1]# go get github.com/songgao/water
+    [root@localhost olan-v1.1]# go get github.com/milosgajdos83/tenus
+    [root@localhost olan-v1.1]# go get golang.org/x/sys
+    
+    [root@localhost olan-v1.1]# go build -o cpe.exe cpe_win.go`
 
 # Configure Windows TAP Device
 
