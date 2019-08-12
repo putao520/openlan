@@ -12,14 +12,14 @@ The Golang implements for OpenLAN project.
                             |                      |                  |
                 Host1 --- Endpoint A           Endpoint B         Endpoint C --- Host2
 
-1. Controller: 
-   TODO
-2. UDP Hole:
-   TODO
-3. Endpoint:
-   TODO
-4. Host:
-   TODO
+<b>Controller<b>: Which is running on VPS or server has WAN's IP address.
+ 
+
+UDP Hole: TODO
+
+Endpoint: TODO
+
+Host: TODO
 
 # Endpoint Online
 
