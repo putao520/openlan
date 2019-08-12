@@ -49,8 +49,8 @@ We use UDP to carry control and ethernet message between Endpoint, Endpoint and 
         Hello    0x01
         Host Learning 0x02
         Host Announce 0x03
-        Auth        0x04
-        Acknowledge 0x05
+        Authentication 0x04
+        Acknowledge   0x05
     Payload:
         If Ethernet:
             Padding using Ethernet Frame.
