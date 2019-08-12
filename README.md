@@ -2,7 +2,8 @@
 
 The Golang implements for OpenLAN project.
     
-                                              Controller
+                                               Controller
+                                                   |
                             ------------------------------------------
                             |                      |                  |
                          UDP Hole               UDP Hole           UDP Hole
