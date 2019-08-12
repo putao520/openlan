@@ -114,9 +114,10 @@ func (this *TcpServer) GoRecv(client *TcpClient, onRecv func (*TcpClient, []byte
 		}
 		
         if length > 0 {
-			log.Printf("TcpServer.GoRecv: length: %d ", length)
-            log.Printf("TcpServer.GoRecv: data  : % x", data[:length])
-			//TODO send to TAP device.
+			if this.IsVerbose() {
+				log.Printf("TcpServer.GoRecv: length: %d ", length)
+				log.Printf("TcpServer.GoRecv: data  : % x", data[:length])
+			}
 			onRecv(client, data[:length])
         }
     }
@@ -124,4 +125,8 @@ func (this *TcpServer) GoRecv(client *TcpClient, onRecv func (*TcpClient, []byte
 
 func (this *TcpServer) GetAddr() string {
 	return this.addr
+}
+
+func (this *TcpServer) IsVerbose() bool {
+	return this.verbose != 0
 }
