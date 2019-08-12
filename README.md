@@ -32,7 +32,9 @@ When Endpoint received a ARP request from host. Fistly, lookup destination wheth
 
 When Controller received a host learning packet from Endpoint, save in local host table and announce it to peer Endpoint.
 
-# UDP Packet
+# Packet Format
+
+We use UDP to carry control and ethernet message between Endpoint, Endpoint and Controller. The UDP port on Controller uses 1002x series, default is 10020, and Endpoint uses 1001x series, default is 10010.
 
     0 1 2 3 4 5 6 7 8 0 1 2 3 4 5 6 7 8 0 1 2 3 4 5 6 7 8 0 1 2 3 4 5 6 7 8
     +-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+
