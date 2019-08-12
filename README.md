@@ -47,7 +47,7 @@ When Controller received a host learning packet from Endpoint, save in local hos
         Hello    0x01
         Host Learning 0x02
         Host Announce 0x03
-        Auth     0x04
+        Auth        0x04
         Acknowledge 0x05
     Payload:
         If Ethernet:
