@@ -32,7 +32,7 @@ When Endpoint received a ARP request from host. Fistly, lookup destination wheth
 
 When Controller received a host learning packet from Endpoint, save in local host table and announce it to peer Endpoint.
 
-# UDP packet
+# UDP Packet
 
     0 1 2 3 4 5 6 7 8 0 1 2 3 4 5 6 7 8 0 1 2 3 4 5 6 7 8 0 1 2 3 4 5 6 7 8
     +-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+
