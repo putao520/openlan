@@ -5,21 +5,21 @@ import (
     "flag"
     "fmt"
 
-    "./openlan"
     "github.com/songgao/water"
+    "github.com/danieldin95/openlan-go-v1"
 )
 
 type Cpe struct {
     verbose int
-    tcpwroker *openlan.TcpWroker 
-    tapwroker *openlan.TapWroker
+    tcpwroker *openlanv1.TcpWroker 
+    tapwroker *openlanv1.TapWroker
 }
 
-func NewCpe(client *openlan.TcpClient, ifce *water.Interface, ifmtu int, verbose int) (this *Cpe){
+func NewCpe(client *openlanv1.TcpClient, ifce *water.Interface, ifmtu int, verbose int) (this *Cpe){
     this = &Cpe {
         verbose: verbose,
-        tapwroker : openlan.NewTapWoker(ifce, ifmtu, verbose),
-        tcpwroker : openlan.NewTcpWoker(client, ifmtu, verbose),
+        tapwroker : openlanv1.NewTapWoker(ifce, ifmtu, verbose),
+        tcpwroker : openlanv1.NewTcpWoker(client, ifmtu, verbose),
     }
     return 
 }
@@ -51,7 +51,7 @@ func main() {
     flag.Parse()
 
     ifce := NewIfce(water.TAP)
-    client := openlan.NewTcpClient(*addr, *verbose)
+    client := openlanv1.NewTcpClient(*addr, *verbose)
     cpe := NewCpe(client, ifce, *ifmtu, *verbose)
     
     cpe.Start()
