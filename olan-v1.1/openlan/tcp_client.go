@@ -31,6 +31,10 @@ func NewTcpClient(addr string, verbose int) (this *TcpClient) {
         verbose: verbose,
     }
 
+    if err := this.Connect(); err != nil {
+        log.Printf("NewTcpClient %s\n", err)
+    }
+
     return 
 }
 

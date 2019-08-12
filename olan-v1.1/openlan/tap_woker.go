@@ -64,3 +64,7 @@ func (this *TapWroker) GoLoop() error {
 func (this *TapWroker) IsVerbose() bool {
     return this.verbose != 0
 }
+
+func (this *TapWroker) Close() {
+	this.ifce.Close()
+}

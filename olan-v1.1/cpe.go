@@ -56,14 +56,15 @@ func main() {
     
     cpe.Start()
 
-    var input string
-
     for {
+        var input string
+
         fmt.Println("Please press enter `q` to exit...")
-        fmt.Scanln(&input)
-        if input == "q" {
+        if fmt.Scanln(&input); input == "q" {
             break
         }
     }
+
+    client.Close()
     fmt.Println("Done!")
 }

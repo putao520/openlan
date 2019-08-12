@@ -2,7 +2,6 @@ package openlanv1
 
 import (
     "net"
-    "fmt"
     "log"
 )
 
@@ -16,7 +15,7 @@ type TcpServer struct {
 	verbose int
 }
 
-func NewTcpServer(addr string) (this *TcpServer) {
+func NewTcpServer(addr string, verbose int) (this *TcpServer) {
 	this = &TcpServer {
 		addr: addr,
 		listener: nil,
@@ -24,10 +23,12 @@ func NewTcpServer(addr string) (this *TcpServer) {
 		clients: make(map[*TcpClient]bool),
 		onClients: make(chan *TcpClient, 4),
 		offClients: make(chan *TcpClient, 8),
-		verbose: 1,
+		verbose: verbose,
 	}
 
-	this.Listen()
+	if err := this.Listen(); err != nil {
+		log.Printf("NewTcpServer %s\n", err)
+	}
 
 	return 
 }
@@ -42,7 +43,7 @@ func (this *TcpServer) Listen() error {
 	
 	listener, err := net.ListenTCP("tcp", laddr)
 	if err != nil {
-		log.Print("TcpServer.Listen: %s", err)
+		log.Printf("TcpServer.Listen: %s", err)
 		this.listener = nil
         return err
 	}
@@ -50,38 +51,60 @@ func (this *TcpServer) Listen() error {
 	return nil
 }
 
+func (this *TcpServer) Close() {
+	if this.listener != nil {
+		this.listener.Close()
+		log.Printf("TcpServer.Close: %s", this.addr)
+	}
+}
+
 func (this *TcpServer) GoAccept() error {
+	log.Printf("TcpServer.GoAccept")
+	if (this.listener == nil) {
+		log.Printf("Error|TcpServer.GoAccept: invalid listener")
+		return nil
+	}
+
+	defer this.Close()
 	for {
 		conn, err := this.listener.AcceptTCP()
 		if err != nil {
-			log.Print("TcpServer.GoAccept: %s", err)
+			log.Printf("Error|TcpServer.GoAccept: %s", err)
 		}
 
 		this.onClients <- NewTcpClientFromConn(conn, this.verbose)
 	}
 }
 
-func (this *TcpServer) GoLoop(client *TcpClient) {
+func (this *TcpServer) GoLoop(onClient func (*TcpClient) error, 
+							  onRecv func (*TcpClient, []byte) error,
+							  onClose func (*TcpClient) error) {
+	log.Printf("TcpServer.GoLoop")
+	defer this.Close()
 	for {
 		select {
 		case client := <- this.onClients:
-			log.Print("TcpServer.addClient %s", client.conn)
-			// client.Open()
+			log.Printf("TcpServer.addClient %s", client.conn)
+			if onClient != nil {
+				onClient(client)
+			}
 			this.clients[client] = true
-
-			go this.GoRecv(client)
+			go this.GoRecv(client, onRecv)
 		case client := <- this.offClients:
 			if ok := this.clients[client]; ok {
-				log.Print("TcpServer.delClient %s", client.conn)
+				log.Printf("TcpServer.delClient %s", client.conn)
+				if onClose != nil {
+					onClose(client)
+				}
 				client.Close()
 				delete(this.clients, client)
 			}
 		}
 	}
-
 }
 
-func (this *TcpServer) GoRecv(client *TcpClient) {
+func (this *TcpServer) GoRecv(client *TcpClient, onRecv func (*TcpClient, []byte) error) {
+	log.Printf("TcpServer.GoRecv: %s", client)	
     for {
         data := make([]byte, 4096)
         length, err := client.RecvMsg(data)
@@ -91,8 +114,14 @@ func (this *TcpServer) GoRecv(client *TcpClient) {
 		}
 		
         if length > 0 {
-            fmt.Println("RECEIVED: " + string(data))
-            //TODO send to TAP device.
+			log.Printf("TcpServer.GoRecv: length: %d ", length)
+            log.Printf("TcpServer.GoRecv: data  : % x", data[:length])
+			//TODO send to TAP device.
+			onRecv(client, data[:length])
         }
     }
+}
+
+func (this *TcpServer) GetAddr() string {
+	return this.addr
 }

@@ -35,7 +35,7 @@ func (this *TcpWroker) GoRecv(dorecv func([]byte)(error)) {
 
 		data := make([]byte, this.maxSize)
         n, err := this.client.RecvMsg(data)
-        if err != nil || n <= 0 {
+        if err != nil {
 			log.Printf("Error|TcpWroker.GoRev: %s", err)
 			this.client.Close()
 			continue
@@ -44,7 +44,9 @@ func (this *TcpWroker) GoRecv(dorecv func([]byte)(error)) {
 			log.Printf("TcpWroker.GoRev: % x\n", data[:n])
 		}
 	
-		dorecv(data[:n])
+		if n > 0 {
+			dorecv(data[:n])
+		}
 	}
 }
 
