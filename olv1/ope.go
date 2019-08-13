@@ -5,17 +5,17 @@ import (
     "fmt"
     "flag"
 
-    "github.com/danieldin95/openlan-go-v1"
+    "github.com/danieldin95/openlan-go/olv1"
 )
 
 type Ope struct {
-    Wroker *openlanv1.OpeWroker
+    Wroker *olv1.OpeWroker
 }
 
 func NewOpe(addr string, ifmtu int, verbose int) (this *Ope){
-    server := openlanv1.NewTcpServer(addr, verbose)
+    server := olv1.NewTcpServer(addr, verbose)
     this = &Ope {
-        Wroker: openlanv1.NewOpeWroker(server, "", verbose),
+        Wroker: olv1.NewOpeWroker(server, "", verbose),
     }
     return 
 }
