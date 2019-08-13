@@ -61,11 +61,10 @@ func (this *TcpServer) Close() {
 	}
 }
 
-func (this *TcpServer) GoAccept() error {
+func (this *TcpServer) GoAccept() {
 	log.Printf("TcpServer.GoAccept")
 	if (this.listener == nil) {
 		log.Printf("Error|TcpServer.GoAccept: invalid listener")
-		return nil
 	}
 
 	defer this.Close()
@@ -73,11 +72,13 @@ func (this *TcpServer) GoAccept() error {
 		conn, err := this.listener.AcceptTCP()
 		if err != nil {
 			log.Printf("Error|TcpServer.GoAccept: %s", err)
-			return err
+			return
 		}
 
 		this.onClients <- olv1.NewTcpClientFromConn(conn, this.verbose)
 	}
+
+	return
 }
 
 func (this *TcpServer) GoLoop(onClient func (*olv1.TcpClient) error, 
