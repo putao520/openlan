@@ -15,7 +15,7 @@ type Ope struct {
 func NewOpe(addr string, ifmtu int, brname string, verbose int) (this *Ope){
     server := olv1ope.NewTcpServer(addr, verbose)
     this = &Ope {
-        Wroker: olv1ope.NewOpeWroker(server, "", verbose),
+        Wroker: olv1ope.NewOpeWroker(server, brname, verbose),
     }
     return 
 }

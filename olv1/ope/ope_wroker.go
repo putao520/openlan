@@ -63,6 +63,8 @@ func (this *OpeWroker) createBr(brname string) {
 		log.Printf("Error|OpeWroker.createBr: ", err)
 	}
 
+	log.Printf("OpeWroker.createBr %s", brname)
+
 	this.br = br
 }
 
