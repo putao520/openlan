@@ -57,6 +57,7 @@ func (this *TcpServer) Close() {
 	if this.listener != nil {
 		this.listener.Close()
 		log.Printf("TcpServer.Close: %s", this.addr)
+		this.listener = nil
 	}
 }
 
@@ -72,6 +73,7 @@ func (this *TcpServer) GoAccept() error {
 		conn, err := this.listener.AcceptTCP()
 		if err != nil {
 			log.Printf("Error|TcpServer.GoAccept: %s", err)
+			return err
 		}
 
 		this.onClients <- olv1.NewTcpClientFromConn(conn, this.verbose)
