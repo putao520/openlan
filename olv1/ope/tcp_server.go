@@ -1,17 +1,19 @@
-package olv1
+package olv1ope
 
 import (
     "net"
-    "log"
+	"log"
+	
+	"github.com/danieldin95/openlan-go/olv1/olv1"
 )
 
 type TcpServer struct {
 	addr string
 	listener *net.TCPListener
 	maxClient int
-	clients map[*TcpClient]bool
-	onClients chan *TcpClient
-	offClients chan *TcpClient
+	clients map[*olv1.TcpClient]bool
+	onClients chan *olv1.TcpClient
+	offClients chan *olv1.TcpClient
 	verbose int
 }
 
@@ -20,9 +22,9 @@ func NewTcpServer(addr string, verbose int) (this *TcpServer) {
 		addr: addr,
 		listener: nil,
 		maxClient: 1024,
-		clients: make(map[*TcpClient]bool),
-		onClients: make(chan *TcpClient, 4),
-		offClients: make(chan *TcpClient, 8),
+		clients: make(map[*olv1.TcpClient]bool),
+		onClients: make(chan *olv1.TcpClient, 4),
+		offClients: make(chan *olv1.TcpClient, 8),
 		verbose: verbose,
 	}
 
@@ -72,19 +74,19 @@ func (this *TcpServer) GoAccept() error {
 			log.Printf("Error|TcpServer.GoAccept: %s", err)
 		}
 
-		this.onClients <- NewTcpClientFromConn(conn, this.verbose)
+		this.onClients <- olv1.NewTcpClientFromConn(conn, this.verbose)
 	}
 }
 
-func (this *TcpServer) GoLoop(onClient func (*TcpClient) error, 
-							  onRecv func (*TcpClient, []byte) error,
-							  onClose func (*TcpClient) error) {
+func (this *TcpServer) GoLoop(onClient func (*olv1.TcpClient) error, 
+							  onRecv func (*olv1.TcpClient, []byte) error,
+							  onClose func (*olv1.TcpClient) error) {
 	log.Printf("TcpServer.GoLoop")
 	defer this.Close()
 	for {
 		select {
 		case client := <- this.onClients:
-			log.Printf("TcpServer.addClient %s", client.conn)
+			log.Printf("TcpServer.addClient %s", client)
 			if onClient != nil {
 				onClient(client)
 			}
@@ -92,7 +94,7 @@ func (this *TcpServer) GoLoop(onClient func (*TcpClient) error,
 			go this.GoRecv(client, onRecv)
 		case client := <- this.offClients:
 			if ok := this.clients[client]; ok {
-				log.Printf("TcpServer.delClient %s", client.conn)
+				log.Printf("TcpServer.delClient %s", client)
 				if onClose != nil {
 					onClose(client)
 				}
@@ -103,7 +105,7 @@ func (this *TcpServer) GoLoop(onClient func (*TcpClient) error,
 	}
 }
 
-func (this *TcpServer) GoRecv(client *TcpClient, onRecv func (*TcpClient, []byte) error) {
+func (this *TcpServer) GoRecv(client *olv1.TcpClient, onRecv func (*olv1.TcpClient, []byte) error) {
 	log.Printf("TcpServer.GoRecv: %s", client)	
     for {
         data := make([]byte, 4096)

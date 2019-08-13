@@ -1,21 +1,21 @@
-package olv1
+package olv1ope
 
 import (
 	"log"
 	"strings"
 	"fmt"
-	"net"
 	"errors"
 
 	"github.com/songgao/water"
 	"github.com/milosgajdos83/tenus"
+	"github.com/danieldin95/openlan-go/olv1/olv1"
 )
 
 type OpeWroker struct {
 	Server *TcpServer
 	verbose int
 	br tenus.Bridger
-	clients map[*TcpClient]*water.Interface
+	clients map[*olv1.TcpClient]*water.Interface
 	ifmtu int
 }
 
@@ -25,7 +25,7 @@ func NewOpeWroker(server *TcpServer, brname string, verbose int) (this *OpeWroke
 		verbose: verbose,
 		br: nil,
 		ifmtu: 1514,
-		clients: make(map[*TcpClient]*water.Interface),
+		clients: make(map[*olv1.TcpClient]*water.Interface),
 	}
 
 	this.createBr(brname)
@@ -58,6 +58,11 @@ func (this *OpeWroker) createBr(brname string) {
 			log.Fatal(err)
 		}
 	}
+
+	if err = br.SetLinkUp(); err != nil {
+		log.Printf("Error|OpeWroker.createBr: ", err)
+	}
+
 	this.br = br
 }
 
@@ -71,13 +76,17 @@ func (this *OpeWroker) createTap() (*water.Interface, error) {
 		return nil, err
 	}
 	
-	link, err := net.InterfaceByName(ifce.Name())
+	link, err := tenus.NewLinkFrom(ifce.Name())
 	if err != nil {
 		log.Printf("Error|OpeWroker.createTap: Get ifce %s", ifce.Name(), err)
 		return nil, err
 	}
 	
-	if err := this.br.AddSlaveIfc(link); err != nil {
+	if err := link.SetLinkUp(); err != nil {
+		log.Printf("Error|OpeWroker.createTap: ", err)
+	}
+
+	if err := this.br.AddSlaveIfc(link.NetInterface()); err != nil {
 		log.Printf("Error|OpeWroker.createTap: Switch ifce %s", ifce.Name(), err)
 		return nil, err
 	}
@@ -92,7 +101,7 @@ func (this *OpeWroker) Start() {
     go this.Server.GoLoop(this.onClient, this.onRecv, this.onClose)
 }
 
-func (this *OpeWroker) onClient(client *TcpClient) error {
+func (this *OpeWroker) onClient(client *olv1.TcpClient) error {
 	log.Printf("Info|OpeWroker.onClient: %s", client)	
 
 	ifce, err := this.createTap()
@@ -106,7 +115,7 @@ func (this *OpeWroker) onClient(client *TcpClient) error {
 	return nil
 }
 
-func (this *OpeWroker) onRecv(client *TcpClient, data []byte) error {
+func (this *OpeWroker) onRecv(client *olv1.TcpClient, data []byte) error {
 	if this.IsVerbose() {
 		log.Printf("Info|OpeWroker.onRecv: %s % x", client, data)	
 	}
@@ -123,7 +132,7 @@ func (this *OpeWroker) onRecv(client *TcpClient, data []byte) error {
 	return nil
 }
 
-func (this *OpeWroker) onClose(client *TcpClient) error {
+func (this *OpeWroker) onClose(client *olv1.TcpClient) error {
 	log.Printf("Info|OpeWroker.onClose: %s", client)
 	if ifce := this.clients[client]; ifce != nil {
 		ifce.Close()

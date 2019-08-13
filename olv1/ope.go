@@ -5,29 +5,30 @@ import (
     "fmt"
     "flag"
 
-    "github.com/danieldin95/openlan-go/olv1"
+    "github.com/danieldin95/openlan-go/olv1/ope"
 )
 
 type Ope struct {
-    Wroker *olv1.OpeWroker
+    Wroker *olv1ope.OpeWroker
 }
 
-func NewOpe(addr string, ifmtu int, verbose int) (this *Ope){
-    server := olv1.NewTcpServer(addr, verbose)
+func NewOpe(addr string, ifmtu int, brname string, verbose int) (this *Ope){
+    server := olv1ope.NewTcpServer(addr, verbose)
     this = &Ope {
-        Wroker: olv1.NewOpeWroker(server, "", verbose),
+        Wroker: olv1ope.NewOpeWroker(server, "", verbose),
     }
     return 
 }
 
 func main() {
+    br := flag.String("br", "",  "the bridge name")
     addr := flag.String("addr", "0.0.0.0:10001",  "the server address")
     verbose := flag.Int("verbose", 0x00, "open verbose")
     ifmtu := flag.Int("ifmtu", 1514, "the interface MTU include ethernet")
 
     flag.Parse()
 
-    ope := NewOpe(*addr, *ifmtu, *verbose)
+    ope := NewOpe(*addr, *ifmtu, *br, *verbose)
     ope.Wroker.Start()
 
     for {

@@ -6,20 +6,21 @@ import (
     "fmt"
 
     "github.com/songgao/water"
-    "github.com/danieldin95/openlan-go/olv1"
+    "github.com/danieldin95/openlan-go/olv1/olv1"
+    "github.com/danieldin95/openlan-go/olv1/cpe"
 )
 
 type Cpe struct {
     verbose int
-    tcpwroker *olv1.TcpWroker 
-    tapwroker *olv1.TapWroker
+    tcpwroker *olv1cpe.TcpWroker 
+    tapwroker *olv1cpe.TapWroker
 }
 
 func NewCpe(client *olv1.TcpClient, ifce *water.Interface, ifmtu int, verbose int) (this *Cpe){
     this = &Cpe {
         verbose: verbose,
-        tapwroker : olv1.NewTapWoker(ifce, ifmtu, verbose),
-        tcpwroker : olv1.NewTcpWoker(client, ifmtu, verbose),
+        tapwroker : olv1cpe.NewTapWoker(ifce, ifmtu, verbose),
+        tcpwroker : olv1cpe.NewTcpWoker(client, ifmtu, verbose),
     }
     return 
 }

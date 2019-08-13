@@ -1,19 +1,21 @@
-package olv1
+package olv1cpe
 
 import (
 	"log"
 	"time"
+
+	"github.com/danieldin95/openlan-go/olv1/olv1"
 )
 
 type TcpWroker struct {
-	client *TcpClient
+	client *olv1.TcpClient
 	readchan chan []byte
 	writechan chan []byte
 	verbose int
 	maxSize int
 }
 
-func NewTcpWoker(client *TcpClient, maxSize int, verbose int) (this *TcpWroker) {
+func NewTcpWoker(client *olv1.TcpClient, maxSize int, verbose int) (this *TcpWroker) {
 	this = &TcpWroker {
 		client: client,
 		writechan: make(chan []byte, 1024*10),
