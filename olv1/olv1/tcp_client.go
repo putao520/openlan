@@ -188,3 +188,7 @@ func (this *TcpClient) GetMinSize() int {
 func (this *TcpClient) IsOk() bool {
     return this.conn != nil
 }
+
+func (this *TcpClient) GetAddr() string {
+    return this.addr
+}

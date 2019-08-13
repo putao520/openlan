@@ -13,9 +13,9 @@ import (
 
 type OpeWroker struct {
 	Server *TcpServer
+	Clients map[*olv1.TcpClient]*water.Interface
 	verbose int
 	br tenus.Bridger
-	clients map[*olv1.TcpClient]*water.Interface
 	ifmtu int
 }
 
@@ -25,7 +25,7 @@ func NewOpeWroker(server *TcpServer, brname string, verbose int) (this *OpeWroke
 		verbose: verbose,
 		br: nil,
 		ifmtu: 1514,
-		clients: make(map[*olv1.TcpClient]*water.Interface),
+		Clients: make(map[*olv1.TcpClient]*water.Interface),
 	}
 
 	this.createBr(brname)
@@ -111,7 +111,7 @@ func (this *OpeWroker) onClient(client *olv1.TcpClient) error {
 		return err
 	}
 	
-	this.clients[client] = ifce
+	this.Clients[client] = ifce
 	go this.GoRecv(ifce, client.SendMsg)
 
 	return nil
@@ -122,7 +122,7 @@ func (this *OpeWroker) onRecv(client *olv1.TcpClient, data []byte) error {
 		log.Printf("Info|OpeWroker.onRecv: %s % x", client, data)	
 	}
 
-	ifce := this.clients[client]
+	ifce := this.Clients[client]
 	if ifce == nil {
 		return errors.New("Tap devices is nil")
 	}
@@ -136,9 +136,9 @@ func (this *OpeWroker) onRecv(client *olv1.TcpClient, data []byte) error {
 
 func (this *OpeWroker) onClose(client *olv1.TcpClient) error {
 	log.Printf("Info|OpeWroker.onClose: %s", client)
-	if ifce := this.clients[client]; ifce != nil {
+	if ifce := this.Clients[client]; ifce != nil {
 		ifce.Close()
-		delete(this.clients, client)
+		delete(this.Clients, client)
 	} 
 	return nil
 }

@@ -4,6 +4,9 @@ package main
 import (
     "fmt"
     "flag"
+    "net/http"
+    "html"
+    "log"
 
     "github.com/danieldin95/openlan-go/olv1/ope"
 )
@@ -20,6 +23,22 @@ func NewOpe(addr string, ifmtu int, brname string, verbose int) (this *Ope){
     return 
 }
 
+func NewHttp(ope *Ope) {
+    http.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
+        fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
+    })
+
+    http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+        body := "remote address, device name\n"
+        for client, ifce := range ope.Wroker.Clients {
+            body += fmt.Sprintf("%s, %s\n", client.GetAddr(), ifce.Name())
+        }
+        fmt.Fprintf(w, body)
+    })
+
+    log.Fatal(http.ListenAndServe(":10081", nil))
+}
+
 func main() {
     br := flag.String("br", "",  "the bridge name")
     addr := flag.String("addr", "0.0.0.0:10001",  "the server address")
@@ -31,6 +50,8 @@ func main() {
     ope := NewOpe(*addr, *ifmtu, *br, *verbose)
     ope.Wroker.Start()
 
+    go NewHttp(ope)
+    
     for {
         var input string
 
