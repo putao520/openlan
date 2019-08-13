@@ -8,12 +8,15 @@ Download `resources/tap-windows-9.21.2.exe`, then install it. And click `cpe.exe
 
 # Build in Powershell
 
-    [root@localhost olv1]# go get github.com/songgao/water
+Download dependent sources： 
 
-    [root@localhost olv1]# go get github.com/milosgajdos83/tenus
-    [root@localhost olv1]# go get golang.org/x/sys
+    PS L:\openlan-go\olv1> go get github.com/songgao/water
+    PS L:\openlan-go\olv1> go get github.com/milosgajdos83/tenus
+    PS L:\openlan-go\olv1> go get golang.org/x/sys
 
-    [root@localhost olv1]# go build -o cpe.exe cpe.go
+Execute building command:
+
+    PS L:\openlan-go\olv1> go build -o ./resources/cpe.exe cpe_windows.go
 
 # Configure Windows TAP Device
 
