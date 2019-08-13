@@ -45,7 +45,7 @@ func NewIfce(devtype water.DeviceType) (ifce *water.Interface) {
 }
 
 func main() {
-    addr := flag.String("addr", "openlan.net:10001",  "the server address")
+    addr := flag.String("addr", "openlan.net:10002",  "the server connect to")
     verbose := flag.Int("verbose", 0x00, "open verbose")
     ifmtu := flag.Int("ifmtu", 1514, "the interface MTU include ethernet")
 

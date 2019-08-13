@@ -23,7 +23,7 @@ func NewOpe(addr string, ifmtu int, brname string, verbose int) (this *Ope){
     return 
 }
 
-func NewHttp(ope *Ope) {
+func NewHttp(ope *Ope, listen string) {
     http.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
         fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
     })
@@ -36,12 +36,13 @@ func NewHttp(ope *Ope) {
         fmt.Fprintf(w, body)
     })
 
-    log.Fatal(http.ListenAndServe(":10081", nil))
+    log.Fatal(http.ListenAndServe(listen, nil))
 }
 
 func main() {
     br := flag.String("br", "",  "the bridge name")
-    addr := flag.String("addr", "0.0.0.0:10001",  "the server address")
+    http := flag.String("http", "0.0.0.0:10082",  "the http listen on")
+    addr := flag.String("addr", "0.0.0.0:10002",  "the server listen on")
     verbose := flag.Int("verbose", 0x00, "open verbose")
     ifmtu := flag.Int("ifmtu", 1514, "the interface MTU include ethernet")
 
@@ -50,7 +51,7 @@ func main() {
     ope := NewOpe(*addr, *ifmtu, *br, *verbose)
     ope.Wroker.Start()
 
-    go NewHttp(ope)
+    go NewHttp(ope, *http)
     
     for {
         var input string
