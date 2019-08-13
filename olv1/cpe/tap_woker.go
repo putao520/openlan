@@ -30,7 +30,7 @@ func (this *TapWroker) GoRecv(dorecv func([]byte)(error)) {
         n, err := this.ifce.Read(data)
         if err != nil {
 			log.Printf("Error|TapWroker.GoRev: %s", err)
-			continue
+			break
         }
 		if this.IsVerbose() {
 			log.Printf("TapWroker.GoRev: % x\n", data[:n])
