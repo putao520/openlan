@@ -7,6 +7,10 @@ import (
     "net/http"
     "html"
     "log"
+    "os/signal"
+    "syscall"
+    "time"
+    "os"
 
     "github.com/danieldin95/openlan-go/olv1/ope"
 )
@@ -36,6 +40,7 @@ func NewHttp(ope *Ope, listen string) {
         fmt.Fprintf(w, body)
     })
 
+    log.Printf("NewHttp on %s", listen)
     log.Fatal(http.ListenAndServe(listen, nil))
 }
 
@@ -53,15 +58,17 @@ func main() {
 
     go NewHttp(ope, *http)
     
-    for {
-        var input string
+    c := make(chan os.Signal)
+    signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+    go func() {
+        <-c
+        ope.Wroker.Close()
+        fmt.Println("Done!")
+        os.Exit(0)
+    }()
 
-        fmt.Println("Please press enter `q` to exit...")
-        if fmt.Scanln(&input); input == "q" {
-            break
-        }
+    fmt.Println("Please enter CTRL+C to exit...")
+    for {
+        time.Sleep(1000 * time.Second)
     }
-    
-	ope.Wroker.Close()
-	fmt.Println("Done!")
 }
