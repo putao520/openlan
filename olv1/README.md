@@ -4,7 +4,7 @@ Refer to https://github.com/danieldin95/openlan-py
 
 # Install tap-windows6
 
-Download `resources/tap-windows-9.21.2.exe`, then install it. And click `cpe.exe` to run CPE in Windows. 
+Download `resources/tap-windows-9.21.2.exe`, then install it. And run CPE in Windows by `cpe.exe -addr x.x.x.x:10002`. 
 
 # Build in Powershell
 
