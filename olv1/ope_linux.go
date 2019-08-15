@@ -32,7 +32,7 @@ func NewHttp(ope *Ope, listen string) {
     })
 
     http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-        body := "remote-address, device-name, rx, tx, error\n"
+        body := "remoteaddr, localdevice, rx, tx, error\n"
         for client, ifce := range ope.Wroker.Clients {
             body += fmt.Sprintf("%s, %s, %d, %d, %d\n", client.GetAddr(), ifce.Name(),
                                             client.RxOkay, client.RxOkay, client.TxError)

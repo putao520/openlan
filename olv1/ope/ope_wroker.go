@@ -104,6 +104,7 @@ func (this *OpeWroker) Start() {
 }
 
 func (this *OpeWroker) onClient(client *olv1.TcpClient) error {
+	//TODO Auth it.
 	log.Printf("Info|OpeWroker.onClient: %s", client)	
 
 	ifce, err := this.createTap()
@@ -118,6 +119,7 @@ func (this *OpeWroker) onClient(client *olv1.TcpClient) error {
 }
 
 func (this *OpeWroker) onRecv(client *olv1.TcpClient, data []byte) error {
+	//TODO Hook packets such as ARP Learning.
 	if this.IsVerbose() {
 		log.Printf("Info|OpeWroker.onRecv: %s % x", client, data)	
 	}
