@@ -35,7 +35,7 @@ func NewHttp(ope *Ope, listen string) {
         body := "remoteaddr, localdevice, rx, tx, error\n"
         for client, ifce := range ope.Wroker.Clients {
             body += fmt.Sprintf("%s, %s, %d, %d, %d\n", client.GetAddr(), ifce.Name(),
-                                            client.RxOkay, client.RxOkay, client.TxError)
+                                            client.RxOkay, client.TxOkay, client.TxError)
         }
         fmt.Fprintf(w, body)
     })
