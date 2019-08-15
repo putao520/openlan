@@ -38,27 +38,29 @@ We use UDP to carry control and ethernet message between Endpoint, Endpoint and 
 
     0 1 2 3 4 5 6 7 8 0 1 2 3 4 5 6 7 8 0 1 2 3 4 5 6 7 8 0 1 2 3 4 5 6 7 8
     +-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+
-    |            MAGIC                |      Type        |     Length      |       
+    |            MAGIC                |              Length                |       
     +-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+
     |                               Payload                                |
     +-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+
     
     MAGIC: 0xFFFF
-    Type: 
-        Ethernet 0x00
-        Hello    0x01
-        Host Learning 0x02
-        Host Announce 0x03
-        Authentication 0x04
-        Acknowledge   0x05
     Payload:
-        If Ethernet:
-            Padding using Ethernet Frame.
+        If Dest.MAC isn't ZERO:
+            Padded by Ethernet Frame.
         Else:
             0 1 2 3 4 5 6 7 8 0 1 2 3 4 5 6 7 8 0 1 2 3 4 5 6 7 8 0 1 2 3 4 5 6 7 8
             +-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+
-            |              Unique ID          |                Reselved            |
+            |                               0x00                                   |
+            +-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+
+            |                0x00             |        Type     |      Resv        |
             +-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+
             |                               Data                                   |
             +-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+
-
+            
+            Type: 
+                Hello          0x01
+                Host Learning  0x02
+                Host Announce  0x03
+                Authentication 0x04
+                Acknowledge    0x05
+            
