@@ -20,6 +20,9 @@ type TcpClient struct {
     maxsize int
     minsize int
     verbose int
+    TxOkay uint64
+    RxOkay uint64
+    TxError uint64
 }
 
 func NewTcpClient(addr string, verbose int) (this *TcpClient) {
@@ -29,6 +32,9 @@ func NewTcpClient(addr string, verbose int) (this *TcpClient) {
         maxsize: 1514,
         minsize: 15,
         verbose: verbose,
+        TxOkay: 0,
+        RxOkay: 0,
+        TxError: 0,
     }
 
     if err := this.Connect(); err != nil {
@@ -137,7 +143,14 @@ func (this *TcpClient) SendMsg(data []byte) error {
     binary.BigEndian.PutUint16(buffer[2:4], uint16(len(data)))
     copy(buffer[HSIZE:], data)
 
-    return this.sendn(buffer)
+    if err := this.sendn(buffer); err != nil {
+        this.TxError++
+        return err
+    }
+    
+    this.TxOkay++
+
+    return nil
 }
 
 func (this *TcpClient) RecvMsg(data []byte) (int, error) {
@@ -165,6 +178,7 @@ func (this *TcpClient) RecvMsg(data []byte) (int, error) {
     }
 
     copy(data, d)
+    this.RxOkay++
 
     return int(size), nil
 }
