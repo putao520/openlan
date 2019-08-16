@@ -18,15 +18,14 @@ type TcpWroker struct {
 	password string
 }
 
-func NewTcpWoker(client *olv1.TcpClient, 
-	             name string, password string, maxSize int, verbose int) (this *TcpWroker) {
+func NewTcpWoker(client *olv1.TcpClient, c *Config) (this *TcpWroker) {
 	this = &TcpWroker {
 		client: client,
 		writechan: make(chan []byte, 1024*10),
-		verbose: verbose,
-		maxSize: maxSize,
-		name: name,
-		password: password,
+		verbose: c.Verbose,
+		maxSize: c.Ifmtu,
+		name: c.Name,
+		password: c.Password,
 	}
 	this.client.SetMaxSize(this.maxSize)
 	this.client.OnConnect = this.TryLogin

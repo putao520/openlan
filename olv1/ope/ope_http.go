@@ -32,15 +32,16 @@ func getToken(n int) string {
 	return string(buf)
 }
 
-func NewOpeHttp(wroker *OpeWroker, listen string, token string)(this *OpeHttp) {
+func NewOpeHttp(wroker *OpeWroker, c *Config)(this *OpeHttp) {
+	token := c.Token
 	if token == "" {
 		token = getToken(16)
 	}
 	this = &OpeHttp {
 		wroker: wroker,
-		listen: listen,
+		listen: c.HttpListen,
 		adminToken: token,
-		adminFile: ".opetoken",
+		adminFile: c.TokenFile,
 	}
 
 	this.SaveToken()

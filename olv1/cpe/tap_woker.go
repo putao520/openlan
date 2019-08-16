@@ -13,12 +13,12 @@ type TapWroker struct {
 	verbose int
 }
 
-func NewTapWoker(ifce *water.Interface, ifmtu int, verbose int) (this *TapWroker) {
+func NewTapWoker(ifce *water.Interface, c *Config) (this *TapWroker) {
 	this = &TapWroker {
 		ifce: ifce,
 		writechan: make(chan []byte, 1024*10),
-		ifmtu: ifmtu, //1514
-		verbose: verbose,
+		ifmtu: c.Ifmtu, //1514
+		verbose: c.Verbose,
 	}
 	return
 }

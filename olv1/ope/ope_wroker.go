@@ -29,23 +29,23 @@ type OpeWroker struct {
 	ifmtu int
 }
 
-func NewOpeWroker(server *TcpServer, brname string, verbose int) (this *OpeWroker) {
+func NewOpeWroker(server *TcpServer, c *Config) (this *OpeWroker) {
 	this = &OpeWroker {
 		Server: server,
 		Clients: make(map[*olv1.TcpClient]*water.Interface, 1024),
 		Users: make(map[string]*User, 1024),
-		verbose: verbose,
+		verbose: c.Verbose,
 		br: nil,
 		ifmtu: 1514,
 		hooks: make(map[int]func(*olv1.TcpClient, *olv1.Frame) error),
 		keys: make([]int, 0, 1024),
 	}
 
-	this.newBr(brname)
+	this.newBr(c.Brname)
 	this.setHook(0x10, this.checkAuth)
 	this.setHook(0x11, this.handleReq)
 	this.showHook()
-	this.loadUsers(".password")
+	this.loadUsers(c.Password)
 
 	return 
 }

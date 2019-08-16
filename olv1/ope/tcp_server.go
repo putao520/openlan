@@ -17,15 +17,15 @@ type TcpServer struct {
 	verbose int
 }
 
-func NewTcpServer(addr string, verbose int) (this *TcpServer) {
+func NewTcpServer(c *Config) (this *TcpServer) {
 	this = &TcpServer {
-		addr: addr,
+		addr: c.TcpListen,
 		listener: nil,
 		maxClient: 1024,
 		clients: make(map[*olv1.TcpClient]bool, 1024),
 		onClients: make(chan *olv1.TcpClient, 4),
 		offClients: make(chan *olv1.TcpClient, 8),
-		verbose: verbose,
+		verbose: c.Verbose,
 	}
 
 	if err := this.Listen(); err != nil {
