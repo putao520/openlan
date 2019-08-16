@@ -3,9 +3,6 @@ package main
 import (
     "fmt"
     "flag"
-    "net/http"
-    "html"
-    "log"
     "os/signal"
     "syscall"
     "time"
@@ -26,37 +23,25 @@ func NewOpe(addr string, ifmtu int, brname string, verbose int) (this *Ope){
     return 
 }
 
-func NewHttp(ope *Ope, listen string) {
-    http.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
-        fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
-    })
-
-    http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-        body := "remoteaddr, localdevice, rx, tx, error\n"
-        for client, ifce := range ope.Wroker.Clients {
-            body += fmt.Sprintf("%s, %s, %d, %d, %d\n", client.GetAddr(), ifce.Name(),
-                                            client.RxOkay, client.TxOkay, client.TxError)
-        }
-        fmt.Fprintf(w, body)
-    })
-
-    log.Printf("NewHttp on %s", listen)
-    log.Fatal(http.ListenAndServe(listen, nil))
+func GoHttp(ope *Ope, listen string, token string) {
+    http := olv1ope.NewOpeHttp(ope.Wroker, listen, token)
+    http.GoStart()
 }
 
 func main() {
     br := flag.String("br", "",  "the bridge name")
+    verbose := flag.Int("verbose", 0x00, "open verbose")
     http := flag.String("http", "0.0.0.0:10082",  "the http listen on")
     addr := flag.String("addr", "0.0.0.0:10002",  "the server listen on")
-    verbose := flag.Int("verbose", 0x00, "open verbose")
     ifmtu := flag.Int("ifmtu", 1514, "the interface MTU include ethernet")
+    token := flag.String("token", "dontUseDefault", "Administrator token")
 
     flag.Parse()
 
     ope := NewOpe(*addr, *ifmtu, *br, *verbose)
     ope.Wroker.Start()
 
-    go NewHttp(ope, *http)
+    go GoHttp(ope, *http, *token)
     
     c := make(chan os.Signal)
     signal.Notify(c, os.Interrupt, syscall.SIGTERM)

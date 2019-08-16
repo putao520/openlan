@@ -10,6 +10,7 @@ import (
     "os"
     
     "github.com/songgao/water"
+    "github.com/milosgajdos83/tenus"
     "github.com/danieldin95/openlan-go/olv1/olv1"
     "github.com/danieldin95/openlan-go/olv1/cpe"
 )
@@ -48,6 +49,21 @@ func NewIfce(devtype water.DeviceType) (ifce *water.Interface) {
     return 
 }
 
+func UpLink(name string) error {
+    link, err := tenus.NewLinkFrom(name)
+	if err != nil {
+		log.Printf("Error|main.UpLink: Get ifce %s: %s", name, err)
+		return err
+	}
+	
+	if err := link.SetLinkUp(); err != nil {
+        log.Printf("Error|main.UpLink: %s : %s", name, err)
+        return err
+    }
+    
+    return nil
+}
+
 func main() {
     addr := flag.String("addr", "openlan.net:10002",  "the server connect to")
     verbose := flag.Int("verbose", 0x00, "open verbose")
@@ -56,6 +72,8 @@ func main() {
     flag.Parse()
 
     ifce := NewIfce(water.TAP)
+    UpLink(ifce.Name())
+
     client := olv1.NewTcpClient(*addr, *verbose)
     cpe := NewCpe(client, ifce, *ifmtu, *verbose)
 

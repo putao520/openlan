@@ -60,7 +60,7 @@ func (this *OpeWroker) createBr(brname string) {
 	}
 
 	if err = br.SetLinkUp(); err != nil {
-		log.Printf("Error|OpeWroker.createBr: ", err)
+		log.Printf("Error|OpeWroker.createBr: %s", err)
 	}
 
 	log.Printf("OpeWroker.createBr %s", brname)
@@ -80,7 +80,7 @@ func (this *OpeWroker) createTap() (*water.Interface, error) {
 	
 	link, err := tenus.NewLinkFrom(ifce.Name())
 	if err != nil {
-		log.Printf("Error|OpeWroker.createTap: Get ifce %s", ifce.Name(), err)
+		log.Printf("Error|OpeWroker.createTap: Get ifce %s: %s", ifce.Name(), err)
 		return nil, err
 	}
 	
@@ -89,7 +89,7 @@ func (this *OpeWroker) createTap() (*water.Interface, error) {
 	}
 
 	if err := this.br.AddSlaveIfc(link.NetInterface()); err != nil {
-		log.Printf("Error|OpeWroker.createTap: Switch ifce %s", ifce.Name(), err)
+		log.Printf("Error|OpeWroker.createTap: Switch ifce %s: %s", ifce.Name(), err)
 		return nil, err
 	}
 
