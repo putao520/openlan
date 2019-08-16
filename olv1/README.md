@@ -24,12 +24,23 @@ Goto `Control Panel\Network and Internet\Network Connections`, and find `Etherne
 
 # Start OPE on Linux
 
+    [root@localhost olv1]# cat .passowrd
+    zzz:wwww
+    xxxx:aaaaa
     [root@localhost olv1]# nohup ./resources/ope -addr x.x.x.x:10002 &
+    [root@localhost olv1]# cat .opetoken
+    m64rxofsqkvlb4cj
     [root@localhost olv1]# ifconfig br-olan-10002 192.168.x.a up
+    
+Show CPEs:
+    [root@localhost olv1]# curl -um64rxofsqkvlb4cj: -XGET http://localhost:10082/
+
+Show Users:
+    [root@localhost olv1]# curl -um64rxofsqkvlb4cj: -XGET http://localhost:10082/user
 
 # Start CPE on Linux
 
-    [root@localhost olv1]# nohup ./resources/cpe -addr x.x.x.x:10002 &
+    [root@localhost olv1]# nohup ./resources/cpe -addr x.x.x.x:10002 -name zzz -password wwww &
     [root@localhost olv1]# ifconfig tap0 192.168.x.b up
     [root@localhost olv1]# ping 192.168.x.a
 
