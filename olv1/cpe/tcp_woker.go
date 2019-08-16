@@ -34,12 +34,11 @@ func NewTcpWoker(client *olv1.TcpClient, c *Config) (this *TcpWroker) {
 }
 
 func (this *TcpWroker) TryLogin(client *olv1.TcpClient) error {
-	body := fmt.Sprintf("{\"name\":\"%s\",\"password\":\"%s\"}", this.name, this.password)
+	body := fmt.Sprintf(`{"name":"%s","password":"%s"}`, this.name, this.password)
+	log.Printf("Info| TcpWroker.TryLogin: %s", body)
 	if err := client.SendReq("login", body); err != nil {
 		return err
 	}
-
-	//TODO received response.
 	return nil
 }
 

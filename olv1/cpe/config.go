@@ -26,7 +26,9 @@ func NewConfig() (this *Config) {
     
 	values := strings.Split(this.Auth, ":")
 	this.Name = values[0] 
-    this.Password = values[1]
+	if (len(values) > 1) {
+		this.Password = values[1]
+	}
 
 	return
 }
