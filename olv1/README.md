@@ -4,7 +4,7 @@ Refer to https://github.com/danieldin95/openlan-py
 
 # Install tap-windows6
 
-Download `resources/tap-windows-9.21.2.exe`, then install it. And run CPE in Windows by `cpe.exe -addr x.x.x.x:10002 -name zzz -password wwww`. 
+Download `resources/tap-windows-9.21.2.exe`, then install it. And run CPE in Windows by `cpe.exe -addr x.x.x.x:10002 -auth zzz:wwww`. 
 
 # Build in Powershell
 
@@ -42,7 +42,7 @@ Show Users
 
 # Start CPE on Linux
 
-    [root@localhost olv1]# nohup ./resources/cpe -addr x.x.x.x:10002 -name zzz -password wwww &
+    [root@localhost olv1]# nohup ./resources/cpe -addr x.x.x.x:10002 -auth zzz:wwww &
     [root@localhost olv1]# ifconfig tap0 192.168.x.b up
     [root@localhost olv1]# ping 192.168.x.a
 
