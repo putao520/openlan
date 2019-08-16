@@ -8,13 +8,13 @@ Download `resources/tap-windows-9.21.2.exe`, then install it. And run CPE in Win
 
 # Build in Powershell
 
-Download dependent sources： 
+Download dependent sources
 
     PS L:\openlan-go\olv1> go get github.com/songgao/water
     PS L:\openlan-go\olv1> go get github.com/milosgajdos83/tenus
     PS L:\openlan-go\olv1> go get golang.org/x/sys
 
-Execute building command:
+Execute building command
 
     PS L:\openlan-go\olv1> go build -o ./resources/cpe.exe cpe_windows.go
 
@@ -32,10 +32,12 @@ Goto `Control Panel\Network and Internet\Network Connections`, and find `Etherne
     m64rxofsqkvlb4cj
     [root@localhost olv1]# ifconfig br-olan-10002 192.168.x.a up
     
-Show CPEs:
+Show CPEs
+
     [root@localhost olv1]# curl -um64rxofsqkvlb4cj: -XGET http://localhost:10082/
 
-Show Users:
+Show Users
+
     [root@localhost olv1]# curl -um64rxofsqkvlb4cj: -XGET http://localhost:10082/user
 
 # Start CPE on Linux
