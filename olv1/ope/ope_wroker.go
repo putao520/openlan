@@ -12,8 +12,12 @@ import (
 )
 
 type OpeWroker struct {
+	//Public variable
 	Server *TcpServer
 	Clients map[*olv1.TcpClient]*water.Interface
+	Users map[string]*User
+
+	//Private variable
 	verbose int
 	br tenus.Bridger
 	ifmtu int
@@ -22,10 +26,11 @@ type OpeWroker struct {
 func NewOpeWroker(server *TcpServer, brname string, verbose int) (this *OpeWroker) {
 	this = &OpeWroker {
 		Server: server,
+		Clients: make(map[*olv1.TcpClient]*water.Interface),
+		Users: make(map[string]*User),
 		verbose: verbose,
 		br: nil,
 		ifmtu: 1514,
-		Clients: make(map[*olv1.TcpClient]*water.Interface),
 	}
 
 	this.createBr(brname)

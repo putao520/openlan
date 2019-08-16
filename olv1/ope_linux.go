@@ -34,7 +34,7 @@ func main() {
     http := flag.String("http", "0.0.0.0:10082",  "the http listen on")
     addr := flag.String("addr", "0.0.0.0:10002",  "the server listen on")
     ifmtu := flag.Int("ifmtu", 1514, "the interface MTU include ethernet")
-    token := flag.String("token", "dontUseDefault", "Administrator token")
+    token := flag.String("token", "", "Administrator token")
 
     flag.Parse()
 
