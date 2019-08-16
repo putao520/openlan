@@ -3,6 +3,7 @@ package olv1cpe
 import (
 	"log"
 	"time"
+	"fmt"
 
 	"github.com/danieldin95/openlan-go/olv1/olv1"
 )
@@ -13,18 +14,49 @@ type TcpWroker struct {
 	writechan chan []byte
 	verbose int
 	maxSize int
+	name string
+	password string
 }
 
-func NewTcpWoker(client *olv1.TcpClient, maxSize int, verbose int) (this *TcpWroker) {
+func NewTcpWoker(client *olv1.TcpClient, 
+	             name string, password string, maxSize int, verbose int) (this *TcpWroker) {
 	this = &TcpWroker {
 		client: client,
 		writechan: make(chan []byte, 1024*10),
 		verbose: verbose,
 		maxSize: maxSize,
+		name: name,
+		password: password,
 	}
 	this.client.SetMaxSize(this.maxSize)
+	this.client.OnConnect = this.TryLogin
 
 	return
+}
+
+func (this *TcpWroker) TryLogin(client *olv1.TcpClient) error {
+	body := fmt.Sprintf("{\"name\":\"%s\",\"password\":\"%s\"}", this.name, this.password)
+	if err := client.SendReq("login", body); err != nil {
+		return err
+	}
+
+	//TODO received response.
+	return nil
+}
+
+func (this *TcpWroker) onInstruct(data []byte) error {
+	action := olv1.DecAction(data)
+	if action == "logi:" {
+		resp := olv1.DecBody(data)
+		log.Printf("Info| TcpWroker.onHook: %s", resp)
+		if resp[:4] == "okay" {
+			this.client.Status = olv1.CL_AUTHED
+		} else {
+			this.client.Status = olv1.CL_UNAUTH
+		}
+	}
+
+	return nil
 }
 
 func (this *TcpWroker) GoRecv(dorecv func([]byte)(error)) {
@@ -45,9 +77,14 @@ func (this *TcpWroker) GoRecv(dorecv func([]byte)(error)) {
 		if this.IsVerbose() {
 			log.Printf("TcpWroker.GoRev: % x\n", data[:n])
 		}
-	
+
 		if n > 0 {
-			dorecv(data[:n])
+			data = data[:n]
+			if olv1.IsInst(data) {
+				this.onInstruct(data)
+			} else {
+				dorecv(data)
+			}
 		}
 	}
 }
@@ -66,6 +103,14 @@ func (this *TcpWroker) GoLoop() error {
 	for {
 		select {
 		case wdata := <- this.writechan:
+			if this.client.Status != olv1.CL_AUTHED {
+				this.client.Droped++
+				if this.IsVerbose() {
+					log.Printf("Error|TcpWroker.GoLoop: droping by unauth")
+					continue
+				}
+			}
+
 			if err := this.client.SendMsg(wdata); err != nil {
 				log.Printf("Error|TcpWroker.GoLoop: %s", err)
 			}

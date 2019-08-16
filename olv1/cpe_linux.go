@@ -21,12 +21,14 @@ type Cpe struct {
     tapwroker *olv1cpe.TapWroker
 }
 
-func NewCpe(client *olv1.TcpClient, ifce *water.Interface, ifmtu int, verbose int) (this *Cpe){
+func NewCpe(client *olv1.TcpClient, ifce *water.Interface, 
+            name string, password string, ifmtu int, verbose int) (this *Cpe){
     this = &Cpe {
         verbose: verbose,
         tapwroker : olv1cpe.NewTapWoker(ifce, ifmtu, verbose),
-        tcpwroker : olv1cpe.NewTcpWoker(client, ifmtu, verbose),
+        tcpwroker : olv1cpe.NewTcpWoker(client, name, password, ifmtu, verbose),
     }
+
     return 
 }
 
@@ -68,6 +70,8 @@ func main() {
     addr := flag.String("addr", "openlan.net:10002",  "the server connect to")
     verbose := flag.Int("verbose", 0x00, "open verbose")
     ifmtu := flag.Int("ifmtu", 1514, "the interface MTU include ethernet")
+    name := flag.String("name", "openlan",  "the name login to")
+    password := flag.String("password", "openlan.net",  "the password login to")
 
     flag.Parse()
 
@@ -75,7 +79,11 @@ func main() {
     UpLink(ifce.Name())
 
     client := olv1.NewTcpClient(*addr, *verbose)
-    cpe := NewCpe(client, ifce, *ifmtu, *verbose)
+    cpe := NewCpe(client, ifce, *name, *password, *ifmtu, *verbose)
+
+    if err := client.Connect(); err != nil {
+        log.Printf("main %s\n", err)
+    }
 
     cpe.Start()
 

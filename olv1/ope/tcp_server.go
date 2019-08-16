@@ -22,7 +22,7 @@ func NewTcpServer(addr string, verbose int) (this *TcpServer) {
 		addr: addr,
 		listener: nil,
 		maxClient: 1024,
-		clients: make(map[*olv1.TcpClient]bool),
+		clients: make(map[*olv1.TcpClient]bool, 1024),
 		onClients: make(chan *olv1.TcpClient, 4),
 		offClients: make(chan *olv1.TcpClient, 8),
 		verbose: verbose,
@@ -89,7 +89,7 @@ func (this *TcpServer) GoLoop(onClient func (*olv1.TcpClient) error,
 	for {
 		select {
 		case client := <- this.onClients:
-			log.Printf("TcpServer.addClient %s", client)
+			log.Printf("TcpServer.addClient %s", client.GetAddr())
 			if onClient != nil {
 				onClient(client)
 			}
@@ -97,7 +97,7 @@ func (this *TcpServer) GoLoop(onClient func (*olv1.TcpClient) error,
 			go this.GoRecv(client, onRecv)
 		case client := <- this.offClients:
 			if ok := this.clients[client]; ok {
-				log.Printf("TcpServer.delClient %s", client)
+				log.Printf("TcpServer.delClient %s", client.GetAddr())
 				if onClose != nil {
 					onClose(client)
 				}
@@ -109,7 +109,7 @@ func (this *TcpServer) GoLoop(onClient func (*olv1.TcpClient) error,
 }
 
 func (this *TcpServer) GoRecv(client *olv1.TcpClient, onRecv func (*olv1.TcpClient, []byte) error) {
-	log.Printf("TcpServer.GoRecv: %s", client)	
+	log.Printf("TcpServer.GoRecv: %s", client.GetAddr())	
     for {
         data := make([]byte, 4096)
         length, err := client.RecvMsg(data)

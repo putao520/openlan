@@ -14,15 +14,27 @@ var (
     HSIZE  = uint16(0x04)
 )
 
+var (
+    CL_INIT      = uint8(0x00)
+    CL_CONNECTED = uint8(0x01)
+    CL_UNAUTH    = uint8(0x02)
+    CL_AUTHED    = uint8(0x03)
+    CL_CLOSED    = uint8(0xff)
+)
+
 type TcpClient struct {
     addr string
     conn *net.TCPConn
     maxsize int
     minsize int
     verbose int
+    //Public variable
     TxOkay uint64
     RxOkay uint64
     TxError uint64
+    Droped uint64
+    Status uint8
+    OnConnect func(*TcpClient) error
 }
 
 func NewTcpClient(addr string, verbose int) (this *TcpClient) {
@@ -35,10 +47,9 @@ func NewTcpClient(addr string, verbose int) (this *TcpClient) {
         TxOkay: 0,
         RxOkay: 0,
         TxError: 0,
-    }
-
-    if err := this.Connect(); err != nil {
-        log.Printf("NewTcpClient %s\n", err)
+        Droped: 0,
+        Status: CL_INIT,
+        OnConnect: nil,
     }
 
     return 
@@ -72,7 +83,13 @@ func (this *TcpClient) Connect() error {
         this.conn = nil
         return err
     }
+
     this.conn = conn
+    this.Status = CL_CONNECTED
+
+    if this.OnConnect != nil {
+        this.OnConnect(this)
+    }
 
     return nil
 }
@@ -205,4 +222,30 @@ func (this *TcpClient) IsOk() bool {
 
 func (this *TcpClient) GetAddr() string {
     return this.addr
+}
+
+func (this *TcpClient) SendReq(action string, body string) error {
+    data := EncInstReq(action, body)
+
+    if this.IsVerbose() {
+    	log.Printf("Debug| TcpClient.SendReq %d %s\n", len(data), data[6:])
+    }
+
+	if err := this.SendMsg(data); err != nil {
+		return err
+    }
+    return nil
+}
+
+func (this *TcpClient) SendResp(action string, body string) error {
+    data := EncInstResp(action, body)
+
+    if this.IsVerbose() {
+    	log.Printf("Debug| TcpClient.SendResp %d %s\n", len(data), data[6:])
+    }
+
+	if err := this.SendMsg(data); err != nil {
+		return err
+    }
+    return nil
 }
