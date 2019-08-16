@@ -97,7 +97,7 @@ func (this *OpeHttp) Hi(w http.ResponseWriter, r *http.Request) {
 
 	for name, headers := range r.Header {
 		for _, h := range headers {
-			log.Printf("%v: %v", name, h)
+			log.Printf("Info| OpeHttp.Hi %v: %v", name, h)
 		}
 	}
 }

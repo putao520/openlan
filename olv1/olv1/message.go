@@ -7,9 +7,9 @@ import (
 
 //[MAGIC(2)][Length(2)][DSTMAC(6)]
 // if DSTMAC is ZERO
-//    [Action(4)][=/:][space(1)][Json Body]
-//    Action: ReqApi such as 'logn', 'resp'.
-//    Json Body: length-4 bytes.
+//    [Action(4+(=/:))[Space(1)][Json Body]
+//    Action: Instruct such as 'logi=', 'logi:'.
+//    Json Body: length - 6 bytes.
 // else 
 //    Payload is Ethernat Frame.
 

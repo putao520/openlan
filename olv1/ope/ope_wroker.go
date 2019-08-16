@@ -1,6 +1,8 @@
 package olv1ope
 
 import (
+	"os"
+	"bufio"
 	"log"
 	"strings"
 	"fmt"
@@ -43,8 +45,34 @@ func NewOpeWroker(server *TcpServer, brname string, verbose int) (this *OpeWroke
 	this.setHook(0x10, this.checkAuth)
 	this.setHook(0x11, this.handleReq)
 	this.showHook()
+	this.loadUsers(".password")
 
 	return 
+}
+
+func (this *OpeWroker) loadUsers(path string) error {
+	file, err := os.Open(path)
+    if err != nil {
+        return err
+	}
+
+	defer file.Close()
+    reader := bufio.NewReader(file)
+
+    for {
+        line, err := reader.ReadString('\n')
+        if err != nil {
+            break
+		}
+		
+		values := strings.Split(line, ":")
+		if len(values) == 2 {
+			user := &User{Name: values[0], Password: strings.TrimSpace(values[1])}
+			this.Users[user.Name] = user
+		}
+    }
+
+	return nil
 }
 
 func (this *OpeWroker) newBr(brname string) {
@@ -58,7 +86,7 @@ func (this *OpeWroker) newBr(brname string) {
 	var br tenus.Bridger
 
 	if (brname == "") {
-		brname = fmt.Sprintf("br-olan-%s", addrs[1])
+		brname = fmt.Sprintf("brol-%s", addrs[1])
 		br, err = tenus.BridgeFromName(brname)
 		if err != nil {
 			br, err = tenus.NewBridgeWithName(brname)
@@ -197,6 +225,7 @@ func  (this *OpeWroker) handlelogin(client *olv1.TcpClient, data string) error {
 		if _user.Password == user.Password {
 			client.Status = olv1.CL_AUTHED
 			log.Printf("Info| OpeWroker.handlelogin: %s Authed", client.GetAddr())
+			this.onAuth(client)
 			return nil
 		}
 
@@ -214,13 +243,22 @@ func (this *OpeWroker) onClient(client *olv1.TcpClient) error {
 	client.Status = olv1.CL_CONNECTED
 	log.Printf("Info|OpeWroker.onClient: %s", client.GetAddr())	
 
+	return nil
+}
+
+func (this *OpeWroker) onAuth(client *olv1.TcpClient) error {
+	if client.Status != olv1.CL_AUTHED {
+		return errors.New("not authed.")
+	}
+
+	log.Printf("Info|OpeWroker.onAuth: %s", client.GetAddr())	
+
 	ifce, err := this.newTap()
 	if err != nil {
 		return err
 	}
-	
+
 	this.Clients[client] = ifce
-	client.Status = olv1.CL_UNAUTH
 	go this.GoRecv(ifce, client.SendMsg)
 
 	return nil
