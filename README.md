@@ -4,12 +4,18 @@ The Golang implements for OpenLAN project.
     
                                                Controller
                                                    |
-                            ------------------------------------------
+                            -------------------------------------------
                             |                      |                  |
                          Firewall               Firewall           FireWall
                             |                      |                  |
-                Host1 --- Endpoint A           Endpoint B         Endpoint C --- Host2
+                Host1 --- Site A                Site B             Site C --- Host2
 
-The version1 refer to https://github.com/danieldin95/openlan-go/tree/master/olv1, 
+The OpenLAN project providers one solution for you to access your any site from any where. 
 
-And version2 refer to https://github.com/danieldin95/openlan-go/tree/master/olv2.
+# Version1 
+
+Refer to https://github.com/danieldin95/openlan-go/tree/master/olv1.
+
+# Version2
+
+Refer to https://github.com/danieldin95/openlan-go/tree/master/olv2.
