@@ -46,7 +46,7 @@ func (this *TcpWroker) onInstruct(data []byte) error {
 	action := olv1.DecAction(data)
 	if action == "logi:" {
 		resp := olv1.DecBody(data)
-		log.Printf("Info| TcpWroker.onHook: %s", resp)
+		log.Printf("Info| TcpWroker.onHook.login: %s", resp)
 		if resp[:4] == "okay" {
 			this.client.Status = olv1.CL_AUTHED
 		} else {

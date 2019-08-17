@@ -7,6 +7,7 @@ import (
     "encoding/binary"
     "bytes"
     "log"
+    "time"
 )
 
 var (
@@ -28,6 +29,7 @@ type TcpClient struct {
     maxsize int
     minsize int
     verbose int
+    newtime int64
     //Public variable
     TxOkay uint64
     RxOkay uint64
@@ -50,6 +52,7 @@ func NewTcpClient(addr string, verbose int) (this *TcpClient) {
         Droped: 0,
         Status: CL_INIT,
         OnConnect: nil,
+        newtime: time.Now().Unix(),
     }
 
     return 
@@ -62,6 +65,7 @@ func NewTcpClientFromConn(conn *net.TCPConn, verbose int) (this *TcpClient) {
         maxsize: 1514,
         minsize: 15,
         verbose: verbose,
+        newtime: time.Now().Unix(),
     }
 
     return 
@@ -248,4 +252,8 @@ func (this *TcpClient) SendResp(action string, body string) error {
 		return err
     }
     return nil
+}
+
+func (this *TcpClient) UpTime() int64 {
+    return time.Now().Unix() - this.newtime
 }

@@ -110,10 +110,10 @@ func (this *OpeHttp) Index(w http.ResponseWriter, r *http.Request) {
 
 	switch (r.Method) {
 	case "GET":  
-		body := "remoteaddr, localdevice, receipt, transmission, error\n"
+		body := "uptime, remoteaddr, device, receipt, transmission, error\n"
 		for client, ifce := range this.wroker.Clients {
-			body += fmt.Sprintf("%s, %s, %d, %d, %d\n", 
-								client.GetAddr(), ifce.Name(),
+			body += fmt.Sprintf("%d, %s, %s, %d, %d, %d\n", 
+								client.UpTime(), client.GetAddr(), ifce.Name(),
 								client.RxOkay, client.TxOkay, client.TxError)
 		}
 		fmt.Fprintf(w, body)
