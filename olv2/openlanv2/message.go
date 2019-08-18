@@ -6,11 +6,29 @@ import (
 )
 
 var (
-    MAGIC  = []byte{0xff,0xff}
-    HSIZE  = uint16(0x04)
+    MAGIC   = []byte{0xff,0xff}
+	HSIZE   = uint16(0x14)
+	CTLUUID = []byte{0x00, 0x00, 0x00, 0x00,
+					 0x00, 0x00, 0x00, 0x00,
+					 0x00, 0x00, 0x00, 0x00,
+					 0x00, 0x00, 0x00, 0x00} 
 )
 
-//[MAGIC(2)][Length(2)][DSTMAC(6)]
+type Message struct {
+	Action string
+	Body string
+}
+
+func NewMessage(action string, body string) (this *Message) {
+	this = &Message {
+		Action: action, 
+		Body: body,
+	}
+	return
+}
+
+//[MAGIC(2)][Length(2)]
+//[UUID(16)][DSTMAC(6)]
 // if DSTMAC is ZERO
 //    [Action(4+(=/:))[Space(1)][Json Body]
 //    Action: Instruct such as 'logi=', 'logi:'.
@@ -18,24 +36,24 @@ var (
 // else 
 //    Payload is Ethernat Frame.
 
-func IsInst(data []byte) bool {
+func IsInstruct(data []byte) bool {
 	return bytes.Equal(data[:6], ZEROMAC)
 }
 
-func DecAction(data []byte) string {
+func DecodeAction(data []byte) string {
 	return string(data[6:11])
 }
 
-func DecBody(data []byte) string {
+func DecodeBody(data []byte) string {
 	return string(data[12:])
 }
 
-func EncInstReq(action string, body string) []byte {
-	payload := fmt.Sprintf("%s= %s", action[:4], body)
+func (this *Message)EncodeReq() []byte {
+	payload := fmt.Sprintf("%s= %s", this.Action[:4], this.Body)
 	return append(ZEROMAC, payload...)
 }
 
-func EncInstResp(action string, body string) []byte {
-	payload := fmt.Sprintf("%s: %s", action[:4], body)
+func (this *Message)EncodeResp() []byte {
+	payload := fmt.Sprintf("%s: %s", this.Action[:4], this.Body)
 	return append(ZEROMAC, payload...)
 }

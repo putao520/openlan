@@ -39,7 +39,7 @@ func (this *Controller) doRecv(raddr *net.UDPAddr, data []byte) error {
 		log.Printf("Info| Controller.doRecv")
 	}
 
-	if openlanv2.IsInst(data) {
+	if openlanv2.IsInstruct(data) {
 		return this.doInstruct(raddr, data)
 	}
 
@@ -51,9 +51,9 @@ func (this *Controller) doInstruct(raddr *net.UDPAddr, data []byte) error {
 		log.Printf("Info| Controller.doInstruct")
 	}
 
-	action := openlanv2.DecAction(data)
+	action := openlanv2.DecodeAction(data)
 	if action == "onli=" {
-		return this.doOnline(raddr, openlanv2.DecBody(data))
+		return this.doOnline(raddr, openlanv2.DecodeBody(data))
 	}
 
 	return nil
@@ -72,29 +72,28 @@ func (this *Controller) doOnline(raddr *net.UDPAddr, body string) error {
 		log.Printf("Info| Controller.doOnline")
 	}
 
-	point, err := openlanv2.NewEndpointFromJson(body)
+	from, err := openlanv2.NewEndpointFromJson(body)
 	if err != nil {
 		log.Printf("Error| Controller.doOnline: %s", err)
 		return err
 	}
 
-	point.UdpAddr = raddr
+	from.UdpAddr = raddr
 	//TODO auth it.
-	net, ok := this.Networks[point.Network]
+	net, ok := this.Networks[from.Network]
 	if !ok {
-		net = openlanv2.NewNetwork(point.Network)
-		this.Networks[point.Network] = net
+		net = openlanv2.NewNetwork(from.Network)
+		this.Networks[from.Network] = net
 	}
-	key := point.UdpAddr.String()
-	_point, ok := net.Endpoints[key]
+	key := from.UdpAddr.String()
+	_from, ok := net.Endpoints[key]
 	if !ok {
-		_point = point
-		net.AddEndpoint(key, point)
+		_from = from
+		net.AddEndpoint(key, from)
 	}
 
 	//TODO If UDP hole is changed.
-	_point.UUID = point.UUID
-	_point.UdpAddr = point.UdpAddr
+	_from.Update(from)
 
 	for uuid, peer := range net.Endpoints {
 		if this.verbose {
@@ -103,7 +102,8 @@ func (this *Controller) doOnline(raddr *net.UDPAddr, body string) error {
 
 		body, err := peer.ToJson()
 		if err == nil {
-			this.Broker.DoSend(raddr, "online", body)
+			m := openlanv2.NewMessage("online", body)
+			this.Broker.DoSend(from.UdpAddr, from.UUID, m)
 		} else {
 			log.Printf("Error| doOnline %s: %s", peer.UdpAddr, err)
 		}

@@ -61,8 +61,12 @@ func (this *Endpoint) ToJson() (string, error) {
 	return string(data), err
 }
 
-func (this *Endpoint) Update() {
+func (this *Endpoint) Update(from *Endpoint) bool {
+	this.UUID = from.UUID
+	this.UdpAddr = from.UdpAddr
 	this.updateTime = time.Now().Unix()
+	
+	return false
 }
 
 func (this *Endpoint) UpTime() int64 {

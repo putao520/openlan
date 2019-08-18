@@ -22,7 +22,7 @@ type UdpHole struct {
 	password string
 }
 
-func SplitAuth(auth string) (string, string){
+func SplitAuth(auth string) (string, string) {
 	values := strings.Split(auth, ":")
 	if len(values) == 2 {
 		return values[0], values[1]
@@ -42,6 +42,8 @@ func NewUdpHole(c *Config) (this *UdpHole) {
 		UUID: openlanv2.GenUUID(16),
 	}
 
+	this.Udp.MaxSize = c.Ifmtu+ETHLEN+int(openlanv2.HSIZE)
+	log.Printf("Info| NewUdpHole UUID %s", this.UUID)
 	this.name, this.password = SplitAuth(c.Auth)
 
 	if err := this.Udp.Listen(); err != nil {
@@ -62,7 +64,8 @@ func (this *UdpHole) GoAlive() {
 	body := fmt.Sprintf(`{"name":"%s", "password":"%s", "uuid":"%s"}`, 
 						this.name, this.password, this.UUID)
 	for {
-		err := this.Udp.SendReq(raddr, "online", body)
+		m := openlanv2.NewMessage("online", body)
+		err := this.Udp.SendReq(raddr, "", m)
 		if err != nil {
 			log.Printf("Error| UdpHole.GoAlive.SendReq %s\n", err)
 		}
@@ -79,27 +82,31 @@ func (this *UdpHole) GoRecv(doRecv func (raddr *net.UDPAddr, data []byte) error)
 	log.Printf("Info| UdpHole.GoRecv from %s\n", this.Controller)
 
 	for {
-		r, d, err := this.Udp.RecvMsg()
+		addr, uuid, data, err := this.Udp.RecvMsg()
 		if err != nil {
 			log.Printf("Error| UdpHole.GoRecv: %s\n", err)
 			return 
 		}
 		if this.verbose {
-			log.Printf("Info| UdpHole.GoRecv from %s : % x\n", r, d)
+			log.Printf("Info| UdpHole.GoRecv from %s,%s : %d: % x..\n", 
+						addr, uuid, len(data), data[:16])
+		}
+		if uuid != this.UUID {
+			log.Printf("Erro| UdpHole.GoRecv from %s,%s not to me.\n", addr, uuid)
 		}
 
-		if err := doRecv(r, d); err != nil {
-			log.Printf("Error| UdpHole.GoRecv from %s when doRecv %s\n", r, err)
+		if err := doRecv(addr, data); err != nil {
+			log.Printf("Error| UdpHole.GoRecv from %s when doRecv %s\n", addr, err)
 		}
 	}
 }
 
-func (this *UdpHole) DoSend(addr *net.UDPAddr, frame []byte) error {
+func (this *UdpHole) DoSend(addr *net.UDPAddr, uuid string, frame []byte) error {
 	if this.verbose {
-		log.Printf("Debug| UdpHole.DoSend to %s\n", addr)
+		log.Printf("Debug| UdpHole.DoSend to %s,%s\n", addr, uuid)
 	}
 
-	return this.Udp.SendMsg(addr, frame) 
+	return this.Udp.SendMsg(addr, uuid, frame)
 }
 
 

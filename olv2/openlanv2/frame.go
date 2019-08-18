@@ -1,12 +1,14 @@
 package openlanv2
 
 import (
+	"fmt"
 	"encoding/binary"
 )
 
 var (
 	ZEROMAC = []byte{0x00,0x00,0x00,0x00,0x00,0x00}
 	BROADCASTMAC = []byte{0xff,0xff,0xff,0xff,0xff,0xff}
+	ETHLEN = 16 //6+6+2+2
 )
 
 var (
@@ -15,27 +17,18 @@ var (
 	ETH_IPV4 = 0x0800
 )
 
-type Frame struct {
-	Data []byte
+func EthType(data []byte) uint16 {
+	return binary.BigEndian.Uint16(data[12:14])
 }
 
-func NewFrame(data []byte) (this *Frame) {
-	this = &Frame{
-		Data: make([]byte, len(data)),
-	}
-
-	copy(this.Data, data)
-	return 
+func DstAddr(data []byte) []byte {
+	return data[0:6]
 }
 
-func (this *Frame) EthType() uint16 {
-	return binary.BigEndian.Uint16(this.Data[12:14])
+func SrcAddr(data []byte) []byte {
+	return data[6:12]
 }
 
-func (this *Frame) DstAddr() []byte {
-	return this.Data[0:6]
-}
-
-func (this *Frame) SrcAddr() []byte {
-	return this.Data[6:12]
+func EthAddrStr(data []byte) string {
+	return fmt.Sprintf("%x:%x:%x:%x:%x:%x", data[0], data[1], data[2], data[3], data[4], data[5])
 }

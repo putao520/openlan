@@ -23,6 +23,8 @@ func NewUdpBroker(c *Config) (this *UdpBroker) {
 		UUID: openlanv2.GenUUID(16),
 	}
 
+	this.Udp.MaxSize = c.Ifmtu+int(openlanv2.HSIZE)
+
 	if err := this.Udp.Listen(); err != nil {
 		log.Printf("Error| NewUdpBroker.Listen %s\n", err)
 	}
@@ -38,23 +40,23 @@ func (this *UdpBroker) GoRecv(doRecv func (raddr *net.UDPAddr, data []byte) erro
 	log.Printf("Info| UdpBroker.GoRecv from %s\n", this.Listen)
 
 	for {
-		r, d, err := this.Udp.RecvMsg()
+		addr, uuid, data, err := this.Udp.RecvMsg()
 		if err != nil {
 			log.Printf("Error| UdpBroker.GoRecv: %s\n", err)
 			return 
 		}
 		if this.verbose {
-			log.Printf("Info| UdpBroker.GoRecv from %s: % x\n", r, d)
+			log.Printf("Info| UdpBroker.GoRecv from %s,%s: % x\n", addr, uuid, data)
 		}
 
-		if err:= doRecv(r, d); err != nil {
-			log.Printf("Error| UdpBroker.GoRecv from %s when doRecv %s\n", r, err)
+		if err:= doRecv(addr, data); err != nil {
+			log.Printf("Error| UdpBroker.GoRecv from %s when doRecv %s\n", addr, err)
 		}
 	}
 }
 
-func (this *UdpBroker) DoSend(raddr *net.UDPAddr, action string, body string) error{
-	return this.Udp.SendResp(raddr, action, body)
+func (this *UdpBroker) DoSend(raddr *net.UDPAddr, uuid string, mesg *openlanv2.Message) error{
+	return this.Udp.SendResp(raddr, uuid, mesg)
 }
 
 

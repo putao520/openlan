@@ -13,23 +13,24 @@ import (
 type UdpSocket struct {
     addr string
     conn *net.UDPConn
-    maxsize int
-    minsize int
     verbose bool
     newtime int64
+
     //Public variable
     TxOkay uint64
     RxOkay uint64
     TxError uint64
     Droped uint64
+    MaxSize int
+    MinSize int
 }
 
 func NewUdpSocket(addr string, verbose bool) (this *UdpSocket) {
     this = &UdpSocket {
         addr: addr,
         conn: nil,
-        maxsize: 1514,
-        minsize: 15,
+        MaxSize: 1514,
+        MinSize: int(HSIZE),
         verbose: verbose,
         TxOkay: 0,
         RxOkay: 0,
@@ -69,19 +70,28 @@ func (this *UdpSocket) Close() (err error) {
     }
     return 
 }
-
-func (this *UdpSocket) SendMsg(addr *net.UDPAddr, data []byte) error {
+//
+// [MAGIC(2)][Length(2)]
+// [UUID(16)]
+func (this *UdpSocket) SendMsg(addr *net.UDPAddr, uuid string, data []byte) error {
     if !this.IsOk() {
         return errors.New("Connection isn't okay!")
     }
 
-    buffer := make([]byte, int(HSIZE)+len(data))
-    copy(buffer[0:2], MAGIC)
+    buffer := make([]byte, 20+len(data))
+
+    copy(buffer[:2], MAGIC)
     binary.BigEndian.PutUint16(buffer[2:4], uint16(len(data)))
-    copy(buffer[HSIZE:], data)
+    if len(uuid) == 16 {
+        copy(buffer[4:20], []byte(uuid))
+    } else {
+        copy(buffer[4:20], CTLUUID)
+    }
+    copy(buffer[20:], data)
 
     if this.verbose {
-        log.Printf("Debug| UdpSocket.SendMsg %d. % x", len(buffer), buffer)
+        log.Printf("Debug| UdpSocket.SendMsg to %s,%s %d: % x...", 
+                    addr, uuid, len(buffer), buffer[:16])
     }
 
     n, err := this.conn.WriteToUDP(buffer, addr)
@@ -99,55 +109,43 @@ func (this *UdpSocket) SendMsg(addr *net.UDPAddr, data []byte) error {
     return nil
 }
 
-func (this *UdpSocket) RecvMsg() (*net.UDPAddr, []byte, error) {
+func (this *UdpSocket) RecvMsg() (*net.UDPAddr, string, []byte, error) {
     if !this.IsOk() {
-        return nil, nil, errors.New("Connection isn't okay!")
+        return nil, "", nil, errors.New("Connection isn't okay!")
     }
 
     var err error
     var addr *net.UDPAddr
 
     n := 0
-    data := make([]byte, this.maxsize)
+    data := make([]byte, this.MaxSize)
     for {
         n, addr, err = this.conn.ReadFromUDP(data)    
         if err != nil {
-            return nil, nil, err
+            return nil, "", nil, err
         }
 
         data = data[:n]
         break
     }
 
-    if this.verbose {
-        log.Printf("Debug| UdpSocket.RecvMsg %d. % x", n, data)
-    }
-
-    head := data[:HSIZE]
+    head := data[:20]
     if !bytes.Equal(head[0:2], MAGIC) {
-        return nil, nil, errors.New("Isn't right magic header!")
+        return nil, "", nil, errors.New("Isn't right magic header!")
+    }
+    uuid := head[4:20]
+    size := binary.BigEndian.Uint16(head[2:4])
+    if this.verbose {
+        log.Printf("Debug| UdpSocket.RecvMsg from %s,%s %d. % x", addr, uuid, n, data[:32])
     }
 
-    size := binary.BigEndian.Uint16(head[2:4])
-    if int(size) > this.maxsize || int(size) < this.minsize {
-        return nil, nil, errors.New(fmt.Sprintf("Isn't right data size(%d)!", size))
+    if int(size) > this.MaxSize || int(size) < this.MinSize {
+        return nil, "", nil, errors.New(fmt.Sprintf("Isn't right data size(%d)!", size))
     }
 
     this.RxOkay++
 
-    return addr, data[HSIZE:], nil
-}
-
-func (this *UdpSocket) GetMaxSize() int {
-    return this.maxsize
-}
-
-func (this *UdpSocket) SetMaxSize(value int) {
-    this.maxsize = value
-}
-
-func (this *UdpSocket) GetMinSize() int {
-    return this.minsize
+    return addr, string(uuid), data[HSIZE:], nil
 }
 
 func (this *UdpSocket) IsOk() bool {
@@ -158,27 +156,27 @@ func (this *UdpSocket) GetAddr() string {
     return this.addr
 }
 
-func (this *UdpSocket) SendReq(addr *net.UDPAddr, action string, body string) error {
-    data := EncInstReq(action, body)
+func (this *UdpSocket) SendReq(addr *net.UDPAddr, uuid string, mesg *Message) error {
+    data := mesg.EncodeReq()
 
     if this.verbose {
     	log.Printf("Debug| UdpSocket.SendReq %d %s\n", len(data), data[6:])
     }
 
-	if err := this.SendMsg(addr, data); err != nil {
+	if err := this.SendMsg(addr, uuid, data); err != nil {
 		return err
     }
     return nil
 }
 
-func (this *UdpSocket) SendResp(addr *net.UDPAddr, action string, body string) error {
-    data := EncInstResp(action, body)
+func (this *UdpSocket) SendResp(addr *net.UDPAddr, uuid string, mesg *Message) error {
+    data := mesg.EncodeResp()
 
     if this.verbose {
     	log.Printf("Debug| UdpSocket.SendResp %d %s\n", len(data), data[6:])
     }
 
-	if err := this.SendMsg(addr, data); err != nil {
+	if err := this.SendMsg(addr, uuid, data); err != nil {
 		return err
     }
     return nil

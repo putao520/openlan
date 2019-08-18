@@ -3,7 +3,6 @@ package endpoint
 import (
 	"log"
 	"net"
-	"fmt"
 
 	"github.com/danieldin95/openlan-go/olv2/openlanv2"
 )
@@ -11,7 +10,7 @@ import (
 type Bridge struct {
 	Hole *UdpHole
 	Network *openlanv2.Network // <ip,port> is key.
-	Hosts map[string]*net.UDPAddr // MAC address is key.
+	Hosts map[string]*openlanv2.Endpoint // MAC address is key.
 	Device *Device
 	//
 	verbose bool
@@ -23,7 +22,7 @@ func NewBridge(c *Config) (this *Bridge) {
 		Device: NewDevice(c),
 		verbose: c.Verbose,
 		Network: openlanv2.NewNetwork("default"),
-		Hosts: make(map[string]*net.UDPAddr),
+		Hosts: make(map[string]*openlanv2.Endpoint),
 	}
 
 	return
@@ -42,36 +41,12 @@ func (this *Bridge) Stop() {
 	this.Hole.Close()
 }
 
-func (this *Bridge) AddHost(dest []byte, peer string) error {
-	dstr := fmt.Sprintf("%:x", dest)
-	if _, ok := this.Hosts[dstr]; ok {
-		return nil
-	}
-
-	raddr, err := net.ResolveUDPAddr("udp", peer)
-    if err != nil {
-        return err
-	}
-
-	this.Hosts[dstr] = raddr
-	return nil
-}
-
-func (this *Bridge) DelHost(dest []byte, peer string) error {
-	dstr := fmt.Sprintf("%:x", dest)
-	if _, ok := this.Hosts[dstr]; ok {
-		delete(this.Hosts, dstr)
-	}
-
-	return nil
-}
-
 func (this *Bridge) doRecv(raddr *net.UDPAddr, data []byte) error {
 	if this.verbose {
 		log.Printf("Info| Bridge.doRecv")
 	}
 
-	if openlanv2.IsInst(data) {
+	if openlanv2.IsInstruct(data) {
 		return this.doInstruct(raddr, data)
 	}
 
@@ -83,9 +58,9 @@ func (this *Bridge) doInstruct(raddr *net.UDPAddr, data []byte) error {
 		log.Printf("Info| Bridge.doInstruct")
 	}
 
-	action := openlanv2.DecAction(data)
+	action := openlanv2.DecodeAction(data)
 	if action == "onli:" {
-		return this.doOnline(raddr, openlanv2.DecBody(data))
+		return this.doOnline(raddr, openlanv2.DecodeBody(data))
 	}
 
 	return nil
@@ -97,7 +72,27 @@ func (this *Bridge) doEthernet(raddr *net.UDPAddr, frame []byte) error {
 	}
 
 	// TODO learn host by source.
+	peer, ok := this.Network.Endpoints[raddr.String()]
+	if !ok {
+		log.Printf("Error| Bridge.doEthernet %s not in my peers.", raddr)
+		return nil
+	}
+
+	this.UpdateHost(peer, openlanv2.SrcAddr(frame))
+
 	return this.Device.DoSend(frame)
+}
+
+func (this *Bridge) UpdateHost(peer *openlanv2.Endpoint, dst []byte) {
+	this.Hosts[openlanv2.EthAddrStr(dst)] = peer
+}
+
+func (this *Bridge) FindHost(dst []byte) *openlanv2.Endpoint{
+	if peer, ok := this.Hosts[openlanv2.EthAddrStr(dst)]; ok {
+		return peer
+	}
+
+	return nil
 }
 
 func (this *Bridge) doOnline(raddr *net.UDPAddr, body string) error {
@@ -118,7 +113,7 @@ func (this *Bridge) doOnline(raddr *net.UDPAddr, body string) error {
 		this.Network.AddEndpoint(key, peer)
 	}
 
-	_peer.Update()
+	_peer.Update(peer)
 	//TODO update time otherwise expire.
 
 	if this.verbose {
@@ -137,8 +132,28 @@ func (this *Bridge) doSend(frame []byte) error {
 }
 
 func (this *Bridge) forward(frame []byte) error {
-	//TODO unicast.
+	peer := this.FindHost(openlanv2.DstAddr(frame))
+	if peer != nil {
+		return this.unicast(peer, frame)
+	}
+	
 	return this.flood(frame)
+}
+
+func (this *Bridge) unicast(peer *openlanv2.Endpoint, frame []byte) error {
+	if this.IsLocal(peer) {
+		return nil
+	}
+
+	if this.verbose {
+		log.Printf("Debug| Bridge.unicast to %s", peer)
+	}
+
+	if err := this.Hole.DoSend(peer.UdpAddr, peer.UUID, frame); err != nil {
+		log.Printf("Error| Bridge.unicast.DoSend %s: %s", peer.UdpAddr, err)
+	}
+
+	return nil
 }
 
 func (this *Bridge) flood(frame []byte) error {
@@ -155,7 +170,7 @@ func (this *Bridge) flood(frame []byte) error {
 			log.Printf("Debug| Bridge.flood to %s", peer)
 		}
 
-		if err := this.Hole.DoSend(peer.UdpAddr, frame); err != nil {
+		if err := this.Hole.DoSend(peer.UdpAddr, peer.UUID, frame); err != nil {
 			log.Printf("Error| Bridge.flood.DoSend %s: %s", peer.UdpAddr, err)
 			continue
 		}
@@ -165,8 +180,5 @@ func (this *Bridge) flood(frame []byte) error {
 }
 
 func (this *Bridge) IsLocal(peer *openlanv2.Endpoint) bool {
-	if this.verbose {
-		log.Printf("Debug| Bridge.IsLocal %s:%s", peer.UUID, this.Hole.UUID)
-	}
 	return peer.UUID == this.Hole.UUID
 }

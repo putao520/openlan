@@ -10,14 +10,18 @@ import (
 type Device struct {
 	ifce *water.Interface
 	ifmtu int
+	ethmtu int
 	verbose bool
 }
+
+const ETHLEN = 14
 
 func NewDevice(c *Config) (this *Device) {
 	this = &Device {
 		ifce: nil,
-		ifmtu: c.Ifmtu, //1514
+		ifmtu: c.Ifmtu,
 		verbose: c.Verbose,
+		ethmtu: c.Ifmtu+ETHLEN, //6+6+2+2
 	}
 
 	ifce, err := water.New(water.Config {DeviceType: water.TAP})
@@ -40,9 +44,14 @@ func (this *Device) UpLink(name string) error {
 	}
 	
 	if err := link.SetLinkUp(); err != nil {
-        log.Printf("Error|Device.UpLink: %s : %s", name, err)
+        log.Printf("Error|Device.UpLink.SetLinkUp: %s : %s", name, err)
         return err
-    }
+	}
+	
+	if err:= link.SetLinkMTU(this.ifmtu); err != nil {
+		log.Printf("Error|Device.UpLink.SetLinkMTU: %s : %s", name, err)
+        return err
+	}
     
     return nil
 }
@@ -53,7 +62,7 @@ func (this *Device) GoRecv(doRecv func([]byte)(error)) {
 
 	defer this.ifce.Close()
 	for {
-		data := make([]byte, this.ifmtu)
+		data := make([]byte, this.ethmtu)
         n, err := this.ifce.Read(data)
         if err != nil {
 			log.Printf("Error|Device.GoRev: %s", err)
@@ -61,7 +70,7 @@ func (this *Device) GoRecv(doRecv func([]byte)(error)) {
 		}
 		if n > 0 {
 			if this.verbose {
-				log.Printf("Debug| Device.GoRev: % x\n", data[:n])
+				log.Printf("Debug| Device.GoRev: %d: % x...% x\n", n, data[:16], data[n-16:n])
 			}
 			if err := doRecv(data[:n]); err != nil {
 				log.Printf("Error| Device.GoRev.doRecv: %s\n", err)
@@ -72,7 +81,8 @@ func (this *Device) GoRecv(doRecv func([]byte)(error)) {
 
 func (this *Device) DoSend(data []byte) error {
 	if this.verbose {
-		log.Printf("Debug| Device.DoSend: % x\n", data)
+		n := len(data)
+		log.Printf("Debug| Device.DoSend: %d:% x...% x\n", n, data[:16], data[n-16:])
 	}
 
 	if _, err := this.ifce.Write(data); err != nil {
