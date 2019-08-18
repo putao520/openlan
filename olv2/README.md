@@ -4,7 +4,7 @@ Refer to `Overview.md`
 
 # Install tap-windows6
 
-Download `resources/tap-windows-9.21.2.exe`, then install it. And run CPE in Windows by `cpe.exe -addr x.x.x.x:10020 -auth zzz@nnn:wwww`. 
+Download `resources/tap-windows-9.21.2.exe`, then install it. And run CPE in Windows by `endpoint.exe -addr x.x.x.x:10020 -auth zzz@nnn:wwww`. 
 
 # Build in Powershell
 
@@ -27,7 +27,7 @@ Goto `Control Panel\Network and Internet\Network Connections`, and find `Etherne
     [root@localhost olv1]# cat .passowrd
     zzz@nnn:wwww
     xxxx@ooo:aaaaa
-    [root@localhost olv1]# nohup ./resources/ope -addr x.x.x.x:10020 &
+    [root@localhost olv1]# nohup ./resources/endpoint -addr x.x.x.x:10020 &
     [root@localhost olv1]# cat .opetoken
     m64rxofsqkvlb4cj
 
