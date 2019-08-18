@@ -18,14 +18,14 @@ Refer to https://github.com/danieldin95/openlan-go/tree/master/olv1.
 
 Refer to https://github.com/danieldin95/openlan-go/tree/master/olv2.
 
-                                               Controller
-                                                   |
-                            ---------------------------------------------
-                            |                      |                    |
-                            >---UDP---<                      >----UDP---<    
-                            |         |<---------->|<------->|          |
-                         Firewall               Firewall             FireWall
-                            |                      |                    |
-                Host1 --- Endpoint A           Endpoint B             Endpoint C --- Host2
-                            |                                           |
-                            >---------------------UDP-------------------<
+                                            Controller
+                                                |
+                            ------------------------------------------
+                            |                                        |
+                            >------------------UDP-------------------<
+                            |                                        |
+                            >---UDP---<                   >----UDP---<    
+                            |         |<------->|<------->|          |
+                         Firewall            Firewall             FireWall
+                            |                   |                    |
+                Host1 --- Endpoint A         Endpoint B            Endpoint C --- Host2
