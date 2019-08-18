@@ -84,7 +84,11 @@ func (this *Bridge) doEthernet(raddr *net.UDPAddr, frame []byte) error {
 }
 
 func (this *Bridge) UpdateHost(peer *openlanv2.Endpoint, dst []byte) {
-	this.Hosts[openlanv2.EthAddrStr(dst)] = peer
+	_peer := this.FindHost(dst)
+	if _peer != peer {
+		log.Printf("Info| Bridge.UpdateHost % x change peer to %s.", dst, peer)
+		this.Hosts[openlanv2.EthAddrStr(dst)] = peer
+	}
 }
 
 func (this *Bridge) FindHost(dst []byte) *openlanv2.Endpoint{
