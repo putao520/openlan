@@ -61,12 +61,13 @@ func (this *UdpSocket) Listen() error {
     return nil
 }
 
-func (this *UdpSocket) Close() {
+func (this *UdpSocket) Close() (err error) {
     if this.conn != nil {
         log.Printf("UdpSocket.Close %s\n", this.addr)
-        this.conn.Close()
+        err = this.conn.Close()
         this.conn = nil
     }
+    return 
 }
 
 func (this *UdpSocket) Sendn(addr *net.UDPAddr, buffer []byte) error {
