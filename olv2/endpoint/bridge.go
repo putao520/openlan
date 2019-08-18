@@ -71,9 +71,9 @@ func (this *Bridge) doEthernet(raddr *net.UDPAddr, frame []byte) error {
 		log.Printf("Info| Bridge.doEthernet")
 	}
 
-	// TODO learn host by source.
 	peer, ok := this.Network.Endpoints[raddr.String()]
 	if !ok {
+		//TODO learn peer by UUID.
 		log.Printf("Error| Bridge.doEthernet %s not in my peers.", raddr)
 		return nil
 	}
