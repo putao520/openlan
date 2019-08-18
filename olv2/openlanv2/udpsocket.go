@@ -15,7 +15,7 @@ type UdpSocket struct {
     conn *net.UDPConn
     maxsize int
     minsize int
-    verbose int
+    verbose bool
     newtime int64
     //Public variable
     TxOkay uint64
@@ -24,7 +24,7 @@ type UdpSocket struct {
     Droped uint64
 }
 
-func UdpSocket(addr string, verbose int) (this *UdpSocket) {
+func NewUdpSocket(addr string, verbose bool) (this *UdpSocket) {
     this = &UdpSocket {
         addr: addr,
         conn: nil,
@@ -69,43 +69,18 @@ func (this *UdpSocket) Close() {
     }
 }
 
-func (this *UdpSocket) Recvn(buffer []byte) (addr *net.UDPAddr, err error) {
-    offset := 0
-    left := len(buffer)
-    for left > 0 {
-        n := 0
-        tmp := make([]byte, left)
-        n, addr, err = this.conn.ReadFromUDP(tmp)
-        if err != nil {
-            return 
-        }
-
-        copy(buffer[offset:], tmp)
-
-        offset += n
-        left -= n 
-    }
-    
-    if this.IsVerbose() {
-        log.Printf("UdpSocket.recvn %d\n", len(buffer))
-        log.Printf("UdpSocket.recvn Data: % x\n", buffer)
-    }
-
-    return 
-}
-
 func (this *UdpSocket) Sendn(addr *net.UDPAddr, buffer []byte) error {
     offset := 0
     size := len(buffer)
     left := size - offset
-    if this.IsVerbose() {
+    if this.verbose {
         log.Printf("UdpSocket.sendn %d\n", size)
         log.Printf("UdpSocket.sendn Data: % x\n", buffer)
     }
 
     for left > 0 {
         tmp := buffer[offset:]
-        if this.IsVerbose() {
+        if this.verbose {
             log.Printf("UdpSocket.sendn tmp %d\n", len(tmp))
         }
         n, err := this.conn.WriteToUDP(tmp, addr)
@@ -124,7 +99,7 @@ func (this *UdpSocket) SendMsg(addr *net.UDPAddr, data []byte) error {
     binary.BigEndian.PutUint16(buffer[2:4], uint16(len(data)))
     copy(buffer[HSIZE:], data)
 
-    if err := this.Sendn(buffer, addr); err != nil {
+    if err := this.Sendn(addr, buffer); err != nil {
         this.TxError++
         return err
     }
@@ -134,9 +109,34 @@ func (this *UdpSocket) SendMsg(addr *net.UDPAddr, data []byte) error {
     return nil
 }
 
-func (this *UdpSocket) RecvMsg() (net.UDPAddr, []byte, error) {
+func (this *UdpSocket) Recvn(buffer []byte) (addr *net.UDPAddr, err error) {
+    offset := 0
+    left := len(buffer)
+    for left > 0 {
+        n := 0
+        tmp := make([]byte, left)
+        n, addr, err = this.conn.ReadFromUDP(tmp)
+        if err != nil {
+            return 
+        }
+
+        copy(buffer[offset:], tmp)
+
+        offset += n
+        left -= n 
+    }
+    
+    if this.verbose {
+        log.Printf("UdpSocket.recvn %d\n", len(buffer))
+        log.Printf("UdpSocket.recvn Data: % x\n", buffer)
+    }
+
+    return 
+}
+
+func (this *UdpSocket) RecvMsg() (*net.UDPAddr, []byte, error) {
     if !this.IsOk() {
-        return -1, errors.New("Connection isn't okay!")
+        return nil, nil, errors.New("Connection isn't okay!")
     }
 
     head := make([]byte, HSIZE)
@@ -145,17 +145,17 @@ func (this *UdpSocket) RecvMsg() (net.UDPAddr, []byte, error) {
         return nil, nil, err
     }
 
-    if !bytes.Equal(h[0:2], MAGIC) {
+    if !bytes.Equal(head[0:2], MAGIC) {
         return nil, nil, errors.New("Isn't right magic header!")
     }
 
-    size := binary.BigEndian.Uint16(h[2:4])
+    size := binary.BigEndian.Uint16(head[2:4])
     if int(size) > this.maxsize || int(size) < this.minsize {
         return nil, nil, errors.New(fmt.Sprintf("Isn't right data size(%d)!", size))
     }
 
     data := make([]byte, size)
-    addr, err := this.Recvn(d)
+    addr, err = this.Recvn(data)
     if err != nil {
         return nil, nil, err
     }
@@ -163,10 +163,6 @@ func (this *UdpSocket) RecvMsg() (net.UDPAddr, []byte, error) {
     this.RxOkay++
 
     return addr, data, nil
-}
-
-func (this *UdpSocket) IsVerbose() bool {
-    return this.verbose != 0
 }
 
 func (this *UdpSocket) GetMaxSize() int {
@@ -192,7 +188,7 @@ func (this *UdpSocket) GetAddr() string {
 func (this *UdpSocket) SendReq(addr *net.UDPAddr, action string, body string) error {
     data := EncInstReq(action, body)
 
-    if this.IsVerbose() {
+    if this.verbose {
     	log.Printf("Debug| UdpSocket.SendReq %d %s\n", len(data), data[6:])
     }
 
@@ -205,7 +201,7 @@ func (this *UdpSocket) SendReq(addr *net.UDPAddr, action string, body string) er
 func (this *UdpSocket) SendResp(addr *net.UDPAddr, action string, body string) error {
     data := EncInstResp(action, body)
 
-    if this.IsVerbose() {
+    if this.verbose {
     	log.Printf("Debug| UdpSocket.SendResp %d %s\n", len(data), data[6:])
     }
 

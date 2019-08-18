@@ -1,28 +1,34 @@
 package endpoint
 
 import (
-	"github.com/danieldin95/openlan-go/olv2/openlanv2"
+	"log"
+	"net"
 )
 
 type Endpoint struct {
-	Udp *openlanv2.UdpSocket
-	Verbose int
+	Hole *UdpHole
+	Verbose bool
 	Peers map[string]*net.UDPAddr
-	Hosts map[[]byte]*net.UDPAddr
+	Hosts map[string]*net.UDPAddr
 }
 
 func NewEndpoint(c *Config) (this *Endpoint) {
 	this = &Endpoint {
-		Udp: NewTcpSocket(c.UdpListen, c.Verbose),
+		Hole: NewUdpHole(c),
 		Verbose: c.Verbose,
 		Peers: make(map[string]*net.UDPAddr),
-		Hosts: make(map[[]byte]*net.UDPAddr),
-	}
-	if err := this.Listen(); err != nil {
-		log.Printf("Error| NewEndpoint.Listen %s\n", err)
+		Hosts: make(map[string]*net.UDPAddr),
 	}
 
 	return
 }
 
+func (this *Endpoint) Start() {
+	log.Printf("Info| Endpoint.Start")
+	go this.Hole.GoKeepAlive()
+}
+
+func (this *Endpoint) Stop() {
+
+}
 
