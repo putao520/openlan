@@ -2,6 +2,7 @@ package controller
 
 import (
 	"log"
+	"net"
 
 	"github.com/danieldin95/openlan-go/olv2/openlanv2"
 )
@@ -33,7 +34,7 @@ func (this *UdpBroker) Close() error {
 	return this.Udp.Close()
 }
 
-func (this *UdpBroker) GoRecv() {
+func (this *UdpBroker) GoRecv(doRecv func (raddr *net.UDPAddr, data []byte) error ) {
 	log.Printf("Info| UdpBroker.GoRecv from %s\n", this.Listen)
 
 	for {
@@ -45,7 +46,15 @@ func (this *UdpBroker) GoRecv() {
 		if this.verbose {
 			log.Printf("Info| UdpBroker.GoRecv from %s: % x\n", r, d)
 		}
+
+		if err:= doRecv(r, d); err != nil {
+			log.Printf("Error| UdpBroker.GoRecv from %s when doRecv %s\n", r, err)
+		}
 	}
+}
+
+func (this *UdpBroker) DoSend(raddr *net.UDPAddr, action string, body string) error{
+	return this.Udp.SendResp(raddr, action, body)
 }
 
 
