@@ -1,0 +1,59 @@
+
+fatal error: concurrent map read and map write
+
+goroutine 8 [running]:
+runtime.throw(0x6b2dc5, 0x21)
+        /usr/lib/golang/src/runtime/panic.go:608 +0x72 fp=0xc0001b2d78 sp=0xc0001b2d48 pc=0x42bce2
+runtime.mapaccess2_faststr(0x658e20, 0xc000011140, 0xc000016460, 0x11, 0x11, 0x0)
+        /usr/lib/golang/src/runtime/map_faststr.go:110 +0x458 fp=0xc0001b2de8 sp=0xc0001b2d78 pc=0x413538
+github.com/danieldin95/openlan-go/olv2/endpoint.(*Bridge).FindHost(0xc000011170, 0xc000265200, 0x6, 0x5ac, 0x5ac)
+        /root/go/src/github.com/danieldin95/openlan-go/olv2/endpoint/bridge.go:91 +0x75 fp=0xc0001b2e28 sp=0xc0001b2de8 pc=0x61bb45
+github.com/danieldin95/openlan-go/olv2/endpoint.(*Bridge).forward(0xc000011170, 0xc000265200, 0x42, 0x5ac, 0x5ac, 0x5ac)
+        /root/go/src/github.com/danieldin95/openlan-go/olv2/endpoint/bridge.go:135 +0x56 fp=0xc0001b2e70 sp=0xc0001b2e28 pc=0x61c006
+github.com/danieldin95/openlan-go/olv2/endpoint.(*Bridge).doSend(0xc000011170, 0xc000265200, 0x42, 0x5ac, 0x0, 0xc000265200)
+        /root/go/src/github.com/danieldin95/openlan-go/olv2/endpoint/bridge.go:131 +0x58 fp=0xc0001b2eb0 sp=0xc0001b2e70 pc=0x61bf48
+github.com/danieldin95/openlan-go/olv2/endpoint.(*Bridge).doSend-fm(0xc000265200, 0x42, 0x5ac, 0x5ac, 0x42)
+        /root/go/src/github.com/danieldin95/openlan-go/olv2/endpoint/bridge.go:35 +0x48 fp=0xc0001b2ef0 sp=0xc0001b2eb0 pc=0x61e578
+github.com/danieldin95/openlan-go/olv2/endpoint.(*Device).GoRecv(0xc00000c360, 0xc000048d20)
+        /root/go/src/github.com/danieldin95/openlan-go/olv2/endpoint/device.go:75 +0x300 fp=0xc0001b2fd0 sp=0xc0001b2ef0 pc=0x61d030
+runtime.goexit()
+        /usr/lib/golang/src/runtime/asm_amd64.s:1333 +0x1 fp=0xc0001b2fd8 sp=0xc0001b2fd0 pc=0x4587c1
+created by github.com/danieldin95/openlan-go/olv2/endpoint.(*Bridge).Start
+        /root/go/src/github.com/danieldin95/openlan-go/olv2/endpoint/bridge.go:35 +0x121
+
+goroutine 1 [sleep, 2 minutes]:
+time.Sleep(0xe8d4a51000)
+        /usr/lib/golang/src/runtime/time.go:105 +0x14f
+main.main()
+        /code/openlan-go/olv2/endpoint_linux.go:34 +0x1b3
+
+goroutine 5 [syscall, 2 minutes]:
+os/signal.signal_recv(0x0)
+        /usr/lib/golang/src/runtime/sigqueue.go:139 +0x9c
+os/signal.loop()
+        /usr/lib/golang/src/os/signal/signal_unix.go:23 +0x22
+created by os/signal.init.0
+        /usr/lib/golang/src/os/signal/signal_unix.go:29 +0x41
+
+goroutine 6 [sleep]:
+time.Sleep(0x6fc23ac00)
+        /usr/lib/golang/src/runtime/time.go:105 +0x14f
+github.com/danieldin95/openlan-go/olv2/endpoint.(*UdpHole).GoAlive(0xc0000fe000)
+        /root/go/src/github.com/danieldin95/openlan-go/olv2/endpoint/udphole.go:73 +0x227
+created by github.com/danieldin95/openlan-go/olv2/endpoint.(*Bridge).Start
+        /root/go/src/github.com/danieldin95/openlan-go/olv2/endpoint/bridge.go:33 +0x70
+
+goroutine 7 [runnable]:
+syscall.Syscall(0x1, 0x5, 0xc000267814, 0x5ac, 0x5ac, 0x5ac, 0x0)
+        /usr/lib/golang/src/syscall/asm_linux_amd64.s:18 +0x5
+syscall.write(0x5, 0xc000267814, 0x5ac, 0x5ac, 0xc00015e001, 0x0, 0x0)
+        /usr/lib/golang/src/syscall/zsyscall_linux_amd64.go:1005 +0x5a
+syscall.Write(0x5, 0xc000267814, 0x5ac, 0x5ac, 0x0, 0xc0001b4c20, 0x46cdda)
+        /usr/lib/golang/src/syscall/syscall_unix.go:191 +0x49
+internal/poll.(*FD).Write(0xc00005e3c0, 0xc000267814, 0x5ac, 0x5ac, 0x0, 0x0, 0x0)
+        /usr/lib/golang/src/internal/poll/fd_unix.go:268 +0x165
+os.(*File).write(0xc00000e048, 0xc000267814, 0x5ac, 0x5ac, 0x11, 0x20, 0xc00023a020)
+        /usr/lib/golang/src/os/file_unix.go:266 +0x4e
+os.(*File).Write(0xc00000e048, 0xc000267814, 0x5ac, 0x5ac, 0x413662, 0xc00028e260, 0xc00023a020)
+        /usr/lib/golang/src/os/file.go:145 +0x6f
+github.com/danieldin95/openlan-go/olv2/endpoint.(*Device).DoSend(0xc00000c360, 0xc000267814, 0x5ac, 0x5ac, 0x5a6, 0x1)

@@ -35,7 +35,7 @@ func NewUdpHole(c *Config) (this *UdpHole) {
 		Listen: c.UdpListen,
 		Udp: openlanv2.NewUdpSocket(c.UdpListen, c.Verbose),
 		verbose: c.Verbose,
-		Interval: 30,
+		Interval: time.Duration(c.Interval),
 		Controller: c.Controller,
 		name: "",
 		password: "",
