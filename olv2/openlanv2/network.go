@@ -1,8 +1,8 @@
-package controller
+package openlanv2
 
 type Network struct {
 	Name string
-	Endpoints map[string]*Endpoint // UUID is key
+	Endpoints map[string]*Endpoint // default UUID is key
 }
 
 func NewNetwork(name string)(this *Network) {
@@ -13,12 +13,12 @@ func NewNetwork(name string)(this *Network) {
 	return
 }
 
-func (this *Network) AddEndpoint(point *Endpoint) error {
-	if _, ok := this.Endpoints[point.UUID]; ok {
+func (this *Network) AddEndpoint(uuid string, point *Endpoint) error {
+	if _, ok := this.Endpoints[uuid]; ok {
 		return nil
 	}
 
-	this.Endpoints[point.UUID] = point
+	this.Endpoints[uuid] = point
 	return nil
 }
 

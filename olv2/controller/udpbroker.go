@@ -34,7 +34,7 @@ func (this *UdpBroker) Close() error {
 	return this.Udp.Close()
 }
 
-func (this *UdpBroker) GoRecv(doRecv func (raddr *net.UDPAddr, data []byte) error ) {
+func (this *UdpBroker) GoRecv(doRecv func (raddr *net.UDPAddr, data []byte) error) {
 	log.Printf("Info| UdpBroker.GoRecv from %s\n", this.Listen)
 
 	for {

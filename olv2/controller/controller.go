@@ -9,7 +9,7 @@ import (
 
 type Controller struct {
 	Broker *UdpBroker
-	Networks map[string]*Network
+	Networks map[string]*openlanv2.Network
 	//
 	verbose bool
 }
@@ -18,7 +18,7 @@ func NewController(c *Config) (this *Controller) {
 	this = &Controller {
 		Broker: NewUdpBroker(c),
 		verbose: c.Verbose,
-		Networks: make(map[string]*Network),
+		Networks: make(map[string]*openlanv2.Network),
 	}
 
 	return
@@ -72,30 +72,33 @@ func (this *Controller) doOnline(raddr *net.UDPAddr, body string) error {
 		log.Printf("Info| Controller.doOnline")
 	}
 
-	point, err := NewEndpointFromJson(body)
+	point, err := openlanv2.NewEndpointFromJson(body)
 	if err != nil {
 		log.Printf("Error| Controller.doOnline: %s", err)
 		return err
 	}
 
+	point.UdpAddr = raddr
 	//TODO auth it.
 	net, ok := this.Networks[point.Network]
 	if !ok {
-		net = NewNetwork(point.Network)
+		net = openlanv2.NewNetwork(point.Network)
 		this.Networks[point.Network] = net
 	}
-	_point, ok := net.Endpoints[point.UUID]
+	key := point.UdpAddr.String()
+	_point, ok := net.Endpoints[key]
 	if !ok {
 		_point = point
-		net.AddEndpoint(point)
+		net.AddEndpoint(key, point)
 	}
 
 	//TODO If UDP hole is changed.
-	_point.UdpAddr = raddr
+	_point.UUID = point.UUID
+	_point.UdpAddr = point.UdpAddr
 
 	for uuid, peer := range net.Endpoints {
 		if this.verbose {
-			log.Printf("Debug| doOnline resp: %s:%s to %s", uuid, peer.UdpAddr, raddr)
+			log.Printf("Debug| doOnline resp: <%s>:%s to %s", uuid, peer.UdpAddr, raddr)
 		}
 
 		body, err := peer.ToJson()

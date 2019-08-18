@@ -8,24 +8,8 @@ import (
     "time"
 	"os"
 	
-	"github.com/milosgajdos83/tenus"
 	"github.com/danieldin95/openlan-go/olv2/endpoint"
 )
-
-func UpLink(name string) error {
-    link, err := tenus.NewLinkFrom(name)
-	if err != nil {
-		log.Printf("Error|main.UpLink: Get ifce %s: %s", name, err)
-		return err
-	}
-	
-	if err := link.SetLinkUp(); err != nil {
-        log.Printf("Error|main.UpLink: %s : %s", name, err)
-        return err
-    }
-    
-    return nil
-}
 
 func main() {
 	c := endpoint.NewConfig()

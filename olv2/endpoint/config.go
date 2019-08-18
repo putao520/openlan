@@ -19,6 +19,7 @@ func NewConfig() (this *Config) {
     flag.StringVar(&this.UdpListen, "udp", "0.0.0.0:10010",  "the udp listen on")
 	flag.StringVar(&this.Controller, "ctl", "openlan.net:10020",  "the controller listen on")
 	flag.StringVar(&this.Auth, "auth", "default@openlan:", "the authentication login")
+	flag.IntVar(&this.Ifmtu, "ifmtu", 1514, "the interface MTU include ethernet")
 
 	flag.Parse()
 

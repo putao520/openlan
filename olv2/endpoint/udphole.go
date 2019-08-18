@@ -11,6 +11,7 @@ import (
 )
 
 type UdpHole struct {
+	Listen string
 	Udp *openlanv2.UdpSocket
 	Interval time.Duration
 	Controller string
@@ -31,9 +32,10 @@ func SplitAuth(auth string) (string, string){
 
 func NewUdpHole(c *Config) (this *UdpHole) {
 	this = &UdpHole {
+		Listen: c.UdpListen,
 		Udp: openlanv2.NewUdpSocket(c.UdpListen, c.Verbose),
 		verbose: c.Verbose,
-		Interval: 5,
+		Interval: 30,
 		Controller: c.Controller,
 		name: "",
 		password: "",
@@ -73,7 +75,7 @@ func (this *UdpHole) Close() error {
 	return this.Udp.Close()
 }
 
-func (this *UdpHole) GoRecv() {
+func (this *UdpHole) GoRecv(doRecv func (raddr *net.UDPAddr, data []byte) error) {
 	log.Printf("Info| UdpHole.GoRecv from %s\n", this.Controller)
 
 	for {
@@ -85,7 +87,19 @@ func (this *UdpHole) GoRecv() {
 		if this.verbose {
 			log.Printf("Info| UdpHole.GoRecv from %s : % x\n", r, d)
 		}
+
+		if err := doRecv(r, d); err != nil {
+			log.Printf("Error| UdpHole.GoRecv from %s when doRecv %s\n", r, err)
+		}
 	}
+}
+
+func (this *UdpHole) DoSend(addr *net.UDPAddr, frame []byte) error {
+	if this.verbose {
+		log.Printf("Debug| UdpHole.DoSend to %s\n", addr)
+	}
+
+	return this.Udp.SendMsg(addr, frame) 
 }
 
 
