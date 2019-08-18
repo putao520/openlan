@@ -1,66 +1,46 @@
-# Openlan-go
+# Overview 
 
-The Golang implements for OpenLAN project.
-    
-                                               Controller
-                                                   |
-                            ------------------------------------------
-                            |                      |                  |
-                         UDP Hole               UDP Hole           UDP Hole
-                            |                      |                  |
-                         Firewall               Firewall           FireWall
-                            |                      |                  |
-                Host1 --- Endpoint A           Endpoint B         Endpoint C --- Host2
+Refer to `Overview.md`
 
-<b>Controller</b>: Which is running on VPS or server has WAN's IP address.
+# Install tap-windows6
 
-<b>UDP Hole</b>: Endpoint sends periodically UDP packet to keep a hole on firewall. And The hole can receive UDP data from any source such as other Endpoint.
+Download `resources/tap-windows-9.21.2.exe`, then install it. And run CPE in Windows by `cpe.exe -addr x.x.x.x:10020 -auth zzz@nnn:wwww`. 
 
-<b>Endpoint</b>: Represent a branch site in one brocast domain, and others Endpoint discover peer Endpoint by Controller, a hole <IPAddress, UDPPort> as unique key.
+# Build in Powershell
 
-<b>Host</b>: Under Endpoint or Endpoint self. Controller records all hosts under all Endpoint, and annouces them to Endpoint periodically, and using <IPAddress, HardwareMac> as unique key.
+Download dependent sources
 
-# Endpoint Online
+    PS L:\openlan-go\olv2> go get github.com/songgao/water
+    PS L:\openlan-go\olv2> go get github.com/milosgajdos83/tenus
+    PS L:\openlan-go\olv2> go get golang.org/x/sys
 
-Endpoint MUST send UDP keepalive packet preiodically(default is 5s), to keep a hole on firewall as represent on WAN. 
+The following command for you building endpoint on windows
 
-# Discover Endpoint
+    PS L:\openlan-go\olv2> go build -o ./resources/endpoint.exe endpoint_windows.go
 
-When Endpoint received a ARP request from host. Fistly, lookup destination whether on remote Endpoint by local ARP cache. And then learn it, send a host learning packet to Controller. If matched, encapsulation it to remote Endpoint by UDP or drop it.
+# Configure Windows TAP Device
 
-# Host Learn and Announce
+Goto `Control Panel\Network and Internet\Network Connections`, and find `Ethernet 2`, then you can configure IPAddress like `192.168.x.a` for other branch site to access it. 
 
-When Controller received a host learning packet from Endpoint, save in local host table and announce it to peer Endpoint.
+# Start Controller on Linux
 
-# Packet Format
+    [root@localhost olv1]# cat .passowrd
+    zzz@nnn:wwww
+    xxxx@ooo:aaaaa
+    [root@localhost olv1]# nohup ./resources/ope -addr x.x.x.x:10020 &
+    [root@localhost olv1]# cat .opetoken
+    m64rxofsqkvlb4cj
 
-We use UDP to carry control and ethernet message between Endpoint, Endpoint and Controller. The UDP port on Controller uses 1002x series, default is 10020, and Endpoint uses 1001x series, default is 10010.
+You can use `curl` to show CPEs already onlines.
 
-    0 1 2 3 4 5 6 7 8 0 1 2 3 4 5 6 7 8 0 1 2 3 4 5 6 7 8 0 1 2 3 4 5 6 7 8
-    +-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+
-    |            MAGIC                |              Length                |       
-    +-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+
-    |                               Payload                                |
-    +-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+
-    
-    MAGIC: 0xFFFF
-    Payload:
-        If Dest.MAC isn't ZERO:
-            Padded by Ethernet Frame.
-        Else:
-            0 1 2 3 4 5 6 7 8 0 1 2 3 4 5 6 7 8 0 1 2 3 4 5 6 7 8 0 1 2 3 4 5 6 7 8
-            +-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+
-            |                               0x00                                   |
-            +-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+
-            |                0x00             |        Type     |      Resv        |
-            +-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+
-            |                               Data                                   |
-            +-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+
-            
-            Type: 
-                Hello          0x01
-                Host Learning  0x02
-                Host Announce  0x03
-                Authentication 0x04
-                Acknowledge    0x05
-            
+    [root@localhost olv1]# curl -um64rxofsqkvlb4cj: -XGET http://localhost:10082/
+
+And search or show users can login.
+
+    [root@localhost olv1]# curl -um64rxofsqkvlb4cj: -XGET http://localhost:10082/user
+
+# Start Endpoint on Linux
+
+    [root@localhost olv1]# nohup ./resources/endpoint -addr x.x.x.x:10002 -auth zzz@nnn:wwww &
+    [root@localhost olv1]# ifconfig tap0 192.168.x.b up
+    [root@localhost olv1]# ping 192.168.x.a
