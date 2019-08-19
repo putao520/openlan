@@ -33,7 +33,7 @@ func NewConfig() (this *Config) {
 	flag.StringVar(&this.Controller, "ctl", "openlan.net:10020",  "the controller listen on")
 	flag.StringVar(&this.HttpListen, "http", "0.0.0.0:10082",  "the http listen on")
 	flag.StringVar(&this.Auth, "auth", "default@openlan:", "the authentication login")
-	flag.IntVar(&this.Ifmtu, "ifmtu", 1438, "the interface MTU include ethernet") //1500-20-8-20-14
+	flag.IntVar(&this.Ifmtu, "ifmtu", 1438, "the interface MTU include ethernet") //1500-20-8-20-14 ~ 1430 for windows.
 	flag.IntVar(&this.Interval, "interval", 30, "the interval heartbeat to controller") 
 	flag.StringVar(&this.Token, "token", "", "the token for http authentication")
 	flag.StringVar(&this.TokenFile, "tokenfile", ".endpoint_token", "the file token saved to")
