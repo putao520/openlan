@@ -71,7 +71,8 @@ func (this *UdpHole) AddPeer(peer *Peer) error {
 	if peer.UUID == this.UUID {
 		return nil
 	}
-	if _addr := this.GetPeer(peer.Name); _addr != nil {
+	if _peer := this.GetPeer(peer.Name); _peer != nil {
+		_peer.UUID = peer.UUID //Update UUID.
 		return nil
 	}
 
