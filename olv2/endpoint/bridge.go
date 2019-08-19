@@ -64,7 +64,9 @@ func (this *Bridge) doInstruct(raddr *net.UDPAddr, data []byte) error {
 
 	action := openlanv2.DecodeAction(data)
 	if action == "onli:" {
-		return this.doOnline(raddr, openlanv2.DecodeBody(data))
+		return this.doOnline(raddr, openlanv2.DecodeBody(data), true)
+	} else if action == "onli=" {
+		return this.doOnline(raddr, openlanv2.DecodeBody(data), false)
 	}
 
 	return nil
@@ -108,7 +110,7 @@ func (this *Bridge) FindHost(dst []byte) *openlanv2.Endpoint{
 	return nil
 }
 
-func (this *Bridge) doOnline(raddr *net.UDPAddr, body string) error {
+func (this *Bridge) doOnline(raddr *net.UDPAddr, body string, IsResp bool) error {
 	if this.verbose {
 		log.Printf("Info| Bridge.doOnline %s", body)
 	}
@@ -127,6 +129,15 @@ func (this *Bridge) doOnline(raddr *net.UDPAddr, body string) error {
 	}
 
 	_peer.Update(peer)
+	if _peer.UdpAddr == nil && !IsResp {
+		_peer.UdpAddr = raddr //from controller this filed is not nil but peer is empty. 
+	}
+
+	this.Hole.AddPeer(&Peer {
+		Name: _peer.UdpAddr.String(), 
+		Addr: _peer.UdpAddr, 
+		UUID: _peer.UUID,
+	})
 	//TODO update time otherwise expire.
 
 	if this.verbose {
