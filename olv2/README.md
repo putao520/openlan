@@ -22,6 +22,11 @@ The following command for you building endpoint on windows
 
 Goto `Control Panel\Network and Internet\Network Connections`, and find `Ethernet 2`, then you can configure IPAddress like `192.168.x.a` for other branch site to access it. 
 
+Setting MTU, run `cmd` by administrator account. 
+
+    netsh interface ipv4 show subinterfaces
+    netsh interface ipv4 set subinterface "Ethernet 2" mtu=1430 store=persistent
+
 # Start Controller on Linux
 
     [root@localhost olv1]# cat .passowrd
