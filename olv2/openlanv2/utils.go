@@ -16,3 +16,14 @@ func GenUUID(n int) string {
 
 	return string(buf)
 }
+
+func GenBins(n int) []byte {
+	buf := make([]byte, n)
+
+	rand.Seed(time.Now().Unix())
+    for i := range buf {
+        buf[i] = byte(rand.Intn(256))
+	}
+
+	return buf
+}

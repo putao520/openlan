@@ -14,6 +14,7 @@ type UdpHole struct {
 	Listen string
 	Udp *openlanv2.UdpSocket
 	Interval time.Duration
+	Trigger time.Duration
 	Controller string
 	UUID string
 	// 
@@ -36,6 +37,7 @@ func NewUdpHole(c *Config) (this *UdpHole) {
 		Udp: openlanv2.NewUdpSocket(c.UdpListen, c.Verbose),
 		verbose: c.Verbose,
 		Interval: time.Duration(c.Interval),
+		Trigger: time.Duration(1),
 		Controller: c.Controller,
 		name: "",
 		password: "",
@@ -60,7 +62,8 @@ func (this *UdpHole) GoAlive() {
 		log.Printf("Error| UdpHole.GoAlive to %s\n", this.Controller)
         return
 	}
-	
+
+	n := 3
 	body := fmt.Sprintf(`{"name":"%s", "password":"%s", "uuid":"%s"}`, 
 						this.name, this.password, this.UUID)
 	for {
@@ -70,7 +73,12 @@ func (this *UdpHole) GoAlive() {
 			log.Printf("Error| UdpHole.GoAlive.SendReq %s\n", err)
 		}
 
-		time.Sleep(this.Interval * time.Second)
+		if n > 0 {
+			time.Sleep(this.Trigger * time.Second)
+			n--
+		} else {
+			time.Sleep(this.Interval * time.Second)
+		}
 	}
 }
 

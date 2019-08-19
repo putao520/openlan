@@ -3,6 +3,7 @@ package endpoint
 import (
 	"log"
 	"net"
+	"sync"
 
 	"github.com/danieldin95/openlan-go/olv2/openlanv2"
 )
@@ -11,6 +12,7 @@ type Bridge struct {
 	Hole *UdpHole
 	Network *openlanv2.Network // <ip,port> is key.
 	Hosts map[string]*openlanv2.Endpoint // MAC address is key.
+	HostsRWLock sync.RWMutex
 	Device *Device
 	//
 	verbose bool
@@ -87,11 +89,16 @@ func (this *Bridge) UpdateHost(peer *openlanv2.Endpoint, dst []byte) {
 	_peer := this.FindHost(dst)
 	if _peer != peer {
 		log.Printf("Info| Bridge.UpdateHost % x change peer to %s.", dst, peer)
+		this.HostsRWLock.Lock()
+		defer this.HostsRWLock.Unlock()
 		this.Hosts[openlanv2.EthAddrStr(dst)] = peer
 	}
 }
 
 func (this *Bridge) FindHost(dst []byte) *openlanv2.Endpoint{
+	this.HostsRWLock.RLock()
+	defer this.HostsRWLock.RUnlock()
+
 	if peer, ok := this.Hosts[openlanv2.EthAddrStr(dst)]; ok {
 		return peer
 	}
@@ -111,8 +118,8 @@ func (this *Bridge) doOnline(raddr *net.UDPAddr, body string) error {
 	}
 
 	key := peer.UdpAddr.String()
-	_peer, ok := this.Network.Endpoints[key]
-	if !ok {
+	_peer := this.Network.GetEndpoint(key)
+	if _peer == nil {
 		_peer = peer
 		this.Network.AddEndpoint(key, peer)
 	}

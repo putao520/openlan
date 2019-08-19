@@ -95,18 +95,32 @@ func (this *Controller) doOnline(raddr *net.UDPAddr, body string) error {
 	//TODO If UDP hole is changed.
 	_from.Update(from)
 
-	for uuid, peer := range net.Endpoints {
+	//Message for announcing to peers.
+	var fromm *openlanv2.Message
+
+	frombody, err := _from.ToJson()
+	if err == nil {
+		fromm = openlanv2.NewMessage("online", frombody)
+	}
+
+	for uuid, _peer := range net.Endpoints {
 		if this.verbose {
-			log.Printf("Debug| doOnline resp: <%s>:%s to %s", uuid, peer.UdpAddr, raddr)
+			log.Printf("Debug| doOnline resp: <%s>:%s to %s", uuid, _peer.UdpAddr, raddr)
 		}
 
-		body, err := peer.ToJson()
+		//Announce to from
+		body, err := _peer.ToJson()
 		if err == nil {
 			m := openlanv2.NewMessage("online", body)
-			this.Broker.DoSend(from.UdpAddr, from.UUID, m)
+			this.Broker.DoSend(_from.UdpAddr, _from.UUID, m)
 		} else {
-			log.Printf("Error| doOnline %s: %s", peer.UdpAddr, err)
+			log.Printf("Error| doOnline %s: %s", _peer.UdpAddr, err)
 		}
+
+		//Announce to peers.
+		if fromm != nil {
+			this.Broker.DoSend(_peer.UdpAddr, _peer.UUID, fromm)
+		} 
 	}
 
 	return nil
