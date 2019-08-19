@@ -112,13 +112,16 @@ func (this *Bridge) FindHost(dst []byte) *openlanv2.Endpoint{
 
 func (this *Bridge) doOnline(raddr *net.UDPAddr, body string, IsResp bool) error {
 	if this.verbose {
-		log.Printf("Info| Bridge.doOnline %s %b %s", raddr, IsResp, body)
+		log.Printf("Info| Bridge.doOnline %s %t %s", raddr, IsResp, body)
 	}
 
 	peer, err := openlanv2.NewEndpointFromJson(body)
 	if err != nil {
 		log.Printf("Error| Bridge.doOnline: %s", err)
 		return err
+	}
+	if peer.UdpAddr == nil && !IsResp {
+		peer.UdpAddr = raddr //from controller this filed is not nil but peer is empty. 
 	}
 
 	key := peer.UdpAddr.String()
@@ -129,9 +132,6 @@ func (this *Bridge) doOnline(raddr *net.UDPAddr, body string, IsResp bool) error
 	}
 
 	_peer.Update(peer)
-	if _peer.UdpAddr == nil && !IsResp {
-		_peer.UdpAddr = raddr //from controller this filed is not nil but peer is empty. 
-	}
 
 	this.Hole.AddPeer(&Peer {
 		Name: _peer.UdpAddr.String(), 
