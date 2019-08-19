@@ -112,7 +112,7 @@ func (this *Bridge) FindHost(dst []byte) *openlanv2.Endpoint{
 
 func (this *Bridge) doOnline(raddr *net.UDPAddr, body string, IsResp bool) error {
 	if this.verbose {
-		log.Printf("Info| Bridge.doOnline %b %s %s", raddr, IsResp, body)
+		log.Printf("Info| Bridge.doOnline %s %b %s", raddr, IsResp, body)
 	}
 
 	peer, err := openlanv2.NewEndpointFromJson(body)
