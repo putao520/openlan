@@ -3,6 +3,7 @@ package controller
 import (
 	"log"
 	"net"
+	"sync"
 
 	"github.com/danieldin95/openlan-go/olv2/openlanv2"
 )
@@ -10,8 +11,10 @@ import (
 type Controller struct {
 	Broker *UdpBroker
 	Networks map[string]*openlanv2.Network
+	Http *Http
 	//
 	verbose bool
+	rwlock sync.RWMutex
 }
 
 func NewController(c *Config) (this *Controller) {
@@ -21,12 +24,15 @@ func NewController(c *Config) (this *Controller) {
 		Networks: make(map[string]*openlanv2.Network),
 	}
 
+	this.Http = NewHttp(this, c)
+
 	return
 }
 
 func (this *Controller) Start() {
 	log.Printf("Info| Controller.Start")
 	go this.Broker.GoRecv(this.doRecv)
+	go this.Http.GoStart()
 }
 
 func (this *Controller) Stop() {
@@ -67,6 +73,21 @@ func (this *Controller) doEthernet(raddr *net.UDPAddr, data []byte) error {
 	return nil
 }
 
+func (this *Controller) FindNet(name string) *openlanv2.Network{
+	this.rwlock.RLock()
+	defer this.rwlock.RUnlock()
+	if net, ok := this.Networks[name]; ok {
+		return net
+	}
+	return nil
+}
+
+func (this *Controller) AddNet(name string, net *openlanv2.Network) {
+	this.rwlock.Lock()
+	this.Networks[name] = net
+	this.rwlock.Unlock()
+}
+
 func (this *Controller) doOnline(raddr *net.UDPAddr, body string) error {
 	if this.verbose {
 		log.Printf("Info| Controller.doOnline")
@@ -80,10 +101,10 @@ func (this *Controller) doOnline(raddr *net.UDPAddr, body string) error {
 
 	from.UdpAddr = raddr
 	//TODO auth it.
-	net, ok := this.Networks[from.Network]
-	if !ok {
+	net := this.FindNet(from.Network)
+	if net == nil {
 		net = openlanv2.NewNetwork(from.Network)
-		this.Networks[from.Network] = net
+		this.AddNet(from.Network, net)
 	}
 	key := from.UdpAddr.String()
 	_from, ok := net.Endpoints[key]
@@ -124,4 +145,19 @@ func (this *Controller) doOnline(raddr *net.UDPAddr, body string) error {
 	}
 
 	return nil
+}
+
+func (this *Controller) GetNetworks() chan *openlanv2.Network {
+	c := make(chan *openlanv2.Network, 16)
+    go func() {
+		this.rwlock.RLock()
+		defer this.rwlock.RUnlock()
+
+        for _, net := range this.Networks {
+            c <- net
+		}
+		c <- nil //Finish channel by nil.
+    }()
+
+    return c
 }

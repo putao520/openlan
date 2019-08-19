@@ -14,6 +14,9 @@ type Endpoint struct {
 	Password string `json:"password"`
 	Network string
 	UdpAddr *net.UDPAddr
+	TxOkay uint64
+	RxOkay uint64
+	TxError uint64
 	//
 	updateTime int64
 	createTime int64
@@ -65,7 +68,7 @@ func (this *Endpoint) Update(from *Endpoint) bool {
 	this.UUID = from.UUID
 	this.UdpAddr = from.UdpAddr
 	this.updateTime = time.Now().Unix()
-	
+
 	return false
 }
 
@@ -75,4 +78,8 @@ func (this *Endpoint) UpTime() int64 {
 
 func (this *Endpoint) String() string {
 	return fmt.Sprintf("%s,%s,%s", this.Name, this.UUID, this.UdpAddr)
+}
+
+func (this *Endpoint) UpdateTime() int64 {
+	return time.Now().Unix() - this.updateTime
 }

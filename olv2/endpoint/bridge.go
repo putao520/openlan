@@ -11,11 +11,11 @@ import (
 type Bridge struct {
 	Hole *UdpHole
 	Network *openlanv2.Network // <ip,port> is key.
-	Hosts map[string]*openlanv2.Endpoint // MAC address is key.
-	HostsRWLock sync.RWMutex
+	Macs map[string]*openlanv2.Endpoint // MAC address is key.
 	Device *Device
 	//
 	verbose bool
+	macsrwlock sync.RWMutex
 }
 
 func NewBridge(c *Config) (this *Bridge) {
@@ -24,7 +24,7 @@ func NewBridge(c *Config) (this *Bridge) {
 		Device: NewDevice(c),
 		verbose: c.Verbose,
 		Network: openlanv2.NewNetwork("default"),
-		Hosts: make(map[string]*openlanv2.Endpoint),
+		Macs: make(map[string]*openlanv2.Endpoint),
 	}
 
 	return
@@ -89,17 +89,17 @@ func (this *Bridge) UpdateHost(peer *openlanv2.Endpoint, dst []byte) {
 	_peer := this.FindHost(dst)
 	if _peer != peer {
 		log.Printf("Info| Bridge.UpdateHost % x change peer to %s.", dst, peer)
-		this.HostsRWLock.Lock()
-		defer this.HostsRWLock.Unlock()
-		this.Hosts[openlanv2.EthAddrStr(dst)] = peer
+		this.macsrwlock.Lock()
+		defer this.macsrwlock.Unlock()
+		this.Macs[openlanv2.EthAddrStr(dst)] = peer
 	}
 }
 
 func (this *Bridge) FindHost(dst []byte) *openlanv2.Endpoint{
-	this.HostsRWLock.RLock()
-	defer this.HostsRWLock.RUnlock()
+	this.macsrwlock.RLock()
+	defer this.macsrwlock.RUnlock()
 
-	if peer, ok := this.Hosts[openlanv2.EthAddrStr(dst)]; ok {
+	if peer, ok := this.Macs[openlanv2.EthAddrStr(dst)]; ok {
 		return peer
 	}
 
@@ -192,4 +192,25 @@ func (this *Bridge) flood(frame []byte) error {
 
 func (this *Bridge) IsLocal(peer *openlanv2.Endpoint) bool {
 	return peer.UUID == this.Hole.UUID
+}
+
+type MacEntry struct {
+	Addr string
+	Peer *openlanv2.Endpoint
+}
+
+func (this *Bridge) ListMacs() chan *MacEntry {
+	c := make(chan *MacEntry, 16)
+    go func() {
+		this.macsrwlock.RLock()
+		defer this.macsrwlock.RUnlock()
+
+        for m, peer := range this.Macs {
+			//log.Printf("Debug| Endpoint.ListMacs: %s", peer)
+            c <- &MacEntry{Addr:m, Peer:peer}
+		}
+		c <- nil //Finish channel by nil.
+    }()
+
+    return c
 }

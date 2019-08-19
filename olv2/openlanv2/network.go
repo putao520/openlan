@@ -2,12 +2,14 @@ package openlanv2
 
 import (
 	"sync"
+	//"log"
 )
 
 type Network struct {
 	Name string
 	Endpoints map[string]*Endpoint // default UUID is key
-	EndpointsRWLock sync.RWMutex
+	//
+	rwlock sync.RWMutex
 }
 
 func NewNetwork(name string)(this *Network) {
@@ -23,15 +25,15 @@ func (this *Network) AddEndpoint(uuid string, point *Endpoint) error {
 		return nil
 	}
 
-	this.EndpointsRWLock.Lock()
-	defer this.EndpointsRWLock.Unlock()
+	this.rwlock.Lock()
+	defer this.rwlock.Unlock()
 	this.Endpoints[uuid] = point
 	return nil
 }
 
 func (this *Network) DelEndpoint(uuid string) error {
-	this.EndpointsRWLock.Lock()
-	defer this.EndpointsRWLock.Unlock()
+	this.rwlock.Lock()
+	defer this.rwlock.Unlock()
 	if _, ok := this.Endpoints[uuid]; ok {
 		delete(this.Endpoints, uuid)
 	}
@@ -39,10 +41,26 @@ func (this *Network) DelEndpoint(uuid string) error {
 }
 
 func (this *Network) GetEndpoint(uuid string) (*Endpoint) {
-	this.EndpointsRWLock.RLock()
-	defer this.EndpointsRWLock.RUnlock()
+	this.rwlock.RLock()
+	defer this.rwlock.RUnlock()
 	if point, ok := this.Endpoints[uuid]; ok {
 		return point
 	}
 	return nil
+}
+
+func (this *Network) ListEndpoint() chan *Endpoint {
+	c := make(chan *Endpoint, 16)
+    go func() {
+		this.rwlock.RLock()
+		defer this.rwlock.RUnlock()
+
+        for _, peer := range this.Endpoints {
+			//log.Printf("Debug| Endpoint.GetPeers: %s", peer)
+            c <- peer
+		}
+		c <- nil //Finish channel by nil.
+    }()
+
+    return c
 }

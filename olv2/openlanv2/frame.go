@@ -30,5 +30,6 @@ func SrcAddr(data []byte) []byte {
 }
 
 func EthAddrStr(data []byte) string {
-	return fmt.Sprintf("%x:%x:%x:%x:%x:%x", data[0], data[1], data[2], data[3], data[4], data[5])
+	return fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x", 
+			data[0], data[1], data[2], data[3], data[4], data[5])
 }
