@@ -4,6 +4,7 @@ import (
 	"log"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/danieldin95/openlan-go/olv2/openlanv2"
 )
@@ -33,6 +34,7 @@ func NewBridge(c *Config) (this *Bridge) {
 func (this *Bridge) Start() {
 	log.Printf("Info| Bridge.Start")
 	go this.Hole.GoAlive()
+	go this.GoExpired()
 	go this.Hole.GoRecv(this.doRecv)
 	go this.Device.GoRecv(this.doSend)
 }
@@ -213,4 +215,15 @@ func (this *Bridge) ListMacs() chan *MacEntry {
     }()
 
     return c
+}
+
+func (this *Bridge) GoExpired() {
+	log.Printf("Debug| Bridge.GoExpired")
+	for {
+		this.macsrwlock.Lock()
+		//TODO
+		this.macsrwlock.Unlock()
+
+		time.Sleep(10*time.Second)
+	}
 }

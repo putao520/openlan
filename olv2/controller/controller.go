@@ -4,6 +4,7 @@ import (
 	"log"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/danieldin95/openlan-go/olv2/openlanv2"
 )
@@ -31,6 +32,7 @@ func NewController(c *Config) (this *Controller) {
 
 func (this *Controller) Start() {
 	log.Printf("Info| Controller.Start")
+	go this.GoExpired()
 	go this.Broker.GoRecv(this.doRecv)
 	go this.Http.GoStart()
 }
@@ -107,8 +109,8 @@ func (this *Controller) doOnline(raddr *net.UDPAddr, body string) error {
 		this.AddNet(from.Network, net)
 	}
 	key := from.UdpAddr.String()
-	_from, ok := net.Endpoints[key]
-	if !ok {
+	_from := net.GetEndpoint(key)
+	if _from == nil {
 		_from = from
 		net.AddEndpoint(key, from)
 	}
@@ -160,4 +162,17 @@ func (this *Controller) GetNetworks() chan *openlanv2.Network {
     }()
 
     return c
+}
+
+func (this *Controller) GoExpired() {
+	log.Printf("Debug| Controller.GoExpired")
+	for {
+		this.rwlock.Lock()
+		for _, net := range this.Networks {
+			net.Expired()
+		}
+		this.rwlock.Unlock()
+
+		time.Sleep(5*time.Second)
+	}
 }

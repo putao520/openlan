@@ -17,6 +17,7 @@ type Endpoint struct {
 	TxOkay uint64
 	RxOkay uint64
 	TxError uint64
+	Expired int
 	//
 	updateTime int64
 	createTime int64
@@ -36,6 +37,7 @@ func NewEndpoint(name string, uuid string) (this *Endpoint) {
 		UUID: uuid,
 		createTime: time.Now().Unix(),
 		updateTime: time.Now().Unix(),
+		Expired: 60, //Default expired time is 60s. 
 	}
 
 	this.Network = GetNetwork(this.Name)
@@ -46,6 +48,7 @@ func NewEndpointFromJson(data string) (this *Endpoint, err error) {
 	this = &Endpoint {
 		createTime: time.Now().Unix(),
 		updateTime: time.Now().Unix(),
+		Expired: 60, //Default expired time is 60s. 
 	}
 	if err = json.Unmarshal([]byte(data), this); err != nil {
 		return
@@ -68,6 +71,7 @@ func (this *Endpoint) Update(from *Endpoint) bool {
 	this.UUID = from.UUID
 	this.UdpAddr = from.UdpAddr
 	this.updateTime = time.Now().Unix()
+	this.RxOkay++
 
 	return false
 }
@@ -82,4 +86,8 @@ func (this *Endpoint) String() string {
 
 func (this *Endpoint) UpdateTime() int64 {
 	return time.Now().Unix() - this.updateTime
+}
+
+func (this *Endpoint) IsExpired() bool {
+	return this.UpdateTime() > int64(this.Expired)
 }

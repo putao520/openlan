@@ -2,7 +2,7 @@ package openlanv2
 
 import (
 	"sync"
-	//"log"
+	"log"
 )
 
 type Network struct {
@@ -64,3 +64,23 @@ func (this *Network) ListEndpoint() chan *Endpoint {
 
     return c
 }
+
+
+func (this *Network) Expired() {
+	this.rwlock.Lock()
+	defer this.rwlock.Unlock()
+
+	expired := make([]string, 0, 1024)
+	for uuid, peer := range this.Endpoints {
+		if peer.IsExpired() {
+			expired = append(expired, uuid)
+		}
+	}
+
+	for _, uuid := range expired {
+		if uuid != ""{
+			log.Printf("Debug| Network.Expired %s", uuid)
+			delete(this.Endpoints, uuid)
+		}
+	}
+} 
