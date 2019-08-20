@@ -1,18 +1,18 @@
 package main 
 
 import (
-	"log"
+    "log"
     "fmt"
     "os/signal"
     "syscall"
     "time"
     "os"
     
-	"github.com/danieldin95/openlan-go/olv2/controller"
+    "github.com/danieldin95/openlan-go/olv2/controller"
 )
 
 func main() {
-	c := controller.NewConfig()
+    c := controller.NewConfig()
     log.Printf("Debug| main.config: %s", c)
 
     ctl := controller.NewController(c)

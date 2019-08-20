@@ -1,33 +1,33 @@
 package olv1cpe
 
 import (
-	"log"
+    "log"
 
-	"github.com/songgao/water"
-	"github.com/danieldin95/openlan-go/olv1/olv1"
+    "github.com/songgao/water"
+    "github.com/danieldin95/openlan-go/olv1/olv1"
 )
 
 type Cpe struct {
     Verbose int
-	Client *olv1.TcpClient
-	Ifce *water.Interface
-	//
+    Client *olv1.TcpClient
+    Ifce *water.Interface
+    //
     tcpwroker *TcpWroker 
     tapwroker *TapWroker
 }
 
 func NewCpe(config *Config) (this *Cpe){
-	ifce, err := water.New(water.Config { DeviceType: water.TAP })
+    ifce, err := water.New(water.Config { DeviceType: water.TAP })
     if err != nil {
         log.Fatal(err)
-	}
-	
-	client := olv1.NewTcpClient(config.Addr, config.Verbose)
+    }
+    
+    client := olv1.NewTcpClient(config.Addr, config.Verbose)
 
     this = &Cpe {
         Verbose: config.Verbose,
-		Client: client,
-		Ifce: ifce,
+        Client: client,
+        Ifce: ifce,
         tapwroker : NewTapWoker(ifce, config),
         tcpwroker : NewTcpWoker(client, config),
     }
@@ -47,6 +47,6 @@ func (this *Cpe) Start() {
 }
 
 func (this *Cpe) Close() {
-	this.Client.Close()
-	this.Ifce.Close()
+    this.Client.Close()
+    this.Ifce.Close()
 }

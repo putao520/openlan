@@ -1,8 +1,8 @@
 package olv1 
 
 import (
-	"bytes"
-	"fmt"
+    "bytes"
+    "fmt"
 )
 
 //[MAGIC(2)][Length(2)][DSTMAC(6)]
@@ -14,23 +14,23 @@ import (
 //    Payload is Ethernat Frame.
 
 func IsInst(data []byte) bool {
-	return bytes.Equal(data[:6], ZEROMAC)
+    return bytes.Equal(data[:6], ZEROMAC)
 }
 
 func DecAction(data []byte) string {
-	return string(data[6:11])
+    return string(data[6:11])
 }
 
 func DecBody(data []byte) string {
-	return string(data[12:])
+    return string(data[12:])
 }
 
 func EncInstReq(action string, body string) []byte {
-	payload := fmt.Sprintf("%s= %s", action[:4], body)
-	return append(ZEROMAC, payload...)
+    payload := fmt.Sprintf("%s= %s", action[:4], body)
+    return append(ZEROMAC, payload...)
 }
 
 func EncInstResp(action string, body string) []byte {
-	payload := fmt.Sprintf("%s: %s", action[:4], body)
-	return append(ZEROMAC, payload...)
+    payload := fmt.Sprintf("%s: %s", action[:4], body)
+    return append(ZEROMAC, payload...)
 }

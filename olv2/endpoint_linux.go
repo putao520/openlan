@@ -1,18 +1,18 @@
 package main 
 
 import (
-	"log"
+    "log"
     "fmt"
     "os/signal"
     "syscall"
     "time"
-	"os"
-	
-	"github.com/danieldin95/openlan-go/olv2/endpoint"
+    "os"
+    
+    "github.com/danieldin95/openlan-go/olv2/endpoint"
 )
 
 func main() {
-	c := endpoint.NewConfig()
+    c := endpoint.NewConfig()
     log.Printf("Debug| main.config: %s", c)
 
     e := endpoint.NewEndpoint(c)

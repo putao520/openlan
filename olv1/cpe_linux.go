@@ -14,12 +14,12 @@ import (
 
 func UpLink(name string) error {
     link, err := tenus.NewLinkFrom(name)
-	if err != nil {
-		log.Printf("Error|main.UpLink: Get ifce %s: %s", name, err)
-		return err
-	}
-	
-	if err := link.SetLinkUp(); err != nil {
+    if err != nil {
+        log.Printf("Error|main.UpLink: Get ifce %s: %s", name, err)
+        return err
+    }
+    
+    if err := link.SetLinkUp(); err != nil {
         log.Printf("Error|main.UpLink: %s : %s", name, err)
         return err
     }

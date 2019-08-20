@@ -1,64 +1,64 @@
 package olv1cpe
 
 import (
-	"log"
+    "log"
 
-	"github.com/songgao/water"
+    "github.com/songgao/water"
 )
 
 type TapWroker struct {
-	ifce *water.Interface
-	writechan chan []byte
-	ifmtu int
-	verbose int
+    ifce *water.Interface
+    writechan chan []byte
+    ifmtu int
+    verbose int
 }
 
 func NewTapWoker(ifce *water.Interface, c *Config) (this *TapWroker) {
-	this = &TapWroker {
-		ifce: ifce,
-		writechan: make(chan []byte, 1024*10),
-		ifmtu: c.Ifmtu, //1514
-		verbose: c.Verbose,
-	}
-	return
+    this = &TapWroker {
+        ifce: ifce,
+        writechan: make(chan []byte, 1024*10),
+        ifmtu: c.Ifmtu, //1514
+        verbose: c.Verbose,
+    }
+    return
 }
 
 func (this *TapWroker) GoRecv(dorecv func([]byte)(error)) {
-	defer this.ifce.Close()
-	for {
-		data := make([]byte, this.ifmtu)
+    defer this.ifce.Close()
+    for {
+        data := make([]byte, this.ifmtu)
         n, err := this.ifce.Read(data)
         if err != nil {
-			log.Printf("Error|TapWroker.GoRev: %s", err)
-			break
+            log.Printf("Error|TapWroker.GoRev: %s", err)
+            break
         }
-		if this.IsVerbose() {
-			log.Printf("TapWroker.GoRev: % x\n", data[:n])
-		}
+        if this.IsVerbose() {
+            log.Printf("TapWroker.GoRev: % x\n", data[:n])
+        }
 
-		dorecv(data[:n])
-	}
+        dorecv(data[:n])
+    }
 }
 
 func (this *TapWroker) DoSend(data []byte) error {
-	if this.IsVerbose() {
-		log.Printf("TapWroker.DoSend: % x\n", data)
-	}
+    if this.IsVerbose() {
+        log.Printf("TapWroker.DoSend: % x\n", data)
+    }
 
-	this.writechan <- data
-	return nil
+    this.writechan <- data
+    return nil
 }
 
 func (this *TapWroker) GoLoop() error {
-	defer this.ifce.Close()
-	for {
-		select {
-		case wdata := <- this.writechan:
-			if _, err := this.ifce.Write(wdata); err != nil {
-				log.Printf("Error|TapWroker.GoLoop: %s", err)	
-			}
-		}
-	}
+    defer this.ifce.Close()
+    for {
+        select {
+        case wdata := <- this.writechan:
+            if _, err := this.ifce.Write(wdata); err != nil {
+                log.Printf("Error|TapWroker.GoLoop: %s", err)   
+            }
+        }
+    }
 }
 
 func (this *TapWroker) IsVerbose() bool {
@@ -66,5 +66,5 @@ func (this *TapWroker) IsVerbose() bool {
 }
 
 func (this *TapWroker) Close() {
-	this.ifce.Close()
+    this.ifce.Close()
 }

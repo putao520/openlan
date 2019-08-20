@@ -1,37 +1,37 @@
 package endpoint
 
 import (
-	"log"
+    "log"
 
-	"github.com/danieldin95/openlan-go/olv2/openlanv2"
+    "github.com/danieldin95/openlan-go/olv2/openlanv2"
 )
 
 type Endpoint struct {
-	bridge *Bridge
-	verbose bool
-	http *Http
+    bridge *Bridge
+    verbose bool
+    http *Http
 }
 
 func NewEndpoint(c *Config) (this *Endpoint) {
-	this = &Endpoint {
-		bridge: NewBridge(c),
-		verbose: c.Verbose,
-	}
+    this = &Endpoint {
+        bridge: NewBridge(c),
+        verbose: c.Verbose,
+    }
 
-	this.http = NewHttp(this, c)
+    this.http = NewHttp(this, c)
 
-	return
+    return
 }
 
 func (this *Endpoint) Start() {
-	log.Printf("Info| Endpoint.Start")
-	this.bridge.Start()
-	go this.http.GoStart()
+    log.Printf("Info| Endpoint.Start")
+    this.bridge.Start()
+    go this.http.GoStart()
 }
 
 func (this *Endpoint) Stop() {
-	log.Printf("Info| Endpoint.Stop")
-	this.bridge.Stop()
+    log.Printf("Info| Endpoint.Stop")
+    this.bridge.Stop()
 }
 
 func (this *Endpoint) GetPeers() chan *openlanv2.Endpoint {

@@ -1,240 +1,240 @@
 package endpoint
 
 import (
-	"log"
-	"net"
-	"sync"
-	"time"
+    "log"
+    "net"
+    "sync"
+    "time"
 
-	"github.com/danieldin95/openlan-go/olv2/openlanv2"
+    "github.com/danieldin95/openlan-go/olv2/openlanv2"
 )
 
 type Bridge struct {
-	Hole *UdpHole
-	Network *openlanv2.Network // <ip,port> is key.
-	Macs map[string]*openlanv2.Endpoint // MAC address is key.
-	Device *Device
-	//
-	verbose bool
-	macsrwlock sync.RWMutex
+    Hole *UdpHole
+    Network *openlanv2.Network // <ip,port> is key.
+    Macs map[string]*openlanv2.Endpoint // MAC address is key.
+    Device *Device
+    //
+    verbose bool
+    macsrwlock sync.RWMutex
 }
 
 func NewBridge(c *Config) (this *Bridge) {
-	this = &Bridge {
-		Hole: NewUdpHole(c),
-		Device: NewDevice(c),
-		verbose: c.Verbose,
-		Network: openlanv2.NewNetwork("default"),
-		Macs: make(map[string]*openlanv2.Endpoint),
-	}
+    this = &Bridge {
+        Hole: NewUdpHole(c),
+        Device: NewDevice(c),
+        verbose: c.Verbose,
+        Network: openlanv2.NewNetwork("default"),
+        Macs: make(map[string]*openlanv2.Endpoint),
+    }
 
-	return
+    return
 }
 
 func (this *Bridge) Start() {
-	log.Printf("Info| Bridge.Start")
-	go this.Hole.GoAlive()
-	go this.GoExpired()
-	go this.Hole.GoRecv(this.doRecv)
-	go this.Device.GoRecv(this.doSend)
+    log.Printf("Info| Bridge.Start")
+    go this.Hole.GoAlive()
+    go this.GoExpired()
+    go this.Hole.GoRecv(this.doRecv)
+    go this.Device.GoRecv(this.doSend)
 }
 
 func (this *Bridge) Stop() {
-	log.Printf("Info| Bridge.Stop")
-	//TODO stop goroute.
-	this.Hole.Close()
+    log.Printf("Info| Bridge.Stop")
+    //TODO stop goroute.
+    this.Hole.Close()
 }
 
 func (this *Bridge) doRecv(raddr *net.UDPAddr, data []byte) error {
-	if this.verbose {
-		log.Printf("Info| Bridge.doRecv")
-	}
+    if this.verbose {
+        log.Printf("Info| Bridge.doRecv")
+    }
 
-	if openlanv2.IsInstruct(data) {
-		return this.doInstruct(raddr, data)
-	}
+    if openlanv2.IsInstruct(data) {
+        return this.doInstruct(raddr, data)
+    }
 
-	return this.doEthernet(raddr, data)
+    return this.doEthernet(raddr, data)
 }
 
 func (this *Bridge) doInstruct(raddr *net.UDPAddr, data []byte) error {
-	if this.verbose {
-		log.Printf("Info| Bridge.doInstruct")
-	}
+    if this.verbose {
+        log.Printf("Info| Bridge.doInstruct")
+    }
 
-	action := openlanv2.DecodeAction(data)
-	if action == "onli:" {
-		return this.doOnline(raddr, openlanv2.DecodeBody(data), true)
-	} else if action == "onli=" {
-		return this.doOnline(raddr, openlanv2.DecodeBody(data), false)
-	}
+    action := openlanv2.DecodeAction(data)
+    if action == "onli:" {
+        return this.doOnline(raddr, openlanv2.DecodeBody(data), true)
+    } else if action == "onli=" {
+        return this.doOnline(raddr, openlanv2.DecodeBody(data), false)
+    }
 
-	return nil
+    return nil
 }
 
 func (this *Bridge) doEthernet(raddr *net.UDPAddr, frame []byte) error {
-	if this.verbose {
-		log.Printf("Info| Bridge.doEthernet")
-	}
+    if this.verbose {
+        log.Printf("Info| Bridge.doEthernet")
+    }
 
-	peer, ok := this.Network.Endpoints[raddr.String()]
-	if !ok {
-		//TODO learn peer by UUID.
-		log.Printf("Error| Bridge.doEthernet %s not in my peers.", raddr)
-		return nil
-	}
+    peer, ok := this.Network.Endpoints[raddr.String()]
+    if !ok {
+        //TODO learn peer by UUID.
+        log.Printf("Error| Bridge.doEthernet %s not in my peers.", raddr)
+        return nil
+    }
 
-	this.UpdateHost(peer, openlanv2.SrcAddr(frame))
+    this.UpdateHost(peer, openlanv2.SrcAddr(frame))
 
-	return this.Device.DoSend(frame)
+    return this.Device.DoSend(frame)
 }
 
 func (this *Bridge) UpdateHost(peer *openlanv2.Endpoint, dst []byte) {
-	_peer := this.FindHost(dst)
-	if _peer != peer {
-		log.Printf("Info| Bridge.UpdateHost % x change peer to %s.", dst, peer)
-		this.macsrwlock.Lock()
-		defer this.macsrwlock.Unlock()
-		this.Macs[openlanv2.EthAddrStr(dst)] = peer
-	}
+    _peer := this.FindHost(dst)
+    if _peer != peer {
+        log.Printf("Info| Bridge.UpdateHost % x change peer to %s.", dst, peer)
+        this.macsrwlock.Lock()
+        defer this.macsrwlock.Unlock()
+        this.Macs[openlanv2.EthAddrStr(dst)] = peer
+    }
 }
 
 func (this *Bridge) FindHost(dst []byte) *openlanv2.Endpoint{
-	this.macsrwlock.RLock()
-	defer this.macsrwlock.RUnlock()
+    this.macsrwlock.RLock()
+    defer this.macsrwlock.RUnlock()
 
-	if peer, ok := this.Macs[openlanv2.EthAddrStr(dst)]; ok {
-		return peer
-	}
+    if peer, ok := this.Macs[openlanv2.EthAddrStr(dst)]; ok {
+        return peer
+    }
 
-	return nil
+    return nil
 }
 
 func (this *Bridge) doOnline(raddr *net.UDPAddr, body string, IsResp bool) error {
-	if this.verbose {
-		log.Printf("Info| Bridge.doOnline %s %t %s", raddr, IsResp, body)
-	}
+    if this.verbose {
+        log.Printf("Info| Bridge.doOnline %s %t %s", raddr, IsResp, body)
+    }
 
-	peer, err := openlanv2.NewEndpointFromJson(body)
-	if err != nil {
-		log.Printf("Error| Bridge.doOnline: %s", err)
-		return err
-	}
-	if peer.UdpAddr == nil && !IsResp {
-		peer.UdpAddr = raddr //from controller this filed is not nil but peer is empty. 
-	}
+    peer, err := openlanv2.NewEndpointFromJson(body)
+    if err != nil {
+        log.Printf("Error| Bridge.doOnline: %s", err)
+        return err
+    }
+    if peer.UdpAddr == nil && !IsResp {
+        peer.UdpAddr = raddr //from controller this filed is not nil but peer is empty. 
+    }
 
-	key := peer.UdpAddr.String()
-	_peer := this.Network.GetEndpoint(key)
-	if _peer == nil {
-		_peer = peer
-		this.Network.AddEndpoint(key, peer)
-	}
+    key := peer.UdpAddr.String()
+    _peer := this.Network.GetEndpoint(key)
+    if _peer == nil {
+        _peer = peer
+        this.Network.AddEndpoint(key, peer)
+    }
 
-	_peer.Update(peer)
+    _peer.Update(peer)
 
-	this.Hole.AddPeer(&Peer {
-		Name: _peer.UdpAddr.String(), 
-		Addr: _peer.UdpAddr, 
-		UUID: _peer.UUID,
-	})
-	//TODO update time otherwise expire.
+    this.Hole.AddPeer(&Peer {
+        Name: _peer.UdpAddr.String(), 
+        Addr: _peer.UdpAddr, 
+        UUID: _peer.UUID,
+    })
+    //TODO update time otherwise expire.
 
-	if this.verbose {
-		log.Printf("Info| Bridge.doOnline.Network %s", this.Network)
-	}
-	
-	return nil
+    if this.verbose {
+        log.Printf("Info| Bridge.doOnline.Network %s", this.Network)
+    }
+    
+    return nil
 }
 
 func (this *Bridge) doSend(frame []byte) error {
-	if this.verbose {
-		log.Printf("Info| Bridge.doSend")
-	}
+    if this.verbose {
+        log.Printf("Info| Bridge.doSend")
+    }
 
-	return this.forward(frame)
+    return this.forward(frame)
 }
 
 func (this *Bridge) forward(frame []byte) error {
-	peer := this.FindHost(openlanv2.DstAddr(frame))
-	if peer != nil {
-		return this.unicast(peer, frame)
-	}
-	
-	return this.flood(frame)
+    peer := this.FindHost(openlanv2.DstAddr(frame))
+    if peer != nil {
+        return this.unicast(peer, frame)
+    }
+    
+    return this.flood(frame)
 }
 
 func (this *Bridge) unicast(peer *openlanv2.Endpoint, frame []byte) error {
-	if this.IsLocal(peer) {
-		return nil
-	}
+    if this.IsLocal(peer) {
+        return nil
+    }
 
-	if this.verbose {
-		log.Printf("Debug| Bridge.unicast to %s", peer)
-	}
+    if this.verbose {
+        log.Printf("Debug| Bridge.unicast to %s", peer)
+    }
 
-	if err := this.Hole.DoSend(peer.UdpAddr, peer.UUID, frame); err != nil {
-		log.Printf("Error| Bridge.unicast.DoSend %s: %s", peer.UdpAddr, err)
-	}
+    if err := this.Hole.DoSend(peer.UdpAddr, peer.UUID, frame); err != nil {
+        log.Printf("Error| Bridge.unicast.DoSend %s: %s", peer.UdpAddr, err)
+    }
 
-	return nil
+    return nil
 }
 
 func (this *Bridge) flood(frame []byte) error {
-	if this.verbose {
-		log.Printf("Debug| Bridge.flood")
-	}
+    if this.verbose {
+        log.Printf("Debug| Bridge.flood")
+    }
 
-	for _, peer := range this.Network.Endpoints {
-		if this.IsLocal(peer) {
-			continue
-		}
+    for _, peer := range this.Network.Endpoints {
+        if this.IsLocal(peer) {
+            continue
+        }
 
-		if this.verbose {
-			log.Printf("Debug| Bridge.flood to %s", peer)
-		}
+        if this.verbose {
+            log.Printf("Debug| Bridge.flood to %s", peer)
+        }
 
-		if err := this.Hole.DoSend(peer.UdpAddr, peer.UUID, frame); err != nil {
-			log.Printf("Error| Bridge.flood.DoSend %s: %s", peer.UdpAddr, err)
-			continue
-		}
-	}
+        if err := this.Hole.DoSend(peer.UdpAddr, peer.UUID, frame); err != nil {
+            log.Printf("Error| Bridge.flood.DoSend %s: %s", peer.UdpAddr, err)
+            continue
+        }
+    }
 
-	return nil
+    return nil
 }
 
 func (this *Bridge) IsLocal(peer *openlanv2.Endpoint) bool {
-	return peer.UUID == this.Hole.UUID
+    return peer.UUID == this.Hole.UUID
 }
 
 type MacEntry struct {
-	Addr string
-	Peer *openlanv2.Endpoint
+    Addr string
+    Peer *openlanv2.Endpoint
 }
 
 func (this *Bridge) ListMacs() chan *MacEntry {
-	c := make(chan *MacEntry, 16)
+    c := make(chan *MacEntry, 16)
     go func() {
-		this.macsrwlock.RLock()
-		defer this.macsrwlock.RUnlock()
+        this.macsrwlock.RLock()
+        defer this.macsrwlock.RUnlock()
 
         for m, peer := range this.Macs {
-			//log.Printf("Debug| Endpoint.ListMacs: %s", peer)
+            //log.Printf("Debug| Endpoint.ListMacs: %s", peer)
             c <- &MacEntry{Addr:m, Peer:peer}
-		}
-		c <- nil //Finish channel by nil.
+        }
+        c <- nil //Finish channel by nil.
     }()
 
     return c
 }
 
 func (this *Bridge) GoExpired() {
-	log.Printf("Debug| Bridge.GoExpired")
-	for {
-		this.macsrwlock.Lock()
-		//TODO
-		this.macsrwlock.Unlock()
+    log.Printf("Debug| Bridge.GoExpired")
+    for {
+        this.macsrwlock.Lock()
+        //TODO
+        this.macsrwlock.Unlock()
 
-		time.Sleep(10*time.Second)
-	}
+        time.Sleep(10*time.Second)
+    }
 }

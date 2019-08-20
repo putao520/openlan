@@ -232,11 +232,11 @@ func (this *TcpClient) SendReq(action string, body string) error {
     data := EncInstReq(action, body)
 
     if this.IsVerbose() {
-    	log.Printf("Debug| TcpClient.SendReq %d %s\n", len(data), data[6:])
+        log.Printf("Debug| TcpClient.SendReq %d %s\n", len(data), data[6:])
     }
 
-	if err := this.SendMsg(data); err != nil {
-		return err
+    if err := this.SendMsg(data); err != nil {
+        return err
     }
     return nil
 }
@@ -245,11 +245,11 @@ func (this *TcpClient) SendResp(action string, body string) error {
     data := EncInstResp(action, body)
 
     if this.IsVerbose() {
-    	log.Printf("Debug| TcpClient.SendResp %d %s\n", len(data), data[6:])
+        log.Printf("Debug| TcpClient.SendResp %d %s\n", len(data), data[6:])
     }
 
-	if err := this.SendMsg(data); err != nil {
-		return err
+    if err := this.SendMsg(data); err != nil {
+        return err
     }
     return nil
 }
