@@ -1,4 +1,4 @@
-package olv1ope
+package vswitch
 
 type User struct {
     Name string `json:"name"`

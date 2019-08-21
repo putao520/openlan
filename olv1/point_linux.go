@@ -28,10 +28,10 @@ func UpLink(name string) error {
 }
 
 func main() {
-    c := olv1cpe.NewConfig()
+    c := point.NewConfig()
     log.Printf("Debug| main.config: %s", c)
 
-    cpe := olv1cpe.NewCpe(c)
+    cpe := point.NewCpe(c)
 
     UpLink(cpe.Ifce.Name())
     cpe.Start()

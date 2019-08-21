@@ -1,4 +1,4 @@
-package olv1cpe
+package point
 
 import (
     "flag"

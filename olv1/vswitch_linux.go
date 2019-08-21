@@ -12,24 +12,24 @@ import (
 )
 
 type Ope struct {
-    Wroker *olv1ope.OpeWroker
+    Wroker *vswitch.OpeWroker
 }
 
-func NewOpe(c *olv1ope.Config) (this *Ope){
-    server := olv1ope.NewTcpServer(c)
+func NewOpe(c *vswitch.Config) (this *Ope){
+    server := vswitch.NewTcpServer(c)
     this = &Ope {
-        Wroker: olv1ope.NewOpeWroker(server, c),
+        Wroker: vswitch.NewOpeWroker(server, c),
     }
     return 
 }
 
-func GoHttp(ope *Ope, c *olv1ope.Config) {
-    http := olv1ope.NewOpeHttp(ope.Wroker, c)
+func GoHttp(ope *Ope, c *vswitch.Config) {
+    http := vswitch.NewOpeHttp(ope.Wroker, c)
     http.GoStart()
 }
 
 func main() {
-    c := olv1ope.NewConfig()
+    c := vswitch.NewConfig()
     log.Printf("Debug| main.config: %s", c)
     ope := NewOpe(c)
     ope.Wroker.Start()

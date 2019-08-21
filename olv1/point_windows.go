@@ -8,9 +8,9 @@ import (
 )
 
 func main() {
-    c := olv1cpe.NewConfig()
+    c := point.NewConfig()
     log.Printf("Debug| main.config: %s", c)
-    cpe := olv1cpe.NewCpe(c)
+    cpe := point.NewCpe(c)
 
     cpe.Start()
 
