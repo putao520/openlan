@@ -22,6 +22,8 @@ Execute building command
 
 Goto `Control Panel\Network and Internet\Network Connections`, and find `Ethernet 2`, then you can configure IPAddress for it to access branch site. 
 
+Or Configure by Powershell.
+
     netsh interface ipv4 show config "Ethernet 2"
     netsh interface ipv4 set address "Ethernet 2" static 192.168.x.b
 
