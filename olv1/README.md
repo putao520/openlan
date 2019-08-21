@@ -1,6 +1,6 @@
 # Overview 
 
-Refer to https://github.com/danieldin95/vswitchnlan-py 
+Refer to https://github.com/danieldin95/openlan-py 
 
 # Install tap-windows6
 
@@ -14,7 +14,7 @@ Download dependent sources
     PS L:\vswitchnlan-go\olv1> go get github.com/milosgajdos83/tenus
     PS L:\vswitchnlan-go\olv1> go get golang.org/x/sys
 
-Execute building command
+Execute building command.
 
     PS L:\vswitchnlan-go\olv1> go build -o ./resources/point.exe cpe_windows.go
 
