@@ -8,7 +8,7 @@ import (
     "os"
     "log"
 
-    "github.com/danieldin95/openlan-go/olv1/ope"
+    "github.com/danieldin95/openlan-go/olv1/vswitch"
 )
 
 type Ope struct {

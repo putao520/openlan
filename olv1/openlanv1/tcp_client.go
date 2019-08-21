@@ -1,4 +1,4 @@
-package olv1
+package openlanv1
 
 import (
     "net"

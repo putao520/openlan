@@ -9,7 +9,7 @@ import (
     "os"
 
     "github.com/milosgajdos83/tenus"
-    "github.com/danieldin95/openlan-go/olv1/cpe"
+    "github.com/danieldin95/openlan-go/olv1/point"
 )
 
 func UpLink(name string) error {
