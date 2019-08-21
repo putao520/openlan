@@ -15,7 +15,7 @@ import (
     "github.com/danieldin95/openlan-go/olv1/openlanv1"
 )
 
-type OpeWroker struct {
+type VSwitchWroker struct {
     //Public variable
     Server *TcpServer
     Clients map[*openlanv1.TcpClient]*water.Interface
@@ -29,8 +29,8 @@ type OpeWroker struct {
     ifmtu int
 }
 
-func NewOpeWroker(server *TcpServer, c *Config) (this *OpeWroker) {
-    this = &OpeWroker {
+func NewVSwitchWroker(server *TcpServer, c *Config) (this *VSwitchWroker) {
+    this = &VSwitchWroker {
         Server: server,
         Clients: make(map[*openlanv1.TcpClient]*water.Interface, 1024),
         Users: make(map[string]*User, 1024),
@@ -50,7 +50,7 @@ func NewOpeWroker(server *TcpServer, c *Config) (this *OpeWroker) {
     return 
 }
 
-func (this *OpeWroker) loadUsers(path string) error {
+func (this *VSwitchWroker) loadUsers(path string) error {
     file, err := os.Open(path)
     if err != nil {
         return err
@@ -75,10 +75,10 @@ func (this *OpeWroker) loadUsers(path string) error {
     return nil
 }
 
-func (this *OpeWroker) newBr(brname string) {
+func (this *VSwitchWroker) newBr(brname string) {
     addrs := strings.Split(this.Server.GetAddr(), ":")
     if len(addrs) != 2 {
-        log.Printf("Error|OpeWroker.newBr: address: %s", this.Server.GetAddr())
+        log.Printf("Error|VSwitchWroker.newBr: address: %s", this.Server.GetAddr())
         return
     }
 
@@ -102,67 +102,67 @@ func (this *OpeWroker) newBr(brname string) {
     }
 
     if err = br.SetLinkUp(); err != nil {
-        log.Printf("Error|OpeWroker.newBr: %s", err)
+        log.Printf("Error|VSwitchWroker.newBr: %s", err)
     }
 
-    log.Printf("OpeWroker.newBr %s", brname)
+    log.Printf("VSwitchWroker.newBr %s", brname)
 
     this.br = br
 }
 
-func (this *OpeWroker) newTap() (*water.Interface, error) {
-    log.Printf("OpeWroker.newTap")  
+func (this *VSwitchWroker) newTap() (*water.Interface, error) {
+    log.Printf("VSwitchWroker.newTap")  
     ifce, err := water.New(water.Config {
         DeviceType: water.TAP,
     })
     if err != nil {
-        log.Printf("Error|OpeWroker.newTap: %s", err)
+        log.Printf("Error|VSwitchWroker.newTap: %s", err)
         return nil, err
     }
     
     link, err := tenus.NewLinkFrom(ifce.Name())
     if err != nil {
-        log.Printf("Error|OpeWroker.newTap: Get ifce %s: %s", ifce.Name(), err)
+        log.Printf("Error|VSwitchWroker.newTap: Get ifce %s: %s", ifce.Name(), err)
         return nil, err
     }
     
     if err := link.SetLinkUp(); err != nil {
-        log.Printf("Error|OpeWroker.newTap: ", err)
+        log.Printf("Error|VSwitchWroker.newTap: ", err)
     }
 
     if err := this.br.AddSlaveIfc(link.NetInterface()); err != nil {
-        log.Printf("Error|OpeWroker.newTap: Switch ifce %s: %s", ifce.Name(), err)
+        log.Printf("Error|VSwitchWroker.newTap: Switch ifce %s: %s", ifce.Name(), err)
         return nil, err
     }
 
-    log.Printf("OpeWroker.newTap %s", ifce.Name())  
+    log.Printf("VSwitchWroker.newTap %s", ifce.Name())  
 
     return ifce, nil
 }
 
-func (this *OpeWroker) Start() {
+func (this *VSwitchWroker) Start() {
     go this.Server.GoAccept()
     go this.Server.GoLoop(this.onClient, this.onRecv, this.onClose)
 }
 
-func (this *OpeWroker) showHook() {
+func (this *VSwitchWroker) showHook() {
     for _, k := range this.keys {
         log.Printf("k:%d func: %p", k, this.hooks[k])
     }
 } 
 
-func (this *OpeWroker) setHook(index int, hook func(*openlanv1.TcpClient, *openlanv1.Frame) error) {
+func (this *VSwitchWroker) setHook(index int, hook func(*openlanv1.TcpClient, *openlanv1.Frame) error) {
     this.hooks[index] = hook
     this.keys = append(this.keys, index)
     sort.Ints(this.keys)
 }
 
-func (this *OpeWroker) onHook(client *openlanv1.TcpClient, data []byte) error {
+func (this *VSwitchWroker) onHook(client *openlanv1.TcpClient, data []byte) error {
     frame := openlanv1.NewFrame(data)
 
     for _, k := range this.keys {
         if this.IsVerbose() {
-            log.Printf("Debug| OpeWroker.onHook k:%d", k)
+            log.Printf("Debug| VSwitchWroker.onHook k:%d", k)
         }
         if f, ok := this.hooks[k]; ok {
             if err := f(client, frame); err != nil {
@@ -174,18 +174,18 @@ func (this *OpeWroker) onHook(client *openlanv1.TcpClient, data []byte) error {
     return nil
 }
 
-func (this *OpeWroker) checkAuth(client *openlanv1.TcpClient, frame *openlanv1.Frame) error {
+func (this *VSwitchWroker) checkAuth(client *openlanv1.TcpClient, frame *openlanv1.Frame) error {
     if this.IsVerbose() {
-        log.Printf("Debug| OpeWroker.checkAuth % x.", frame.Data)
+        log.Printf("Debug| VSwitchWroker.checkAuth % x.", frame.Data)
     }
 
     if openlanv1.IsInst(frame.Data) {
         action := openlanv1.DecAction(frame.Data)
-        log.Printf("Debug| OpeWroker.checkAuth.action: %s", action)
+        log.Printf("Debug| VSwitchWroker.checkAuth.action: %s", action)
 
         if action == "logi=" {
             if err := this.handlelogin(client, openlanv1.DecBody(frame.Data)); err != nil {
-                log.Printf("Error| OpeWroker.checkAuth: %s", err)
+                log.Printf("Error| VSwitchWroker.checkAuth: %s", err)
                 client.SendResp("login", err.Error())
                 client.Close()
                 return err
@@ -199,7 +199,7 @@ func (this *OpeWroker) checkAuth(client *openlanv1.TcpClient, frame *openlanv1.F
     if client.Status != openlanv1.CL_AUTHED {
         client.Droped++
         if this.IsVerbose() {
-            log.Printf("Debug|OpeWroker.onRecv: %s unauth", client.GetAddr())
+            log.Printf("Debug|VSwitchWroker.onRecv: %s unauth", client.GetAddr())
         }
         return errors.New("Unauthed client.")
     }
@@ -207,9 +207,9 @@ func (this *OpeWroker) checkAuth(client *openlanv1.TcpClient, frame *openlanv1.F
     return nil
 }
 
-func  (this *OpeWroker) handlelogin(client *openlanv1.TcpClient, data string) error {
+func  (this *VSwitchWroker) handlelogin(client *openlanv1.TcpClient, data string) error {
     if this.IsVerbose() {
-        log.Printf("Debug| OpeWroker.handlelogin: %s", data)
+        log.Printf("Debug| VSwitchWroker.handlelogin: %s", data)
     }
     user := &User {}
     if err := json.Unmarshal([]byte(data), user); err != nil {
@@ -224,7 +224,7 @@ func  (this *OpeWroker) handlelogin(client *openlanv1.TcpClient, data string) er
     if _user, ok := this.Users[name]; ok {
         if _user.Password == user.Password {
             client.Status = openlanv1.CL_AUTHED
-            log.Printf("Info| OpeWroker.handlelogin: %s Authed", client.GetAddr())
+            log.Printf("Info| VSwitchWroker.handlelogin: %s Authed", client.GetAddr())
             this.onAuth(client)
             return nil
         }
@@ -235,23 +235,23 @@ func  (this *OpeWroker) handlelogin(client *openlanv1.TcpClient, data string) er
     return errors.New("Auth failed.")
 }
 
-func (this *OpeWroker) handleReq(client *openlanv1.TcpClient, frame *openlanv1.Frame) error {
+func (this *VSwitchWroker) handleReq(client *openlanv1.TcpClient, frame *openlanv1.Frame) error {
     return nil
 }
 
-func (this *OpeWroker) onClient(client *openlanv1.TcpClient) error {
+func (this *VSwitchWroker) onClient(client *openlanv1.TcpClient) error {
     client.Status = openlanv1.CL_CONNECTED
-    log.Printf("Info|OpeWroker.onClient: %s", client.GetAddr()) 
+    log.Printf("Info|VSwitchWroker.onClient: %s", client.GetAddr()) 
 
     return nil
 }
 
-func (this *OpeWroker) onAuth(client *openlanv1.TcpClient) error {
+func (this *VSwitchWroker) onAuth(client *openlanv1.TcpClient) error {
     if client.Status != openlanv1.CL_AUTHED {
         return errors.New("not authed.")
     }
 
-    log.Printf("Info|OpeWroker.onAuth: %s", client.GetAddr())   
+    log.Printf("Info|VSwitchWroker.onAuth: %s", client.GetAddr())   
 
     ifce, err := this.newTap()
     if err != nil {
@@ -264,15 +264,15 @@ func (this *OpeWroker) onAuth(client *openlanv1.TcpClient) error {
     return nil
 }
 
-func (this *OpeWroker) onRecv(client *openlanv1.TcpClient, data []byte) error {
+func (this *VSwitchWroker) onRecv(client *openlanv1.TcpClient, data []byte) error {
     //TODO Hook packets such as ARP Learning.
     if this.IsVerbose() {
-        log.Printf("Debug|OpeWroker.onRecv: %s % x", client.GetAddr(), data)    
+        log.Printf("Debug|VSwitchWroker.onRecv: %s % x", client.GetAddr(), data)    
     }
 
     if err := this.onHook(client, data); err != nil {
         if this.IsVerbose() {
-            log.Printf("Debug|OpeWroker.onRecv: %s dropping by %s", client.GetAddr(), err)
+            log.Printf("Debug|VSwitchWroker.onRecv: %s dropping by %s", client.GetAddr(), err)
             return err
         }
     }
@@ -283,14 +283,14 @@ func (this *OpeWroker) onRecv(client *openlanv1.TcpClient, data []byte) error {
     }
 
     if _, err := ifce.Write(data); err != nil {
-        log.Printf("Error|OpeWroker.onRecv: %s", err)
+        log.Printf("Error|VSwitchWroker.onRecv: %s", err)
     }
 
     return nil
 }
 
-func (this *OpeWroker) onClose(client *openlanv1.TcpClient) error {
-    log.Printf("Info|OpeWroker.onClose: %s", client.GetAddr())
+func (this *VSwitchWroker) onClose(client *openlanv1.TcpClient) error {
+    log.Printf("Info|VSwitchWroker.onClose: %s", client.GetAddr())
     if ifce := this.Clients[client]; ifce != nil {
         ifce.Close()
         delete(this.Clients, client)
@@ -298,30 +298,30 @@ func (this *OpeWroker) onClose(client *openlanv1.TcpClient) error {
     return nil
 }
 
-func (this *OpeWroker) Close() {
+func (this *VSwitchWroker) Close() {
     this.Server.Close()
 }
 
-func (this *OpeWroker) GoRecv(ifce *water.Interface, dorecv func([]byte)(error)) {
-    log.Printf("Info|OpeWroker.GoRecv: %s", ifce.Name())    
+func (this *VSwitchWroker) GoRecv(ifce *water.Interface, dorecv func([]byte)(error)) {
+    log.Printf("Info|VSwitchWroker.GoRecv: %s", ifce.Name())    
     defer ifce.Close()
     for {
         data := make([]byte, this.ifmtu)
         n, err := ifce.Read(data)
         if err != nil {
-            log.Printf("Error|OpeWroker.GoRev: %s", err)
+            log.Printf("Error|VSwitchWroker.GoRev: %s", err)
             break
         }
         if this.IsVerbose() {
-            log.Printf("OpeWroker.GoRev: % x\n", data[:n])
+            log.Printf("VSwitchWroker.GoRev: % x\n", data[:n])
         }
 
         if err := dorecv(data[:n]); err != nil {
-            log.Printf("Error|OpeWroker.GoRev: do-recv %s %s", ifce.Name(), err)
+            log.Printf("Error|VSwitchWroker.GoRev: do-recv %s %s", ifce.Name(), err)
         }
     }
 }
 
-func (this *OpeWroker) IsVerbose() bool {
+func (this *VSwitchWroker) IsVerbose() bool {
     return this.verbose != 0
 }

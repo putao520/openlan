@@ -3,6 +3,7 @@ package point
 import (
     "flag"
     "strings"
+    "fmt"
 )
 
 type Config struct {
@@ -12,6 +13,13 @@ type Config struct {
     Name string
     Password string
     Auth string
+}
+
+func RightAddr(listen *string, port int) {
+    values := strings.Split(*listen, ":")
+    if len(values) == 1 {
+        *listen = fmt.Sprintf("%s:%d", values[0], port)
+    }
 }
 
 func NewConfig() (this *Config) {
@@ -30,5 +38,7 @@ func NewConfig() (this *Config) {
         this.Password = values[1]
     }
 
+    RightAddr(&this.Addr, 10002)
+    
     return
 }

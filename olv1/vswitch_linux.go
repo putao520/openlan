@@ -11,36 +11,36 @@ import (
     "github.com/danieldin95/openlan-go/olv1/vswitch"
 )
 
-type Ope struct {
-    Wroker *vswitch.OpeWroker
+type VSwitch struct {
+    Wroker *vswitch.VSwitchWroker
 }
 
-func NewOpe(c *vswitch.Config) (this *Ope){
+func NewVSwitch(c *vswitch.Config) (this *VSwitch){
     server := vswitch.NewTcpServer(c)
-    this = &Ope {
-        Wroker: vswitch.NewOpeWroker(server, c),
+    this = &VSwitch {
+        Wroker: vswitch.NewVSwitchWroker(server, c),
     }
     return 
 }
 
-func GoHttp(ope *Ope, c *vswitch.Config) {
-    http := vswitch.NewOpeHttp(ope.Wroker, c)
+func GoHttp(ope *VSwitch, c *vswitch.Config) {
+    http := vswitch.NewVSwitchHttp(ope.Wroker, c)
     http.GoStart()
 }
 
 func main() {
     c := vswitch.NewConfig()
     log.Printf("Debug| main.config: %s", c)
-    ope := NewOpe(c)
-    ope.Wroker.Start()
+    vs := NewVSwitch(c)
+    vs.Wroker.Start()
 
-    go GoHttp(ope, c)
+    go GoHttp(vs, c)
     
     x := make(chan os.Signal)
     signal.Notify(x, os.Interrupt, syscall.SIGTERM)
     go func() {
         <- x
-        ope.Wroker.Close()
+        vs.Wroker.Close()
         fmt.Println("Done!")
         os.Exit(0)
     }()

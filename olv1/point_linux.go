@@ -31,16 +31,16 @@ func main() {
     c := point.NewConfig()
     log.Printf("Debug| main.config: %s", c)
 
-    cpe := point.NewCpe(c)
+    p := point.NewPoint(c)
 
-    UpLink(cpe.Ifce.Name())
-    cpe.Start()
+    UpLink(p.Ifce.Name())
+    p.Start()
 
     x := make(chan os.Signal)
     signal.Notify(x, os.Interrupt, syscall.SIGTERM)
     go func() {
         <- x
-        cpe.Close()
+        p.Close()
         fmt.Println("Done!")
         os.Exit(0)
     }()

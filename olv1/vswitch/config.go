@@ -2,6 +2,8 @@ package vswitch
 
 import (
     "flag"
+    "strings"
+    "fmt"
 )
 
 type Config struct {
@@ -14,6 +16,13 @@ type Config struct {
     TokenFile string
     Password string
 } 
+
+func RightAddr(listen *string, port int) {
+    values := strings.Split(*listen, ":")
+    if len(values) == 1 {
+        *listen = fmt.Sprintf("%s:%d", values[0], port)
+    }
+}
 
 func NewConfig() (this *Config) {
     this = &Config {}
@@ -28,6 +37,9 @@ func NewConfig() (this *Config) {
     flag.StringVar(&this.Password, "password", ".password", "The file password loading from.")
 
     flag.Parse()
+   
+    RightAddr(&this.TcpListen, 10002)
+    RightAddr(&this.HttpListen, 10082)
 
     return
 }

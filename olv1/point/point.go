@@ -7,7 +7,7 @@ import (
     "github.com/danieldin95/openlan-go/olv1/openlanv1"
 )
 
-type Cpe struct {
+type Point struct {
     Verbose int
     Client *openlanv1.TcpClient
     Ifce *water.Interface
@@ -16,7 +16,7 @@ type Cpe struct {
     tapwroker *TapWroker
 }
 
-func NewCpe(config *Config) (this *Cpe){
+func NewPoint(config *Config) (this *Point){
     ifce, err := water.New(water.Config { DeviceType: water.TAP })
     if err != nil {
         log.Fatal(err)
@@ -24,7 +24,7 @@ func NewCpe(config *Config) (this *Cpe){
     
     client := openlanv1.NewTcpClient(config.Addr, config.Verbose)
 
-    this = &Cpe {
+    this = &Point {
         Verbose: config.Verbose,
         Client: client,
         Ifce: ifce,
@@ -34,9 +34,9 @@ func NewCpe(config *Config) (this *Cpe){
     return 
 }
 
-func (this *Cpe) Start() {
+func (this *Point) Start() {
     if err := this.Client.Connect(); err != nil {
-        log.Printf("Error| Cpe.Start %s\n", err)
+        log.Printf("Error| Point.Start %s\n", err)
     }
 
     go this.tapwroker.GoRecv(this.tcpwroker.DoSend)
@@ -46,7 +46,7 @@ func (this *Cpe) Start() {
     go this.tcpwroker.GoLoop()
 }
 
-func (this *Cpe) Close() {
+func (this *Point) Close() {
     this.Client.Close()
     this.Ifce.Close()
 }

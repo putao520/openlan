@@ -10,9 +10,9 @@ import (
 func main() {
     c := point.NewConfig()
     log.Printf("Debug| main.config: %s", c)
-    cpe := point.NewCpe(c)
+    p := point.NewPoint(c)
 
-    cpe.Start()
+    p.Start()
 
     for {
         var input string
@@ -23,6 +23,6 @@ func main() {
         }
     }
 
-    cpe.Close()
+    p.Close()
     fmt.Println("Done!")
 }
