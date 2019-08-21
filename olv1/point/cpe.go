@@ -9,7 +9,7 @@ import (
 
 type Cpe struct {
     Verbose int
-    Client *olv1.TcpClient
+    Client *openlanv1.TcpClient
     Ifce *water.Interface
     //
     tcpwroker *TcpWroker 
@@ -22,7 +22,7 @@ func NewCpe(config *Config) (this *Cpe){
         log.Fatal(err)
     }
     
-    client := olv1.NewTcpClient(config.Addr, config.Verbose)
+    client := openlanv1.NewTcpClient(config.Addr, config.Verbose)
 
     this = &Cpe {
         Verbose: config.Verbose,

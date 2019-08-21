@@ -18,26 +18,26 @@ import (
 type OpeWroker struct {
     //Public variable
     Server *TcpServer
-    Clients map[*olv1.TcpClient]*water.Interface
+    Clients map[*openlanv1.TcpClient]*water.Interface
     Users map[string]*User
 
     //Private variable
     verbose int
     br tenus.Bridger
     keys []int
-    hooks map[int]func(*olv1.TcpClient, *olv1.Frame) error
+    hooks map[int]func(*openlanv1.TcpClient, *openlanv1.Frame) error
     ifmtu int
 }
 
 func NewOpeWroker(server *TcpServer, c *Config) (this *OpeWroker) {
     this = &OpeWroker {
         Server: server,
-        Clients: make(map[*olv1.TcpClient]*water.Interface, 1024),
+        Clients: make(map[*openlanv1.TcpClient]*water.Interface, 1024),
         Users: make(map[string]*User, 1024),
         verbose: c.Verbose,
         br: nil,
         ifmtu: 1514,
-        hooks: make(map[int]func(*olv1.TcpClient, *olv1.Frame) error),
+        hooks: make(map[int]func(*openlanv1.TcpClient, *openlanv1.Frame) error),
         keys: make([]int, 0, 1024),
     }
 
@@ -151,14 +151,14 @@ func (this *OpeWroker) showHook() {
     }
 } 
 
-func (this *OpeWroker) setHook(index int, hook func(*olv1.TcpClient, *olv1.Frame) error) {
+func (this *OpeWroker) setHook(index int, hook func(*openlanv1.TcpClient, *openlanv1.Frame) error) {
     this.hooks[index] = hook
     this.keys = append(this.keys, index)
     sort.Ints(this.keys)
 }
 
-func (this *OpeWroker) onHook(client *olv1.TcpClient, data []byte) error {
-    frame := olv1.NewFrame(data)
+func (this *OpeWroker) onHook(client *openlanv1.TcpClient, data []byte) error {
+    frame := openlanv1.NewFrame(data)
 
     for _, k := range this.keys {
         if this.IsVerbose() {
@@ -174,17 +174,17 @@ func (this *OpeWroker) onHook(client *olv1.TcpClient, data []byte) error {
     return nil
 }
 
-func (this *OpeWroker) checkAuth(client *olv1.TcpClient, frame *olv1.Frame) error {
+func (this *OpeWroker) checkAuth(client *openlanv1.TcpClient, frame *openlanv1.Frame) error {
     if this.IsVerbose() {
         log.Printf("Debug| OpeWroker.checkAuth % x.", frame.Data)
     }
 
-    if olv1.IsInst(frame.Data) {
-        action := olv1.DecAction(frame.Data)
+    if openlanv1.IsInst(frame.Data) {
+        action := openlanv1.DecAction(frame.Data)
         log.Printf("Debug| OpeWroker.checkAuth.action: %s", action)
 
         if action == "logi=" {
-            if err := this.handlelogin(client, olv1.DecBody(frame.Data)); err != nil {
+            if err := this.handlelogin(client, openlanv1.DecBody(frame.Data)); err != nil {
                 log.Printf("Error| OpeWroker.checkAuth: %s", err)
                 client.SendResp("login", err.Error())
                 client.Close()
@@ -196,7 +196,7 @@ func (this *OpeWroker) checkAuth(client *olv1.TcpClient, frame *olv1.Frame) erro
         return nil
     }
 
-    if client.Status != olv1.CL_AUTHED {
+    if client.Status != openlanv1.CL_AUTHED {
         client.Droped++
         if this.IsVerbose() {
             log.Printf("Debug|OpeWroker.onRecv: %s unauth", client.GetAddr())
@@ -207,7 +207,7 @@ func (this *OpeWroker) checkAuth(client *olv1.TcpClient, frame *olv1.Frame) erro
     return nil
 }
 
-func  (this *OpeWroker) handlelogin(client *olv1.TcpClient, data string) error {
+func  (this *OpeWroker) handlelogin(client *openlanv1.TcpClient, data string) error {
     if this.IsVerbose() {
         log.Printf("Debug| OpeWroker.handlelogin: %s", data)
     }
@@ -223,31 +223,31 @@ func  (this *OpeWroker) handlelogin(client *olv1.TcpClient, data string) error {
 
     if _user, ok := this.Users[name]; ok {
         if _user.Password == user.Password {
-            client.Status = olv1.CL_AUTHED
+            client.Status = openlanv1.CL_AUTHED
             log.Printf("Info| OpeWroker.handlelogin: %s Authed", client.GetAddr())
             this.onAuth(client)
             return nil
         }
 
-        client.Status = olv1.CL_UNAUTH
+        client.Status = openlanv1.CL_UNAUTH
     }
 
     return errors.New("Auth failed.")
 }
 
-func (this *OpeWroker) handleReq(client *olv1.TcpClient, frame *olv1.Frame) error {
+func (this *OpeWroker) handleReq(client *openlanv1.TcpClient, frame *openlanv1.Frame) error {
     return nil
 }
 
-func (this *OpeWroker) onClient(client *olv1.TcpClient) error {
-    client.Status = olv1.CL_CONNECTED
+func (this *OpeWroker) onClient(client *openlanv1.TcpClient) error {
+    client.Status = openlanv1.CL_CONNECTED
     log.Printf("Info|OpeWroker.onClient: %s", client.GetAddr()) 
 
     return nil
 }
 
-func (this *OpeWroker) onAuth(client *olv1.TcpClient) error {
-    if client.Status != olv1.CL_AUTHED {
+func (this *OpeWroker) onAuth(client *openlanv1.TcpClient) error {
+    if client.Status != openlanv1.CL_AUTHED {
         return errors.New("not authed.")
     }
 
@@ -264,7 +264,7 @@ func (this *OpeWroker) onAuth(client *olv1.TcpClient) error {
     return nil
 }
 
-func (this *OpeWroker) onRecv(client *olv1.TcpClient, data []byte) error {
+func (this *OpeWroker) onRecv(client *openlanv1.TcpClient, data []byte) error {
     //TODO Hook packets such as ARP Learning.
     if this.IsVerbose() {
         log.Printf("Debug|OpeWroker.onRecv: %s % x", client.GetAddr(), data)    
@@ -289,7 +289,7 @@ func (this *OpeWroker) onRecv(client *olv1.TcpClient, data []byte) error {
     return nil
 }
 
-func (this *OpeWroker) onClose(client *olv1.TcpClient) error {
+func (this *OpeWroker) onClose(client *openlanv1.TcpClient) error {
     log.Printf("Info|OpeWroker.onClose: %s", client.GetAddr())
     if ifce := this.Clients[client]; ifce != nil {
         ifce.Close()
