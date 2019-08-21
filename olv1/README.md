@@ -1,6 +1,6 @@
 # Overview 
 
-Refer to https://github.com/danieldin95/openlan-py 
+Refer to https://github.com/danieldin95/openlan-py , and now we change cpe to point, ope to vswitch.
 
 # Install tap-windows6
 
