@@ -4,7 +4,7 @@ import (
     "net"
     "log"
     
-    "github.com/danieldin95/openlan-go/olv1/olv1"
+    "github.com/danieldin95/openlan-go/olv1/openlanv1"
 )
 
 type TcpServer struct {

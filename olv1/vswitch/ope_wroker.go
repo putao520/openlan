@@ -12,7 +12,7 @@ import (
 
     "github.com/songgao/water"
     "github.com/milosgajdos83/tenus"
-    "github.com/danieldin95/openlan-go/olv1/olv1"
+    "github.com/danieldin95/openlan-go/olv1/openlanv1"
 )
 
 type OpeWroker struct {

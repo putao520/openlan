@@ -24,7 +24,7 @@ func NewConfig() (this *Config) {
     flag.StringVar(&this.TcpListen, "addr", "0.0.0.0:10002",  "the server listen on")
     flag.IntVar(&this.Ifmtu, "ifmtu", 1514, "the interface MTU include ethernet")
     flag.StringVar(&this.Token, "token", "", "Administrator token")
-    flag.StringVar(&this.TokenFile, "tokenfile", ".opetoken", "The file administrator token saved to.")
+    flag.StringVar(&this.TokenFile, "tokenfile", ".vswitch_oken", "The file administrator token saved to.")
     flag.StringVar(&this.Password, "password", ".password", "The file password loading from.")
 
     flag.Parse()
