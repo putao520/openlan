@@ -7,12 +7,13 @@ import (
 )
 
 type Config struct {
-    Addr string
-    Verbose int
-    Ifmtu int
-    Name string
-    Password string
-    Auth string
+    Addr string `json:"vsAddr"`
+    Verbose int `json:"verbose"`
+    Ifmtu int `json:"ifMtu"`
+    Auth string `json:"vsAuth"`
+    
+    Name string 
+    Password string 
 }
 
 func RightAddr(listen *string, port int) {
@@ -25,10 +26,10 @@ func RightAddr(listen *string, port int) {
 func NewConfig() (this *Config) {
     this = &Config {}
 
-    flag.StringVar(&this.Addr, "addr", "openlan.net:10002",  "the server connect to")
+    flag.StringVar(&this.Addr, "vs:addr", "openlan.net:10002",  "the server connect to")
     flag.IntVar(&this.Verbose, "verbose", 0x00, "open verbose")
-    flag.IntVar(&this.Ifmtu, "ifmtu", 1514, "the interface MTU include ethernet")
-    flag.StringVar(&this.Auth, "auth", "openlan:password",  "the auth login to")
+    flag.IntVar(&this.Ifmtu, "if:mtu", 1514, "the interface MTU include ethernet")
+    flag.StringVar(&this.Auth, "vs:auth", "openlan:password",  "the auth login to")
     
     flag.Parse()
     

@@ -7,14 +7,14 @@ import (
 )
 
 type Config struct {
-    Brname string
-    Verbose int
-    HttpListen string
-    TcpListen string
-    Ifmtu int
-    Token string
-    TokenFile string
-    Password string
+    Brname string `json:"vsBr"`
+    Verbose int `json:"verbose"`
+    HttpListen string `json:"httpAddr"`
+    TcpListen string `json:"vsAddr"`
+    Ifmtu int `json:"ifMtu"`
+    Token string `json:"adminToken"`
+    TokenFile string `json:"adminFile"`
+    Password string `json:"authFile"`
 } 
 
 func RightAddr(listen *string, port int) {
@@ -27,14 +27,14 @@ func RightAddr(listen *string, port int) {
 func NewConfig() (this *Config) {
     this = &Config {}
 
-    flag.StringVar(&this.Brname, "br", "",  "the bridge name")
+    flag.StringVar(&this.Brname, "vs:br", "",  "the bridge name")
     flag.IntVar(&this.Verbose, "verbose", 0x00, "open verbose")
-    flag.StringVar(&this.HttpListen, "http", "0.0.0.0:10082",  "the http listen on")
-    flag.StringVar(&this.TcpListen, "addr", "0.0.0.0:10002",  "the server listen on")
-    flag.IntVar(&this.Ifmtu, "ifmtu", 1514, "the interface MTU include ethernet")
-    flag.StringVar(&this.Token, "token", "", "Administrator token")
-    flag.StringVar(&this.TokenFile, "tokenfile", ".vswitch_oken", "The file administrator token saved to.")
-    flag.StringVar(&this.Password, "password", ".password", "The file password loading from.")
+    flag.StringVar(&this.HttpListen, "http:addr", "0.0.0.0:10082",  "the http listen on")
+    flag.StringVar(&this.TcpListen, "vs:addr", "0.0.0.0:10002",  "the server listen on")
+    flag.IntVar(&this.Ifmtu, "if:mtu", 1514, "the interface MTU include ethernet")
+    flag.StringVar(&this.Token, "admin:token", "", "Administrator token")
+    flag.StringVar(&this.TokenFile, "admin:file", ".vswitch_oken", "The file administrator token saved to.")
+    flag.StringVar(&this.Password, "auth:file", ".password", "The file password loading from.")
 
     flag.Parse()
    

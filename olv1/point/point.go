@@ -21,7 +21,8 @@ func NewPoint(config *Config) (this *Point){
     if err != nil {
         log.Fatal(err)
     }
-    
+    log.Printf("Info| NewPoint.device %s\n", ifce.Name())
+
     client := openlanv1.NewTcpClient(config.Addr, config.Verbose)
 
     this = &Point {

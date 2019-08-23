@@ -68,12 +68,12 @@ func (this *TcpWroker) GoRecv(dorecv func([]byte)(error)) {
         data := make([]byte, this.maxSize)
         n, err := this.client.RecvMsg(data)
         if err != nil {
-            log.Printf("Error|TcpWroker.GoRev: %s", err)
+            log.Printf("Error| TcpWroker.GoRev: %s", err)
             this.client.Close()
             continue
         }
         if this.IsVerbose() {
-            log.Printf("TcpWroker.GoRev: % x\n", data[:n])
+            log.Printf("Debug| TcpWroker.GoRev: % x\n", data[:n])
         }
 
         if n > 0 {
@@ -89,7 +89,7 @@ func (this *TcpWroker) GoRecv(dorecv func([]byte)(error)) {
 
 func (this *TcpWroker) DoSend(data []byte) error {
     if this.IsVerbose() {
-        log.Printf("TcpWroker.DoSend: % x\n", data)
+        log.Printf("Debug| TcpWroker.DoSend: % x\n", data)
     }
 
     this.writechan <- data
@@ -104,13 +104,13 @@ func (this *TcpWroker) GoLoop() error {
             if this.client.Status != openlanv1.CL_AUTHED {
                 this.client.Droped++
                 if this.IsVerbose() {
-                    log.Printf("Error|TcpWroker.GoLoop: droping by unauth")
+                    log.Printf("Error| TcpWroker.GoLoop: droping by unauth")
                     continue
                 }
             }
 
             if err := this.client.SendMsg(wdata); err != nil {
-                log.Printf("Error|TcpWroker.GoLoop: %s", err)
+                log.Printf("Error| TcpWroker.GoLoop: %s", err)
             }
         }
     }

@@ -53,7 +53,7 @@ func NewVSwitchHttp(wroker *VSwitchWroker, c *Config)(this *VSwitchHttp) {
 }
 
 func (this *VSwitchHttp) SaveToken() error {
-    log.Printf("VSwitchHttp.SaveToken: AdminToken: %s", this.adminToken)
+    log.Printf("Info| VSwitchHttp.SaveToken: AdminToken: %s", this.adminToken)
 
     f, err := os.OpenFile(this.adminFile, os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0600)
     defer f.Close()
@@ -71,7 +71,7 @@ func (this *VSwitchHttp) SaveToken() error {
 }
 
 func (this *VSwitchHttp) GoStart() error {
-    log.Printf("NewHttp on %s", this.listen)
+    log.Printf("Debug| NewHttp on %s", this.listen)
     if err := http.ListenAndServe(this.listen, nil); err != nil {
         log.Printf("Error| VSwitchHttp.GoStart on %s: %s", this.listen, err)
         return err
@@ -82,7 +82,7 @@ func (this *VSwitchHttp) GoStart() error {
 func (this *VSwitchHttp) IsAuth(w http.ResponseWriter, r *http.Request) bool {
     token, pass, ok := r.BasicAuth()
     if this.wroker.IsVerbose() {
-        log.Printf("token: %s, pass: %s", token, pass)
+        log.Printf("Debug| VSwitchHttp.IsAuth token: %s, pass: %s", token, pass)
     }
     if !ok  || token != this.adminToken {
         w.Header().Set("WWW-Authenticate", "Basic")

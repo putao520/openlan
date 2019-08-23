@@ -78,7 +78,7 @@ func (this *VSwitchWroker) loadUsers(path string) error {
 func (this *VSwitchWroker) newBr(brname string) {
     addrs := strings.Split(this.Server.GetAddr(), ":")
     if len(addrs) != 2 {
-        log.Printf("Error|VSwitchWroker.newBr: address: %s", this.Server.GetAddr())
+        log.Printf("Error| VSwitchWroker.newBr: address: %s", this.Server.GetAddr())
         return
     }
 
@@ -102,40 +102,40 @@ func (this *VSwitchWroker) newBr(brname string) {
     }
 
     if err = br.SetLinkUp(); err != nil {
-        log.Printf("Error|VSwitchWroker.newBr: %s", err)
+        log.Printf("Error| VSwitchWroker.newBr: %s", err)
     }
 
-    log.Printf("VSwitchWroker.newBr %s", brname)
+    log.Printf("Info| VSwitchWroker.newBr %s", brname)
 
     this.br = br
 }
 
 func (this *VSwitchWroker) newTap() (*water.Interface, error) {
-    log.Printf("VSwitchWroker.newTap")  
+    log.Printf("Debug| VSwitchWroker.newTap")  
     ifce, err := water.New(water.Config {
         DeviceType: water.TAP,
     })
     if err != nil {
-        log.Printf("Error|VSwitchWroker.newTap: %s", err)
+        log.Printf("Error| VSwitchWroker.newTap: %s", err)
         return nil, err
     }
     
     link, err := tenus.NewLinkFrom(ifce.Name())
     if err != nil {
-        log.Printf("Error|VSwitchWroker.newTap: Get ifce %s: %s", ifce.Name(), err)
+        log.Printf("Error| VSwitchWroker.newTap: Get ifce %s: %s", ifce.Name(), err)
         return nil, err
     }
     
     if err := link.SetLinkUp(); err != nil {
-        log.Printf("Error|VSwitchWroker.newTap: ", err)
+        log.Printf("Error| VSwitchWroker.newTap: ", err)
     }
 
     if err := this.br.AddSlaveIfc(link.NetInterface()); err != nil {
-        log.Printf("Error|VSwitchWroker.newTap: Switch ifce %s: %s", ifce.Name(), err)
+        log.Printf("Error| VSwitchWroker.newTap: Switch ifce %s: %s", ifce.Name(), err)
         return nil, err
     }
 
-    log.Printf("VSwitchWroker.newTap %s", ifce.Name())  
+    log.Printf("Info| VSwitchWroker.newTap %s", ifce.Name())  
 
     return ifce, nil
 }
@@ -147,7 +147,7 @@ func (this *VSwitchWroker) Start() {
 
 func (this *VSwitchWroker) showHook() {
     for _, k := range this.keys {
-        log.Printf("k:%d func: %p", k, this.hooks[k])
+        log.Printf("Debug| VSwitchWroker.showHool k:%d func: %p", k, this.hooks[k])
     }
 } 
 
@@ -199,7 +199,7 @@ func (this *VSwitchWroker) checkAuth(client *openlanv1.TcpClient, frame *openlan
     if client.Status != openlanv1.CL_AUTHED {
         client.Droped++
         if this.IsVerbose() {
-            log.Printf("Debug|VSwitchWroker.onRecv: %s unauth", client.GetAddr())
+            log.Printf("Debug| VSwitchWroker.onRecv: %s unauth", client.GetAddr())
         }
         return errors.New("Unauthed client.")
     }
@@ -241,7 +241,7 @@ func (this *VSwitchWroker) handleReq(client *openlanv1.TcpClient, frame *openlan
 
 func (this *VSwitchWroker) onClient(client *openlanv1.TcpClient) error {
     client.Status = openlanv1.CL_CONNECTED
-    log.Printf("Info|VSwitchWroker.onClient: %s", client.GetAddr()) 
+    log.Printf("Info| VSwitchWroker.onClient: %s", client.GetAddr()) 
 
     return nil
 }
@@ -251,7 +251,7 @@ func (this *VSwitchWroker) onAuth(client *openlanv1.TcpClient) error {
         return errors.New("not authed.")
     }
 
-    log.Printf("Info|VSwitchWroker.onAuth: %s", client.GetAddr())   
+    log.Printf("Info| VSwitchWroker.onAuth: %s", client.GetAddr())   
 
     ifce, err := this.newTap()
     if err != nil {
@@ -267,12 +267,12 @@ func (this *VSwitchWroker) onAuth(client *openlanv1.TcpClient) error {
 func (this *VSwitchWroker) onRecv(client *openlanv1.TcpClient, data []byte) error {
     //TODO Hook packets such as ARP Learning.
     if this.IsVerbose() {
-        log.Printf("Debug|VSwitchWroker.onRecv: %s % x", client.GetAddr(), data)    
+        log.Printf("Debug| VSwitchWroker.onRecv: %s % x", client.GetAddr(), data)    
     }
 
     if err := this.onHook(client, data); err != nil {
         if this.IsVerbose() {
-            log.Printf("Debug|VSwitchWroker.onRecv: %s dropping by %s", client.GetAddr(), err)
+            log.Printf("Debug| VSwitchWroker.onRecv: %s dropping by %s", client.GetAddr(), err)
             return err
         }
     }
@@ -283,14 +283,14 @@ func (this *VSwitchWroker) onRecv(client *openlanv1.TcpClient, data []byte) erro
     }
 
     if _, err := ifce.Write(data); err != nil {
-        log.Printf("Error|VSwitchWroker.onRecv: %s", err)
+        log.Printf("Error| VSwitchWroker.onRecv: %s", err)
     }
 
     return nil
 }
 
 func (this *VSwitchWroker) onClose(client *openlanv1.TcpClient) error {
-    log.Printf("Info|VSwitchWroker.onClose: %s", client.GetAddr())
+    log.Printf("Info| VSwitchWroker.onClose: %s", client.GetAddr())
     if ifce := this.Clients[client]; ifce != nil {
         ifce.Close()
         delete(this.Clients, client)
@@ -303,21 +303,21 @@ func (this *VSwitchWroker) Close() {
 }
 
 func (this *VSwitchWroker) GoRecv(ifce *water.Interface, dorecv func([]byte)(error)) {
-    log.Printf("Info|VSwitchWroker.GoRecv: %s", ifce.Name())    
+    log.Printf("Info| VSwitchWroker.GoRecv: %s", ifce.Name())    
     defer ifce.Close()
     for {
         data := make([]byte, this.ifmtu)
         n, err := ifce.Read(data)
         if err != nil {
-            log.Printf("Error|VSwitchWroker.GoRev: %s", err)
+            log.Printf("Error| VSwitchWroker.GoRev: %s", err)
             break
         }
         if this.IsVerbose() {
-            log.Printf("VSwitchWroker.GoRev: % x\n", data[:n])
+            log.Printf("Debug| VSwitchWroker.GoRev: % x\n", data[:n])
         }
 
         if err := dorecv(data[:n]); err != nil {
-            log.Printf("Error|VSwitchWroker.GoRev: do-recv %s %s", ifce.Name(), err)
+            log.Printf("Error| VSwitchWroker.GoRev: do-recv %s %s", ifce.Name(), err)
         }
     }
 }

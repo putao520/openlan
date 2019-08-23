@@ -29,14 +29,14 @@ func NewTcpServer(c *Config) (this *TcpServer) {
     }
 
     if err := this.Listen(); err != nil {
-        log.Printf("NewTcpServer %s\n", err)
+        log.Printf("Debug| NewTcpServer %s\n", err)
     }
 
     return 
 }
 
 func (this *TcpServer) Listen() error {
-    log.Printf("TcpServer.Start %s\n", this.addr)
+    log.Printf("Debug| TcpServer.Start %s\n", this.addr)
 
     laddr, err := net.ResolveTCPAddr("tcp", this.addr)
     if err != nil {
@@ -45,7 +45,7 @@ func (this *TcpServer) Listen() error {
     
     listener, err := net.ListenTCP("tcp", laddr)
     if err != nil {
-        log.Printf("TcpServer.Listen: %s", err)
+        log.Printf("Info| TcpServer.Listen: %s", err)
         this.listener = nil
         return err
     }
@@ -56,22 +56,22 @@ func (this *TcpServer) Listen() error {
 func (this *TcpServer) Close() {
     if this.listener != nil {
         this.listener.Close()
-        log.Printf("TcpServer.Close: %s", this.addr)
+        log.Printf("Info| TcpServer.Close: %s", this.addr)
         this.listener = nil
     }
 }
 
 func (this *TcpServer) GoAccept() {
-    log.Printf("TcpServer.GoAccept")
+    log.Printf("Debug| TcpServer.GoAccept")
     if (this.listener == nil) {
-        log.Printf("Error|TcpServer.GoAccept: invalid listener")
+        log.Printf("Error| TcpServer.GoAccept: invalid listener")
     }
 
     defer this.Close()
     for {
         conn, err := this.listener.AcceptTCP()
         if err != nil {
-            log.Printf("Error|TcpServer.GoAccept: %s", err)
+            log.Printf("Error| TcpServer.GoAccept: %s", err)
             return
         }
 
@@ -84,12 +84,12 @@ func (this *TcpServer) GoAccept() {
 func (this *TcpServer) GoLoop(onClient func (*openlanv1.TcpClient) error, 
                               onRecv func (*openlanv1.TcpClient, []byte) error,
                               onClose func (*openlanv1.TcpClient) error) {
-    log.Printf("TcpServer.GoLoop")
+    log.Printf("Debug| TcpServer.GoLoop")
     defer this.Close()
     for {
         select {
         case client := <- this.onClients:
-            log.Printf("TcpServer.addClient %s", client.GetAddr())
+            log.Printf("Debug| TcpServer.addClient %s", client.GetAddr())
             if onClient != nil {
                 onClient(client)
             }
@@ -97,7 +97,7 @@ func (this *TcpServer) GoLoop(onClient func (*openlanv1.TcpClient) error,
             go this.GoRecv(client, onRecv)
         case client := <- this.offClients:
             if ok := this.clients[client]; ok {
-                log.Printf("TcpServer.delClient %s", client.GetAddr())
+                log.Printf("Debug| TcpServer.delClient %s", client.GetAddr())
                 if onClose != nil {
                     onClose(client)
                 }
@@ -109,7 +109,7 @@ func (this *TcpServer) GoLoop(onClient func (*openlanv1.TcpClient) error,
 }
 
 func (this *TcpServer) GoRecv(client *openlanv1.TcpClient, onRecv func (*openlanv1.TcpClient, []byte) error) {
-    log.Printf("TcpServer.GoRecv: %s", client.GetAddr())    
+    log.Printf("Debug| TcpServer.GoRecv: %s", client.GetAddr())    
     for {
         data := make([]byte, 4096)
         length, err := client.RecvMsg(data)
@@ -120,8 +120,8 @@ func (this *TcpServer) GoRecv(client *openlanv1.TcpClient, onRecv func (*openlan
         
         if length > 0 {
             if this.IsVerbose() {
-                log.Printf("TcpServer.GoRecv: length: %d ", length)
-                log.Printf("TcpServer.GoRecv: data  : % x", data[:length])
+                log.Printf("Debug| TcpServer.GoRecv: length: %d ", length)
+                log.Printf("Debug| TcpServer.GoRecv: data  : % x", data[:length])
             }
             onRecv(client, data[:length])
         }

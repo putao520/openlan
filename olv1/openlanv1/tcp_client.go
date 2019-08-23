@@ -76,7 +76,7 @@ func (this *TcpClient) Connect() error {
         return nil
     }
 
-    log.Printf("TcpClient.Connect %s\n", this.addr)
+    log.Printf("Info| TcpClient.Connect %s\n", this.addr)
     raddr, err := net.ResolveTCPAddr("tcp", this.addr)
     if err != nil {
         return err
@@ -100,7 +100,7 @@ func (this *TcpClient) Connect() error {
 
 func (this *TcpClient) Close() {
     if this.conn != nil {
-        log.Printf("TcpClient.Close %s\n", this.addr)
+        log.Printf("Info| TcpClient.Close %s\n", this.addr)
         this.conn.Close()
         this.conn = nil
     }
@@ -123,8 +123,8 @@ func (this *TcpClient) recvn(buffer []byte) error {
     }
     
     if this.IsVerbose() {
-        log.Printf("TcpClient.recvn %d\n", len(buffer))
-        log.Printf("TcpClient.recvn Data: % x\n", buffer)
+        log.Printf("Debug| TcpClient.recvn %d\n", len(buffer))
+        log.Printf("Debug| TcpClient.recvn Data: % x\n", buffer)
     }
 
     return nil
@@ -135,14 +135,14 @@ func (this *TcpClient) sendn(buffer []byte) error {
     size := len(buffer)
     left := size - offset
     if this.IsVerbose() {
-        log.Printf("TcpClient.sendn %d\n", size)
-        log.Printf("TcpClient.sendn Data: % x\n", buffer)
+        log.Printf("Debug| TcpClient.sendn %d\n", size)
+        log.Printf("Debug| TcpClient.sendn Data: % x\n", buffer)
     }
 
     for left > 0 {
         tmp := buffer[offset:]
         if this.IsVerbose() {
-            log.Printf("TcpClient.sendn tmp %d\n", len(tmp))
+            log.Printf("Debug| TcpClient.sendn tmp %d\n", len(tmp))
         }
         n, err := this.conn.Write(tmp)
         if err != nil {

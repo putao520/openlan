@@ -29,11 +29,11 @@ func (this *TapWroker) GoRecv(dorecv func([]byte)(error)) {
         data := make([]byte, this.ifmtu)
         n, err := this.ifce.Read(data)
         if err != nil {
-            log.Printf("Error|TapWroker.GoRev: %s", err)
+            log.Printf("Error| TapWroker.GoRev: %s", err)
             break
         }
         if this.IsVerbose() {
-            log.Printf("TapWroker.GoRev: % x\n", data[:n])
+            log.Printf("Debug| TapWroker.GoRev: % x\n", data[:n])
         }
 
         dorecv(data[:n])
@@ -42,7 +42,7 @@ func (this *TapWroker) GoRecv(dorecv func([]byte)(error)) {
 
 func (this *TapWroker) DoSend(data []byte) error {
     if this.IsVerbose() {
-        log.Printf("TapWroker.DoSend: % x\n", data)
+        log.Printf("Debug| TapWroker.DoSend: % x\n", data)
     }
 
     this.writechan <- data
@@ -55,7 +55,7 @@ func (this *TapWroker) GoLoop() error {
         select {
         case wdata := <- this.writechan:
             if _, err := this.ifce.Write(wdata); err != nil {
-                log.Printf("Error|TapWroker.GoLoop: %s", err)   
+                log.Printf("Error| TapWroker.GoLoop: %s", err)   
             }
         }
     }
