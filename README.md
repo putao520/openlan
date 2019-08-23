@@ -2,7 +2,7 @@
 
 The OpenLAN project providers one solution for you to access your any site from any where. 
 
-# Version1 
+# Version1 (active)
 
 Refer to https://github.com/danieldin95/openlan-go/tree/master/olv1.
 
@@ -14,7 +14,7 @@ Refer to https://github.com/danieldin95/openlan-go/tree/master/olv1.
                             |                 |                    |
                 Host1 --- CPE A             CPE B                CPE C --- Host2
 
-# Version2
+# Version2 (abandon)
 
 Refer to https://github.com/danieldin95/openlan-go/tree/master/olv2.
 
