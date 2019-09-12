@@ -26,15 +26,15 @@ func UpLink(name string, c *point.Config) error {
     }
     
     ip, ipnet, err := net.ParseCIDR(c.Ifaddr)
-	if err != nil {
+    if err != nil {
         log.Printf("Error| main.UpLink.ParseCIDR %s : %s", c.Ifaddr, err)
         return err
-	}
+    }
 
-	if err := link.SetLinkIp(ip, ipnet); err != nil {
+    if err := link.SetLinkIp(ip, ipnet); err != nil {
         log.Printf("Error| main.UpLink.SetLinkIp %s : %s", name, err)
         return err
-	}
+    }
 	
     return nil
 }

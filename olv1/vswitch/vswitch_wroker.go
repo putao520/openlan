@@ -8,6 +8,7 @@ import (
     "fmt"
     "errors"
     "sort"
+    "net"
     "encoding/json"
 
     "github.com/songgao/water"
@@ -41,7 +42,7 @@ func NewVSwitchWroker(server *TcpServer, c *Config) (this *VSwitchWroker) {
         keys: make([]int, 0, 1024),
     }
 
-    this.newBr(c.Brname)
+    this.newBr(c.Brname, c.Ifaddr)
     this.setHook(0x10, this.checkAuth)
     this.setHook(0x11, this.handleReq)
     this.showHook()
@@ -75,7 +76,7 @@ func (this *VSwitchWroker) loadUsers(path string) error {
     return nil
 }
 
-func (this *VSwitchWroker) newBr(brname string) {
+func (this *VSwitchWroker) newBr(brname string, addr string) {
     addrs := strings.Split(this.Server.GetAddr(), ":")
     if len(addrs) != 2 {
         log.Printf("Error| VSwitchWroker.newBr: address: %s", this.Server.GetAddr())
@@ -106,6 +107,15 @@ func (this *VSwitchWroker) newBr(brname string) {
     }
 
     log.Printf("Info| VSwitchWroker.newBr %s", brname)
+
+    ip, ipnet, err := net.ParseCIDR(addr)
+    if err != nil {
+        log.Printf("Error| VSwitchWroker.newBr.ParseCIDR %s : %s", addr, err)
+    }
+
+    if err := br.SetLinkIp(ip, ipnet); err != nil {
+        log.Printf("Error| VSwitchWroker.newBr.SetLinkIp %s : %s", brname, err)
+    }
 
     this.br = br
 }
