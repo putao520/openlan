@@ -1,0 +1,13 @@
+[Unit]
+Description=OpenLan vswitch daemon
+After=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+EnvironmentFile=/etc/vswitch.cfg
+ExecStart=/bin/bash -c '/usr/bin/vswitch $OPTIONS &'
+ExecStop=/usr/bin/kill `/usr/sbin/pidof vswitch`
+
+[Install]
+WantedBy=multi-user.target

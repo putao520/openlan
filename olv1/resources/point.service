@@ -1,0 +1,13 @@
+[Unit]
+Description=OpenLan point daemon
+After=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+EnvironmentFile=/etc/point.cfg
+ExecStart=/bin/bash -c '/usr/bin/point $OPTIONS &'
+ExecStop=/usr/bin/kill `/usr/sbin/pidof point`
+
+[Install]
+WantedBy=multi-user.target
