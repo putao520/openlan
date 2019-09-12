@@ -7,12 +7,13 @@ import (
     "syscall"
     "time"
     "os"
+    "net"
 
     "github.com/milosgajdos83/tenus"
     "github.com/danieldin95/openlan-go/olv1/point"
 )
 
-func UpLink(name string) error {
+func UpLink(name string, c *point.Config) error {
     link, err := tenus.NewLinkFrom(name)
     if err != nil {
         log.Printf("Error| main.UpLink: Get ifce %s: %s", name, err)
@@ -20,10 +21,21 @@ func UpLink(name string) error {
     }
     
     if err := link.SetLinkUp(); err != nil {
-        log.Printf("Error| main.UpLink: %s : %s", name, err)
+        log.Printf("Error| main.UpLink.SetLinkUp: %s : %s", name, err)
         return err
     }
     
+    ip, ipnet, err := net.ParseCIDR(c.Ifaddr)
+	if err != nil {
+        log.Printf("Error| main.UpLink.ParseCIDR %s : %s", c.Ifaddr, err)
+        return err
+	}
+
+	if err := link.SetLinkIp(ip, ipnet); err != nil {
+        log.Printf("Error| main.UpLink.SetLinkIp %s : %s", name, err)
+        return err
+	}
+	
     return nil
 }
 
@@ -32,8 +44,8 @@ func main() {
     log.Printf("Debug| main.config: %s", c)
 
     p := point.NewPoint(c)
-
-    UpLink(p.Ifce.Name())
+    
+    UpLink(p.Ifce.Name(), c)
     p.Start()
 
     x := make(chan os.Signal)
