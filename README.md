@@ -1,31 +1,53 @@
-# Openlan-go
+# Overview 
 
-The OpenLAN project providers one solution for you to access your any site from any where. 
+Refer to https://github.com/danieldin95/openlan-py , and now we change cpe to point, ope to vswitch.
 
-# Version1 <small>[active]</small>
+# Install tap-windows6
 
-Refer to https://github.com/danieldin95/openlan-go/tree/master/olv1.
+Download `resources/tap-windows-9.21.2.exe`, then install it. And run Point in Windows by `point.exe -addr x.x.x.x:10002 -auth zzz:wwww`. 
 
-                                          FireWall --- CPE D --- Host3
-                                              |
-                            -----------------OPE--------------------
-                            |                 |                    |
-                         Firewall          Firewall             FireWall
-                            |                 |                    |
-                Host1 --- CPE A             CPE B                CPE C --- Host2
+# Build in Powershell
 
-# Version2 <small>[abandon]</small>
+Download dependent sources
 
-Refer to https://github.com/danieldin95/openlan-go/tree/master/olv2.
+    PS L:\vswitchnlan-go\olv1> go get github.com/songgao/water
+    PS L:\vswitchnlan-go\olv1> go get github.com/milosgajdos83/tenus
+    PS L:\vswitchnlan-go\olv1> go get golang.org/x/sys
 
-                                            Controller
-                                                |
-                            ------------------------------------------
-                            |                                        |
-                            >------------------UDP-------------------<
-                            |                                        |
-                            >---UDP---<                   >----UDP---<    
-                            |         |<------->|<------->|          |
-                         Firewall            Firewall             FireWall
-                            |                   |                    |
-                Host1 --- Endpoint A         Endpoint B            Endpoint C --- Host2
+Execute building command.
+
+    PS L:\vswitchnlan-go\olv1> go build -o ./resources/point.exe cpe_windows.go
+
+# Configure Windows TAP Device
+
+Goto `Control Panel\Network and Internet\Network Connections`, and find `Ethernet 2`, then you can configure IPAddress for it to access branch site. 
+
+Or Configure by Powershell.
+
+    netsh interface ipv4 show config "Ethernet 2"
+    netsh interface ipv4 set address "Ethernet 2" static 192.168.x.b
+
+# Start vSwitch on Linux
+
+    [root@localhost olv1]# cat .passowrd
+    zzz:wwww
+    xxxx:aaaaa
+    [root@localhost olv1]# nohup ./resources/vswitch -addr x.x.x.x:10002 &
+    [root@localhost olv1]# cat .vswitchtoken
+    m64rxofsqkvlb4cj
+    [root@localhost olv1]# ifconfig br-olan-10002 192.168.x.a up
+    
+Show Points
+
+    [root@localhost olv1]# curl -um64rxofsqkvlb4cj: -XGET http://localhost:10082/
+
+Show Users
+
+    [root@localhost olv1]# curl -um64rxofsqkvlb4cj: -XGET http://localhost:10082/user
+
+# Start Point on Linux
+
+    [root@localhost olv1]# nohup ./resources/point -addr x.x.x.x:10002 -auth zzz:wwww &
+    [root@localhost olv1]# ifconfig tap0 192.168.x.b up
+    [root@localhost olv1]# ping 192.168.x.a
+
