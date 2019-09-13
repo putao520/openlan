@@ -43,9 +43,9 @@ func NewVSwitchWroker(server *TcpServer, c *Config) (this *VSwitchWroker) {
     }
 
     this.newBr(c.Brname, c.Ifaddr)
-    this.setHook(0x10, this.checkAuth)
-    this.setHook(0x11, this.handleReq)
-    this.showHook()
+    this.SetHook(0x10, this.checkAuth)
+    this.SetHook(0x11, this.handleReq)
+    this.ShowHook()
     this.loadUsers(c.Password)
 
     return 
@@ -155,13 +155,13 @@ func (this *VSwitchWroker) Start() {
     go this.Server.GoLoop(this.onClient, this.onRecv, this.onClose)
 }
 
-func (this *VSwitchWroker) showHook() {
+func (this *VSwitchWroker) ShowHook() {
     for _, k := range this.keys {
         log.Printf("Debug| VSwitchWroker.showHool k:%d func: %p", k, this.hooks[k])
     }
 } 
 
-func (this *VSwitchWroker) setHook(index int, hook func(*openlanv1.TcpClient, *openlanv1.Frame) error) {
+func (this *VSwitchWroker) SetHook(index int, hook func(*openlanv1.TcpClient, *openlanv1.Frame) error) {
     this.hooks[index] = hook
     this.keys = append(this.keys, index)
     sort.Ints(this.keys)
