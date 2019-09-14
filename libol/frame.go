@@ -43,3 +43,7 @@ func (this *Frame) DstAddr() []byte {
 func (this *Frame) SrcAddr() []byte {
     return this.Data[6:12]
 }
+
+func (this *Frame) EthParse() (uint16, []byte) {
+    return this.EthType(), this.EthData()
+}

@@ -51,8 +51,7 @@ func (this *Neighborer) OnFrame(client *libol.TcpClient, frame *libol.Frame) err
         return nil
     }
 
-    ethtype := frame.EthType()
-    ethdata := frame.EthData()
+    ethtype, ethdata := frame.EthParse()
     if ethtype != libol.ETH_P_ARP {
         if ethtype == libol.ETH_P_VLAN {
             //TODO
