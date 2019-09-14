@@ -4,7 +4,7 @@ Refer to https://github.com/danieldin95/openlan-py , and now we change cpe to po
 
 # Install tap-windows6
 
-Download `resources/tap-windows-9.21.2.exe`, then install it. And run Point in Windows by `point.exe -addr x.x.x.x:10002 -auth zzz:wwww`. 
+Download `resources/tap-windows-9.21.2.exe`, then install it. And run Point in Windows by `point.exe -vs:addr x.x.x.x -vs:auth zzz:wwww`. 
 
 # Build in Powershell
 
@@ -32,10 +32,9 @@ Or Configure by Powershell.
     [root@localhost olv1]# cat .passowrd
     zzz:wwww
     xxxx:aaaaa
-    [root@localhost olv1]# nohup ./resources/vswitch -addr x.x.x.x:10002 &
+    [root@localhost olv1]# nohup ./resources/vswitch -vs:addr x.x.x.x -if:addr 192.168.x.a/24 &
     [root@localhost olv1]# cat .vswitchtoken
     m64rxofsqkvlb4cj
-    [root@localhost olv1]# ifconfig br-olan-10002 192.168.x.a up
     
 Show Points
 
@@ -47,7 +46,6 @@ Show Users
 
 # Start Point on Linux
 
-    [root@localhost olv1]# nohup ./resources/point -addr x.x.x.x:10002 -auth zzz:wwww &
-    [root@localhost olv1]# ifconfig tap0 192.168.x.b up
+    [root@localhost olv1]# nohup ./resources/point -vs:addr x.x.x.x -vs:auth zzz:wwww -if:addr 192.168.x.b/24 &
     [root@localhost olv1]# ping 192.168.x.a
 
