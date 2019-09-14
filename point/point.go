@@ -4,12 +4,12 @@ import (
     "log"
 
     "github.com/songgao/water"
-    "github.com/danieldin95/openlan-go/olv1/openlanv1"
+    "github.com/danieldin95/openlan-go/openlan"
 )
 
 type Point struct {
     Verbose int
-    Client *openlanv1.TcpClient
+    Client *openlan.TcpClient
     Ifce *water.Interface
     //
     tcpwroker *TcpWroker 
@@ -23,7 +23,7 @@ func NewPoint(config *Config) (this *Point){
     }
     log.Printf("Info| NewPoint.device %s\n", ifce.Name())
 
-    client := openlanv1.NewTcpClient(config.Addr, config.Verbose)
+    client := openlan.NewTcpClient(config.Addr, config.Verbose)
 
     this = &Point {
         Verbose: config.Verbose,

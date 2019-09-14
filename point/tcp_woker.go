@@ -5,11 +5,11 @@ import (
     "time"
     "fmt"
 
-    "github.com/danieldin95/openlan-go/olv1/openlanv1"
+    "github.com/danieldin95/openlan-go/openlan"
 )
 
 type TcpWroker struct {
-    client *openlanv1.TcpClient
+    client *openlan.TcpClient
     readchan chan []byte
     writechan chan []byte
     verbose int
@@ -18,7 +18,7 @@ type TcpWroker struct {
     password string
 }
 
-func NewTcpWoker(client *openlanv1.TcpClient, c *Config) (this *TcpWroker) {
+func NewTcpWoker(client *openlan.TcpClient, c *Config) (this *TcpWroker) {
     this = &TcpWroker {
         client: client,
         writechan: make(chan []byte, 1024*10),
@@ -33,7 +33,7 @@ func NewTcpWoker(client *openlanv1.TcpClient, c *Config) (this *TcpWroker) {
     return
 }
 
-func (this *TcpWroker) TryLogin(client *openlanv1.TcpClient) error {
+func (this *TcpWroker) TryLogin(client *openlan.TcpClient) error {
     body := fmt.Sprintf(`{"name":"%s","password":"%s"}`, this.name, this.password)
     log.Printf("Info| TcpWroker.TryLogin: %s", body)
     if err := client.SendReq("login", body); err != nil {
@@ -43,14 +43,14 @@ func (this *TcpWroker) TryLogin(client *openlanv1.TcpClient) error {
 }
 
 func (this *TcpWroker) onInstruct(data []byte) error {
-    action := openlanv1.DecAction(data)
+    action := openlan.DecAction(data)
     if action == "logi:" {
-        resp := openlanv1.DecBody(data)
+        resp := openlan.DecBody(data)
         log.Printf("Info| TcpWroker.onHook.login: %s", resp)
         if resp[:4] == "okay" {
-            this.client.Status = openlanv1.CL_AUTHED
+            this.client.Status = openlan.CL_AUTHED
         } else {
-            this.client.Status = openlanv1.CL_UNAUTH
+            this.client.Status = openlan.CL_UNAUTH
         }
     }
 
@@ -78,7 +78,7 @@ func (this *TcpWroker) GoRecv(dorecv func([]byte)(error)) {
 
         if n > 0 {
             data = data[:n]
-            if openlanv1.IsInst(data) {
+            if openlan.IsInst(data) {
                 this.onInstruct(data)
             } else {
                 dorecv(data)
@@ -101,7 +101,7 @@ func (this *TcpWroker) GoLoop() error {
     for {
         select {
         case wdata := <- this.writechan:
-            if this.client.Status != openlanv1.CL_AUTHED {
+            if this.client.Status != openlan.CL_AUTHED {
                 this.client.Droped++
                 if this.IsVerbose() {
                     log.Printf("Error| TcpWroker.GoLoop: droping by unauth")

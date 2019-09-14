@@ -35,7 +35,7 @@ func NewConfig() (this *Config) {
     flag.StringVar(&this.Token, "admin:token", "", "Administrator token")
     flag.StringVar(&this.TokenFile, "admin:file", ".vswitch_oken", "The file administrator token saved to.")
     flag.StringVar(&this.Password, "auth:file", ".password", "The file password loading from.")
-    flag.IntVar(&this.Ifmtu, "if:mtu", 1514, "the interface MTU include ethernet")
+    flag.IntVar(&this.Ifmtu, "if:mtu", 1518, "the interface MTU include ethernet")
     flag.StringVar(&this.Ifaddr, "if:addr", "192.168.100.2/24", "the interface address")
 
     flag.Parse()

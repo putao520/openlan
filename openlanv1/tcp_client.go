@@ -24,7 +24,7 @@ var (
 )
 
 type TcpClient struct {
-    addr string
+    addr string `json:"addr"`
     conn *net.TCPConn
     maxsize int
     minsize int
@@ -256,4 +256,8 @@ func (this *TcpClient) SendResp(action string, body string) error {
 
 func (this *TcpClient) UpTime() int64 {
     return time.Now().Unix() - this.newtime
+}
+
+func (this *TcpClient) String() string {
+    return this.addr
 }

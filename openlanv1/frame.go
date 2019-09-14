@@ -1,6 +1,7 @@
 package openlanv1
 
 import (
+    "fmt"
     "encoding/binary"
 )
 
@@ -30,6 +31,10 @@ func NewFrame(data []byte) (this *Frame) {
 
 func (this *Frame) EthType() uint16 {
     return binary.BigEndian.Uint16(this.Data[12:14])
+}
+
+func (this *Frame) EthData() {
+    return this.Data[14:]
 }
 
 func (this *Frame) DstAddr() []byte {
