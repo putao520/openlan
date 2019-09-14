@@ -61,8 +61,8 @@ func (this *Neighborer) OnFrame(client *libol.TcpClient, frame *libol.Frame) err
         return nil
     }
 
-    arp := libol.NewArp()
-    if err := arp.Decode(ethdata); err != nil {
+    arp, err := libol.NewArpFromFrame(ethdata)
+    if err != nil {
         log.Printf("Error| Neighborer.OnFrame %s.", err)
         return nil
     }

@@ -36,8 +36,14 @@ type Arp struct {
 }
 
 func NewArp() (this *Arp) {
-    this = &Arp {
-    }
+    this = &Arp {}
+
+    return
+}
+
+func NewArpFromFrame(frame []byte) (this *Arp, err error) {
+    this = &Arp {}
+    err = this.Decode(frame)
 
     return
 }
