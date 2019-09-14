@@ -1,7 +1,6 @@
-package openlan
+package libol
 
 import (
-    "fmt"
     "encoding/binary"
 )
 
@@ -33,7 +32,7 @@ func (this *Frame) EthType() uint16 {
     return binary.BigEndian.Uint16(this.Data[12:14])
 }
 
-func (this *Frame) EthData() {
+func (this *Frame) EthData() []byte {
     return this.Data[14:]
 }
 

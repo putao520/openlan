@@ -5,7 +5,7 @@ import (
     "time"
     "fmt"
 
-    "github.com/danieldin95/openlan-go/openlan"
+    "github.com/danieldin95/openlan-go/libol"
 )
 
 type TcpWroker struct {

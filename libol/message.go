@@ -1,4 +1,4 @@
-package openlan 
+package libol 
 
 import (
     "bytes"

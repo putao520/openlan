@@ -10,7 +10,7 @@ import (
     "net"
 
     "github.com/milosgajdos83/tenus"
-    "github.com/danieldin95/openlan-go/olv1/point"
+    "github.com/danieldin95/openlan-go/point"
 )
 
 func UpLink(name string, c *point.Config) error {

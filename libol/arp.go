@@ -1,7 +1,6 @@
-package openlan
+package libol
 
 import (
-    "fmt"
     "errors"
     "encoding/binary"
 )
@@ -30,10 +29,10 @@ type Arp struct {
     ProLen  uint8  // length of protocol address
     OpCode  uint16 // ARP Op(command)
 
-    SHwAddr byte[] // sender hardware address.
-    SIpAddr byte[] // sender IP address.
-    THwAddr byte[] // target hardware address.
-    TIpAddr byte[] // target IP address.
+    SHwAddr []byte // sender hardware address.
+    SIpAddr []byte // sender IP address.
+    THwAddr []byte // target hardware address.
+    TIpAddr []byte // target IP address.
 }
 
 func NewArp() (this *Arp) {
@@ -43,19 +42,19 @@ func NewArp() (this *Arp) {
     return
 }
 
-func (this *Arp) Decode(frame byte[]) error {
+func (this *Arp) Decode(frame []byte) error {
     if len(frame) < 8 {
         return errors.New("too small header") 
     }
 
     this.HrdCode = binary.BigEndian.Uint16(frame[0:2])
     this.ProCode = binary.BigEndian.Uint16(frame[2:4])
-    this.HrdLen  = binary.BigEndian.Uint8(frame[4:5])
-    this.ProLen  = binary.BigEndian.Uint8(frame[5:6])
+    this.HrdLen  = uint8(frame[4])
+    this.ProLen  = uint8(frame[5])
     this.OpCode  = binary.BigEndian.Uint16(frame[6:8])
 
-    p := 8
-    if len(frame) < p + 2 * (this.HrdLen + this.ProLen) {
+    p := uint8(8)
+    if len(frame) < int(p + 2 * (this.HrdLen + this.ProLen)) {
         return errors.New("too small frame") 
     }
 
@@ -77,11 +76,11 @@ func (this *Arp) Encode()[]byte {
     
     binary.BigEndian.PutUint16(buffer[0:2], this.HrdCode)
     binary.BigEndian.PutUint16(buffer[2:4], this.ProCode)
-    binary.BigEndian.PutUint8(buffer[4:5], this.HrdLen)
-    binary.BigEndian.PutUint8(buffer[5:6], this.ProLen)
+    buffer[4] = byte(this.HrdLen)
+    buffer[5] = byte(this.ProLen)
     binary.BigEndian.PutUint16(buffer[6:8], this.OpCode)
 
-    p := 8
+    p := uint8(8)
     copy(buffer[p:p+this.HrdLen], this.SHwAddr[0:this.HrdLen])
     p += this.HrdLen
     copy(buffer[p:p+this.ProLen], this.SIpAddr[0:this.ProLen])

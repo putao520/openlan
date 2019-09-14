@@ -13,7 +13,7 @@ import (
 
     "github.com/songgao/water"
     "github.com/milosgajdos83/tenus"
-    "github.com/danieldin95/openlan-go/openlan"
+    "github.com/danieldin95/openlan-go/libol"
 )
 
 type VSwitchWroker struct {
@@ -27,7 +27,7 @@ type VSwitchWroker struct {
     verbose int
     br tenus.Bridger
     keys []int
-    hooks map[int]func(*libol.TcpClient, *openlan.Frame) error
+    hooks map[int]func(*libol.TcpClient, *libol.Frame) error
     ifmtu int
 }
 
@@ -41,7 +41,7 @@ func NewVSwitchWroker(server *TcpServer, c *Config) (this *VSwitchWroker) {
         verbose: c.Verbose,
         br: nil,
         ifmtu: 1514,
-        hooks: make(map[int]func(*libol.TcpClient, *openlan.Frame) error),
+        hooks: make(map[int]func(*libol.TcpClient, *libol.Frame) error),
         keys: make([]int, 0, 1024),
     }
 
@@ -101,7 +101,7 @@ func (this *VSwitchWroker) newBr(brname string, addr string) {
         if err != nil {
             br, err = tenus.NewBridgeWithName(brname)
             if err != nil {
-                log.Error("Error| VSwitchWroker.newBr: %s", err)
+                log.Printf("Error| VSwitchWroker.newBr: %s", err)
             }
         }
     } else {
@@ -170,7 +170,7 @@ func (this *VSwitchWroker) showHook() {
     }
 } 
 
-func (this *VSwitchWroker) setHook(index int, hook func(*libol.TcpClient, *openlan.Frame) error) {
+func (this *VSwitchWroker) setHook(index int, hook func(*libol.TcpClient, *libol.Frame) error) {
     this.hooks[index] = hook
     this.keys = append(this.keys, index)
     sort.Ints(this.keys)
@@ -193,7 +193,7 @@ func (this *VSwitchWroker) onHook(client *libol.TcpClient, data []byte) error {
     return nil
 }
 
-func (this *VSwitchWroker) checkAuth(client *libol.TcpClient, frame *openlan.Frame) error {
+func (this *VSwitchWroker) checkAuth(client *libol.TcpClient, frame *libol.Frame) error {
     if this.IsVerbose() {
         log.Printf("Debug| VSwitchWroker.checkAuth % x.", frame.Data)
     }
@@ -254,7 +254,7 @@ func  (this *VSwitchWroker) handlelogin(client *libol.TcpClient, data string) er
     return errors.New("Auth failed.")
 }
 
-func (this *VSwitchWroker) handleReq(client *libol.TcpClient, frame *openlan.Frame) error {
+func (this *VSwitchWroker) handleReq(client *libol.TcpClient, frame *libol.Frame) error {
     return nil
 }
 

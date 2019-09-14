@@ -3,7 +3,8 @@ package vswitch
 import (
     "fmt"
     "net"
-    "github.com/danieldin95/openlan-go/openlan"
+    "log"
+    "github.com/danieldin95/openlan-go/libol"
 )
 
 type Neighbor struct {
@@ -13,7 +14,7 @@ type Neighbor struct {
     IpAddr net.IP `json:"IpAddr"`
 }
 
-func (this *Neighbor) String() {
+func (this *Neighbor) String() string {
     return fmt.Sprintf("%s,%s,%s", this.HwAddr, this.IpAddr, this.Client)
 }
 
@@ -41,7 +42,7 @@ func NewNeighborer(c *Config) (this *Neighborer) {
     return
 }
 
-func (this *Neighborer) OnFrame(client *libol.TcpClient, frame *openlan.Frame) error {
+func (this *Neighborer) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
     if this.IsVerbose() {
         log.Printf("Debug| Neighborer.OnFrame % x.", frame.Data)
     }
@@ -78,12 +79,11 @@ func (this *Neighborer) OnFrame(client *libol.TcpClient, frame *openlan.Frame) e
 }
 
 func (this *Neighborer) AddNeighbor(neb *Neighbor) {
-    if this.IsVerbose() {
-        log.Printf("Debug| Neighborer.AddNeighbor %s.", neb)
-    }
-    
     if n := this.Neighbors[neb.HwAddr.String()]; n != nil {
         //TODO update.
+        log.Printf("Info| Neighborer.AddNeighbor: update %s.", neb)
+    } else {
+        log.Printf("Info| Neighborer.AddNeighbor: new %s.", neb)
     }
     
     this.Neighbors[neb.HwAddr.String()] = neb
@@ -92,15 +92,17 @@ func (this *Neighborer) AddNeighbor(neb *Neighbor) {
 }
 
 func (this *Neighborer) DelNeighbor(hwaddr net.HardwareAddr) {
+    log.Printf("Info| Neighborer.DelNeighbor %s.", hwaddr)
     if n := this.Neighbors[hwaddr.String()]; n != nil {
         delete(this.Neighbors, hwaddr.String())
     }
 }
 
-func (this *Neighbor) OnClientClose(client *libol.TcpClient) {
+func (this *Neighborer) OnClientClose(client *libol.TcpClient) {
     //TODO
+    log.Printf("Info| Neighborer.OnClientClose %s.", client)
 }
 
-func (this *Neighbor) IsVerbose() bool {
+func (this *Neighborer) IsVerbose() bool {
     return this.verbose != 0
 }

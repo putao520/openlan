@@ -4,7 +4,7 @@ import (
     "net"
     "log"
     
-    "github.com/danieldin95/openlan-go/openlan"
+    "github.com/danieldin95/openlan-go/libol"
 )
 
 type TcpServer struct {
@@ -108,7 +108,7 @@ func (this *TcpServer) GoLoop(onClient func (*libol.TcpClient) error,
     }
 }
 
-func (this *TcpServer) GoRecv(client *libol.TcpClient, onRecv func (*openlan.TcpClient, []byte) error) {
+func (this *TcpServer) GoRecv(client *libol.TcpClient, onRecv func (*libol.TcpClient, []byte) error) {
     log.Printf("Debug| TcpServer.GoRecv: %s", client.GetAddr())    
     for {
         data := make([]byte, 4096)
