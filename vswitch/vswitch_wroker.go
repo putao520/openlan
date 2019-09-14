@@ -10,6 +10,7 @@ import (
     "sort"
     "net"
     "sync"
+    "time"
     "encoding/json"
 
     "github.com/songgao/water"
@@ -47,7 +48,7 @@ type VSwitchWroker struct {
     clients map[*libol.TcpClient]*Point
     usersLock sync.RWMutex
     users map[string]*User
-    
+    newtime int64
 }
 
 func NewVSwitchWroker(server *TcpServer, c *Config) (this *VSwitchWroker) {
@@ -62,6 +63,7 @@ func NewVSwitchWroker(server *TcpServer, c *Config) (this *VSwitchWroker) {
         keys: make([]int, 0, 1024),
         clients: make(map[*libol.TcpClient]*Point, 1024),
         users: make(map[string]*User, 1024),
+        newtime: time.Now().Unix(),
     }
 
     this.newBr(c.Brname, c.Ifaddr)
@@ -449,4 +451,8 @@ func (this *VSwitchWroker) ListPoint() chan *Point {
     }()
 
     return c
+}
+
+func (this *VSwitchWroker) UpTime() int64 {
+    return time.Now().Unix() - this.newtime
 }

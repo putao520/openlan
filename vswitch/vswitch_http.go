@@ -48,6 +48,7 @@ func NewVSwitchHttp(wroker *VSwitchWroker, c *Config)(this *VSwitchHttp) {
     http.HandleFunc("/", this.Index)
     http.HandleFunc("/hi", this.Hi)
     http.HandleFunc("/user", this.User)
+    http.HandleFunc("/neighbor", this.Neighbor)
 
     return 
 }
@@ -110,7 +111,8 @@ func (this *VSwitchHttp) Index(w http.ResponseWriter, r *http.Request) {
 
     switch (r.Method) {
     case "GET":  
-        body := "uptime, remoteaddr, device, receipt, transmission, error\n"
+        body := fmt.Sprintf("uptime: %d\n", this.wroker.UpTime())
+        body += "uptime, remoteaddr, device, receipt, transmission, error\n"
         for p := range this.wroker.ListPoint() {
             if p == nil {
                 break
@@ -164,3 +166,28 @@ func (this *VSwitchHttp) User(w http.ResponseWriter, r *http.Request) {
         http.Error(w, fmt.Sprintf("Not support %s", r.Method), 400)
     }
 }
+
+func (this *VSwitchHttp) Neighbor(w http.ResponseWriter, r *http.Request) {
+    if (!this.IsAuth(w, r)) {
+        return
+    }
+
+    switch (r.Method) {
+    case "GET":  
+        body := "uptime, ethernet, address, remote\n"
+        for n := range this.wroker.Neighbor.ListNeighbor() {
+            if n == nil {
+                break
+            }
+            
+            body += fmt.Sprintf("%d, %s, %s, %s\n", 
+                                n.UpTime(), n.HwAddr, n.IpAddr, n.Client)
+        }
+        fmt.Fprintf(w, body)
+    default:
+        http.Error(w, fmt.Sprintf("Not support %s", r.Method), 400)
+        return 
+    }
+}
+
+

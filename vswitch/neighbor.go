@@ -4,14 +4,17 @@ import (
     "fmt"
     "net"
     "log"
+    "sync"
+    "time"
     "github.com/danieldin95/openlan-go/libol"
 )
 
 type Neighbor struct {
     Client *libol.TcpClient  `json:"Client"`
-
     HwAddr net.HardwareAddr `json:"HwAddr"`
     IpAddr net.IP `json:"IpAddr"`
+    NewTime int64 `json:"NewTime"`
+    HitTime int64 `json:"HitTime"`
 }
 
 func (this *Neighbor) String() string {
@@ -23,23 +26,57 @@ func NewNeighbor(hwaddr net.HardwareAddr, ipaddr net.IP, client *libol.TcpClient
         HwAddr: hwaddr,
         IpAddr: ipaddr,
         Client: client,
+        NewTime: time.Now().Unix(),
+        HitTime: time.Now().Unix(),
     }
 
     return
 }
 
+func (this *Neighbor) UpTime() int64 {
+    return time.Now().Unix() - this.NewTime
+}
+
 type Neighborer struct {
-    Neighbors map[string]*Neighbor
+    lock sync.RWMutex
+    neighbors map[string]*Neighbor
     verbose int
 }
 
 func NewNeighborer(c *Config) (this *Neighborer) {
     this = &Neighborer {
-        Neighbors: make(map[string]*Neighbor, 1024*10),
+        neighbors: make(map[string]*Neighbor, 1024*10),
         verbose: c.Verbose,
     }
 
     return
+}
+
+func (this *Neighborer) GetNeighbor(name string) *Neighbor {
+    this.lock.RLock()
+    defer this.lock.RUnlock()
+
+    if n, ok := this.neighbors[name]; ok {
+        return n
+    }
+
+    return nil
+}
+
+func (this *Neighborer) ListNeighbor() chan *Neighbor {
+    c := make(chan *Neighbor, 128)
+
+    go func() {
+        this.lock.RLock()
+        defer this.lock.RUnlock()
+
+        for _, u := range this.neighbors {
+            c <- u
+        }
+        c <- nil //Finish channel by nil.
+    }()
+
+    return c
 }
 
 func (this *Neighborer) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
@@ -78,22 +115,31 @@ func (this *Neighborer) OnFrame(client *libol.TcpClient, frame *libol.Frame) err
 }
 
 func (this *Neighborer) AddNeighbor(neb *Neighbor) {
-    if n := this.Neighbors[neb.HwAddr.String()]; n != nil {
+    this.lock.Lock()
+    defer this.lock.Unlock()
+    
+    if n, ok := this.neighbors[neb.HwAddr.String()]; ok {
         //TODO update.
         log.Printf("Info| Neighborer.AddNeighbor: update %s.", neb)
+        n.IpAddr = neb.IpAddr
+        n.Client = neb.Client
+        n.HitTime = time.Now().Unix()
     } else {
         log.Printf("Info| Neighborer.AddNeighbor: new %s.", neb)
+        n = neb
+        this.neighbors[neb.HwAddr.String()] = n
     }
-    
-    this.Neighbors[neb.HwAddr.String()] = neb
 
     //TODO publish via redis.
 }
 
 func (this *Neighborer) DelNeighbor(hwaddr net.HardwareAddr) {
+    this.lock.RLock()
+    defer this.lock.RUnlock()
+    
     log.Printf("Info| Neighborer.DelNeighbor %s.", hwaddr)
-    if n := this.Neighbors[hwaddr.String()]; n != nil {
-        delete(this.Neighbors, hwaddr.String())
+    if n := this.neighbors[hwaddr.String()]; n != nil {
+        delete(this.neighbors, hwaddr.String())
     }
 }
 
