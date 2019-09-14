@@ -19,7 +19,7 @@ import (
 type VSwitchWroker struct {
     //Public variable
     Server *TcpServer
-    Clients map[*openlan.TcpClient]*water.Interface
+    Clients map[*libol.TcpClient]*water.Interface
     Users map[string]*User
     Neighbor *Neighborer
 
@@ -27,21 +27,21 @@ type VSwitchWroker struct {
     verbose int
     br tenus.Bridger
     keys []int
-    hooks map[int]func(*openlan.TcpClient, *openlan.Frame) error
+    hooks map[int]func(*libol.TcpClient, *openlan.Frame) error
     ifmtu int
 }
 
 func NewVSwitchWroker(server *TcpServer, c *Config) (this *VSwitchWroker) {
     this = &VSwitchWroker {
         Server: server,
-        Clients: make(map[*openlan.TcpClient]*water.Interface, 1024),
+        Clients: make(map[*libol.TcpClient]*water.Interface, 1024),
         Users: make(map[string]*User, 1024),
         Neighbor: NewNeighborer(c),
         
         verbose: c.Verbose,
         br: nil,
         ifmtu: 1514,
-        hooks: make(map[int]func(*openlan.TcpClient, *openlan.Frame) error),
+        hooks: make(map[int]func(*libol.TcpClient, *openlan.Frame) error),
         keys: make([]int, 0, 1024),
     }
 
@@ -170,14 +170,14 @@ func (this *VSwitchWroker) showHook() {
     }
 } 
 
-func (this *VSwitchWroker) setHook(index int, hook func(*openlan.TcpClient, *openlan.Frame) error) {
+func (this *VSwitchWroker) setHook(index int, hook func(*libol.TcpClient, *openlan.Frame) error) {
     this.hooks[index] = hook
     this.keys = append(this.keys, index)
     sort.Ints(this.keys)
 }
 
-func (this *VSwitchWroker) onHook(client *openlan.TcpClient, data []byte) error {
-    frame := openlan.NewFrame(data)
+func (this *VSwitchWroker) onHook(client *libol.TcpClient, data []byte) error {
+    frame := libol.NewFrame(data)
 
     for _, k := range this.keys {
         if this.IsVerbose() {
@@ -193,17 +193,17 @@ func (this *VSwitchWroker) onHook(client *openlan.TcpClient, data []byte) error 
     return nil
 }
 
-func (this *VSwitchWroker) checkAuth(client *openlan.TcpClient, frame *openlan.Frame) error {
+func (this *VSwitchWroker) checkAuth(client *libol.TcpClient, frame *openlan.Frame) error {
     if this.IsVerbose() {
         log.Printf("Debug| VSwitchWroker.checkAuth % x.", frame.Data)
     }
 
-    if openlan.IsInst(frame.Data) {
-        action := openlan.DecAction(frame.Data)
+    if libol.IsInst(frame.Data) {
+        action := libol.DecAction(frame.Data)
         log.Printf("Debug| VSwitchWroker.checkAuth.action: %s", action)
 
         if action == "logi=" {
-            if err := this.handlelogin(client, openlan.DecBody(frame.Data)); err != nil {
+            if err := this.handlelogin(client, libol.DecBody(frame.Data)); err != nil {
                 log.Printf("Error| VSwitchWroker.checkAuth: %s", err)
                 client.SendResp("login", err.Error())
                 client.Close()
@@ -215,7 +215,7 @@ func (this *VSwitchWroker) checkAuth(client *openlan.TcpClient, frame *openlan.F
         return nil
     }
 
-    if client.Status != openlan.CL_AUTHED {
+    if client.Status != libol.CL_AUTHED {
         client.Droped++
         if this.IsVerbose() {
             log.Printf("Debug| VSwitchWroker.onRecv: %s unauth", client.GetAddr())
@@ -226,7 +226,7 @@ func (this *VSwitchWroker) checkAuth(client *openlan.TcpClient, frame *openlan.F
     return nil
 }
 
-func  (this *VSwitchWroker) handlelogin(client *openlan.TcpClient, data string) error {
+func  (this *VSwitchWroker) handlelogin(client *libol.TcpClient, data string) error {
     if this.IsVerbose() {
         log.Printf("Debug| VSwitchWroker.handlelogin: %s", data)
     }
@@ -242,31 +242,31 @@ func  (this *VSwitchWroker) handlelogin(client *openlan.TcpClient, data string) 
 
     if _user, ok := this.Users[name]; ok {
         if _user.Password == user.Password {
-            client.Status = openlan.CL_AUTHED
+            client.Status = libol.CL_AUTHED
             log.Printf("Info| VSwitchWroker.handlelogin: %s Authed", client.GetAddr())
             this.onAuth(client)
             return nil
         }
 
-        client.Status = openlan.CL_UNAUTH
+        client.Status = libol.CL_UNAUTH
     }
 
     return errors.New("Auth failed.")
 }
 
-func (this *VSwitchWroker) handleReq(client *openlan.TcpClient, frame *openlan.Frame) error {
+func (this *VSwitchWroker) handleReq(client *libol.TcpClient, frame *openlan.Frame) error {
     return nil
 }
 
-func (this *VSwitchWroker) onClient(client *openlan.TcpClient) error {
-    client.Status = openlan.CL_CONNECTED
+func (this *VSwitchWroker) onClient(client *libol.TcpClient) error {
+    client.Status = libol.CL_CONNECTED
     log.Printf("Info| VSwitchWroker.onClient: %s", client.GetAddr()) 
 
     return nil
 }
 
-func (this *VSwitchWroker) onAuth(client *openlan.TcpClient) error {
-    if client.Status != openlan.CL_AUTHED {
+func (this *VSwitchWroker) onAuth(client *libol.TcpClient) error {
+    if client.Status != libol.CL_AUTHED {
         return errors.New("not authed.")
     }
 
@@ -283,7 +283,7 @@ func (this *VSwitchWroker) onAuth(client *openlan.TcpClient) error {
     return nil
 }
 
-func (this *VSwitchWroker) onRecv(client *openlan.TcpClient, data []byte) error {
+func (this *VSwitchWroker) onRecv(client *libol.TcpClient, data []byte) error {
     //TODO Hook packets such as ARP Learning.
     if this.IsVerbose() {
         log.Printf("Debug| VSwitchWroker.onRecv: %s % x", client.GetAddr(), data)    
@@ -308,7 +308,7 @@ func (this *VSwitchWroker) onRecv(client *openlan.TcpClient, data []byte) error 
     return nil
 }
 
-func (this *VSwitchWroker) onClose(client *openlan.TcpClient) error {
+func (this *VSwitchWroker) onClose(client *libol.TcpClient) error {
     log.Printf("Info| VSwitchWroker.onClose: %s", client.GetAddr())
     if ifce := this.Clients[client]; ifce != nil {
         ifce.Close()

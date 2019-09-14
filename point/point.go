@@ -9,7 +9,7 @@ import (
 
 type Point struct {
     Verbose int
-    Client *openlan.TcpClient
+    Client *libol.TcpClient
     Ifce *water.Interface
     //
     tcpwroker *TcpWroker 
@@ -23,7 +23,7 @@ func NewPoint(config *Config) (this *Point){
     }
     log.Printf("Info| NewPoint.device %s\n", ifce.Name())
 
-    client := openlan.NewTcpClient(config.Addr, config.Verbose)
+    client := libol.NewTcpClient(config.Addr, config.Verbose)
 
     this = &Point {
         Verbose: config.Verbose,

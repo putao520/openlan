@@ -7,7 +7,7 @@ import (
 )
 
 type Neighbor struct {
-    Client *openlan.TcpClient  `json:"Client"`
+    Client *libol.TcpClient  `json:"Client"`
 
     HwAddr net.HardwareAddr `json:"HwAddr"`
     IpAddr net.IP `json:"IpAddr"`
@@ -17,7 +17,7 @@ func (this *Neighbor) String() {
     return fmt.Sprintf("%s,%s,%s", this.HwAddr, this.IpAddr, this.Client)
 }
 
-func NewNeighbor(hwaddr net.HardwareAddr, ipaddr net.IP, client *openlan.TcpClient) (this *Neighbor) {
+func NewNeighbor(hwaddr net.HardwareAddr, ipaddr net.IP, client *libol.TcpClient) (this *Neighbor) {
     this = &Neighbor {
         HwAddr: hwaddr,
         IpAddr: ipaddr,
@@ -41,34 +41,34 @@ func NewNeighborer(c *Config) (this *Neighborer) {
     return
 }
 
-func (this *Neighborer) OnFrame(client *openlan.TcpClient, frame *openlan.Frame) error {
+func (this *Neighborer) OnFrame(client *libol.TcpClient, frame *openlan.Frame) error {
     if this.IsVerbose() {
         log.Printf("Debug| Neighborer.OnFrame % x.", frame.Data)
     }
 
-    if openlan.IsInst(frame.Data) {
+    if libol.IsInst(frame.Data) {
         return nil
     }
 
     ethtype := frame.EthType()
     ethdata := frame.EthData()
-    if ethtype != openlan.ETH_P_ARP {
-        if ethtype == openlan.ETH_P_VLAN {
+    if ethtype != libol.ETH_P_ARP {
+        if ethtype == libol.ETH_P_VLAN {
             //TODO
         }
         
         return nil
     }
 
-    arp := openlan.NewArp()
+    arp := libol.NewArp()
     if err := arp.Decode(ethdata); err != nil {
         log.Printf("Error| Neighborer.OnFrame %s.", err)
         return nil
     }
 
-    if arp.ProCode == openlan.ETH_P_IP4 {
-        if arp.OpCode == openlan.ARP_REQUEST ||
-           arp.OpCode == openlan.ARP_REPLY {
+    if arp.ProCode == libol.ETH_P_IP4 {
+        if arp.OpCode == libol.ARP_REQUEST ||
+           arp.OpCode == libol.ARP_REPLY {
             n := NewNeighbor(net.HardwareAddr(arp.SHwAddr), net.IP(arp.SIpAddr), client)
             this.AddNeighbor(n)
         }
@@ -97,7 +97,7 @@ func (this *Neighborer) DelNeighbor(hwaddr net.HardwareAddr) {
     }
 }
 
-func (this *Neighbor) OnClientClose(client *openlan.TcpClient) {
+func (this *Neighbor) OnClientClose(client *libol.TcpClient) {
     //TODO
 }
 

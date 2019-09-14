@@ -11,9 +11,9 @@ type TcpServer struct {
     addr string
     listener *net.TCPListener
     maxClient int
-    clients map[*openlan.TcpClient]bool
-    onClients chan *openlan.TcpClient
-    offClients chan *openlan.TcpClient
+    clients map[*libol.TcpClient]bool
+    onClients chan *libol.TcpClient
+    offClients chan *libol.TcpClient
     verbose int
 }
 
@@ -22,9 +22,9 @@ func NewTcpServer(c *Config) (this *TcpServer) {
         addr: c.TcpListen,
         listener: nil,
         maxClient: 1024,
-        clients: make(map[*openlan.TcpClient]bool, 1024),
-        onClients: make(chan *openlan.TcpClient, 4),
-        offClients: make(chan *openlan.TcpClient, 8),
+        clients: make(map[*libol.TcpClient]bool, 1024),
+        onClients: make(chan *libol.TcpClient, 4),
+        offClients: make(chan *libol.TcpClient, 8),
         verbose: c.Verbose,
     }
 
@@ -75,15 +75,15 @@ func (this *TcpServer) GoAccept() {
             return
         }
 
-        this.onClients <- openlan.NewTcpClientFromConn(conn, this.verbose)
+        this.onClients <- libol.NewTcpClientFromConn(conn, this.verbose)
     }
 
     return
 }
 
-func (this *TcpServer) GoLoop(onClient func (*openlan.TcpClient) error, 
-                              onRecv func (*openlan.TcpClient, []byte) error,
-                              onClose func (*openlan.TcpClient) error) {
+func (this *TcpServer) GoLoop(onClient func (*libol.TcpClient) error, 
+                              onRecv func (*libol.TcpClient, []byte) error,
+                              onClose func (*libol.TcpClient) error) {
     log.Printf("Debug| TcpServer.GoLoop")
     defer this.Close()
     for {
@@ -108,7 +108,7 @@ func (this *TcpServer) GoLoop(onClient func (*openlan.TcpClient) error,
     }
 }
 
-func (this *TcpServer) GoRecv(client *openlan.TcpClient, onRecv func (*openlan.TcpClient, []byte) error) {
+func (this *TcpServer) GoRecv(client *libol.TcpClient, onRecv func (*openlan.TcpClient, []byte) error) {
     log.Printf("Debug| TcpServer.GoRecv: %s", client.GetAddr())    
     for {
         data := make([]byte, 4096)
