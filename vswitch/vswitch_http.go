@@ -111,7 +111,12 @@ func (this *VSwitchHttp) Index(w http.ResponseWriter, r *http.Request) {
     switch (r.Method) {
     case "GET":  
         body := "uptime, remoteaddr, device, receipt, transmission, error\n"
-        for client, ifce := range this.wroker.Clients {
+        for p := range this.wroker.ListPoint() {
+            if p == nil {
+                break
+            }
+
+            client, ifce := p.Client, p.Device
             body += fmt.Sprintf("%d, %s, %s, %d, %d, %d\n", 
                                 client.UpTime(), client.GetAddr(), ifce.Name(),
                                 client.RxOkay, client.TxOkay, client.TxError)
@@ -130,13 +135,14 @@ func (this *VSwitchHttp) User(w http.ResponseWriter, r *http.Request) {
 
     switch (r.Method) {
     case "GET":
-        pagesJson, err := json.Marshal(this.wroker.Users)
-        if err != nil {
-            fmt.Fprintf(w, fmt.Sprintf("Error| VSwitchHttp.User: %s", err))
-            return
+        body := "username, password, token\n"
+        for u := range this.wroker.ListUser() {
+            if u == nil {
+                break
+            }
+            body += fmt.Sprintf("%s, %s, %s\n", u.Name, u.Password, u.Token)
         }
-
-        fmt.Fprintf(w, string(pagesJson))
+        fmt.Fprintf(w, body)
     case "POST":
         defer r.Body.Close()
         body, err := ioutil.ReadAll(r.Body)
@@ -151,11 +157,7 @@ func (this *VSwitchHttp) User(w http.ResponseWriter, r *http.Request) {
             return
         }
 
-        if user.Name != "" {
-            this.wroker.Users[user.Name] = user
-        } else if (user.Token != "") {
-            this.wroker.Users[user.Token] = user
-        }
+        this.wroker.AddUser(user)
 
         fmt.Fprintf(w, "Saved it.")
     default:
