@@ -35,6 +35,8 @@ func NewPoint(c *libol.TcpClient, d *water.Interface) (this *Point) {
 type VSwitchWroker struct {
     //Public variable
     Server *TcpServer
+    Auth *PointAuth
+    Request *WithRequest
     Neighbor *Neighborer
 
     //Private variable
@@ -54,7 +56,7 @@ type VSwitchWroker struct {
 func NewVSwitchWroker(server *TcpServer, c *Config) (this *VSwitchWroker) {
     this = &VSwitchWroker {
         Server: server,
-        Neighbor: NewNeighborer(c),
+        Neighbor: nil,
 
         verbose: c.Verbose,
         br: nil,
@@ -66,7 +68,11 @@ func NewVSwitchWroker(server *TcpServer, c *Config) (this *VSwitchWroker) {
         newtime: time.Now().Unix(),
     }
 
-    this.newBr(c.Brname, c.Ifaddr)
+    this.Auth = NewPointAuth(this, c)
+    this.Request = NewWithRequest(this, c)
+    this.Neighbor = NewNeighborer(this, c)
+
+    this.NewBr(c.Brname, c.Ifaddr)
     this.register()
     this.loadUsers(c.Password)
 
@@ -75,8 +81,8 @@ func NewVSwitchWroker(server *TcpServer, c *Config) (this *VSwitchWroker) {
 
 func (this *VSwitchWroker) register() {
     this.setHook(0x10, this.Neighbor.OnFrame)
-    this.setHook(0x00, this.checkAuth)
-    this.setHook(0x01, this.handleReq)
+    this.setHook(0x00, this.Auth.OnFrame)
+    this.setHook(0x01, this.Request.OnFrame)
 
     this.showHook()
 }
@@ -106,7 +112,7 @@ func (this *VSwitchWroker) loadUsers(path string) error {
     return nil
 }
 
-func (this *VSwitchWroker) newBr(brname string, addr string) {
+func (this *VSwitchWroker) NewBr(brname string, addr string) {
     addrs := strings.Split(this.Server.GetAddr(), ":")
     if len(addrs) != 2 {
         log.Printf("Error| VSwitchWroker.newBr: address: %s", this.Server.GetAddr())
@@ -150,7 +156,7 @@ func (this *VSwitchWroker) newBr(brname string, addr string) {
     this.br = br
 }
 
-func (this *VSwitchWroker) newTap() (*water.Interface, error) {
+func (this *VSwitchWroker) NewTap() (*water.Interface, error) {
     log.Printf("Debug| VSwitchWroker.newTap")  
     ifce, err := water.New(water.Config {
         DeviceType: water.TAP,
@@ -214,67 +220,6 @@ func (this *VSwitchWroker) onHook(client *libol.TcpClient, data []byte) error {
     return nil
 }
 
-func (this *VSwitchWroker) checkAuth(client *libol.TcpClient, frame *libol.Frame) error {
-    if this.IsVerbose() {
-        log.Printf("Debug| VSwitchWroker.checkAuth % x.", frame.Data)
-    }
-
-    if libol.IsInst(frame.Data) {
-        action := libol.DecAction(frame.Data)
-        log.Printf("Debug| VSwitchWroker.checkAuth.action: %s", action)
-
-        if action == "logi=" {
-            if err := this.handlelogin(client, libol.DecBody(frame.Data)); err != nil {
-                log.Printf("Error| VSwitchWroker.checkAuth: %s", err)
-                client.SendResp("login", err.Error())
-                client.Close()
-                return err
-            }
-            client.SendResp("login", "okay.")
-        }
-
-        return nil
-    }
-
-    if client.Status != libol.CL_AUTHED {
-        client.Droped++
-        if this.IsVerbose() {
-            log.Printf("Debug| VSwitchWroker.onRecv: %s unauth", client.GetAddr())
-        }
-        return errors.New("Unauthed client.")
-    }
-
-    return nil
-}
-
-func  (this *VSwitchWroker) handlelogin(client *libol.TcpClient, data string) error {
-    if this.IsVerbose() {
-        log.Printf("Debug| VSwitchWroker.handlelogin: %s", data)
-    }
-    user := &User {}
-    if err := json.Unmarshal([]byte(data), user); err != nil {
-        return errors.New("Invalid json data.")
-    }
-
-    name := user.Name
-    if user.Token != "" {
-        name = user.Token
-    }
-    _user := this.GetUser(name)
-    if _user != nil {
-        if _user.Password == user.Password {
-            client.Status = libol.CL_AUTHED
-            log.Printf("Info| VSwitchWroker.handlelogin: %s Authed", client.GetAddr())
-            this.onAuth(client)
-            return nil
-        }
-
-        client.Status = libol.CL_UNAUTH
-    }
-
-    return errors.New("Auth failed.")
-}
-
 func (this *VSwitchWroker) handleReq(client *libol.TcpClient, frame *libol.Frame) error {
     return nil
 }
@@ -282,25 +227,6 @@ func (this *VSwitchWroker) handleReq(client *libol.TcpClient, frame *libol.Frame
 func (this *VSwitchWroker) onClient(client *libol.TcpClient) error {
     client.Status = libol.CL_CONNECTED
     log.Printf("Info| VSwitchWroker.onClient: %s", client.GetAddr()) 
-
-    return nil
-}
-
-func (this *VSwitchWroker) onAuth(client *libol.TcpClient) error {
-    if client.Status != libol.CL_AUTHED {
-        return errors.New("not authed.")
-    }
-
-    log.Printf("Info| VSwitchWroker.onAuth: %s", client.GetAddr())   
-
-    ifce, err := this.newTap()
-    if err != nil {
-        return err
-    }
-
-    this.AddPoint(NewPoint(client, ifce))
-    
-    go this.GoRecv(ifce, client.SendMsg)
 
     return nil
 }
@@ -345,26 +271,6 @@ func (this *VSwitchWroker) onClose(client *libol.TcpClient) error {
 
 func (this *VSwitchWroker) Close() {
     this.Server.Close()
-}
-
-func (this *VSwitchWroker) GoRecv(ifce *water.Interface, dorecv func([]byte)(error)) {
-    log.Printf("Info| VSwitchWroker.GoRecv: %s", ifce.Name())    
-    defer ifce.Close()
-    for {
-        data := make([]byte, this.ifmtu)
-        n, err := ifce.Read(data)
-        if err != nil {
-            log.Printf("Error| VSwitchWroker.GoRev: %s", err)
-            break
-        }
-        if this.IsVerbose() {
-            log.Printf("Debug| VSwitchWroker.GoRev: % x\n", data[:n])
-        }
-
-        if err := dorecv(data[:n]); err != nil {
-            log.Printf("Error| VSwitchWroker.GoRev: do-recv %s %s", ifce.Name(), err)
-        }
-    }
 }
 
 func (this *VSwitchWroker) IsVerbose() bool {
@@ -455,4 +361,145 @@ func (this *VSwitchWroker) ListPoint() chan *Point {
 
 func (this *VSwitchWroker) UpTime() int64 {
     return time.Now().Unix() - this.newtime
+}
+
+type PointAuth struct {
+    ifmtu int
+    verbose int 
+    wroker *VSwitchWroker
+}
+
+func NewPointAuth(wroker *VSwitchWroker, c *Config) (this *PointAuth) {
+    this = &PointAuth {
+        ifmtu: c.Ifmtu,
+        verbose: c.Verbose,
+        wroker: wroker,
+    }
+    return
+}
+
+func (this *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
+    if this.IsVerbose() {
+        log.Printf("Debug| PointAuth.checkAuth % x.", frame.Data)
+    }
+
+    if libol.IsInst(frame.Data) {
+        action := libol.DecAction(frame.Data)
+        log.Printf("Debug| PointAuth.checkAuth.action: %s", action)
+
+        if action == "logi=" {
+            if err := this.handlelogin(client, libol.DecBody(frame.Data)); err != nil {
+                log.Printf("Error| PointAuth.checkAuth: %s", err)
+                client.SendResp("login", err.Error())
+                client.Close()
+                return err
+            }
+            client.SendResp("login", "okay.")
+        }
+
+        return nil
+    }
+
+    if client.Status != libol.CL_AUTHED {
+        client.Droped++
+        if this.IsVerbose() {
+            log.Printf("Debug| PointAuth.onRecv: %s unauth", client.GetAddr())
+        }
+        return errors.New("Unauthed client.")
+    }
+
+    return nil
+}
+
+func  (this *PointAuth) handlelogin(client *libol.TcpClient, data string) error {
+    if this.IsVerbose() {
+        log.Printf("Debug| PointAuth.handlelogin: %s", data)
+    }
+    user := &User {}
+    if err := json.Unmarshal([]byte(data), user); err != nil {
+        return errors.New("Invalid json data.")
+    }
+
+    name := user.Name
+    if user.Token != "" {
+        name = user.Token
+    }
+    _user := this.wroker.GetUser(name)
+    if _user != nil {
+        if _user.Password == user.Password {
+            client.Status = libol.CL_AUTHED
+            log.Printf("Info| PointAuth.handlelogin: %s Authed", client.GetAddr())
+            this.onAuth(client)
+            return nil
+        }
+
+        client.Status = libol.CL_UNAUTH
+    }
+
+    return errors.New("Auth failed.")
+}
+
+func (this *PointAuth) IsVerbose() bool {
+    return this.verbose != 0
+}
+
+func (this *PointAuth) onAuth(client *libol.TcpClient) error {
+    if client.Status != libol.CL_AUTHED {
+        return errors.New("not authed.")
+    }
+
+    log.Printf("Info| PointAuth.onAuth: %s", client.GetAddr())   
+
+    ifce, err := this.wroker.NewTap()
+    if err != nil {
+        return err
+    }
+
+    this.wroker.AddPoint(NewPoint(client, ifce))
+    
+    go this.GoRecv(ifce, client.SendMsg)
+
+    return nil
+}
+
+func (this *PointAuth) GoRecv(ifce *water.Interface, dorecv func([]byte)(error)) {
+    log.Printf("Info| PointAuth.GoRecv: %s", ifce.Name())    
+    defer ifce.Close()
+    for {
+        data := make([]byte, this.ifmtu)
+        n, err := ifce.Read(data)
+        if err != nil {
+            log.Printf("Error| PointAuth.GoRev: %s", err)
+            break
+        }
+        if this.IsVerbose() {
+            log.Printf("Debug| PointAuth.GoRev: % x\n", data[:n])
+        }
+
+        if err := dorecv(data[:n]); err != nil {
+            log.Printf("Error| PointAuth.GoRev: do-recv %s %s", ifce.Name(), err)
+        }
+    }
+}
+
+
+type WithRequest struct {
+    verbose int 
+    wroker *VSwitchWroker
+}
+
+func NewWithRequest(wroker *VSwitchWroker, c *Config) (this *WithRequest) {
+    this = &WithRequest {
+        verbose: c.Verbose,
+        wroker: wroker,
+    }
+    return
+}
+
+func (this *WithRequest) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
+    return nil
+}
+
+func (this *WithRequest) IsVerbose() bool {
+    return this.verbose != 0
 }

@@ -41,12 +41,14 @@ type Neighborer struct {
     lock sync.RWMutex
     neighbors map[string]*Neighbor
     verbose int
+    wroker *VSwitchWroker
 }
 
-func NewNeighborer(c *Config) (this *Neighborer) {
+func NewNeighborer(wroker *VSwitchWroker, c *Config) (this *Neighborer) {
     this = &Neighborer {
         neighbors: make(map[string]*Neighbor, 1024*10),
         verbose: c.Verbose,
+        wroker: wroker,
     }
 
     return
