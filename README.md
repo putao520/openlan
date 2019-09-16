@@ -8,11 +8,9 @@ Download `resource/tap-windows-9.21.2.exe`, then install it. And run Point in Wi
 
 # Build in Powershell
 
-Download dependent sources
+Add `vendor` to `GOPATH` by `Control Panel\System and Security\System\`
 
-    PS L:\vswitchnlan-go\olv1> go get github.com/songgao/water
-    PS L:\vswitchnlan-go\olv1> go get github.com/milosgajdos83/tenus
-    PS L:\vswitchnlan-go\olv1> go get golang.org/x/sys
+    <your-path-save-openlan>\openlan-go\vendor
 
 Execute building command.
 
