@@ -43,6 +43,9 @@ type VSwitchWroker struct {
     //Private variable
     verbose int
     br tenus.Bridger
+    brip net.IP
+    brnet *net.IPNet
+    
     keys []int
     hooks map[int]func(*libol.TcpClient, *libol.Frame) error
     ifmtu int
@@ -150,16 +153,18 @@ func (this *VSwitchWroker) NewBr(brname string, addr string) {
 
     log.Printf("Info| VSwitchWroker.newBr %s", brname)
 
-    ip, ipnet, err := net.ParseCIDR(addr)
+    ip, net, err := net.ParseCIDR(addr)
     if err != nil {
         log.Printf("Error| VSwitchWroker.newBr.ParseCIDR %s : %s", addr, err)
     }
 
-    if err := br.SetLinkIp(ip, ipnet); err != nil {
+    if err := br.SetLinkIp(ip, net); err != nil {
         log.Printf("Error| VSwitchWroker.newBr.SetLinkIp %s : %s", brname, err)
     }
 
     this.br = br
+    this.brip = ip
+    this.brnet = net
 }
 
 func (this *VSwitchWroker) NewTap() (*water.Interface, error) {
@@ -276,13 +281,20 @@ func (this *VSwitchWroker) onClose(client *libol.TcpClient) error {
 }
 
 func (this *VSwitchWroker) Close() {
+    log.Printf("Info| VSwitchWroker.Close")
+
     this.Server.Close()
+
+    if this.br != nil && this.brip != nil {
+        if err := this.br.UnsetLinkIp(this.brip, this.brnet); err != nil {
+            log.Printf("Error| VSwitchWroker.Close.UnsetLinkIp %s : %s", this.br.NetInterface().Name, err)
+        }
+    }
 }
 
 func (this *VSwitchWroker) IsVerbose() bool {
     return this.verbose != 0
 }
-
 
 func (this *VSwitchWroker) AddUser(user *User) {
     this.usersLock.Lock()
