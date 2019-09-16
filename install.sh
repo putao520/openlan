@@ -30,8 +30,8 @@ hi:hi@123$
 EOF
 }
 
-systemctl enable point
-systemctl enable vswitch
+#systemctl enable point
+#systemctl enable vswitch
 
 #systemctl start point
 #systemctl start vswitch
