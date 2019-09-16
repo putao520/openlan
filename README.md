@@ -4,7 +4,7 @@ Refer to https://github.com/danieldin95/openlan-py , and now we change cpe to po
 
 # Install tap-windows6
 
-Download `resources/tap-windows-9.21.2.exe`, then install it. And run Point in Windows by `point.exe -vs:addr x.x.x.x -vs:auth zzz:wwww`. 
+Download `resource/tap-windows-9.21.2.exe`, then install it. And run Point in Windows by `point.exe -vs:addr x.x.x.x -vs:auth zzz:wwww`. 
 
 # Build in Powershell
 
@@ -16,7 +16,7 @@ Download dependent sources
 
 Execute building command.
 
-    PS L:\vswitchnlan-go\olv1> go build -o ./resources/point.exe cpe_windows.go
+    PS L:\vswitchnlan-go\olv1> go build -o ./resource/point.exe cpe_windows.go
 
 # Configure Windows TAP Device
 
@@ -32,7 +32,7 @@ Or Configure by Powershell.
     [root@localhost olv1]# cat .passowrd
     zzz:wwww
     xxxx:aaaaa
-    [root@localhost olv1]# nohup ./resources/vswitch -vs:addr x.x.x.x -if:addr 192.168.x.a/24 &
+    [root@localhost olv1]# nohup ./resource/vswitch -vs:addr x.x.x.x -if:addr 192.168.x.a/24 &
     [root@localhost olv1]# cat .vswitchtoken
     m64rxofsqkvlb4cj
     
@@ -46,6 +46,6 @@ Show Users
 
 # Start Point on Linux
 
-    [root@localhost olv1]# nohup ./resources/point -vs:addr x.x.x.x -vs:auth zzz:wwww -if:addr 192.168.x.b/24 &
+    [root@localhost olv1]# nohup ./resource/point -vs:addr x.x.x.x -vs:auth zzz:wwww -if:addr 192.168.x.b/24 &
     [root@localhost olv1]# ping 192.168.x.a
 
