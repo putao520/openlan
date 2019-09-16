@@ -48,7 +48,7 @@ func (this *RedisCli) Open() error {
     _, err := client.Ping().Result()
     if err != nil {
         return err
-    } 
+    }
 
     this.Client = client
     
@@ -60,6 +60,10 @@ func (this *RedisCli) Close() error {
 }
 
 func (this *RedisCli) HMSet(key string, value map[string] interface{}) error {
+    if err := this.Open(); err != nil {
+        return err
+    }
+    
     if _, err := this.Client.HMSet(key, value).Result(); err != nil {
         return err
     }
@@ -67,6 +71,10 @@ func (this *RedisCli) HMSet(key string, value map[string] interface{}) error {
 }
 
 func (this *RedisCli) HMDel(key string, field string) error {
+    if err := this.Open(); err != nil {
+        return err
+    }
+    
     if field == "" {
         if _, err := this.Client.Del(key).Result(); err != nil {
             return err
@@ -80,6 +88,10 @@ func (this *RedisCli) HMDel(key string, field string) error {
 }
 
 func (this *RedisCli) HGet(key string, field string) interface{} {
+    if err := this.Open(); err != nil {
+        return err
+    }
+    
     hget := this.Client.HGet(key, field)
     if hget.Err() == nil || hget.Err() == redis.Nil {
         return nil
