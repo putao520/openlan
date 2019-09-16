@@ -16,6 +16,9 @@ type Config struct {
     Token string `json:"adminToken"`
     TokenFile string `json:"adminFile"`
     Password string `json:"authFile"`
+    RedisListen string `json:"RedisAddr"`
+    RedisPassword string `json:"RedisPassword"`
+    RedisDatabase int `json:"RedisDatabse"`
 } 
 
 func RightAddr(listen *string, port int) {
@@ -37,6 +40,9 @@ func NewConfig() (this *Config) {
     flag.StringVar(&this.Password, "auth:file", ".password", "The file password loading from.")
     flag.IntVar(&this.Ifmtu, "if:mtu", 1518, "the interface MTU include ethernet")
     flag.StringVar(&this.Ifaddr, "if:addr", "192.168.100.2/24", "the interface address")
+    flag.StringVar(&this.RedisListen, "redis:addr", "127.0.0.1",  "the redis listen on")
+    flag.StringVar(&this.RedisPassword, "redis:password", "",  "the password for redis")
+    flag.IntVar(&this.RedisDatabase, "redis:db", 0,  "the database for redis")
 
     flag.Parse()
    

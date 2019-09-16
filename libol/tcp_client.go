@@ -261,3 +261,7 @@ func (this *TcpClient) UpTime() int64 {
 func (this *TcpClient) String() string {
     return this.addr
 }
+
+func (this *TcpClient) GetNewTime() int64 {
+    return this.newtime
+}

@@ -38,6 +38,7 @@ type VSwitchWroker struct {
     Auth *PointAuth
     Request *WithRequest
     Neighbor *Neighborer
+    Redis *libol.RedisCli
 
     //Private variable
     verbose int
@@ -57,6 +58,7 @@ func NewVSwitchWroker(server *TcpServer, c *Config) (this *VSwitchWroker) {
     this = &VSwitchWroker {
         Server: server,
         Neighbor: nil,
+        Redis: libol.NewRedisCli(c.RedisListen, c.RedisPassword, c.RedisDatabase),
 
         verbose: c.Verbose,
         br: nil,
@@ -68,6 +70,10 @@ func NewVSwitchWroker(server *TcpServer, c *Config) (this *VSwitchWroker) {
         newtime: time.Now().Unix(),
     }
 
+    if err := this.Redis.Open(); err != nil {
+        log.Printf("Error| NewVSwitchWroker: redis.Open %s", err)
+    }
+    
     this.Auth = NewPointAuth(this, c)
     this.Request = NewWithRequest(this, c)
     this.Neighbor = NewNeighborer(this, c)
@@ -320,6 +326,7 @@ func (this *VSwitchWroker) AddPoint(p *Point) {
     this.clientsLock.Lock()
     defer this.clientsLock.Unlock()
 
+    this.PubPoint(p)
     this.clients[p.Client] = p
 }
 
@@ -361,6 +368,19 @@ func (this *VSwitchWroker) ListPoint() chan *Point {
 
 func (this *VSwitchWroker) UpTime() int64 {
     return time.Now().Unix() - this.newtime
+}
+
+func (this *VSwitchWroker) PubPoint(p *Point) {
+    key := fmt.Sprintf("point:%s", strings.Replace(p.Client.String(), ":", "-", -1))
+    value := map[string]interface{} {
+        "remote": p.Client.String(), 
+        "newtime": p.Client.GetNewTime(),
+        "device": p.Device.Name(),
+    }
+    
+    if _, err := this.Redis.Client.HMSet(key, value).Result(); err != nil {
+        log.Printf("Error| Neighborer.PubNeighbor hset %s", err)
+    }
 }
 
 type PointAuth struct {

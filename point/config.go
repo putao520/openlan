@@ -28,7 +28,7 @@ func NewConfig() (this *Config) {
     this = &Config {}
 
     flag.StringVar(&this.Addr, "vs:addr", "openlan.net:10002",  "the server connect to")
-    flag.StringVar(&this.Auth, "vs:auth", "openlan:password",  "the auth login to")
+    flag.StringVar(&this.Auth, "vs:auth", "hi:hi@123$",  "the auth login to")
     flag.IntVar(&this.Verbose, "verbose", 0x00, "open verbose")
     flag.IntVar(&this.Ifmtu, "if:mtu", 1518, "the interface MTU include ethernet")
     flag.StringVar(&this.Ifaddr, "if:addr", "192.168.100.254/24", "the interface address")

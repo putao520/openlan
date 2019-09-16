@@ -6,6 +6,8 @@ import (
     "log"
     "sync"
     "time"
+    "strings"
+    
     "github.com/danieldin95/openlan-go/libol"
 )
 
@@ -132,7 +134,7 @@ func (this *Neighborer) AddNeighbor(neb *Neighbor) {
         this.neighbors[neb.HwAddr.String()] = n
     }
 
-    //TODO publish via redis.
+    this.PubNeighbor(neb)
 }
 
 func (this *Neighborer) DelNeighbor(hwaddr net.HardwareAddr) {
@@ -152,4 +154,19 @@ func (this *Neighborer) OnClientClose(client *libol.TcpClient) {
 
 func (this *Neighborer) IsVerbose() bool {
     return this.verbose != 0
+}
+
+func (this *Neighborer) PubNeighbor(neb *Neighbor) {
+    key := fmt.Sprintf("neighbor:%s", strings.Replace(neb.HwAddr.String(), ":", "-", -1))
+    value := map[string]interface{} {
+        "hwaddr": neb.HwAddr.String(),
+        "ipaddr": neb.IpAddr.String(),
+        "remote": neb.Client.String(),
+        "newtime": neb.NewTime,
+        "hittime": neb.HitTime,
+    }
+    
+    if _, err := this.wroker.Redis.Client.HMSet(key, value).Result(); err != nil {
+        log.Printf("Error| Neighborer.PubNeighbor hset %s", err)
+    }
 }
