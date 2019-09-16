@@ -134,7 +134,7 @@ func (this *Neighborer) AddNeighbor(neb *Neighbor) {
         this.neighbors[neb.HwAddr.String()] = n
     }
 
-    this.PubNeighbor(neb)
+    this.PubNeighbor(neb, true)
 }
 
 func (this *Neighborer) DelNeighbor(hwaddr net.HardwareAddr) {
@@ -143,6 +143,7 @@ func (this *Neighborer) DelNeighbor(hwaddr net.HardwareAddr) {
     
     log.Printf("Info| Neighborer.DelNeighbor %s.", hwaddr)
     if n := this.neighbors[hwaddr.String()]; n != nil {
+        this.PubNeighbor(n, false)
         delete(this.neighbors, hwaddr.String())
     }
 }
@@ -156,7 +157,7 @@ func (this *Neighborer) IsVerbose() bool {
     return this.verbose != 0
 }
 
-func (this *Neighborer) PubNeighbor(neb *Neighbor) {
+func (this *Neighborer) PubNeighbor(neb *Neighbor, isadd bool) {
     key := fmt.Sprintf("neighbor:%s", strings.Replace(neb.HwAddr.String(), ":", "-", -1))
     value := map[string]interface{} {
         "hwaddr": neb.HwAddr.String(),
@@ -164,9 +165,10 @@ func (this *Neighborer) PubNeighbor(neb *Neighbor) {
         "remote": neb.Client.String(),
         "newtime": neb.NewTime,
         "hittime": neb.HitTime,
+        "actived": isadd,
     }
-    
-    if _, err := this.wroker.Redis.Client.HMSet(key, value).Result(); err != nil {
+
+    if err := this.wroker.Redis.HMSet(key, value); err != nil {
         log.Printf("Error| Neighborer.PubNeighbor hset %s", err)
-    }
+    }    
 }

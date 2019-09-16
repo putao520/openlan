@@ -58,3 +58,32 @@ func (this *RedisCli) Open() error {
 func (this *RedisCli) Close() error {
     return nil
 }
+
+func (this *RedisCli) HMSet(key string, value map[string] interface{}) error {
+    if _, err := this.Client.HMSet(key, value).Result(); err != nil {
+        return err
+    }
+    return nil
+}
+
+func (this *RedisCli) HMDel(key string, field string) error {
+    if field == "" {
+        if _, err := this.Client.Del(key).Result(); err != nil {
+            return err
+        }
+    } else {
+        if _, err := this.Client.HDel(key, field).Result(); err != nil {
+            return err
+        }        
+    }
+    return nil
+}
+
+func (this *RedisCli) HGet(key string, field string) interface{} {
+    hget := this.Client.HGet(key, field)
+    if hget.Err() == nil || hget.Err() == redis.Nil {
+        return nil
+    }
+
+    return hget.Val()
+}

@@ -326,7 +326,7 @@ func (this *VSwitchWroker) AddPoint(p *Point) {
     this.clientsLock.Lock()
     defer this.clientsLock.Unlock()
 
-    this.PubPoint(p)
+    this.PubPoint(p, true)
     this.clients[p.Client] = p
 }
 
@@ -346,6 +346,7 @@ func (this *VSwitchWroker) DelPoint(c *libol.TcpClient) {
     
     if p, ok := this.clients[c]; ok {
         p.Device.Close()
+        this.PubPoint(p, false)
         delete(this.clients, p.Client)
     }
 }
@@ -370,15 +371,16 @@ func (this *VSwitchWroker) UpTime() int64 {
     return time.Now().Unix() - this.newtime
 }
 
-func (this *VSwitchWroker) PubPoint(p *Point) {
+func (this *VSwitchWroker) PubPoint(p *Point, isadd bool) {
     key := fmt.Sprintf("point:%s", strings.Replace(p.Client.String(), ":", "-", -1))
     value := map[string]interface{} {
         "remote": p.Client.String(), 
         "newtime": p.Client.GetNewTime(),
         "device": p.Device.Name(),
+        "actived": isadd, 
     }
-    
-    if _, err := this.Redis.Client.HMSet(key, value).Result(); err != nil {
+
+    if err := this.Redis.HMSet(key, value); err != nil {
         log.Printf("Error| Neighborer.PubNeighbor hset %s", err)
     }
 }
