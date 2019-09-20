@@ -38,9 +38,9 @@ Show Points
 
     [root@localhost olv1]# curl -um64rxofsqkvlb4cj: -XGET http://localhost:10082/
 
-Show Users
+Show Neightbors
 
-    [root@localhost olv1]# curl -um64rxofsqkvlb4cj: -XGET http://localhost:10082/user
+    [root@localhost olv1]# curl -um64rxofsqkvlb4cj: -XGET http://localhost:10082/neighbor
 
 # Start Point on Linux
 
