@@ -4,7 +4,7 @@ import (
     "fmt"
     "log"
 
-    "github.com/danieldin95/openlan-go/point"
+    "github.com/lightstar-dev/openlan-go/point"
 )
 
 func main() {

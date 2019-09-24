@@ -4,7 +4,7 @@ import (
     "log"
 
     "github.com/songgao/water"
-    "github.com/danieldin95/openlan-go/libol"
+    "github.com/lightstar-dev/openlan-go/libol"
 )
 
 type Point struct {

@@ -8,7 +8,7 @@ import (
     "time"
     "strings"
     
-    "github.com/danieldin95/openlan-go/libol"
+    "github.com/lightstar-dev/openlan-go/libol"
 )
 
 type Neighbor struct {

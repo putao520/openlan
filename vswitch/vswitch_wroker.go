@@ -15,7 +15,7 @@ import (
 
     "github.com/songgao/water"
     "github.com/milosgajdos83/tenus"
-    "github.com/danieldin95/openlan-go/libol"
+    "github.com/lightstar-dev/openlan-go/libol"
 )
 
 type Point struct {

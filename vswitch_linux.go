@@ -8,7 +8,7 @@ import (
     "os"
     "log"
 
-    "github.com/danieldin95/openlan-go/vswitch"
+    "github.com/lightstar-dev/openlan-go/vswitch"
 )
 
 type VSwitch struct {
