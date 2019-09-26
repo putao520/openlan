@@ -28,6 +28,7 @@ func (this *Logger) Debug(format string, v ...interface{}) {
 }
 
 func (this *Logger) Fatal(format string, v ...interface{}) {
+    //TODO saved to Errors and Publish it.
     log.Printf(fmt.Sprintf("FATAL %s", format), v...)
 }
 
