@@ -31,6 +31,30 @@ func UpLink(name string, c *point.Config) error {
         return err
     }
 
+    if c.Brname != "" {
+        br, err := tenus.BridgeFromName(c.Brname)
+        if err != nil {
+            log.Printf("Error| main.UpLink.newBr: %s", err)
+            br, err = tenus.NewBridgeWithName(c.Brname)
+            if err != nil {
+                log.Printf("Error| main.UpLink.newBr: %s", err)
+            }
+        }
+
+        if err := br.SetLinkUp(); err != nil {
+            log.Printf("Error| main.UpLink.newBr.Up: %s", err)
+        }
+
+        if err := br.AddSlaveIfc(link.NetInterface()); err != nil {
+            log.Printf("Error| main.UpLink.AddSlave: Switch ifce %s: %s", name, err)
+        }
+
+        link, err = tenus.NewLinkFrom(c.Brname)
+        if err != nil {
+            log.Printf("Error| main.UpLink: Get ifce %s: %s", c.Brname, err)
+        }
+    }
+    
     if err := link.SetLinkIp(ip, ipnet); err != nil {
         log.Printf("Error| main.UpLink.SetLinkIp %s : %s", name, err)
         return err

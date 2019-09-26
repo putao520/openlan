@@ -12,6 +12,7 @@ type Config struct {
     Verbose int `json:"verbose"`
     Ifmtu int `json:"ifMtu"`
     Ifaddr string `json:"ifAddr"`
+    Brname string `json:"ifBr"`
     
     Name string 
     Password string 
@@ -32,6 +33,7 @@ func NewConfig() (this *Config) {
     flag.IntVar(&this.Verbose, "verbose", 0x00, "open verbose")
     flag.IntVar(&this.Ifmtu, "if:mtu", 1518, "the interface MTU include ethernet")
     flag.StringVar(&this.Ifaddr, "if:addr", "192.168.100.254/24", "the interface address")
+    flag.StringVar(&this.Brname, "if:br", "",  "the bridge name")
     
     flag.Parse()
     
