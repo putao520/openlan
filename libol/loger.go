@@ -5,6 +5,14 @@ import (
     "fmt"
 )
 
+const (
+    PRINT  = 0x00
+    DEUBG  = 0x01
+    INFO   = 0x02
+    ERROR  = 0x03
+    FATAL  = 0xff
+)
+
 type Logger struct {
     Level int
     Errors []string
@@ -32,7 +40,7 @@ func (this *Logger) Fatal(format string, v ...interface{}) {
     log.Printf(fmt.Sprintf("FATAL %s", format), v...)
 }
 
-func (this *Logger) Printf(format string, v ...interface{}) {
+func (this *Logger) Print(format string, v ...interface{}) {
     log.Printf(fmt.Sprintf("PRINT %s", format), v...)
 }
 
