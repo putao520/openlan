@@ -3,7 +3,6 @@ package vswitch
 import (
     "fmt"
     "net"
-    "log"
     "sync"
     "time"
     "strings"
@@ -85,7 +84,7 @@ func (this *Neighborer) ListNeighbor() chan *Neighbor {
 
 func (this *Neighborer) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
     if this.IsVerbose() {
-        log.Printf("Debug| Neighborer.OnFrame % x.", frame.Data)
+        libol.Debug("Neighborer.OnFrame % x.", frame.Data)
     }
 
     if libol.IsInst(frame.Data) {
@@ -103,7 +102,7 @@ func (this *Neighborer) OnFrame(client *libol.TcpClient, frame *libol.Frame) err
 
     arp, err := libol.NewArpFromFrame(ethdata)
     if err != nil {
-        log.Printf("Error| Neighborer.OnFrame %s.", err)
+        libol.Error("Neighborer.OnFrame %s.", err)
         return nil
     }
 
@@ -124,12 +123,12 @@ func (this *Neighborer) AddNeighbor(neb *Neighbor) {
     
     if n, ok := this.neighbors[neb.HwAddr.String()]; ok {
         //TODO update.
-        log.Printf("Info| Neighborer.AddNeighbor: update %s.", neb)
+        libol.Info("Neighborer.AddNeighbor: update %s.", neb)
         n.IpAddr = neb.IpAddr
         n.Client = neb.Client
         n.HitTime = time.Now().Unix()
     } else {
-        log.Printf("Info| Neighborer.AddNeighbor: new %s.", neb)
+        libol.Info("Neighborer.AddNeighbor: new %s.", neb)
         n = neb
         this.neighbors[neb.HwAddr.String()] = n
     }
@@ -141,7 +140,7 @@ func (this *Neighborer) DelNeighbor(hwaddr net.HardwareAddr) {
     this.lock.RLock()
     defer this.lock.RUnlock()
     
-    log.Printf("Info| Neighborer.DelNeighbor %s.", hwaddr)
+    libol.Info("Neighborer.DelNeighbor %s.", hwaddr)
     if n := this.neighbors[hwaddr.String()]; n != nil {
         this.PubNeighbor(n, false)
         delete(this.neighbors, hwaddr.String())
@@ -150,7 +149,7 @@ func (this *Neighborer) DelNeighbor(hwaddr net.HardwareAddr) {
 
 func (this *Neighborer) OnClientClose(client *libol.TcpClient) {
     //TODO
-    log.Printf("Info| Neighborer.OnClientClose %s.", client)
+    libol.Info("Neighborer.OnClientClose %s.", client)
 }
 
 func (this *Neighborer) IsVerbose() bool {
@@ -169,6 +168,6 @@ func (this *Neighborer) PubNeighbor(neb *Neighbor, isadd bool) {
     }
 
     if err := this.wroker.Redis.HMSet(key, value); err != nil {
-        log.Printf("Error| Neighborer.PubNeighbor hset %s", err)
+        libol.Error("Neighborer.PubNeighbor hset %s", err)
     }    
 }

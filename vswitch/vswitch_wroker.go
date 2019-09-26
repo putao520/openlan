@@ -3,7 +3,6 @@ package vswitch
 import (
     "os"
     "bufio"
-    "log"
     "strings"
     "fmt"
     "errors"
@@ -74,7 +73,7 @@ func NewVSwitchWroker(server *TcpServer, c *Config) (this *VSwitchWroker) {
     }
 
     if err := this.Redis.Open(); err != nil {
-        log.Printf("Error| NewVSwitchWroker: redis.Open %s", err)
+        libol.Error("NewVSwitchWroker: redis.Open %s", err)
     }
     
     this.Auth = NewPointAuth(this, c)
@@ -124,7 +123,7 @@ func (this *VSwitchWroker) loadUsers(path string) error {
 func (this *VSwitchWroker) NewBr(brname string, addr string) {
     addrs := strings.Split(this.Server.GetAddr(), ":")
     if len(addrs) != 2 {
-        log.Printf("Error| VSwitchWroker.newBr: address: %s", this.Server.GetAddr())
+        libol.Error("VSwitchWroker.newBr: address: %s", this.Server.GetAddr())
         return
     }
 
@@ -137,29 +136,29 @@ func (this *VSwitchWroker) NewBr(brname string, addr string) {
         if err != nil {
             br, err = tenus.NewBridgeWithName(brname)
             if err != nil {
-                log.Printf("Error| VSwitchWroker.newBr: %s", err)
+                libol.Error("VSwitchWroker.newBr: %s", err)
             }
         }
     } else {
         br, err = tenus.BridgeFromName(brname)
         if err != nil {
-            log.Printf("Error| VSwitchWroker.newBr: %s", err)
+            libol.Error("VSwitchWroker.newBr: %s", err)
         }
     }
 
     if err = br.SetLinkUp(); err != nil {
-        log.Printf("Error| VSwitchWroker.newBr: %s", err)
+        libol.Error("VSwitchWroker.newBr: %s", err)
     }
 
-    log.Printf("Info| VSwitchWroker.newBr %s", brname)
+    libol.Info("VSwitchWroker.newBr %s", brname)
 
     ip, net, err := net.ParseCIDR(addr)
     if err != nil {
-        log.Printf("Error| VSwitchWroker.newBr.ParseCIDR %s : %s", addr, err)
+        libol.Error("VSwitchWroker.newBr.ParseCIDR %s : %s", addr, err)
     }
 
     if err := br.SetLinkIp(ip, net); err != nil {
-        log.Printf("Error| VSwitchWroker.newBr.SetLinkIp %s : %s", brname, err)
+        libol.Error("VSwitchWroker.newBr.SetLinkIp %s : %s", brname, err)
     }
 
     this.br = br
@@ -168,31 +167,31 @@ func (this *VSwitchWroker) NewBr(brname string, addr string) {
 }
 
 func (this *VSwitchWroker) NewTap() (*water.Interface, error) {
-    log.Printf("Debug| VSwitchWroker.newTap")  
+    libol.Debug("VSwitchWroker.newTap")  
     ifce, err := water.New(water.Config {
         DeviceType: water.TAP,
     })
     if err != nil {
-        log.Printf("Error| VSwitchWroker.newTap: %s", err)
+        libol.Error("VSwitchWroker.newTap: %s", err)
         return nil, err
     }
     
     link, err := tenus.NewLinkFrom(ifce.Name())
     if err != nil {
-        log.Printf("Error| VSwitchWroker.newTap: Get ifce %s: %s", ifce.Name(), err)
+        libol.Error("VSwitchWroker.newTap: Get ifce %s: %s", ifce.Name(), err)
         return nil, err
     }
     
     if err := link.SetLinkUp(); err != nil {
-        log.Printf("Error| VSwitchWroker.newTap: ", err)
+        libol.Error("VSwitchWroker.newTap: ", err)
     }
 
     if err := this.br.AddSlaveIfc(link.NetInterface()); err != nil {
-        log.Printf("Error| VSwitchWroker.newTap: Switch ifce %s: %s", ifce.Name(), err)
+        libol.Error("VSwitchWroker.newTap: Switch ifce %s: %s", ifce.Name(), err)
         return nil, err
     }
 
-    log.Printf("Info| VSwitchWroker.newTap %s", ifce.Name())  
+    libol.Info("VSwitchWroker.newTap %s", ifce.Name())  
 
     return ifce, nil
 }
@@ -204,7 +203,7 @@ func (this *VSwitchWroker) Start() {
 
 func (this *VSwitchWroker) showHook() {
     for _, k := range this.keys {
-        log.Printf("Debug| VSwitchWroker.showHool k:%d func: %p", k, this.hooks[k])
+        libol.Debug("VSwitchWroker.showHool k:%d func: %p", k, this.hooks[k])
     }
 } 
 
@@ -219,7 +218,7 @@ func (this *VSwitchWroker) onHook(client *libol.TcpClient, data []byte) error {
 
     for _, k := range this.keys {
         if this.IsVerbose() {
-            log.Printf("Debug| VSwitchWroker.onHook k:%d", k)
+            libol.Debug("VSwitchWroker.onHook k:%d", k)
         }
         if f, ok := this.hooks[k]; ok {
             if err := f(client, frame); err != nil {
@@ -237,7 +236,7 @@ func (this *VSwitchWroker) handleReq(client *libol.TcpClient, frame *libol.Frame
 
 func (this *VSwitchWroker) onClient(client *libol.TcpClient) error {
     client.Status = libol.CL_CONNECTED
-    log.Printf("Info| VSwitchWroker.onClient: %s", client.GetAddr()) 
+    libol.Info("VSwitchWroker.onClient: %s", client.GetAddr()) 
 
     return nil
 }
@@ -245,12 +244,12 @@ func (this *VSwitchWroker) onClient(client *libol.TcpClient) error {
 func (this *VSwitchWroker) onRecv(client *libol.TcpClient, data []byte) error {
     //TODO Hook packets such as ARP Learning.
     if this.IsVerbose() {
-        log.Printf("Debug| VSwitchWroker.onRecv: %s % x", client.GetAddr(), data)    
+        libol.Debug("VSwitchWroker.onRecv: %s % x", client.GetAddr(), data)    
     }
 
     if err := this.onHook(client, data); err != nil {
         if this.IsVerbose() {
-            log.Printf("Debug| VSwitchWroker.onRecv: %s dropping by %s", client.GetAddr(), err)
+            libol.Debug("VSwitchWroker.onRecv: %s dropping by %s", client.GetAddr(), err)
             return err
         }
     }
@@ -266,14 +265,14 @@ func (this *VSwitchWroker) onRecv(client *libol.TcpClient, data []byte) error {
     }
  
     if _, err := ifce.Write(data); err != nil {
-        log.Printf("Error| VSwitchWroker.onRecv: %s", err)
+        libol.Error("VSwitchWroker.onRecv: %s", err)
     }
 
     return nil
 }
 
 func (this *VSwitchWroker) onClose(client *libol.TcpClient) error {
-    log.Printf("Info| VSwitchWroker.onClose: %s", client.GetAddr())
+    libol.Info("VSwitchWroker.onClose: %s", client.GetAddr())
 
     this.DelPoint(client)
     
@@ -281,13 +280,13 @@ func (this *VSwitchWroker) onClose(client *libol.TcpClient) error {
 }
 
 func (this *VSwitchWroker) Close() {
-    log.Printf("Info| VSwitchWroker.Close")
+    libol.Info("VSwitchWroker.Close")
 
     this.Server.Close()
 
     if this.br != nil && this.brip != nil {
         if err := this.br.UnsetLinkIp(this.brip, this.brnet); err != nil {
-            log.Printf("Error| VSwitchWroker.Close.UnsetLinkIp %s : %s", this.br.NetInterface().Name, err)
+            libol.Error("VSwitchWroker.Close.UnsetLinkIp %s : %s", this.br.NetInterface().Name, err)
         }
     }
 }
@@ -393,7 +392,7 @@ func (this *VSwitchWroker) PubPoint(p *Point, isadd bool) {
     }
 
     if err := this.Redis.HMSet(key, value); err != nil {
-        log.Printf("Error| Neighborer.PubNeighbor hset %s", err)
+        libol.Error("Neighborer.PubNeighbor hset %s", err)
     }
 }
 
@@ -414,16 +413,16 @@ func NewPointAuth(wroker *VSwitchWroker, c *Config) (this *PointAuth) {
 
 func (this *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
     if this.IsVerbose() {
-        log.Printf("Debug| PointAuth.checkAuth % x.", frame.Data)
+        libol.Debug("PointAuth.checkAuth % x.", frame.Data)
     }
 
     if libol.IsInst(frame.Data) {
         action := libol.DecAction(frame.Data)
-        log.Printf("Debug| PointAuth.checkAuth.action: %s", action)
+        libol.Debug("PointAuth.checkAuth.action: %s", action)
 
         if action == "logi=" {
             if err := this.handlelogin(client, libol.DecBody(frame.Data)); err != nil {
-                log.Printf("Error| PointAuth.checkAuth: %s", err)
+                libol.Error("PointAuth.checkAuth: %s", err)
                 client.SendResp("login", err.Error())
                 client.Close()
                 return err
@@ -437,7 +436,7 @@ func (this *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.Frame) erro
     if client.Status != libol.CL_AUTHED {
         client.Droped++
         if this.IsVerbose() {
-            log.Printf("Debug| PointAuth.onRecv: %s unauth", client.GetAddr())
+            libol.Debug("PointAuth.onRecv: %s unauth", client.GetAddr())
         }
         return errors.New("Unauthed client.")
     }
@@ -447,7 +446,7 @@ func (this *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.Frame) erro
 
 func  (this *PointAuth) handlelogin(client *libol.TcpClient, data string) error {
     if this.IsVerbose() {
-        log.Printf("Debug| PointAuth.handlelogin: %s", data)
+        libol.Debug("PointAuth.handlelogin: %s", data)
     }
     user := &User {}
     if err := json.Unmarshal([]byte(data), user); err != nil {
@@ -462,7 +461,7 @@ func  (this *PointAuth) handlelogin(client *libol.TcpClient, data string) error 
     if _user != nil {
         if _user.Password == user.Password {
             client.Status = libol.CL_AUTHED
-            log.Printf("Info| PointAuth.handlelogin: %s Authed", client.GetAddr())
+            libol.Info("PointAuth.handlelogin: %s Authed", client.GetAddr())
             this.onAuth(client)
             return nil
         }
@@ -482,7 +481,7 @@ func (this *PointAuth) onAuth(client *libol.TcpClient) error {
         return errors.New("not authed.")
     }
 
-    log.Printf("Info| PointAuth.onAuth: %s", client.GetAddr())   
+    libol.Info("PointAuth.onAuth: %s", client.GetAddr())   
 
     ifce, err := this.wroker.NewTap()
     if err != nil {
@@ -497,21 +496,21 @@ func (this *PointAuth) onAuth(client *libol.TcpClient) error {
 }
 
 func (this *PointAuth) GoRecv(ifce *water.Interface, dorecv func([]byte)(error)) {
-    log.Printf("Info| PointAuth.GoRecv: %s", ifce.Name())    
+    libol.Info("PointAuth.GoRecv: %s", ifce.Name())    
     defer ifce.Close()
     for {
         data := make([]byte, this.ifmtu)
         n, err := ifce.Read(data)
         if err != nil {
-            log.Printf("Error| PointAuth.GoRev: %s", err)
+            libol.Error("PointAuth.GoRev: %s", err)
             break
         }
         if this.IsVerbose() {
-            log.Printf("Debug| PointAuth.GoRev: % x\n", data[:n])
+            libol.Debug("PointAuth.GoRev: % x\n", data[:n])
         }
 
         if err := dorecv(data[:n]); err != nil {
-            log.Printf("Error| PointAuth.GoRev: do-recv %s %s", ifce.Name(), err)
+            libol.Error("PointAuth.GoRev: do-recv %s %s", ifce.Name(), err)
         }
     }
 }

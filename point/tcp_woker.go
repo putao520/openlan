@@ -1,7 +1,6 @@
 package point
 
 import (
-    "log"
     "time"
     "fmt"
 
@@ -35,7 +34,7 @@ func NewTcpWoker(client *libol.TcpClient, c *Config) (this *TcpWroker) {
 
 func (this *TcpWroker) TryLogin(client *libol.TcpClient) error {
     body := fmt.Sprintf(`{"name":"%s","password":"%s"}`, this.name, this.password)
-    log.Printf("Info| TcpWroker.TryLogin: %s", body)
+    libol.Info("TcpWroker.TryLogin: %s", body)
     if err := client.SendReq("login", body); err != nil {
         return err
     }
@@ -46,7 +45,7 @@ func (this *TcpWroker) onInstruct(data []byte) error {
     action := libol.DecAction(data)
     if action == "logi:" {
         resp := libol.DecBody(data)
-        log.Printf("Info| TcpWroker.onHook.login: %s", resp)
+        libol.Info("TcpWroker.onHook.login: %s", resp)
         if resp[:4] == "okay" {
             this.client.Status = libol.CL_AUTHED
         } else {
@@ -68,12 +67,12 @@ func (this *TcpWroker) GoRecv(dorecv func([]byte)(error)) {
         data := make([]byte, this.maxSize)
         n, err := this.client.RecvMsg(data)
         if err != nil {
-            log.Printf("Error| TcpWroker.GoRev: %s", err)
+            libol.Error("TcpWroker.GoRev: %s", err)
             this.client.Close()
             continue
         }
         if this.IsVerbose() {
-            log.Printf("Debug| TcpWroker.GoRev: % x\n", data[:n])
+            libol.Debug("TcpWroker.GoRev: % x\n", data[:n])
         }
 
         if n > 0 {
@@ -89,7 +88,7 @@ func (this *TcpWroker) GoRecv(dorecv func([]byte)(error)) {
 
 func (this *TcpWroker) DoSend(data []byte) error {
     if this.IsVerbose() {
-        log.Printf("Debug| TcpWroker.DoSend: % x\n", data)
+        libol.Debug("TcpWroker.DoSend: % x\n", data)
     }
 
     this.writechan <- data
@@ -104,13 +103,13 @@ func (this *TcpWroker) GoLoop() error {
             if this.client.Status != libol.CL_AUTHED {
                 this.client.Droped++
                 if this.IsVerbose() {
-                    log.Printf("Error| TcpWroker.GoLoop: droping by unauth")
+                    libol.Error("TcpWroker.GoLoop: droping by unauth")
                     continue
                 }
             }
 
             if err := this.client.SendMsg(wdata); err != nil {
-                log.Printf("Error| TcpWroker.GoLoop: %s", err)
+                libol.Error("TcpWroker.GoLoop: %s", err)
             }
         }
     }

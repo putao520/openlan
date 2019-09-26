@@ -1,9 +1,8 @@
 package point
 
 import (
-    "log"
-
     "github.com/songgao/water"
+    "github.com/lightstar-dev/openlan-go/libol"
 )
 
 type TapWroker struct {
@@ -29,11 +28,11 @@ func (this *TapWroker) GoRecv(dorecv func([]byte)(error)) {
         data := make([]byte, this.ifmtu)
         n, err := this.ifce.Read(data)
         if err != nil {
-            log.Printf("Error| TapWroker.GoRev: %s", err)
+            libol.Error("TapWroker.GoRev: %s", err)
             break
         }
         if this.IsVerbose() {
-            log.Printf("Debug| TapWroker.GoRev: % x\n", data[:n])
+            libol.Debug("TapWroker.GoRev: % x\n", data[:n])
         }
 
         dorecv(data[:n])
@@ -42,7 +41,7 @@ func (this *TapWroker) GoRecv(dorecv func([]byte)(error)) {
 
 func (this *TapWroker) DoSend(data []byte) error {
     if this.IsVerbose() {
-        log.Printf("Debug| TapWroker.DoSend: % x\n", data)
+        libol.Debug("TapWroker.DoSend: % x\n", data)
     }
 
     this.writechan <- data
@@ -55,7 +54,7 @@ func (this *TapWroker) GoLoop() error {
         select {
         case wdata := <- this.writechan:
             if _, err := this.ifce.Write(wdata); err != nil {
-                log.Printf("Error| TapWroker.GoLoop: %s", err)   
+                libol.Error("TapWroker.GoLoop: %s", err)   
             }
         }
     }

@@ -1,8 +1,6 @@
 package point
 
 import (
-    "log"
-
     "github.com/songgao/water"
     "github.com/lightstar-dev/openlan-go/libol"
 )
@@ -19,9 +17,9 @@ type Point struct {
 func NewPoint(config *Config) (this *Point){
     ifce, err := water.New(water.Config { DeviceType: water.TAP })
     if err != nil {
-        log.Fatal(err)
+        libol.Fatal("NewPoint: ", err)
     }
-    log.Printf("Info| NewPoint.device %s\n", ifce.Name())
+    libol.Info("NewPoint.device %s\n", ifce.Name())
 
     client := libol.NewTcpClient(config.Addr, config.Verbose)
 
@@ -37,7 +35,7 @@ func NewPoint(config *Config) (this *Point){
 
 func (this *Point) Start() {
     if err := this.Client.Connect(); err != nil {
-        log.Printf("Error| Point.Start %s\n", err)
+        libol.Error("Point.Start %s\n", err)
     }
 
     go this.tapwroker.GoRecv(this.tcpwroker.DoSend)

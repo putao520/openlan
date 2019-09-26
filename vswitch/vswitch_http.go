@@ -4,12 +4,13 @@ import (
     "os"
     "fmt"
     "html"
-    "log"
     "time"
     "math/rand"
     "io/ioutil"
     "net/http"
     "encoding/json"
+
+    "github.com/lightstar-dev/openlan-go/libol"
 )
 
 type VSwitchHttp struct {
@@ -54,17 +55,17 @@ func NewVSwitchHttp(wroker *VSwitchWroker, c *Config)(this *VSwitchHttp) {
 }
 
 func (this *VSwitchHttp) SaveToken() error {
-    log.Printf("Info| VSwitchHttp.SaveToken: AdminToken: %s", this.adminToken)
+    libol.Info("VSwitchHttp.SaveToken: AdminToken: %s", this.adminToken)
 
     f, err := os.OpenFile(this.adminFile, os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0600)
     defer f.Close()
     if err != nil {
-        log.Printf("Error| VSwitchHttp.SaveToken: %s", err)
+        libol.Error("VSwitchHttp.SaveToken: %s", err)
         return err
     }
 
     if _, err := f.Write([]byte(this.adminToken)); err != nil {
-        log.Printf("Error| VSwitchHttp.SaveToken: %s", err)
+        libol.Error("VSwitchHttp.SaveToken: %s", err)
         return err
     }
 
@@ -72,9 +73,9 @@ func (this *VSwitchHttp) SaveToken() error {
 }
 
 func (this *VSwitchHttp) GoStart() error {
-    log.Printf("Debug| NewHttp on %s", this.listen)
+    libol.Debug("NewHttp on %s", this.listen)
     if err := http.ListenAndServe(this.listen, nil); err != nil {
-        log.Printf("Error| VSwitchHttp.GoStart on %s: %s", this.listen, err)
+        libol.Error("VSwitchHttp.GoStart on %s: %s", this.listen, err)
         return err
     }
     return nil
@@ -83,7 +84,7 @@ func (this *VSwitchHttp) GoStart() error {
 func (this *VSwitchHttp) IsAuth(w http.ResponseWriter, r *http.Request) bool {
     token, pass, ok := r.BasicAuth()
     if this.wroker.IsVerbose() {
-        log.Printf("Debug| VSwitchHttp.IsAuth token: %s, pass: %s", token, pass)
+        libol.Debug("VSwitchHttp.IsAuth token: %s, pass: %s", token, pass)
     }
     if !ok  || token != this.adminToken {
         w.Header().Set("WWW-Authenticate", "Basic")
@@ -99,7 +100,7 @@ func (this *VSwitchHttp) Hi(w http.ResponseWriter, r *http.Request) {
 
     for name, headers := range r.Header {
         for _, h := range headers {
-            log.Printf("Info| VSwitchHttp.Hi %v: %v", name, h)
+            libol.Info("VSwitchHttp.Hi %v: %v", name, h)
         }
     }
 }

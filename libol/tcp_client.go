@@ -6,7 +6,6 @@ import (
     "errors"
     "encoding/binary"
     "bytes"
-    "log"
     "time"
 )
 
@@ -76,7 +75,7 @@ func (this *TcpClient) Connect() error {
         return nil
     }
 
-    log.Printf("Info| TcpClient.Connect %s\n", this.addr)
+    Info("TcpClient.Connect %s\n", this.addr)
     raddr, err := net.ResolveTCPAddr("tcp", this.addr)
     if err != nil {
         return err
@@ -100,7 +99,7 @@ func (this *TcpClient) Connect() error {
 
 func (this *TcpClient) Close() {
     if this.conn != nil {
-        log.Printf("Info| TcpClient.Close %s\n", this.addr)
+        Info("TcpClient.Close %s\n", this.addr)
         this.conn.Close()
         this.conn = nil
     }
@@ -123,8 +122,8 @@ func (this *TcpClient) recvn(buffer []byte) error {
     }
     
     if this.IsVerbose() {
-        log.Printf("Debug| TcpClient.recvn %d\n", len(buffer))
-        log.Printf("Debug| TcpClient.recvn Data: % x\n", buffer)
+        Debug("TcpClient.recvn %d\n", len(buffer))
+        Debug("TcpClient.recvn Data: % x\n", buffer)
     }
 
     return nil
@@ -135,14 +134,14 @@ func (this *TcpClient) sendn(buffer []byte) error {
     size := len(buffer)
     left := size - offset
     if this.IsVerbose() {
-        log.Printf("Debug| TcpClient.sendn %d\n", size)
-        log.Printf("Debug| TcpClient.sendn Data: % x\n", buffer)
+        Debug("TcpClient.sendn %d\n", size)
+        Debug("TcpClient.sendn Data: % x\n", buffer)
     }
 
     for left > 0 {
         tmp := buffer[offset:]
         if this.IsVerbose() {
-            log.Printf("Debug| TcpClient.sendn tmp %d\n", len(tmp))
+            Debug("TcpClient.sendn tmp %d\n", len(tmp))
         }
         n, err := this.conn.Write(tmp)
         if err != nil {
@@ -232,7 +231,7 @@ func (this *TcpClient) SendReq(action string, body string) error {
     data := EncInstReq(action, body)
 
     if this.IsVerbose() {
-        log.Printf("Debug| TcpClient.SendReq %d %s\n", len(data), data[6:])
+        Debug("TcpClient.SendReq %d %s\n", len(data), data[6:])
     }
 
     if err := this.SendMsg(data); err != nil {
@@ -245,7 +244,7 @@ func (this *TcpClient) SendResp(action string, body string) error {
     data := EncInstResp(action, body)
 
     if this.IsVerbose() {
-        log.Printf("Debug| TcpClient.SendResp %d %s\n", len(data), data[6:])
+        Debug("TcpClient.SendResp %d %s\n", len(data), data[6:])
     }
 
     if err := this.SendMsg(data); err != nil {

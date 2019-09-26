@@ -2,7 +2,6 @@ package vswitch
 
 import (
     "net"
-    "log"
     
     "github.com/lightstar-dev/openlan-go/libol"
 )
@@ -29,14 +28,14 @@ func NewTcpServer(c *Config) (this *TcpServer) {
     }
 
     if err := this.Listen(); err != nil {
-        log.Printf("Debug| NewTcpServer %s\n", err)
+        libol.Debug("NewTcpServer %s\n", err)
     }
 
     return 
 }
 
 func (this *TcpServer) Listen() error {
-    log.Printf("Debug| TcpServer.Start %s\n", this.addr)
+    libol.Debug("TcpServer.Start %s\n", this.addr)
 
     laddr, err := net.ResolveTCPAddr("tcp", this.addr)
     if err != nil {
@@ -45,7 +44,7 @@ func (this *TcpServer) Listen() error {
     
     listener, err := net.ListenTCP("tcp", laddr)
     if err != nil {
-        log.Printf("Info| TcpServer.Listen: %s", err)
+        libol.Info("TcpServer.Listen: %s", err)
         this.listener = nil
         return err
     }
@@ -56,22 +55,22 @@ func (this *TcpServer) Listen() error {
 func (this *TcpServer) Close() {
     if this.listener != nil {
         this.listener.Close()
-        log.Printf("Info| TcpServer.Close: %s", this.addr)
+        libol.Info("TcpServer.Close: %s", this.addr)
         this.listener = nil
     }
 }
 
 func (this *TcpServer) GoAccept() {
-    log.Printf("Debug| TcpServer.GoAccept")
+    libol.Debug("TcpServer.GoAccept")
     if (this.listener == nil) {
-        log.Printf("Error| TcpServer.GoAccept: invalid listener")
+        libol.Error("TcpServer.GoAccept: invalid listener")
     }
 
     defer this.Close()
     for {
         conn, err := this.listener.AcceptTCP()
         if err != nil {
-            log.Printf("Error| TcpServer.GoAccept: %s", err)
+            libol.Error("TcpServer.GoAccept: %s", err)
             return
         }
 
@@ -84,12 +83,12 @@ func (this *TcpServer) GoAccept() {
 func (this *TcpServer) GoLoop(onClient func (*libol.TcpClient) error, 
                               onRecv func (*libol.TcpClient, []byte) error,
                               onClose func (*libol.TcpClient) error) {
-    log.Printf("Debug| TcpServer.GoLoop")
+    libol.Debug("TcpServer.GoLoop")
     defer this.Close()
     for {
         select {
         case client := <- this.onClients:
-            log.Printf("Debug| TcpServer.addClient %s", client.GetAddr())
+            libol.Debug("TcpServer.addClient %s", client.GetAddr())
             if onClient != nil {
                 onClient(client)
             }
@@ -97,7 +96,7 @@ func (this *TcpServer) GoLoop(onClient func (*libol.TcpClient) error,
             go this.GoRecv(client, onRecv)
         case client := <- this.offClients:
             if ok := this.clients[client]; ok {
-                log.Printf("Debug| TcpServer.delClient %s", client.GetAddr())
+                libol.Debug("TcpServer.delClient %s", client.GetAddr())
                 if onClose != nil {
                     onClose(client)
                 }
@@ -109,7 +108,7 @@ func (this *TcpServer) GoLoop(onClient func (*libol.TcpClient) error,
 }
 
 func (this *TcpServer) GoRecv(client *libol.TcpClient, onRecv func (*libol.TcpClient, []byte) error) {
-    log.Printf("Debug| TcpServer.GoRecv: %s", client.GetAddr())    
+    libol.Debug("TcpServer.GoRecv: %s", client.GetAddr())    
     for {
         data := make([]byte, 4096)
         length, err := client.RecvMsg(data)
@@ -120,8 +119,8 @@ func (this *TcpServer) GoRecv(client *libol.TcpClient, onRecv func (*libol.TcpCl
         
         if length > 0 {
             if this.IsVerbose() {
-                log.Printf("Debug| TcpServer.GoRecv: length: %d ", length)
-                log.Printf("Debug| TcpServer.GoRecv: data  : % x", data[:length])
+                libol.Debug("TcpServer.GoRecv: length: %d ", length)
+                libol.Debug("TcpServer.GoRecv: data  : % x", data[:length])
             }
             onRecv(client, data[:length])
         }

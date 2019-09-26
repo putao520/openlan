@@ -2,14 +2,14 @@ package main
 
 import (
     "fmt"
-    "log"
 
+    "github.com/lightstar-dev/openlan-go/point"
     "github.com/lightstar-dev/openlan-go/point"
 )
 
 func main() {
     c := point.NewConfig()
-    log.Printf("Debug| main.config: %s", c)
+    libol.Debug("main.config: %s", c)
     p := point.NewPoint(c)
 
     p.Start()
