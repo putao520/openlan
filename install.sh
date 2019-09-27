@@ -1,8 +1,8 @@
 #!/bin/bash
 
 systemctl status firewalld && {
+  firewall-cmd --zone=public --add-port=10000/tcp --permanent
   firewall-cmd --zone=public --add-port=10002/tcp --permanent
-  firewall-cmd --zone=public --add-port=10082/tcp --permanent
   firewall-cmd --reload
 }
 
