@@ -14,22 +14,27 @@ import (
 )
 
 type Config struct {
-    Brname string `json:"vsBridge"`
     TcpListen string `json:"vsListen"`
     Verbose int `json:"verbose"`
     HttpListen string `json:"httpListen"`
     Ifmtu int `json:"ifMtu"`
     Ifaddr string `json:"ifAddr"`
+    Brname string `json:"ifBridge"`
     Token string `json:"adminToken"`
     TokenFile string `json:"adminFile"`
     Password string `json:"authFile"`
-    RedisAddr string `json:"redisAddr"`
-    RedisAuth string `json:"redisAuth"`
-    RedisDb int `json:"redisDb"`
+    Redis RedisConfig `json:"Redis"`
 
     Links []*point.Config `json:"Links"`
     saveFile string
-} 
+}
+
+type RedisConfig struct {
+    Enable bool `json:"Enable"`
+    Addr string `json:"Addr"`
+    Auth string `json:"Auth"`
+    Db int `json:"Database"`
+}
 
 var Default = Config {
     Brname: "",
@@ -41,9 +46,12 @@ var Default = Config {
     Password: ".password",
     Ifmtu: 1518,
     Ifaddr: "",
-    RedisAddr: "127.0.0.1",
-    RedisAuth: "",
-    RedisDb: 0,
+    Redis: RedisConfig {
+        Addr: "127.0.0.1",
+        Auth: "",
+        Db: 0,
+        Enable: false,
+    },
     saveFile: "vswitch.json", 
     Links: nil,
 }
@@ -56,9 +64,10 @@ func RightAddr(listen *string, port int) {
 }
 
 func NewConfig() (this *Config) {
-    this = &Config {}
+    this = &Config {
+        Redis: Default.Redis,
+    }
 
-    flag.StringVar(&this.Brname, Default.Brname, "",  "the bridge name")
     flag.IntVar(&this.Verbose, "verbose", Default.Verbose, "open verbose")
     flag.StringVar(&this.HttpListen, "http:addr", Default.HttpListen,  "the http listen on")
     flag.StringVar(&this.TcpListen, "vs:addr", Default.TcpListen,  "the server listen on")
@@ -67,9 +76,7 @@ func NewConfig() (this *Config) {
     flag.StringVar(&this.Password, "auth:file", Default.Password, "The file password loading from.")
     flag.IntVar(&this.Ifmtu, "if:mtu", Default.Ifmtu, "the interface MTU include ethernet")
     flag.StringVar(&this.Ifaddr, "if:addr", Default.Ifaddr, "the interface address")
-    flag.StringVar(&this.RedisAddr, "redis:addr", Default.RedisAddr,  "the redis listen on")
-    flag.StringVar(&this.RedisAuth, "redis:password", Default.RedisAuth,  "the password for redis")
-    flag.IntVar(&this.RedisDb, "redis:db", Default.RedisDb,  "the database for redis")
+    flag.StringVar(&this.Brname, "if:br", Default.Brname,  "the bridge name")
     flag.StringVar(&this.saveFile, "conf", Default.SaveFile(), "The configuration file")
 
     flag.Parse()

@@ -51,7 +51,7 @@ func NewNeighborer(wroker *VSwitchWroker, c *Config) (this *Neighborer) {
         neighbors: make(map[string]*Neighbor, 1024*10),
         verbose: c.Verbose,
         wroker: wroker,
-        EnableRedis: true,
+        EnableRedis: c.Redis.Enable,
     }
 
     return

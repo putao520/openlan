@@ -66,8 +66,8 @@ func NewVSwitchWroker(server *TcpServer, c *Config) (this *VSwitchWroker) {
     this = &VSwitchWroker {
         Server: server,
         Neighbor: nil,
-        Redis: libol.NewRedisCli(c.RedisAddr, c.RedisAuth, c.RedisDb),
-        EnableRedis: true,
+        Redis: libol.NewRedisCli(c.Redis.Addr, c.Redis.Auth, c.Redis.Db),
+        EnableRedis: c.Redis.Enable,
         Conf: c,
 
         verbose: c.Verbose,
@@ -428,7 +428,7 @@ func (this *VSwitchWroker) PubPoint(p *Point, isadd bool) {
     }
 
     if err := this.Redis.HMSet(key, value); err != nil {
-        libol.Error("Neighborer.PubNeighbor hset %s", err)
+        libol.Error("VSwitchWroker.PubPoint hset %s", err)
     }
 }
 

@@ -1,15 +1,20 @@
 {
   "vsListen": "0.0.0.0:10002",
   "httpListen": "0.0.0.0:10000",
-  "ifAddr": "192.168.100.4/24",
   "adminToken": "yunex@123$",
+  "Redis": {
+    "Enable": false,
+    "Addr": "127.0.0.1",
+    "Auth": "",
+    "Database": 0
+  },
   "Links": [
     {
       "vsAddr": "openlan.net:10002",
       "vsAuth": "hi:hi@123$"
     },
     {
-      "vsAddr": "localhost",
+      "vsAddr": "localhost:10002",
       "vsAuth": "hi:hi@123$"
     }
   ]

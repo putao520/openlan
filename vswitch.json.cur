@@ -1,16 +1,19 @@
 {
-  "vsBridge": "",
   "vsListen": "0.0.0.0:10002",
   "verbose": 0,
   "httpListen": "0.0.0.0:10000",
   "ifMtu": 1518,
-  "ifAddr": "192.168.100.4/24",
+  "ifAddr": "",
+  "ifBridge": "",
   "adminToken": "yunex@123$",
   "adminFile": ".vswitch.token",
   "authFile": ".password",
-  "redisAddr": "127.0.0.1",
-  "redisAuth": "",
-  "redisDb": 0,
+  "Redis": {
+    "Enable": false,
+    "Addr": "127.0.0.1",
+    "Auth": "",
+    "Database": 0
+  },
   "Links": [
     {
       "vsAddr": "openlan.net:10002",
