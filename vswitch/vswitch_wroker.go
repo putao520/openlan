@@ -168,6 +168,10 @@ func (this *VSwitchWroker) NewBr() {
         }
     }
 
+    if err := libol.BrCtlStp(brname, true); err != nil {
+        libol.Error("VSwitchWroker.newBr.ctlstp: %s", err)
+    }
+    
     if err = br.SetLinkUp(); err != nil {
         libol.Error("VSwitchWroker.newBr: %s", err)
     }
