@@ -31,7 +31,7 @@ var Default = Config {
     Ifmtu: 1518,
     Ifaddr: "",
     Brname: "",
-    saveFile: "point.json",
+    saveFile: ".point.json",
     name: "",
     password: "",
 }

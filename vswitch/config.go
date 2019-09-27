@@ -14,26 +14,26 @@ import (
 )
 
 type Config struct {
-    TcpListen string `json:"vsListen"`
+    TcpListen string `json:"listen"`
     Verbose int `json:"verbose"`
-    HttpListen string `json:"httpListen"`
+    HttpListen string `json:"http"`
     Ifmtu int `json:"ifMtu"`
     Ifaddr string `json:"ifAddr"`
     Brname string `json:"ifBridge"`
     Token string `json:"adminToken"`
     TokenFile string `json:"adminFile"`
     Password string `json:"authFile"`
-    Redis RedisConfig `json:"Redis"`
+    Redis RedisConfig `json:"redis"`
 
-    Links []*point.Config `json:"Links"`
+    Links []*point.Config `json:"links"`
     saveFile string
 }
 
 type RedisConfig struct {
-    Enable bool `json:"Enable"`
-    Addr string `json:"Addr"`
-    Auth string `json:"Auth"`
-    Db int `json:"Database"`
+    Enable bool `json:"enable"`
+    Addr string `json:"addr"`
+    Auth string `json:"auth"`
+    Db int `json:"database"`
 }
 
 var Default = Config {
@@ -52,7 +52,7 @@ var Default = Config {
         Db: 0,
         Enable: false,
     },
-    saveFile: "vswitch.json", 
+    saveFile: ".vswitch.json", 
     Links: nil,
 }
 

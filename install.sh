@@ -19,8 +19,10 @@ cp -rvf ./resource/point /usr/bin
 cp -rvf ./resource/vswitch /usr/bin
 
 [ -e /etc/point.cfg ] || cp -rvf ./resource/point.cfg /etc
+[ -e /etc/point.json ] || cp -rvf ./resource/point.json /etc
 cp -rvf ./resource/point.service /usr/lib/systemd/system
 
+[ -e /etc/vswitch.json ] || cp -rvf ./resource/vswitch.json /etc
 [ -e /etc/vswitch.cfg ] || cp -rvf ./resource/vswitch.cfg /etc
 cp -rvf ./resource/vswitch.service /usr/lib/systemd/system
 
