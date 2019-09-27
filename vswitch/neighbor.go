@@ -43,6 +43,7 @@ type Neighborer struct {
     neighbors map[string]*Neighbor
     verbose int
     wroker *VSwitchWroker
+    EnableRedis bool
 }
 
 func NewNeighborer(wroker *VSwitchWroker, c *Config) (this *Neighborer) {
@@ -50,6 +51,7 @@ func NewNeighborer(wroker *VSwitchWroker, c *Config) (this *Neighborer) {
         neighbors: make(map[string]*Neighbor, 1024*10),
         verbose: c.Verbose,
         wroker: wroker,
+        EnableRedis: true,
     }
 
     return
@@ -157,6 +159,10 @@ func (this *Neighborer) IsVerbose() bool {
 }
 
 func (this *Neighborer) PubNeighbor(neb *Neighbor, isadd bool) {
+    if !this.EnableRedis {
+        return 
+    }
+
     key := fmt.Sprintf("neighbor:%s", strings.Replace(neb.HwAddr.String(), ":", "-", -1))
     value := map[string]interface{} {
         "hwaddr": neb.HwAddr.String(),

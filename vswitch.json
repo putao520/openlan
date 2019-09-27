@@ -1,0 +1,16 @@
+{
+  "vsListen": "0.0.0.0:10002",
+  "httpListen": "0.0.0.0:10000",
+  "ifAddr": "192.168.100.4/24",
+  "adminToken": "yunex@123$",
+  "Links": [
+    {
+      "vsAddr": "openlan.net:10002",
+      "vsAuth": "hi:hi@123$"
+    },
+    {
+      "vsAddr": "localhost",
+      "vsAuth": "hi:hi@123$"
+    }
+  ]
+}

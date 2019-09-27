@@ -23,8 +23,8 @@ func NewTcpWoker(client *libol.TcpClient, c *Config) (this *TcpWroker) {
         writechan: make(chan []byte, 1024*10),
         verbose: c.Verbose,
         maxSize: c.Ifmtu,
-        name: c.Name,
-        password: c.Password,
+        name: c.Name(),
+        password: c.Password(),
     }
     this.client.SetMaxSize(this.maxSize)
     this.client.OnConnect = this.TryLogin

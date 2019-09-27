@@ -6,7 +6,6 @@ import (
     "syscall"
     "time"
     "os"
-    "log"
 
     "github.com/lightstar-dev/openlan-go/vswitch"
 )
@@ -30,7 +29,6 @@ func GoHttp(ope *VSwitch, c *vswitch.Config) {
 
 func main() {
     c := vswitch.NewConfig()
-    log.Printf("Debug| main.config: %s", c)
     vs := NewVSwitch(c)
     vs.Wroker.Start()
 

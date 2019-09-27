@@ -1,0 +1,32 @@
+{
+  "vsBridge": "",
+  "vsListen": "0.0.0.0:10002",
+  "verbose": 0,
+  "httpListen": "0.0.0.0:10000",
+  "ifMtu": 1518,
+  "ifAddr": "192.168.100.4/24",
+  "adminToken": "yunex@123$",
+  "adminFile": ".vswitch.token",
+  "authFile": ".password",
+  "redisAddr": "127.0.0.1",
+  "redisAuth": "",
+  "redisDb": 0,
+  "Links": [
+    {
+      "vsAddr": "openlan.net:10002",
+      "vsAuth": "hi:hi@123$",
+      "verbose": 0,
+      "ifMtu": 1518,
+      "ifAddr": "",
+      "ifBridge": ""
+    },
+    {
+      "vsAddr": "localhost:10002",
+      "vsAuth": "hi:hi@123$",
+      "verbose": 0,
+      "ifMtu": 1518,
+      "ifAddr": "",
+      "ifBridge": ""
+    }
+  ]
+}

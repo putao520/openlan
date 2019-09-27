@@ -61,6 +61,10 @@ func Info(format string, v ...interface{}) {
     Log.Info(format, v...)
 }
 
+func Warn(format string, v ...interface{}) {
+    Log.Warn(format, v...)
+}
+
 func Fatal(format string, v ...interface{}) {
     Log.Fatal(format, v...)
 }

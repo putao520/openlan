@@ -15,6 +15,7 @@ import (
     "github.com/songgao/water"
     "github.com/milosgajdos83/tenus"
     "github.com/lightstar-dev/openlan-go/libol"
+    "github.com/lightstar-dev/openlan-go/point"
 )
 
 type Point struct {
@@ -38,7 +39,9 @@ type VSwitchWroker struct {
     Request *WithRequest
     Neighbor *Neighborer
     Redis *libol.RedisCli
-
+    EnableRedis bool
+    Conf *Config
+    
     //Private variable
     verbose int
     br tenus.Bridger
@@ -54,22 +57,29 @@ type VSwitchWroker struct {
     usersLock sync.RWMutex
     users map[string]*User
     newtime int64
+    brname string
+    linksLock sync.RWMutex
+    links map[string]*point.Point
 }
 
 func NewVSwitchWroker(server *TcpServer, c *Config) (this *VSwitchWroker) {
     this = &VSwitchWroker {
         Server: server,
         Neighbor: nil,
-        Redis: libol.NewRedisCli(c.RedisListen, c.RedisPassword, c.RedisDatabase),
+        Redis: libol.NewRedisCli(c.RedisAddr, c.RedisAuth, c.RedisDb),
+        EnableRedis: true,
+        Conf: c,
 
         verbose: c.Verbose,
         br: nil,
-        ifmtu: 1514,
+        ifmtu: c.Ifmtu,
         hooks: make(map[int]func(*libol.TcpClient, *libol.Frame) error),
         keys: make([]int, 0, 1024),
         clients: make(map[*libol.TcpClient]*Point, 1024),
         users: make(map[string]*User, 1024),
         newtime: time.Now().Unix(),
+        brname: c.Brname,
+        links: make(map[string]*point.Point),
     }
 
     if err := this.Redis.Open(); err != nil {
@@ -80,14 +90,15 @@ func NewVSwitchWroker(server *TcpServer, c *Config) (this *VSwitchWroker) {
     this.Request = NewWithRequest(this, c)
     this.Neighbor = NewNeighborer(this, c)
 
-    this.NewBr(c.Brname, c.Ifaddr)
-    this.register()
-    this.loadUsers(c.Password)
+    this.NewBr()
+    this.Register()
+    this.LoadUsers()
+    this.LoadLinks()
 
     return 
 }
 
-func (this *VSwitchWroker) register() {
+func (this *VSwitchWroker) Register() {
     this.setHook(0x10, this.Neighbor.OnFrame)
     this.setHook(0x00, this.Auth.OnFrame)
     this.setHook(0x01, this.Request.OnFrame)
@@ -95,8 +106,8 @@ func (this *VSwitchWroker) register() {
     this.showHook()
 }
 
-func (this *VSwitchWroker) loadUsers(path string) error {
-    file, err := os.Open(path)
+func (this *VSwitchWroker) LoadUsers() error {
+    file, err := os.Open(this.Conf.Password)
     if err != nil {
         return err
     }
@@ -120,27 +131,38 @@ func (this *VSwitchWroker) loadUsers(path string) error {
     return nil
 }
 
-func (this *VSwitchWroker) NewBr(brname string, addr string) {
-    addrs := strings.Split(this.Server.GetAddr(), ":")
-    if len(addrs) != 2 {
-        libol.Error("VSwitchWroker.newBr: address: %s", this.Server.GetAddr())
-        return
+func (this *VSwitchWroker) LoadLinks() {
+    if this.Conf.Links != nil {
+        for _, lc := range this.Conf.Links {
+            lc.Right()
+            libol.Info("VSwitchWroker.LoadLinks %s", lc)
+            this.AddLink(lc)
+        }
+    }
+}
+
+func (this *VSwitchWroker) BrName() string {
+    if this.brname == "" {
+        addrs := strings.Split(this.Server.GetAddr(), ":")
+        if len(addrs) != 2 {
+            this.brname = "brol-default"
+        } else {
+            this.brname = fmt.Sprintf("brol-%s", addrs[1])
+        }
     }
 
+    return this.brname
+}
+
+func (this *VSwitchWroker) NewBr() {
     var err error
     var br tenus.Bridger
 
-    if (brname == "") {
-        brname = fmt.Sprintf("brol-%s", addrs[1])
-        br, err = tenus.BridgeFromName(brname)
-        if err != nil {
-            br, err = tenus.NewBridgeWithName(brname)
-            if err != nil {
-                libol.Error("VSwitchWroker.newBr: %s", err)
-            }
-        }
-    } else {
-        br, err = tenus.BridgeFromName(brname)
+    addr := this.Conf.Ifaddr
+    brname := this.BrName()
+    br, err = tenus.BridgeFromName(brname)
+    if err != nil {
+        br, err = tenus.NewBridgeWithName(brname)
         if err != nil {
             libol.Error("VSwitchWroker.newBr: %s", err)
         }
@@ -152,18 +174,20 @@ func (this *VSwitchWroker) NewBr(brname string, addr string) {
 
     libol.Info("VSwitchWroker.newBr %s", brname)
 
-    ip, net, err := net.ParseCIDR(addr)
-    if err != nil {
-        libol.Error("VSwitchWroker.newBr.ParseCIDR %s : %s", addr, err)
-    }
+    if addr != "" {
+        ip, net, err := net.ParseCIDR(addr)
+        if err != nil {
+            libol.Error("VSwitchWroker.newBr.ParseCIDR %s : %s", addr, err)
+        }
+        if err := br.SetLinkIp(ip, net); err != nil {
+            libol.Error("VSwitchWroker.newBr.SetLinkIp %s : %s", brname, err)
+        }
 
-    if err := br.SetLinkIp(ip, net); err != nil {
-        libol.Error("VSwitchWroker.newBr.SetLinkIp %s : %s", brname, err)
+        this.brip = ip
+        this.brnet = net
     }
 
     this.br = br
-    this.brip = ip
-    this.brnet = net
 }
 
 func (this *VSwitchWroker) NewTap() (*water.Interface, error) {
@@ -289,6 +313,10 @@ func (this *VSwitchWroker) Close() {
             libol.Error("VSwitchWroker.Close.UnsetLinkIp %s : %s", this.br.NetInterface().Name, err)
         }
     }
+
+    for _, p := range this.links {
+        p.Close()
+    }
 }
 
 func (this *VSwitchWroker) IsVerbose() bool {
@@ -358,7 +386,7 @@ func (this *VSwitchWroker) DelPoint(c *libol.TcpClient) {
     if p, ok := this.clients[c]; ok {
         p.Device.Close()
         this.PubPoint(p, false)
-        delete(this.clients, p.Client)
+        delete(this.clients, c)
     }
 }
 
@@ -383,6 +411,10 @@ func (this *VSwitchWroker) UpTime() int64 {
 }
 
 func (this *VSwitchWroker) PubPoint(p *Point, isadd bool) {
+    if !this.EnableRedis {
+        return
+    }
+
     key := fmt.Sprintf("point:%s", strings.Replace(p.Client.String(), ":", "-", -1))
     value := map[string]interface{} {
         "remote": p.Client.String(), 
@@ -394,6 +426,41 @@ func (this *VSwitchWroker) PubPoint(p *Point, isadd bool) {
     if err := this.Redis.HMSet(key, value); err != nil {
         libol.Error("Neighborer.PubNeighbor hset %s", err)
     }
+}
+
+func (this *VSwitchWroker) AddLink(c *point.Config) {
+    c.Brname = this.BrName() //Reset bridge name.
+
+    go func() {
+        p := point.NewPoint(c)
+
+        this.linksLock.Lock()
+        this.links[c.Addr] = p
+        this.linksLock.Unlock()
+
+        p.UpLink()
+        p.Start()
+    }()
+}
+
+func (this *VSwitchWroker) DelLink(addr string) {
+    this.linksLock.Lock()
+    defer this.linksLock.Unlock()
+    if p, ok := this.links[addr]; ok {
+        p.Close()
+        delete(this.links, addr)
+    }
+}
+
+func (this *VSwitchWroker) GetLink(addr string) *point.Point {
+    this.linksLock.RLock()
+    defer this.linksLock.RUnlock()
+
+    if p, ok := this.links[addr]; ok {
+        return p
+    }
+    
+    return nil
 }
 
 type PointAuth struct {
@@ -448,6 +515,12 @@ func  (this *PointAuth) handlelogin(client *libol.TcpClient, data string) error 
     if this.IsVerbose() {
         libol.Debug("PointAuth.handlelogin: %s", data)
     }
+
+    if client.Status == libol.CL_AUTHED {
+        libol.Warn("PointAuth.handlelogin: already authed %s", client)
+        return nil
+    }
+    
     user := &User {}
     if err := json.Unmarshal([]byte(data), user); err != nil {
         return errors.New("Invalid json data.")
