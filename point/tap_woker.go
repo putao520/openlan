@@ -23,9 +23,13 @@ func NewTapWoker(ifce *water.Interface, c *Config) (this *TapWroker) {
 }
 
 func (this *TapWroker) GoRecv(dorecv func([]byte)(error)) {
-    defer this.ifce.Close()
+    defer this.Close()
     for {
         data := make([]byte, this.ifmtu)
+        if this.ifce == nil {
+            break
+        }
+        
         n, err := this.ifce.Read(data)
         if err != nil {
             libol.Error("TapWroker.GoRev: %s", err)
@@ -48,11 +52,14 @@ func (this *TapWroker) DoSend(data []byte) error {
     return nil
 }
 
-func (this *TapWroker) GoLoop() error {
-    defer this.ifce.Close()
+func (this *TapWroker) GoLoop() {
+    defer this.Close()
     for {
         select {
         case wdata := <- this.writechan:
+            if this.ifce == nil {
+                return
+            }
             if _, err := this.ifce.Write(wdata); err != nil {
                 libol.Error("TapWroker.GoLoop: %s", err)   
             }
@@ -65,5 +72,9 @@ func (this *TapWroker) IsVerbose() bool {
 }
 
 func (this *TapWroker) Close() {
-    this.ifce.Close()
+    libol.Info("TapWroker.Close")
+    if this.ifce != nil {
+        this.ifce.Close()
+        this.ifce = nil
+    }
 }
