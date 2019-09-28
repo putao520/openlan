@@ -23,24 +23,25 @@ var (
 )
 
 type TcpClient struct {
-    addr string `json:"addr"`
     conn *net.TCPConn
     maxsize int
     minsize int
     verbose int
-    newtime int64
+    onConnected func(*TcpClient) error
+
     //Public variable
     TxOkay uint64
     RxOkay uint64
     TxError uint64
     Droped uint64
     Status uint8
-    OnConnect func(*TcpClient) error
+    Addr string
+    NewTime int64
 }
 
 func NewTcpClient(addr string, verbose int) (this *TcpClient) {
     this = &TcpClient {
-        addr: addr,
+        Addr: addr,
         conn: nil,
         maxsize: 1514,
         minsize: 15,
@@ -50,8 +51,8 @@ func NewTcpClient(addr string, verbose int) (this *TcpClient) {
         TxError: 0,
         Droped: 0,
         Status: CL_INIT,
-        OnConnect: nil,
-        newtime: time.Now().Unix(),
+        onConnected: nil,
+        NewTime: time.Now().Unix(),
     }
 
     return 
@@ -59,12 +60,12 @@ func NewTcpClient(addr string, verbose int) (this *TcpClient) {
 
 func NewTcpClientFromConn(conn *net.TCPConn, verbose int) (this *TcpClient) {
     this = &TcpClient {
-        addr: conn.RemoteAddr().String(),
+        Addr: conn.RemoteAddr().String(),
         conn: conn,
         maxsize: 1514,
         minsize: 15,
         verbose: verbose,
-        newtime: time.Now().Unix(),
+        NewTime: time.Now().Unix(),
     }
 
     return 
@@ -75,8 +76,8 @@ func (this *TcpClient) Connect() error {
         return nil
     }
 
-    Info("TcpClient.Connect %s\n", this.addr)
-    raddr, err := net.ResolveTCPAddr("tcp", this.addr)
+    Info("TcpClient.Connect %s\n", this.Addr)
+    raddr, err := net.ResolveTCPAddr("tcp", this.Addr)
     if err != nil {
         return err
     }
@@ -90,16 +91,20 @@ func (this *TcpClient) Connect() error {
     this.conn = conn
     this.Status = CL_CONNECTED
 
-    if this.OnConnect != nil {
-        this.OnConnect(this)
+    if this.onConnected != nil {
+        this.onConnected(this)
     }
 
     return nil
 }
 
+func (this *TcpClient) OnConnected(on func(*TcpClient) error) {
+    this.onConnected = on
+}
+
 func (this *TcpClient) Close() {
     if this.conn != nil {
-        Info("TcpClient.Close %s\n", this.addr)
+        Info("TcpClient.Close %s\n", this.Addr)
         this.conn.Close()
         this.conn = nil
     }
@@ -223,10 +228,6 @@ func (this *TcpClient) IsOk() bool {
     return this.conn != nil
 }
 
-func (this *TcpClient) GetAddr() string {
-    return this.addr
-}
-
 func (this *TcpClient) SendReq(action string, body string) error {
     data := EncInstReq(action, body)
 
@@ -254,13 +255,9 @@ func (this *TcpClient) SendResp(action string, body string) error {
 }
 
 func (this *TcpClient) UpTime() int64 {
-    return time.Now().Unix() - this.newtime
+    return time.Now().Unix() - this.NewTime
 }
 
 func (this *TcpClient) String() string {
-    return this.addr
-}
-
-func (this *TcpClient) GetNewTime() int64 {
-    return this.newtime
+    return this.Addr
 }

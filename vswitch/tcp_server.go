@@ -7,7 +7,8 @@ import (
 )
 
 type TcpServer struct {
-    addr string
+    Addr string
+
     listener *net.TCPListener
     maxClient int
     clients map[*libol.TcpClient]bool
@@ -18,7 +19,7 @@ type TcpServer struct {
 
 func NewTcpServer(c *Config) (this *TcpServer) {
     this = &TcpServer {
-        addr: c.TcpListen,
+        Addr: c.TcpListen,
         listener: nil,
         maxClient: 1024,
         clients: make(map[*libol.TcpClient]bool, 1024),
@@ -35,9 +36,9 @@ func NewTcpServer(c *Config) (this *TcpServer) {
 }
 
 func (this *TcpServer) Listen() error {
-    libol.Debug("TcpServer.Start %s\n", this.addr)
+    libol.Debug("TcpServer.Start %s\n", this.Addr)
 
-    laddr, err := net.ResolveTCPAddr("tcp", this.addr)
+    laddr, err := net.ResolveTCPAddr("tcp", this.Addr)
     if err != nil {
         return err
     }
@@ -55,7 +56,7 @@ func (this *TcpServer) Listen() error {
 func (this *TcpServer) Close() {
     if this.listener != nil {
         this.listener.Close()
-        libol.Info("TcpServer.Close: %s", this.addr)
+        libol.Info("TcpServer.Close: %s", this.Addr)
         this.listener = nil
     }
 }
@@ -88,7 +89,7 @@ func (this *TcpServer) GoLoop(onClient func (*libol.TcpClient) error,
     for {
         select {
         case client := <- this.onClients:
-            libol.Debug("TcpServer.addClient %s", client.GetAddr())
+            libol.Debug("TcpServer.addClient %s", client.Addr)
             if onClient != nil {
                 onClient(client)
             }
@@ -96,7 +97,7 @@ func (this *TcpServer) GoLoop(onClient func (*libol.TcpClient) error,
             go this.GoRecv(client, onRecv)
         case client := <- this.offClients:
             if ok := this.clients[client]; ok {
-                libol.Debug("TcpServer.delClient %s", client.GetAddr())
+                libol.Debug("TcpServer.delClient %s", client.Addr)
                 if onClose != nil {
                     onClose(client)
                 }
@@ -108,7 +109,7 @@ func (this *TcpServer) GoLoop(onClient func (*libol.TcpClient) error,
 }
 
 func (this *TcpServer) GoRecv(client *libol.TcpClient, onRecv func (*libol.TcpClient, []byte) error) {
-    libol.Debug("TcpServer.GoRecv: %s", client.GetAddr())    
+    libol.Debug("TcpServer.GoRecv: %s", client.Addr)    
     for {
         data := make([]byte, 4096)
         length, err := client.RecvMsg(data)
@@ -125,10 +126,6 @@ func (this *TcpServer) GoRecv(client *libol.TcpClient, onRecv func (*libol.TcpCl
             onRecv(client, data[:length])
         }
     }
-}
-
-func (this *TcpServer) GetAddr() string {
-    return this.addr
 }
 
 func (this *TcpServer) IsVerbose() bool {

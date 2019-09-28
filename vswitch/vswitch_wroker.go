@@ -143,7 +143,7 @@ func (this *VSwitchWroker) LoadLinks() {
 
 func (this *VSwitchWroker) BrName() string {
     if this.brname == "" {
-        addrs := strings.Split(this.Server.GetAddr(), ":")
+        addrs := strings.Split(this.Server.Addr, ":")
         if len(addrs) != 2 {
             this.brname = "brol-default"
         } else {
@@ -264,7 +264,7 @@ func (this *VSwitchWroker) handleReq(client *libol.TcpClient, frame *libol.Frame
 
 func (this *VSwitchWroker) onClient(client *libol.TcpClient) error {
     client.Status = libol.CL_CONNECTED
-    libol.Info("VSwitchWroker.onClient: %s", client.GetAddr()) 
+    libol.Info("VSwitchWroker.onClient: %s", client.Addr) 
 
     return nil
 }
@@ -272,12 +272,12 @@ func (this *VSwitchWroker) onClient(client *libol.TcpClient) error {
 func (this *VSwitchWroker) onRecv(client *libol.TcpClient, data []byte) error {
     //TODO Hook packets such as ARP Learning.
     if this.IsVerbose() {
-        libol.Debug("VSwitchWroker.onRecv: %s % x", client.GetAddr(), data)    
+        libol.Debug("VSwitchWroker.onRecv: %s % x", client.Addr, data)    
     }
 
     if err := this.onHook(client, data); err != nil {
         if this.IsVerbose() {
-            libol.Debug("VSwitchWroker.onRecv: %s dropping by %s", client.GetAddr(), err)
+            libol.Debug("VSwitchWroker.onRecv: %s dropping by %s", client.Addr, err)
             return err
         }
     }
@@ -300,7 +300,7 @@ func (this *VSwitchWroker) onRecv(client *libol.TcpClient, data []byte) error {
 }
 
 func (this *VSwitchWroker) onClose(client *libol.TcpClient) error {
-    libol.Info("VSwitchWroker.onClose: %s", client.GetAddr())
+    libol.Info("VSwitchWroker.onClose: %s", client.Addr)
 
     this.DelPoint(client)
     
@@ -422,7 +422,7 @@ func (this *VSwitchWroker) PubPoint(p *Point, isadd bool) {
     key := fmt.Sprintf("point:%s", strings.Replace(p.Client.String(), ":", "-", -1))
     value := map[string]interface{} {
         "remote": p.Client.String(), 
-        "newtime": p.Client.GetNewTime(),
+        "newtime": p.Client.NewTime,
         "device": p.Device.Name(),
         "actived": isadd, 
     }
@@ -467,6 +467,22 @@ func (this *VSwitchWroker) GetLink(addr string) *point.Point {
     return nil
 }
 
+func (this *VSwitchWroker) ListLink() chan *point.Point {
+    c := make(chan *point.Point, 128)
+
+    go func() {
+        this.linksLock.RLock()
+        defer this.linksLock.RUnlock()
+
+        for _, p := range this.links {
+            c <- p
+        }
+        c <- nil //Finish channel by nil.
+    }()
+
+    return c
+}
+
 type PointAuth struct {
     ifmtu int
     verbose int 
@@ -507,7 +523,7 @@ func (this *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.Frame) erro
     if client.Status != libol.CL_AUTHED {
         client.Droped++
         if this.IsVerbose() {
-            libol.Debug("PointAuth.onRecv: %s unauth", client.GetAddr())
+            libol.Debug("PointAuth.onRecv: %s unauth", client.Addr)
         }
         return errors.New("Unauthed client.")
     }
@@ -538,7 +554,7 @@ func  (this *PointAuth) handlelogin(client *libol.TcpClient, data string) error 
     if _user != nil {
         if _user.Password == user.Password {
             client.Status = libol.CL_AUTHED
-            libol.Info("PointAuth.handlelogin: %s Authed", client.GetAddr())
+            libol.Info("PointAuth.handlelogin: %s Authed", client.Addr)
             this.onAuth(client)
             return nil
         }
@@ -558,7 +574,7 @@ func (this *PointAuth) onAuth(client *libol.TcpClient) error {
         return errors.New("not authed.")
     }
 
-    libol.Info("PointAuth.onAuth: %s", client.GetAddr())   
+    libol.Info("PointAuth.onAuth: %s", client.Addr)   
 
     ifce, err := this.wroker.NewTap()
     if err != nil {

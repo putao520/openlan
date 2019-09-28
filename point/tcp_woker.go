@@ -27,7 +27,7 @@ func NewTcpWoker(client *libol.TcpClient, c *Config) (this *TcpWroker) {
         password: c.Password(),
     }
     this.client.SetMaxSize(this.maxSize)
-    this.client.OnConnect = this.TryLogin
+    this.client.OnConnected(this.TryLogin)
 
     return
 }
