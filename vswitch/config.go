@@ -81,7 +81,7 @@ func NewConfig() (this *Config) {
 
     flag.Parse()
 
-    this.Right()
+    this.Default()
     this.Load()
     this.Save(fmt.Sprintf("%s.cur", this.saveFile))
 
@@ -94,7 +94,7 @@ func NewConfig() (this *Config) {
     return
 }
 
-func (this *Config) Right() {
+func (this *Config) Default() {
     RightAddr(&this.TcpListen, 10002)
     RightAddr(&this.HttpListen, 10082)
 
@@ -171,7 +171,7 @@ func (this *Config) Load() error {
 
     if this.Links != nil {
         for _, link := range this.Links {
-            link.Right()
+            link.Default()
         }
     }
 

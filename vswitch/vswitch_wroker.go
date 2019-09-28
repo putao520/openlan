@@ -134,7 +134,7 @@ func (this *VSwitchWroker) LoadUsers() error {
 func (this *VSwitchWroker) LoadLinks() {
     if this.Conf.Links != nil {
         for _, lc := range this.Conf.Links {
-            lc.Right()
+            lc.Default()
             libol.Info("VSwitchWroker.LoadLinks %s", lc)
             this.AddLink(lc)
         }

@@ -286,7 +286,7 @@ func (this *VSwitchHttp) _Link(w http.ResponseWriter, r *http.Request) {
             return
         }
         
-        c.Right()
+        c.Default()
         this.wroker.AddLink(c)
 
         fmt.Fprintf(w, "success")

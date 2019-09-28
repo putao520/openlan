@@ -56,7 +56,7 @@ func NewConfig() (this *Config) {
 
     flag.Parse()
     
-    this.Right()
+    this.Default()
     this.Save(fmt.Sprintf("%s.cur", this.saveFile))
     str, err := this.Marshal(false)
     if err != nil { 
@@ -67,7 +67,7 @@ func NewConfig() (this *Config) {
     return
 }
 
-func (this *Config) Right() {
+func (this *Config) Default() {
     if this.Auth != "" {
         values := strings.Split(this.Auth, ":")
         this.name = values[0] 
