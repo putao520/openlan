@@ -137,8 +137,10 @@ func (this *VSwitchHttp) Index(w http.ResponseWriter, r *http.Request) {
 
     switch (r.Method) {
     case "GET":  
-        body := fmt.Sprintf("# uptime: %d\n\n", this.wroker.UpTime())
-        body += "# uptime, remote, device, receipt, transmis, error\n"
+        body := fmt.Sprintf("# uptime: %d\n", this.wroker.UpTime())
+        body += "\n"
+        body += "# point accessed to this vswith.\n"
+        body += "uptime, remote, device, receipt, transmis, error\n"
         for p := range this.wroker.ListPoint() {
             if p == nil {
                 break
@@ -151,8 +153,8 @@ func (this *VSwitchHttp) Index(w http.ResponseWriter, r *http.Request) {
         }
 
         body += "\n"
-        body += "# neighbor\n"
-        body += "# uptime, ethernet, address, remote\n"
+        body += "# neighbor we discovered on this vswitch.\n"
+        body += "uptime, ethernet, address, remote\n"
         for n := range this.wroker.Neighbor.ListNeighbor() {
             if n == nil {
                 break
@@ -163,8 +165,8 @@ func (this *VSwitchHttp) Index(w http.ResponseWriter, r *http.Request) {
         }
 
         body += "\n"
-        body += "# Link\n"
-        body += "# uptime, bridge, device, remote\n"
+        body += "# Link which connect to other vswitch.\n"
+        body += "uptime, bridge, device, remote\n"
         for p := range this.wroker.ListLink() {
             if p == nil {
                 break
