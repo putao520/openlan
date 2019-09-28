@@ -165,7 +165,7 @@ func (this *VSwitchHttp) Index(w http.ResponseWriter, r *http.Request) {
         }
 
         body += "\n"
-        body += "# Link which connect to other vswitch.\n"
+        body += "# link which connect to other vswitch.\n"
         body += "uptime, bridge, device, remote\n"
         for p := range this.wroker.ListLink() {
             if p == nil {
