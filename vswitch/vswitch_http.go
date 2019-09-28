@@ -226,7 +226,7 @@ func (this *VSwitchHttp) _User(w http.ResponseWriter, r *http.Request) {
 
         this.wroker.AddUser(user)
 
-        fmt.Fprintf(w, "success")
+        fmt.Fprintf(w, ApiReplyer(0, "success"))
     default:
         http.Error(w, fmt.Sprintf("Not support %s", r.Method), 400)
     }
@@ -289,10 +289,39 @@ func (this *VSwitchHttp) _Link(w http.ResponseWriter, r *http.Request) {
         c.Default()
         this.wroker.AddLink(c)
 
-        fmt.Fprintf(w, "success")
+        fmt.Fprintf(w, ApiReplyer(0, "success"))
     default:
         http.Error(w, fmt.Sprintf("Not support %s", r.Method), 400)
     }
 }
 
+type ApiReply struct {
+    Code int 
+    Output string
+}
 
+func NewApiReply(code int, output string) (this *ApiReply) {
+    this = &ApiReply {
+        Code: code,
+        Output: output,
+    }
+    return
+}
+
+func ApiReplyer(code int, output string) string {
+    this := ApiReply {
+        Code: code,
+        Output: output,
+    }
+    return this.String()
+}
+
+func (this *ApiReply) String() string {
+    str , err := json.Marshal(this)
+    if err != nil { 
+        libol.Error("ApiReply.String error: %s" , err)
+        return ""
+    }
+
+    return string(str)
+}
