@@ -33,18 +33,27 @@ type Arp struct {
     SIpAddr []byte // sender IP address.
     THwAddr []byte // target hardware address.
     TIpAddr []byte // target IP address.
+    Len int
 }
 
 func NewArp() (this *Arp) {
-    this = &Arp {}
+    this = &Arp {
+        HrdCode: ARPHRD_ETHER,
+        ProCode: ETH_P_IP4,
+        HrdLen: 6,
+        ProLen: 4,
+        OpCode: ARP_REQUEST,
+        Len: 0,
+    }
 
     return
 }
 
 func NewArpFromFrame(frame []byte) (this *Arp, err error) {
-    this = &Arp {}
+    this = &Arp {
+        Len: 0,
+    }
     err = this.Decode(frame)
-
     return
 }
 
@@ -74,10 +83,12 @@ func (this *Arp) Decode(frame []byte) error {
     this.TIpAddr = frame[p:p+this.ProLen]
     p += this.ProLen
 
+    this.Len = int(p)
+
     return nil
 }
 
-func (this *Arp) Encode()[]byte {
+func (this *Arp) Encode() []byte {
     buffer := make([]byte, 1024)
     
     binary.BigEndian.PutUint16(buffer[0:2], this.HrdCode)
@@ -96,6 +107,8 @@ func (this *Arp) Encode()[]byte {
     p += this.HrdLen
     copy(buffer[p:p+this.ProLen], this.TIpAddr[0:this.ProLen])
     p += this.ProLen
+
+    this.Len = int(p)
 
     return buffer[:p]
 }

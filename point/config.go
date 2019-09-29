@@ -2,6 +2,7 @@ package point
 
 import (
     "flag"
+    "io/ioutil"
     "strings"
     "fmt"
     "os"
@@ -18,6 +19,9 @@ type Config struct {
     Ifmtu int `json:"ifMtu"`
     Ifaddr string `json:"ifAddr"`
     Brname string `json:"ifBridge"`
+    Iftun bool `json:"ifTun"`
+    Ifethsrc string `json:"ifEthSrc"`
+    Ifethdst string `json:"ifEthDst"`
 
     saveFile string
     name string
@@ -30,10 +34,13 @@ var Default = Config {
     Verbose: 0,
     Ifmtu: 1518,
     Ifaddr: "",
+    Iftun: false,
     Brname: "",
     saveFile: ".point.json",
     name: "",
     password: "",
+    Ifethdst: "2e:4b:f0:b7:6d:ba",
+    Ifethsrc: "a6:d3:db:7f:66:15",
 }
 
 func RightAddr(listen *string, port int) {
@@ -52,10 +59,14 @@ func NewConfig() (this *Config) {
     flag.IntVar(&this.Ifmtu, "if:mtu", Default.Ifmtu, "the interface MTU include ethernet")
     flag.StringVar(&this.Ifaddr, "if:addr", Default.Ifaddr, "the interface address")
     flag.StringVar(&this.Brname, "if:br", Default.Brname,  "the bridge name")
+    flag.BoolVar(&this.Iftun, "if:tun", Default.Iftun,  "using tun device as interface, otherwise tap")
+    flag.StringVar(&this.Ifethdst, "if:ethdst", Default.Ifethdst,  "ethernet destination for tun device")
+    flag.StringVar(&this.Ifethsrc, "if:ethsrc", Default.Ifethsrc,  "ethernet source for tun device")
     flag.StringVar(&this.saveFile, "conf", Default.SaveFile(), "The configuration file")
 
     flag.Parse()
-    
+
+    this.Load()
     this.Default()
     this.Save(fmt.Sprintf("%s.cur", this.saveFile))
     str, err := this.Marshal(false)
@@ -71,7 +82,7 @@ func (this *Config) Default() {
     if this.Auth != "" {
         values := strings.Split(this.Auth, ":")
         this.name = values[0] 
-        if (len(values) > 1) {
+        if len(values) > 1 {
             this.password = values[1]
         }
     }
@@ -145,6 +156,27 @@ func (this *Config) Save(file string) error {
 
     if _, err := f.Write([]byte(str)); err != nil {
         libol.Error("Config.Save: %s", err)
+        return err
+    }
+
+    return nil
+}
+
+func (this *Config) Load() error {
+    if _, err := os.Stat(this.saveFile); os.IsNotExist(err) {
+        libol.Info("Config.Load: file:%s does not exist", this.saveFile)
+        return nil
+    }
+
+    contents, err := ioutil.ReadFile(this.saveFile)
+    if err != nil {
+        libol.Error("Config.Load: file:%s %s", this.saveFile, err)
+        return err
+
+    }
+
+    if err := json.Unmarshal([]byte(contents), this); err != nil {
+        libol.Error("Config.Load: %s", err)
         return err
     }
 

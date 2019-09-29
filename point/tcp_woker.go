@@ -3,6 +3,7 @@ package point
 import (
     "time"
     "fmt"
+    "strings"
 
     "github.com/lightstar-dev/openlan-go/libol"
 )
@@ -30,6 +31,14 @@ func NewTcpWoker(client *libol.TcpClient, c *Config) (this *TcpWroker) {
     this.client.OnConnected(this.TryLogin)
 
     return
+}
+
+func (this *TcpWroker) Close() {
+    this.client.Close()
+}
+
+func (this *TcpWroker) Connect() error {
+    return this.client.Connect()
 }
 
 func (this *TcpWroker) TryLogin(client *libol.TcpClient) error {
@@ -117,4 +126,16 @@ func (this *TcpWroker) GoLoop() error {
 
 func (this *TcpWroker) IsVerbose() bool {
     return this.verbose != 0
+}
+
+func (this *TcpWroker) SetAuth(auth string)  {
+    values := strings.Split(auth, ":")
+    this.name = values[0]
+    if len(values) > 1 {
+        this.password = values[1]
+    }
+}
+
+func (this *TcpWroker) SetAddr(addr string)  {
+    this.client.Addr = addr
 }

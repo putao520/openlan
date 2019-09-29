@@ -46,4 +46,13 @@ Show Neightbors
 
     [root@localhost olv1]# nohup ./resource/point -vs:addr x.x.x.x -vs:auth zzz:wwww -if:addr 192.168.x.b/24 &
     [root@localhost olv1]# ping 192.168.x.a
+    
+# Start Point on macOS
 
+    AppledeMBP:openlan-go apple$ make darwin
+    AppledeMBP:openlan-go apple$ sudo ./resource/point.dw -if:ethdst b2:bb:ba:c0:8a:4d -if:addr 192.168.10.14
+
+Configure IP address on `utun2`
+    
+    AppledeMBP:~ apple$ sudo ifconfig utun2 192.168.10.14 192.168.10.11
+    AppledeMBP:~ apple$ ping 192.168.10.11

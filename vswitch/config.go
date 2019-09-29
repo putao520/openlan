@@ -157,7 +157,7 @@ func (this *Config) Load() error {
         return nil
     }
 
-    contents, err := ioutil.ReadFile(this.saveFile); 
+    contents, err := ioutil.ReadFile(this.saveFile)
     if err != nil {
         libol.Error("Config.Load: file:%s %s", this.saveFile, err)
         return err

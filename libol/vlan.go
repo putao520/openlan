@@ -13,14 +13,24 @@ type Vlan struct {
     Tci uint8
     Vid uint16
     Pro uint16
+    Len int
 }
 
 func NewVlan(tci uint8, vid uint16) (this *Vlan) {
     this = &Vlan {
         Tci: tci,
         Vid: vid,
+        Len: 4,
     }
 
+    return
+}
+
+func NewVlanFromFrame(frame []byte) (this *Vlan, err error) {
+    this = &Vlan {
+        Len: 4,
+    }
+    err = this.Decode(frame)
     return
 }
 
@@ -37,7 +47,7 @@ func (this *Vlan) Decode(frame []byte) error {
     return nil
 }
 
-func (this *Vlan) Encode()[]byte {
+func (this *Vlan) Encode() []byte {
     buffer := make([]byte, 16)
 
     v := (uint16(this.Tci) << 12) | this.Vid
