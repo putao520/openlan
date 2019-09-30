@@ -56,3 +56,22 @@ Configure IP address on `utun2`
     
     AppledeMBP:~ apple$ sudo ifconfig utun2 192.168.10.14 192.168.10.11
     AppledeMBP:~ apple$ ping 192.168.10.11
+    
+How to get gateway or remote destination ethernet address for `utun2`
+
+    AppledeMBP:openlan-go apple$ ./resource/pointctl.dw 
+    [point]# 
+    [point]# open openlan.net hi:hi@123$
+    2019/09/30 16:53:00 INFO PointCmd.Connect
+    2019/09/30 16:53:00 INFO TcpClient.Connect openlan.net:10002
+    2019/09/30 16:53:01 INFO TcpWroker.TryLogin: {"name":"hi","password":"hi@123$"}
+    [point]# 2019/09/30 16:53:01 INFO TcpWroker.onHook.login: okay.
+    [point]# arp
+    arp <source> <destination>
+    [point]# 
+    [point]# arp 192.168.10.24 192.168.10.11
+    42
+    [point]# 2019/09/30 16:53:58 INFO PointCmd.onArp: b2:bb:ba:c0:8a:4d on 192.168.10.11
+    [point]# exit
+    AppledeMBP:openlan-go apple$ ./resource/point.dw -if:ethdst b2:bb:ba:c0:8a:4d
+    
