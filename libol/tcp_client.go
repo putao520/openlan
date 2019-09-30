@@ -180,6 +180,10 @@ func (this *TcpClient) SendMsg(data []byte) error {
 }
 
 func (this *TcpClient) RecvMsg(data []byte) (int, error) {
+    if this.IsVerbose() {
+        Debug("TcpClient.RecvMsg %s", this)
+    }
+
     if !this.IsOk() {
         return -1, errors.New("Connection isn't okay!")
     }

@@ -55,6 +55,10 @@ func NewPoint(config *Config) (this *Point) {
 }
 
 func (this *Point) Start() {
+    if this.IsVerbose() {
+        libol.Debug("Point.Start linux.\n")
+    }
+
     if err := this.Client.Connect(); err != nil {
         libol.Error("Point.Start %s\n", err)
     }
@@ -137,4 +141,8 @@ func (this *Point) UpLink() error {
     }
 
     return nil
+}
+
+func (this *Point) IsVerbose() bool {
+    return this.verbose != 0
 }

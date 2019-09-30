@@ -66,6 +66,10 @@ func (this *TcpWroker) onInstruct(data []byte) error {
 }
 
 func (this *TcpWroker) GoRecv(dorecv func ([]byte) error) {
+    if this.IsVerbose() {
+        libol.Debug("TcpWroker.GoRev %s\n", this.client.IsOk())
+    }
+
     defer this.client.Close()
     for {
         if !this.client.IsOk() {
