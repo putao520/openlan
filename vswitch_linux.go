@@ -29,6 +29,10 @@ func GoHttp(ope *VSwitch, c *vswitch.Config) {
 
 func main() {
     c := vswitch.NewConfig()
+    if c.Verbose != 0 {
+        libol.Debug("main.config: %s", c)
+    }
+    
     vs := NewVSwitch(c)
     vs.Wroker.Start()
 

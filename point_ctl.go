@@ -12,7 +12,9 @@ import (
 
 func main() {
     c := point.NewConfig()
-    libol.Debug("main.config: %s", c)
+    if c.Verbose != 0 {
+        libol.Debug("main.config: %s", c)
+    }
 
     p := point.NewPointCmd(c)
     p.Start()
