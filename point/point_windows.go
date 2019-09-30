@@ -8,7 +8,7 @@ import (
     "github.com/lightstar-dev/openlan-go/libol"
 )
 
-type PointWin struct {
+type Point struct {
     Client *libol.TcpClient
     Ifce *water.Interface
     Brname string
@@ -24,17 +24,17 @@ type PointWin struct {
     verbose int
 }
 
-func NewPointWin(config *Config) (this *PointWin) {
+func NewPoint(config *Config) (this *Point) {
     ifce, err := water.New(water.Config { DeviceType: water.TAP })
     if err != nil {
-        libol.Fatal("NewPointWin: ", err)
+        libol.Fatal("NewPoint: ", err)
     }
 
-    libol.Info("NewPointWin.device %s\n", ifce.Name())
+    libol.Info("NewPoint.device %s\n", ifce.Name())
 
     client := libol.NewTcpClient(config.Addr, config.Verbose)
 
-    this = &PointWin {
+    this = &Point {
         verbose: config.Verbose,
         Client: client,
         Ifce: ifce,
@@ -47,13 +47,13 @@ func NewPointWin(config *Config) (this *PointWin) {
     return 
 }
 
-func (this *PointWin) Start() {
+func (this *Point) Start() {
     if this.IsVerbose() {
-        libol.Debug("PointWin.Start linux.\n")
+        libol.Debug("Point.Start linux.\n")
     }
 
     if err := this.Client.Connect(); err != nil {
-        libol.Error("PointWin.Start %s\n", err)
+        libol.Error("Point.Start %s\n", err)
     }
 
     go this.tapwroker.GoRecv(this.tcpwroker.DoSend)
@@ -63,35 +63,35 @@ func (this *PointWin) Start() {
     go this.tcpwroker.GoLoop()
 }
 
-func (this *PointWin) Close() {
+func (this *Point) Close() {
     this.Client.Close()
     this.Ifce.Close()
 
     if this.br != nil && this.brip != nil {
         if err := this.br.UnsetLinkIp(this.brip, this.brnet); err != nil {
-            libol.Error("PointWin.Close.UnsetLinkIp %s : %s", this.br.NetInterface().Name, err)
+            libol.Error("Point.Close.UnsetLinkIp %s : %s", this.br.NetInterface().Name, err)
         }
     }    
 }
 
-func (this *PointWin) UpLink() error {
+func (this *Point) UpLink() error {
     name := this.Ifce.Name()
     
-    libol.Debug("PointWin.UpLink: %s", name)
+    libol.Debug("Point.UpLink: %s", name)
     link, err := tenus.NewLinkFrom(name)
     if err != nil {
-        libol.Error("PointWin.UpLink: Get ifce %s: %s", name, err)
+        libol.Error("Point.UpLink: Get ifce %s: %s", name, err)
         return err
     }
     
     if err := link.SetLinkUp(); err != nil {
-        libol.Error("PointWin.UpLink.SetLinkUp: %s : %s", name, err)
+        libol.Error("Point.UpLink.SetLinkUp: %s : %s", name, err)
         return err
     }
 
     return nil
 }
 
-func (this *PointWin) IsVerbose() bool {
+func (this *Point) IsVerbose() bool {
     return this.verbose != 0
 }

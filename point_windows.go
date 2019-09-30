@@ -9,7 +9,7 @@ import (
 func main() {
     c := point.NewConfig()
     libol.Debug("main.config: %s", c)
-    p := point.NewPointWin(c)
+    p := point.NewPoint(c)
 
     p.Start()
 
