@@ -1,15 +1,15 @@
 package point
 
 import (
-    "flag"
-    "io/ioutil"
-    "strings"
-    "fmt"
-    "os"
     "bytes"
     "encoding/json"
+    "flag"
+    "fmt"
+    "io/ioutil"
+    "os"
+    "strings"
 
-    "github.com/lightstar-dev/openlan-go/libol"    
+    "github.com/lightstar-dev/openlan-go/libol"
 )
 
 type Config struct {

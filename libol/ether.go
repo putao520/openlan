@@ -1,8 +1,8 @@
 package libol
 
 import (
-    "errors"
     "encoding/binary"
+    "errors"
 )
 
 var (

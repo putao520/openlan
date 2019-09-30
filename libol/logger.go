@@ -1,8 +1,8 @@
 package libol
 
 import (
-    "log"
     "fmt"
+    "log"
 )
 
 const (

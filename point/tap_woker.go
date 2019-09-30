@@ -3,8 +3,8 @@ package point
 import (
     "net"
 
-    "github.com/songgao/water"
     "github.com/lightstar-dev/openlan-go/libol"
+    "github.com/songgao/water"
 )
 
 type TapWroker struct {

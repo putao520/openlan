@@ -1,11 +1,11 @@
 package libol
 
 import (
-    "net"
-    "fmt"
-    "errors"
-    "encoding/binary"
     "bytes"
+    "encoding/binary"
+    "errors"
+    "fmt"
+    "net"
     "time"
 )
 

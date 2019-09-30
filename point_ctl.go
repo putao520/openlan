@@ -1,9 +1,9 @@
 package main
 
 import (
-    "os"
-    "fmt"
     "bufio"
+    "fmt"
+    "os"
     "strings"
 
     "github.com/lightstar-dev/openlan-go/libol"

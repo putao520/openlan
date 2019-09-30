@@ -1,21 +1,21 @@
 package vswitch
 
 import (
-    "os"
     "bufio"
-    "strings"
-    "fmt"
+    "encoding/json"
     "errors"
-    "sort"
+    "fmt"
     "net"
+    "os"
+    "sort"
+    "strings"
     "sync"
     "time"
-    "encoding/json"
 
-    "github.com/songgao/water"
-    "github.com/milosgajdos83/tenus"
     "github.com/lightstar-dev/openlan-go/libol"
     "github.com/lightstar-dev/openlan-go/point"
+    "github.com/milosgajdos83/tenus"
+    "github.com/songgao/water"
 )
 
 type Point struct {

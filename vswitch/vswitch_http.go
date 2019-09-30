@@ -1,12 +1,12 @@
 package vswitch
 
 import (
-    "os"
+    "encoding/json"
     "fmt"
     "html"
     "io/ioutil"
     "net/http"
-    "encoding/json"
+    "os"
 
     "github.com/lightstar-dev/openlan-go/libol"
     "github.com/lightstar-dev/openlan-go/point"

@@ -3,10 +3,10 @@ package vswitch
 import (
     "fmt"
     "net"
+    "strings"
     "sync"
     "time"
-    "strings"
-    
+
     "github.com/lightstar-dev/openlan-go/libol"
 )
 
