@@ -4,7 +4,6 @@ import (
     "net"
     
     "github.com/songgao/water"
-    "github.com/milosgajdos83/tenus"
     "github.com/lightstar-dev/openlan-go/libol"
 )
 
@@ -18,7 +17,6 @@ type Point struct {
     //
     tcpwroker *TcpWroker 
     tapwroker *TapWroker
-    br tenus.Bridger
     brip net.IP
     brnet *net.IPNet
     verbose int
@@ -66,29 +64,10 @@ func (this *Point) Start() {
 func (this *Point) Close() {
     this.Client.Close()
     this.Ifce.Close()
-
-    if this.br != nil && this.brip != nil {
-        if err := this.br.UnsetLinkIp(this.brip, this.brnet); err != nil {
-            libol.Error("Point.Close.UnsetLinkIp %s : %s", this.br.NetInterface().Name, err)
-        }
-    }    
 }
 
 func (this *Point) UpLink() error {
-    name := this.Ifce.Name()
-    
-    libol.Debug("Point.UpLink: %s", name)
-    link, err := tenus.NewLinkFrom(name)
-    if err != nil {
-        libol.Error("Point.UpLink: Get ifce %s: %s", name, err)
-        return err
-    }
-    
-    if err := link.SetLinkUp(); err != nil {
-        libol.Error("Point.UpLink.SetLinkUp: %s : %s", name, err)
-        return err
-    }
-
+    //TODO
     return nil
 }
 
