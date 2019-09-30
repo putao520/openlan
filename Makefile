@@ -14,6 +14,7 @@ windows:
 
 darwin:
 	go build -o ./resource/point.dw point_darwin.go
+	go build -o ./resource/pointctl.dw point_ctl.go
 
 install:
 	./install.sh
