@@ -12,9 +12,10 @@ var (
 )
 
 const (
-    ETH_ARP  = 0x0806
-    ETH_VLAN = 0x8100
-    ETH_IPV4 = 0x0800
+    ETH_P_ARP  = 0x0806
+    ETH_P_IP4  = 0x0800
+    ETH_P_IP6  = 0x86DD
+    ETH_P_VLAN = 0x8100
 )
 
 type Ether struct {
@@ -31,7 +32,6 @@ func NewEther(t uint16) (this *Ether) {
         Dst: ZEROETHADDR,
         Len: 14,
     }
-
     return
 }
 

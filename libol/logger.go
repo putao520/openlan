@@ -27,7 +27,7 @@ func (this *Logger) Warn(format string, v ...interface{}) {
 }
 
 func (this *Logger) Error(format string, v ...interface{}) {
-    //TODO insert to Errors.
+    this.SaveError(fmt.Sprintf("ERROR %s", format), v...)
     log.Printf(fmt.Sprintf("ERROR %s", format), v...)
 }
 
@@ -36,7 +36,7 @@ func (this *Logger) Debug(format string, v ...interface{}) {
 }
 
 func (this *Logger) Fatal(format string, v ...interface{}) {
-    //TODO saved to Errors and Publish it.
+    this.SaveError(fmt.Sprintf("FATAL %s", format), v...)
     log.Printf(fmt.Sprintf("FATAL %s", format), v...)
 }
 
@@ -44,9 +44,14 @@ func (this *Logger) Print(format string, v ...interface{}) {
     log.Printf(fmt.Sprintf("PRINT %s", format), v...)
 }
 
+func (this *Logger) SaveError(format string, v ...interface{}) {
+    ////TODO save to log when too large.
+    this.Errors = append(this.Errors, fmt.Sprintf(format, v...))
+}
+
 var Log = Logger {
     Level: 1,
-    Errors: make([]string, 1024),
+    Errors: make([]string, 0, 1024),
 }
 
 func Error(format string, v ...interface{}) {

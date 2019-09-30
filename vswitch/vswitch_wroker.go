@@ -49,17 +49,17 @@ type VSwitchWroker struct {
     brnet *net.IPNet
     
     keys []int
-    hooks map[int]func(*libol.TcpClient, *libol.Frame) error
+    hooks map[int] func (*libol.TcpClient, *libol.Frame) error
     ifmtu int
 
     clientsLock sync.RWMutex
-    clients map[*libol.TcpClient]*Point
+    clients map[*libol.TcpClient] *Point
     usersLock sync.RWMutex
-    users map[string]*User
+    users map[string] *User
     newtime int64
     brname string
     linksLock sync.RWMutex
-    links map[string]*point.Point
+    links map[string] *point.Point
 }
 
 func NewVSwitchWroker(server *TcpServer, c *Config) (this *VSwitchWroker) {
@@ -69,27 +69,24 @@ func NewVSwitchWroker(server *TcpServer, c *Config) (this *VSwitchWroker) {
         Redis: libol.NewRedisCli(c.Redis.Addr, c.Redis.Auth, c.Redis.Db),
         EnableRedis: c.Redis.Enable,
         Conf: c,
-
         verbose: c.Verbose,
         br: nil,
         ifmtu: c.Ifmtu,
-        hooks: make(map[int]func(*libol.TcpClient, *libol.Frame) error),
+        hooks: make(map[int] func (*libol.TcpClient, *libol.Frame) error),
         keys: make([]int, 0, 1024),
-        clients: make(map[*libol.TcpClient]*Point, 1024),
-        users: make(map[string]*User, 1024),
+        clients: make(map[*libol.TcpClient] *Point, 1024),
+        users: make(map[string] *User, 1024),
         newtime: time.Now().Unix(),
         brname: c.Brname,
-        links: make(map[string]*point.Point),
+        links: make(map[string] *point.Point),
     }
 
     if err := this.Redis.Open(); err != nil {
         libol.Error("NewVSwitchWroker: redis.Open %s", err)
     }
-    
     this.Auth = NewPointAuth(this, c)
     this.Request = NewWithRequest(this, c)
     this.Neighbor = NewNeighborer(this, c)
-
     this.NewBr()
     this.Register()
     this.LoadUsers()
@@ -102,7 +99,6 @@ func (this *VSwitchWroker) Register() {
     this.setHook(0x10, this.Neighbor.OnFrame)
     this.setHook(0x00, this.Auth.OnFrame)
     this.setHook(0x01, this.Request.OnFrame)
-
     this.showHook()
 }
 
@@ -114,7 +110,6 @@ func (this *VSwitchWroker) LoadUsers() error {
 
     defer file.Close()
     reader := bufio.NewReader(file)
-
     for {
         line, err := reader.ReadString('\n')
         if err != nil {
@@ -235,7 +230,7 @@ func (this *VSwitchWroker) showHook() {
     }
 } 
 
-func (this *VSwitchWroker) setHook(index int, hook func(*libol.TcpClient, *libol.Frame) error) {
+func (this *VSwitchWroker) setHook(index int, hook func (*libol.TcpClient, *libol.Frame) error) {
     this.hooks[index] = hook
     this.keys = append(this.keys, index)
     sort.Ints(this.keys)
@@ -420,7 +415,7 @@ func (this *VSwitchWroker) PubPoint(p *Point, isadd bool) {
     }
 
     key := fmt.Sprintf("point:%s", strings.Replace(p.Client.String(), ":", "-", -1))
-    value := map[string]interface{} {
+    value := map[string] interface{} {
         "remote": p.Client.String(), 
         "newtime": p.Client.NewTime,
         "device": p.Device.Name(),
@@ -588,7 +583,7 @@ func (this *PointAuth) onAuth(client *libol.TcpClient) error {
     return nil
 }
 
-func (this *PointAuth) GoRecv(ifce *water.Interface, dorecv func([]byte)(error)) {
+func (this *PointAuth) GoRecv(ifce *water.Interface, dorecv func ([]byte) error) {
     libol.Info("PointAuth.GoRecv: %s", ifce.Name())    
     defer ifce.Close()
     for {
@@ -607,7 +602,6 @@ func (this *PointAuth) GoRecv(ifce *water.Interface, dorecv func([]byte)(error))
         }
     }
 }
-
 
 type WithRequest struct {
     verbose int 

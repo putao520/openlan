@@ -10,16 +10,19 @@ import (
 )
 
 var (
-    MAGIC  = []byte{0xff,0xff}
-    HSIZE  = uint16(0x04)
+    MAGIC  = []byte {0xff,0xff}
 )
 
-var (
-    CL_INIT      = uint8(0x00)
-    CL_CONNECTED = uint8(0x01)
-    CL_UNAUTH    = uint8(0x02)
-    CL_AUTHED    = uint8(0x03)
-    CL_CLOSED    = uint8(0xff)
+const (
+    CL_INIT      = 0x00
+    CL_CONNECTED = 0x01
+    CL_UNAUTH    = 0x02
+    CL_AUTHED    = 0x03
+    CL_CLOSED    = 0xff
+)
+
+const (
+    HSIZE  = 0x04
 )
 
 type TcpClient struct {
@@ -27,7 +30,7 @@ type TcpClient struct {
     maxsize int
     minsize int
     verbose int
-    onConnected func(*TcpClient) error
+    onConnected func (*TcpClient) error
 
     //Public variable
     TxOkay uint64
@@ -98,7 +101,7 @@ func (this *TcpClient) Connect() error {
     return nil
 }
 
-func (this *TcpClient) OnConnected(on func(*TcpClient) error) {
+func (this *TcpClient) OnConnected(on func (*TcpClient) error) {
     this.onConnected = on
 }
 
@@ -119,9 +122,7 @@ func (this *TcpClient) recvn(buffer []byte) error {
         if err != nil {
             return err
         }
-
         copy(buffer[offset:], tmp)
-
         offset += n
         left -= n 
     }
@@ -163,7 +164,7 @@ func (this *TcpClient) SendMsg(data []byte) error {
         return err
     }
 
-    buffer := make([]byte, int(HSIZE)+len(data))
+    buffer := make([]byte, HSIZE + len(data))
     copy(buffer[0:2], MAGIC)
     binary.BigEndian.PutUint16(buffer[2:4], uint16(len(data)))
     copy(buffer[HSIZE:], data)

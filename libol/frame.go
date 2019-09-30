@@ -12,7 +12,6 @@ func NewFrame(data []byte) (this *Frame) {
     this = &Frame{
         Data: make([]byte, len(data)),
     }
-
     copy(this.Data, data)
     return 
 }

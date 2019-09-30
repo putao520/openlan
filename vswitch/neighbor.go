@@ -40,7 +40,7 @@ func (this *Neighbor) UpTime() int64 {
 
 type Neighborer struct {
     lock sync.RWMutex
-    neighbors map[string]*Neighbor
+    neighbors map[string] *Neighbor
     verbose int
     wroker *VSwitchWroker
     EnableRedis bool
@@ -164,7 +164,7 @@ func (this *Neighborer) PubNeighbor(neb *Neighbor, isadd bool) {
     }
 
     key := fmt.Sprintf("neighbor:%s", strings.Replace(neb.HwAddr.String(), ":", "-", -1))
-    value := map[string]interface{} {
+    value := map[string] interface{} {
         "hwaddr": neb.HwAddr.String(),
         "ipaddr": neb.IpAddr.String(),
         "remote": neb.Client.String(),

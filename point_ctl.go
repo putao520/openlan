@@ -29,8 +29,7 @@ func main() {
             break
         }
 
-        input := strings.Trim(cmdstr, "\r\n")
-        input = strings.TrimSpace(input)
+        input := strings.TrimSpace(strings.Trim(cmdstr, "\r\n"))
         if input == "quit" || input == "exit" {
             break
         }

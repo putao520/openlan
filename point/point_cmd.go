@@ -133,14 +133,13 @@ func (this *PointCmd) DoArp(args []string) string {
     arp.SIpAddr = []byte(net.ParseIP(args[0]).To4())
     arp.TIpAddr = []byte(net.ParseIP(args[1]).To4())
 
-    eth := libol.NewEther(libol.ETH_ARP)
+    eth := libol.NewEther(libol.ETH_P_ARP)
     eth.Dst = libol.BROADETHADDR
     eth.Src = libol.DEFAULTETHADDR
 
     buffer := make([]byte, 0, 1024)
     buffer = append(buffer, eth.Encode()...)
     buffer = append(buffer, arp.Encode()...)
-    //libol.Debug("PointCmd.DoArp % x\n", buffer)
     this.DoSend(buffer)
 
     return fmt.Sprintf("%d", len(buffer))

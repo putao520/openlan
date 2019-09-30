@@ -32,8 +32,12 @@ func NewTapWoker(ifce *water.Interface, c *Config) (this *TapWroker) {
         this.EthSrcIp = net.ParseIP(c.Ifaddr).To4()
         libol.Info("NewTapWoker srcIp: % x\n", this.EthSrcIp)
 
-        if hw, err := net.ParseMAC(c.Ifethsrc); err == nil {
-            this.EthSrcAddr = []byte(hw)
+        if c.Ifethsrc == "" {
+          this.EthSrcAddr = libol.GenEthAddr(6)
+        } else {
+            if hw, err := net.ParseMAC(c.Ifethsrc); err == nil {
+                this.EthSrcAddr = []byte(hw)
+            }
         }
         if hw, err := net.ParseMAC(c.Ifethdst); err == nil {
             this.EthDstAddr = []byte(hw)
@@ -44,7 +48,15 @@ func NewTapWoker(ifce *water.Interface, c *Config) (this *TapWroker) {
     return
 }
 
-func (this *TapWroker) GoRecv(dorecv func([]byte) error) {
+func (this *TapWroker) NewEth(t uint16) *libol.Ether {
+    eth := libol.NewEther(t)
+    eth.Dst = this.EthDstAddr
+    eth.Src = this.EthSrcAddr
+
+    return eth
+}
+
+func (this *TapWroker) GoRecv(dorecv func ([]byte) error) {
     this.dorecv = dorecv
     defer this.Close()
     for {
@@ -63,9 +75,7 @@ func (this *TapWroker) GoRecv(dorecv func([]byte) error) {
         }
 
         if this.ifce.IsTUN() {
-            eth := libol.NewEther(libol.ETH_IPV4)
-            eth.Dst = this.EthDstAddr
-            eth.Src = this.EthSrcAddr
+            eth := this.NewEth(libol.ETH_P_IP4)
 
             buffer := make([]byte, 0, this.ifmtu)
             buffer = append(buffer, eth.Encode()...)
@@ -114,16 +124,14 @@ func (this *TapWroker) onArp(data []byte) bool {
             return false
         }
 
+        eth := this.NewEth(libol.ETH_P_ARP)
+
         reply := libol.NewArp()
         reply.OpCode = libol.ARP_REPLY
         reply.SIpAddr = this.EthSrcIp
         reply.TIpAddr = arp.SIpAddr
         reply.SHwAddr = this.EthSrcAddr
         reply.THwAddr = arp.SHwAddr
-
-        eth := libol.NewEther(libol.ETH_ARP)
-        eth.Dst = this.EthDstAddr
-        eth.Src = this.EthSrcAddr
 
         buffer := make([]byte, 0, this.ifmtu)
         buffer = append(buffer, eth.Encode()...)
@@ -161,9 +169,9 @@ func (this *TapWroker) GoLoop() {
                     libol.Error("TapWroker.GoLoop: %s", err)
                     continue
                 }
-                if eth.Type == libol.ETH_VLAN {
+                if eth.Type == libol.ETH_P_VLAN {
                     wdata = wdata[18:]
-                } else if eth.Type == libol.ETH_IPV4 {
+                } else if eth.Type == libol.ETH_P_IP4 {
                     wdata = wdata[14:]
                 } else { // default is Ethernet is 14 bytes.
                     wdata = wdata[14:]

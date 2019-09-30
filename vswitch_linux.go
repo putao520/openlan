@@ -43,7 +43,6 @@ func main() {
         os.Exit(0)
     }()
 
-    fmt.Println("Please enter CTRL+C to exit...")
     for {
         time.Sleep(1000 * time.Second)
     }

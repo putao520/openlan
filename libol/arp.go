@@ -11,12 +11,6 @@ const (
 )
 
 const (
-    ETH_P_ARP  = 0x0806
-    ETH_P_IP4  = 0x0800
-    ETH_P_IP6  = 0x86DD
-)
-
-const (
     ARPHRD_NETROM = 0
     ARPHRD_ETHER  = 1
     ARPHRD_EETHER = 2

@@ -11,7 +11,7 @@ type TcpServer struct {
 
     listener *net.TCPListener
     maxClient int
-    clients map[*libol.TcpClient]bool
+    clients map[*libol.TcpClient] bool
     onClients chan *libol.TcpClient
     offClients chan *libol.TcpClient
     verbose int
@@ -22,7 +22,7 @@ func NewTcpServer(c *Config) (this *TcpServer) {
         Addr: c.TcpListen,
         listener: nil,
         maxClient: 1024,
-        clients: make(map[*libol.TcpClient]bool, 1024),
+        clients: make(map[*libol.TcpClient] bool, 1024),
         onClients: make(chan *libol.TcpClient, 4),
         offClients: make(chan *libol.TcpClient, 8),
         verbose: c.Verbose,
@@ -81,9 +81,9 @@ func (this *TcpServer) GoAccept() {
     return
 }
 
-func (this *TcpServer) GoLoop(onClient func (*libol.TcpClient) error, 
-                              onRecv func (*libol.TcpClient, []byte) error,
-                              onClose func (*libol.TcpClient) error) {
+func (this *TcpServer) GoLoop(onClient func (*libol.TcpClient) error,
+                            onRecv func (*libol.TcpClient, []byte) error,
+                            onClose func (*libol.TcpClient) error) {
     libol.Debug("TcpServer.GoLoop")
     defer this.Close()
     for {

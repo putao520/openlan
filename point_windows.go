@@ -2,8 +2,7 @@ package main
 
 import (
     "fmt"
-
-    "github.com/lightstar-dev/openlan-go/point"
+    "github.com/lightstar-dev/openlan-go/libol"
     "github.com/lightstar-dev/openlan-go/point"
 )
 
@@ -15,9 +14,9 @@ func main() {
     p.Start()
 
     for {
-        var input string
-
         fmt.Println("Please press enter `q` to exit...")
+
+        input := ""
         if fmt.Scanln(&input); input == "q" {
             break
         }

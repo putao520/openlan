@@ -5,10 +5,6 @@ import (
     "encoding/binary"
 )
 
-const (
-    ETH_P_VLAN  = 0x8100
-)
-
 type Vlan struct {
     Tci uint8
     Vid uint16

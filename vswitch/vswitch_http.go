@@ -4,8 +4,6 @@ import (
     "os"
     "fmt"
     "html"
-    "time"
-    "math/rand"
     "io/ioutil"
     "net/http"
     "encoding/json"
@@ -21,19 +19,6 @@ type VSwitchHttp struct {
     adminFile string
 }
 
-func getToken(n int) string {
-    letters := []byte("0123456789abcdefghijklmnopqrstuvwxyz")
-    buf := make([]byte, n)
-
-    rand.Seed(time.Now().UnixNano())
-
-    for i := range buf {
-        buf[i] = letters[rand.Int63() % int64(len(letters))]
-    }
-
-    return string(buf)
-}
-
 func NewVSwitchHttp(wroker *VSwitchWroker, c *Config)(this *VSwitchHttp) {
     this = &VSwitchHttp {
         wroker: wroker,
@@ -47,7 +32,7 @@ func NewVSwitchHttp(wroker *VSwitchWroker, c *Config)(this *VSwitchHttp) {
     }
 
     if this.adminToken == "" {
-        this.adminToken = getToken(13)
+        this.adminToken = libol.GenToken(13)
     }
 
     this.SaveToken()
@@ -63,7 +48,7 @@ func NewVSwitchHttp(wroker *VSwitchWroker, c *Config)(this *VSwitchHttp) {
 func (this *VSwitchHttp) SaveToken() error {
     libol.Info("VSwitchHttp.SaveToken: AdminToken: %s", this.adminToken)
 
-    f, err := os.OpenFile(this.adminFile, os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0600)
+    f, err := os.OpenFile(this.adminFile, os.O_RDWR | os.O_TRUNC | os.O_CREATE, 0600)
     defer f.Close()
     if err != nil {
         libol.Error("VSwitchHttp.SaveToken: %s", err)

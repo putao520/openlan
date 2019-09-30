@@ -65,7 +65,7 @@ func (this *TcpWroker) onInstruct(data []byte) error {
     return nil
 }
 
-func (this *TcpWroker) GoRecv(dorecv func([]byte)(error)) {
+func (this *TcpWroker) GoRecv(dorecv func ([]byte) error) {
     defer this.client.Close()
     for {
         if !this.client.IsOk() {

@@ -40,7 +40,7 @@ var Default = Config {
     name: "",
     password: "",
     Ifethdst: "2e:4b:f0:b7:6d:ba",
-    Ifethsrc: "a6:d3:db:7f:66:15",
+    Ifethsrc: "",
 }
 
 func RightAddr(listen *string, port int) {
