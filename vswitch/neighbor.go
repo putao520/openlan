@@ -11,7 +11,7 @@ import (
 )
 
 type Neighbor struct {
-    Client *libol.TcpClient  `json:"Client"`
+    Client *libol.TcpClient `json:"Client"`
     HwAddr net.HardwareAddr `json:"HwAddr"`
     IpAddr net.IP `json:"IpAddr"`
     NewTime int64 `json:"NewTime"`
