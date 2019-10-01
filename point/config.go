@@ -12,15 +12,15 @@ import (
 )
 
 type Config struct {
-    Addr string `json:"vsAddr"`
-    Auth string `json:"vsAuth"`
-    Verbose int `json:"verbose"`
-    Ifmtu int `json:"ifMtu"`
-    Ifaddr string `json:"ifAddr"`
-    Brname string `json:"ifBridge"`
-    Iftun bool `json:"ifTun"`
-    Ifethsrc string `json:"ifEthSrc"`
-    Ifethdst string `json:"ifEthDst"`
+    Addr string `json:"VsAddr"`
+    Auth string `json:"VsAuth"`
+    Verbose int `json:"Verbose"`
+    Ifmtu int `json:"IfMtu"`
+    Ifaddr string `json:"IfAddr"`
+    Brname string `json:"IfBridge"`
+    Iftun bool `json:"IfTun"`
+    Ifethsrc string `json:"IfEthSrc"`
+    Ifethdst string `json:"IfEthDst"`
 
     saveFile string
     name string

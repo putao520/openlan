@@ -35,6 +35,14 @@ func NewEther(t uint16) (this *Ether) {
     return
 }
 
+func NewEtherArp() (this *Ether) {
+    return NewEther(ETH_P_ARP)
+}
+
+func NewEtherIP4() (this *Ether) {
+    return NewEther(ETH_P_IP4)
+}
+
 func NewEtherFromFrame(frame []byte) (this *Ether, err error) {
     this = &Ether {
         Len: 14,

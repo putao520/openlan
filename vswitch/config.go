@@ -13,26 +13,26 @@ import (
 )
 
 type Config struct {
-    TcpListen string `json:"listen"`
-    Verbose int `json:"verbose"`
-    HttpListen string `json:"http"`
-    Ifmtu int `json:"ifMtu"`
-    Ifaddr string `json:"ifAddr"`
-    Brname string `json:"ifBridge"`
-    Token string `json:"adminToken"`
-    TokenFile string `json:"adminFile"`
-    Password string `json:"authFile"`
-    Redis RedisConfig `json:"redis"`
+    TcpListen string `json:"Listen"`
+    Verbose int `json:"Verbose"`
+    HttpListen string `json:"Http"`
+    Ifmtu int `json:"IfMtu"`
+    Ifaddr string `json:"IfAddr"`
+    Brname string `json:"IfBridge"`
+    Token string `json:"AdminToken"`
+    TokenFile string `json:"AdminFile"`
+    Password string `json:"AuthFile"`
+    Redis RedisConfig `json:"Redis"`
 
-    Links []*point.Config `json:"links"`
+    Links []*point.Config `json:"Links"`
     saveFile string
 }
 
 type RedisConfig struct {
-    Enable bool `json:"enable"`
-    Addr string `json:"addr"`
-    Auth string `json:"auth"`
-    Db int `json:"database"`
+    Enable bool `json:"Enable"`
+    Addr string `json:"Addr"`
+    Auth string `json:"Auth"`
+    Db int `json:"Database"`
 }
 
 var Default = Config {

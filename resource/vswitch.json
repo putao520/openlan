@@ -1,20 +1,20 @@
 {
-  "listen": "0.0.0.0:10002",
-  "http": "0.0.0.0:10000",
-  "redis": {
-    "enable": false,
-    "addr": "127.0.0.1",
-    "auth": "",
-    "database": 0
+  "Listen": "0.0.0.0:10002",
+  "Http": "0.0.0.0:10000",
+  "Redis": {
+    "Enable": false,
+    "Addr": "127.0.0.1",
+    "Auth": "",
+    "Database": 0
   },
-  "links": [
+  "Links": [
     {
-      "vsAddr": "openlan.net",
-      "vsAuth": "hi:hi@123$"
+      "VsAddr": "openlan.net",
+      "VsAuth": "hi:hi@123$"
     },
     {
-      "vsAddr": "localhost",
-      "vsAuth": "hi:hi@123$"
+      "VsAddr": "localhost",
+      "VsAuth": "hi:hi@123$"
     }
   ]
 }
