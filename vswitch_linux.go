@@ -7,6 +7,7 @@ import (
     "time"
     "os"
 
+    "github.com/lightstar-dev/openlan-go/libol"
     "github.com/lightstar-dev/openlan-go/vswitch"
 )
 
@@ -32,7 +33,7 @@ func main() {
     if c.Verbose != 0 {
         libol.Debug("main.config: %s", c)
     }
-    
+
     vs := NewVSwitch(c)
     vs.Wroker.Start()
 

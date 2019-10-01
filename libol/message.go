@@ -25,6 +25,10 @@ func DecBody(data []byte) string {
     return string(data[12:])
 }
 
+func DecActionBody(data []byte) (string, string) {
+    return DecAction(data), DecBody(data)
+}
+
 func EncInstReq(action string, body string) []byte {
     payload := fmt.Sprintf("%s= %s", action[:4], body)
     return append(ZEROETHADDR[:6], payload...)

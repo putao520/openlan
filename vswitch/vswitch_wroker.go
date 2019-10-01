@@ -495,16 +495,16 @@ func NewPointAuth(wroker *VSwitchWroker, c *Config) (this *PointAuth) {
 
 func (this *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
     if this.IsVerbose() {
-        libol.Debug("PointAuth.checkAuth % x.", frame.Data)
+        libol.Debug("PointAuth.OnFrame % x.", frame.Data)
     }
 
     if libol.IsInst(frame.Data) {
         action := libol.DecAction(frame.Data)
-        libol.Debug("PointAuth.checkAuth.action: %s", action)
+        libol.Debug("PointAuth.OnFrame.action: %s", action)
 
         if action == "logi=" {
             if err := this.handlelogin(client, libol.DecBody(frame.Data)); err != nil {
-                libol.Error("PointAuth.checkAuth: %s", err)
+                libol.Error("PointAuth.OnFrame: %s", err)
                 client.SendResp("login", err.Error())
                 client.Close()
                 return err
@@ -617,9 +617,23 @@ func NewWithRequest(wroker *VSwitchWroker, c *Config) (this *WithRequest) {
 }
 
 func (this *WithRequest) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
+    if this.IsVerbose() {
+        libol.Debug("WithRequest.OnFrame % x.", frame.Data)
+    }
+
+    if libol.IsInst(frame.Data) {
+        action, body := libol.DecActionBody(frame.Data)
+        libol.Debug("WithRequest.OnFrame.action: %s %s", action, body)
+
+        if action == "neig=" {
+            //TODO
+        }
+    }
+
     return nil
 }
 
 func (this *WithRequest) IsVerbose() bool {
     return this.verbose != 0
 }
+
