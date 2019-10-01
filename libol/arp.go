@@ -106,3 +106,7 @@ func (this *Arp) Encode() []byte {
 
     return buffer[:p]
 }
+
+func (this *Arp) IsIP4() bool {
+    return this.ProCode == ETH_P_IP4
+}

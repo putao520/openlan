@@ -65,3 +65,15 @@ func (this *Ether) Encode() []byte {
 
     return buffer[:14]
 }
+
+func (this *Ether) IsVlan() bool {
+    return this.Type == ETH_P_VLAN
+}
+
+func (this *Ether) IsArp() bool {
+    return this.Type == ETH_P_ARP
+}
+
+func (this *Ether) IsIP4() bool {
+    return this.Type == ETH_P_IP4
+}

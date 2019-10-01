@@ -56,7 +56,7 @@ func (this *PointCmd) onArp(data []byte) {
         return
     }
 
-    if eth.Type != libol.ETH_P_ARP {
+    if !eth.IsArp() {
         return
     }
 
@@ -66,7 +66,7 @@ func (this *PointCmd) onArp(data []byte) {
         return
     }
 
-    if arp.ProCode == libol.ETH_P_IP4 {
+    if arp.IsIP4() {
         if arp.OpCode != libol.ARP_REQUEST && arp.OpCode != libol.ARP_REPLY {
             return
         }

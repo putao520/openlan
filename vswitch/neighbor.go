@@ -93,22 +93,24 @@ func (this *Neighborer) OnFrame(client *libol.TcpClient, frame *libol.Frame) err
         return nil
     }
 
-    ethtype, ethdata := frame.EthParse()
-    if ethtype != libol.ETH_P_ARP {
-        if ethtype == libol.ETH_P_VLAN {
+    eth, err := libol.NewEtherFromFrame(frame.Data)
+    if err != nil {
+        libol.Warn("PointCmd.onArp %s\n", err)
+        return err
+    }
+    if !eth.IsArp() {
+        if eth.IsVlan() {
             //TODO
         }
-        
         return nil
     }
 
-    arp, err := libol.NewArpFromFrame(ethdata)
+    arp, err := libol.NewArpFromFrame(frame.Data[eth.Len:])
     if err != nil {
         libol.Error("Neighborer.OnFrame %s.", err)
         return nil
     }
-
-    if arp.ProCode == libol.ETH_P_IP4 {
+    if arp.IsIP4() {
         if arp.OpCode == libol.ARP_REQUEST ||
            arp.OpCode == libol.ARP_REPLY {
             n := NewNeighbor(net.HardwareAddr(arp.SHwAddr), net.IP(arp.SIpAddr), client)

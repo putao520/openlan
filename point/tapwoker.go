@@ -109,7 +109,7 @@ func (this *TapWroker) onArp(data []byte) bool {
         return false
     }
 
-    if eth.Type != libol.ETH_P_ARP {
+    if !eth.IsArp() {
         return false
     }
 
@@ -119,7 +119,7 @@ func (this *TapWroker) onArp(data []byte) bool {
         return false
     }
 
-    if arp.ProCode == libol.ETH_P_IP4 {
+    if arp.IsIP4() {
         if arp.OpCode != libol.ARP_REQUEST {
             return false
         }
@@ -169,9 +169,9 @@ func (this *TapWroker) GoLoop() {
                     libol.Error("TapWroker.GoLoop: %s", err)
                     continue
                 }
-                if eth.Type == libol.ETH_P_VLAN {
+                if eth.IsVlan() {
                     wdata = wdata[18:]
-                } else if eth.Type == libol.ETH_P_IP4 {
+                } else if eth.IsIP4() {
                     wdata = wdata[14:]
                 } else { // default is Ethernet is 14 bytes.
                     wdata = wdata[14:]
