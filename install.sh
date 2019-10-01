@@ -15,8 +15,8 @@ systemctl status firewalld && {
   #iptables -t nat -I PREROUTING -d 117.89.132.47 -p tcp -m tcp --dport 10082 -j DNAT --to-destination 192.168.4.151:10082
 }
 
-cp -rvf ./resource/point /usr/bin
-cp -rvf ./resource/vswitch /usr/bin
+cp -rvf ./resource/point.linux.x86_64 /usr/bin/point
+cp -rvf ./resource/vswitch.linux.x86_64 /usr/bin/vswitch
 
 [ -e /etc/point.cfg ] || cp -rvf ./resource/point.cfg /etc
 [ -e /etc/point.json ] || cp -rvf ./resource/point.json /etc
