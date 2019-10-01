@@ -1,7 +1,6 @@
 package point
 
 import (
-    "bytes"
     "encoding/json"
     "flag"
     "fmt"
@@ -69,7 +68,7 @@ func NewConfig() (this *Config) {
     this.Load()
     this.Default()
     this.Save(fmt.Sprintf("%s.cur", this.saveFile))
-    str, err := this.Marshal(false)
+    str, err := libol.Marshal(this,false)
     if err != nil { 
         libol.Error("NewConfig.json error: %s" , err) 
     }
@@ -116,26 +115,6 @@ func (this *Config) SaveFile() string {
     return this.saveFile
 }
 
-func (this *Config) Marshal(pretty bool) (string, error) {
-    str , err := json.Marshal(this)
-    if err != nil { 
-        libol.Error("NewConfig.json error: %s" , err)
-        return "", err
-    }
-
-    if !pretty {
-        return string(str), nil
-    }
-
-    var out bytes.Buffer
-    
-    if err := json.Indent(&out, str, "", "  "); err != nil {
-        return string(str), nil
-    }
-    
-    return out.String(), nil
-}
-
 func (this *Config) Save(file string) error {
     if file == "" {
         file = this.saveFile
@@ -148,7 +127,7 @@ func (this *Config) Save(file string) error {
         return err
     }
 
-    str, err := this.Marshal(true)
+    str, err := libol.Marshal(this,true)
     if err != nil { 
         libol.Error("Config.Save error: %s" , err)
         return err

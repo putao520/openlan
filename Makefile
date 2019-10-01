@@ -5,16 +5,16 @@
 	@echo "make install  install openlan to linux"
 
 linux:
-	go build -o ./resource/point.linux.x86_64 point_linux.go
-	go build -o ./resource/vswitch.linux.x86_64 vswitch_linux.go
-	go build -o ./resource/pointctl.linux.x86_64 pointctl.go
+	go build -o ./resource/point.linux.x86_64 main/point_linux.go
+	go build -o ./resource/vswitch.linux.x86_64 main/vswitch_linux.go
+	go build -o ./resource/pointctl.linux.x86_64 main/pointctl.go
 
 windows:
-	go build -o ./resource/point.windows.x86_64 point_windows.go
+	go build -o ./resource/point.windows.x86_64 main/point_windows.go
 
 darwin:
-	go build -o ./resource/point.darwin.x86_64 point_darwin.go
-	go build -o ./resource/pointctl.darwin.x86_64 pointctl.go
+	go build -o ./resource/point.darwin.x86_64 main/point_darwin.go
+	go build -o ./resource/pointctl.darwin.x86_64 main/pointctl.go
 
 install:
 	./install.sh

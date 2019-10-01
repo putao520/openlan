@@ -1,6 +1,8 @@
 package libol
 
 import (
+	"bytes"
+	"encoding/json"
 	"math/rand"
 	"time"
 )
@@ -32,4 +34,24 @@ func GenEthAddr(n int) []byte {
 	data[0] &= 0xfe
 
 	return data
+}
+
+func Marshal(v interface {}, pretty bool) (string, error) {
+	str , err := json.Marshal(v)
+	if err != nil {
+		Error("Marshal error: %s" , err)
+		return "", err
+	}
+
+	if !pretty {
+		return string(str), nil
+	}
+
+	var out bytes.Buffer
+
+	if err := json.Indent(&out, str, "", "  "); err != nil {
+		return string(str), nil
+	}
+
+	return out.String(), nil
 }
