@@ -98,8 +98,10 @@ func (this *Point) UpLink() error {
                 libol.Error("Point.UpLink.newBr: %s", err)
             }
         }
-        if err := libol.BrCtlStp(this.Brname, true); err != nil {
-            libol.Error("Point.UpLink.ctlstp: %s", err)
+
+        brctl := libol.NewBrCtl(this.Brname)
+        if err := brctl.Stp(true); err != nil {
+            libol.Error("Point.UpLink.Stp: %s", err)
         }
 
         if err := br.SetLinkUp(); err != nil {
