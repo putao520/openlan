@@ -11,15 +11,15 @@ import (
 
 func GenToken(n int) string {
 	letters := []byte("0123456789abcdefghijklmnopqrstuvwxyz")
-	buf := make([]byte, n)
+	buffer  := make([]byte, n)
 
+	size := len(letters)
 	rand.Seed(time.Now().UnixNano())
-
-	for i := range buf {
-		buf[i] = letters[rand.Int63() % int64(len(letters))]
+	for i := range buffer {
+		buffer[i] = letters[rand.Int63() % int64(size)]
 	}
 
-	return string(buf)
+	return string(buffer)
 }
 
 func GenEthAddr(n int) []byte {
