@@ -6,6 +6,7 @@ import (
 
 type Frame struct {
     Data []byte
+    Eth *Ether
 }
 
 func NewFrame(data []byte) (this *Frame) {
@@ -13,6 +14,14 @@ func NewFrame(data []byte) (this *Frame) {
         Data: make([]byte, len(data)),
     }
     copy(this.Data, data)
+
+    eth, err := NewEtherFromFrame(this.Data)
+    if err == nil {
+        this.Eth = eth
+    } else {
+        Error("NewFrame: %s", err)
+    }
+
     return 
 }
 
