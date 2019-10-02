@@ -32,52 +32,46 @@ func NewPoint(c *libol.TcpClient, d *water.Interface) (this *Point) {
 }
 
 type VSwitchWroker struct {
-    //Public variable
-    Server *TcpServer
-    Auth *PointAuth
-    Request *WithRequest
-    Neighbor *Neighborer
-    Redis *libol.RedisCli
+    Server    *TcpServer
+    Auth      *PointAuth
+    Request   *WithRequest
+    Neighbor  *Neighborer
+    Redis     *libol.RedisCli
     EnableRedis bool
-    Conf *Config
-    
-    //Private variable
-    verbose int
-    br tenus.Bridger
-    brip net.IP
-    brnet *net.IPNet
-    
-    keys []int
-    hooks map[int] func (*libol.TcpClient, *libol.Frame) error
-    ifmtu int
+    Conf      *Config
 
-    clientsLock sync.RWMutex
-    clients map[*libol.TcpClient] *Point
-    usersLock sync.RWMutex
-    users map[string] *User
-    newtime int64
-    brname string
-    linksLock sync.RWMutex
-    links map[string] *point.Point
+    br        tenus.Bridger
+    brip      net.IP
+    brnet     *net.IPNet
+    keys      []int
+    hooks     map[int] func (*libol.TcpClient, *libol.Frame) error
+    ifmtu     int
+    clientsLock  sync.RWMutex
+    clients    map[*libol.TcpClient] *Point
+    usersLock  sync.RWMutex
+    users      map[string] *User
+    newtime    int64
+    brname     string
+    linksLock  sync.RWMutex
+    links      map[string] *point.Point
 }
 
 func NewVSwitchWroker(server *TcpServer, c *Config) (this *VSwitchWroker) {
     this = &VSwitchWroker {
-        Server: server,
-        Neighbor: nil,
-        Redis: libol.NewRedisCli(c.Redis.Addr, c.Redis.Auth, c.Redis.Db),
-        EnableRedis: c.Redis.Enable,
-        Conf: c,
-        verbose: c.Verbose,
-        br: nil,
-        ifmtu: c.Ifmtu,
-        hooks: make(map[int] func (*libol.TcpClient, *libol.Frame) error),
-        keys: make([]int, 0, 1024),
-        clients: make(map[*libol.TcpClient] *Point, 1024),
-        users: make(map[string] *User, 1024),
-        newtime: time.Now().Unix(),
-        brname: c.Brname,
-        links: make(map[string] *point.Point),
+        Server      : server,
+        Neighbor    : nil,
+        Redis       : libol.NewRedisCli(c.Redis.Addr, c.Redis.Auth, c.Redis.Db),
+        EnableRedis : c.Redis.Enable,
+        Conf        : c,
+        br          : nil,
+        ifmtu       : c.Ifmtu,
+        hooks       : make(map[int] func (*libol.TcpClient, *libol.Frame) error),
+        keys        : make([]int, 0, 1024),
+        clients     : make(map[*libol.TcpClient] *Point, 1024),
+        users       : make(map[string] *User, 1024),
+        newtime     : time.Now().Unix(),
+        brname      : c.Brname,
+        links       : make(map[string] *point.Point),
     }
 
     if err := this.Redis.Open(); err != nil {
@@ -470,13 +464,13 @@ func (this *VSwitchWroker) ListLink() chan *point.Point {
 }
 
 type PointAuth struct {
-    ifmtu int
+    ifmtu  int
     wroker *VSwitchWroker
 }
 
 func NewPointAuth(wroker *VSwitchWroker, c *Config) (this *PointAuth) {
     this = &PointAuth {
-        ifmtu: c.Ifmtu,
+        ifmtu : c.Ifmtu,
         wroker: wroker,
     }
     return

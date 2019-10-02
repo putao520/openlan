@@ -9,21 +9,21 @@ import (
 )
 
 type TcpWroker struct {
-    client *libol.TcpClient
-    readchan chan []byte
+    client    *libol.TcpClient
+    readchan  chan []byte
     writechan chan []byte
-    maxSize int
-    name string
-    password string
+    maxSize   int
+    name      string
+    password  string
 }
 
 func NewTcpWoker(client *libol.TcpClient, c *Config) (this *TcpWroker) {
     this = &TcpWroker {
-        client: client,
+        client   : client,
         writechan: make(chan []byte, 1024*10),
-        maxSize: c.Ifmtu,
-        name: c.Name(),
-        password: c.Password(),
+        maxSize  : c.Ifmtu,
+        name     : c.Name(),
+        password : c.Password(),
     }
     this.client.SetMaxSize(this.maxSize)
     this.client.OnConnected(this.TryLogin)

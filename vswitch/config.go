@@ -10,46 +10,46 @@ import (
 )
 
 type Config struct {
-    TcpListen string `json:"Listen"`
-    Verbose int `json:"Verbose"`
-    HttpListen string `json:"Http"`
-    Ifmtu int `json:"IfMtu"`
-    Ifaddr string `json:"IfAddr"`
-    Brname string `json:"IfBridge"`
-    Token string `json:"AdminToken"`
-    TokenFile string `json:"AdminFile"`
-    Password string `json:"AuthFile"`
-    Redis RedisConfig `json:"Redis"`
+    TcpListen   string `json:"Listen"`
+    Verbose     int `json:"Verbose"`
+    HttpListen  string `json:"Http"`
+    Ifmtu       int `json:"IfMtu"`
+    Ifaddr      string `json:"IfAddr"`
+    Brname      string `json:"IfBridge"`
+    Token       string `json:"AdminToken"`
+    TokenFile   string `json:"AdminFile"`
+    Password    string `json:"AuthFile"`
+    Redis       RedisConfig `json:"Redis"`
 
-    Links []*point.Config `json:"Links"`
-    saveFile string
+    Links       []*point.Config `json:"Links"`
+    saveFile    string
 }
 
 type RedisConfig struct {
     Enable bool `json:"Enable"`
-    Addr string `json:"Addr"`
-    Auth string `json:"Auth"`
-    Db int `json:"Database"`
+    Addr   string `json:"Addr"`
+    Auth   string `json:"Auth"`
+    Db     int `json:"Database"`
 }
 
 var Default = Config {
-    Brname: "",
-    Verbose: libol.INFO,
+    Brname    : "",
+    Verbose   : libol.INFO,
     HttpListen: "0.0.0.0:10000",
-    TcpListen: "0.0.0.0:10002",
-    Token: "",
-    TokenFile: ".vswitch.token",
-    Password: ".password",
-    Ifmtu: 1518,
-    Ifaddr: "",
+    TcpListen : "0.0.0.0:10002",
+    Token     : "",
+    TokenFile : ".vswitch.token",
+    Password  : ".password",
+    Ifmtu     : 1518,
+    Ifaddr    : "",
     Redis: RedisConfig {
-        Addr: "127.0.0.1",
-        Auth: "",
-        Db: 0,
+        Addr   : "127.0.0.1",
+        Auth   : "",
+        Db     : 0,
         Enable: false,
     },
-    saveFile: ".vswitch.json", 
-    Links: nil,
+    saveFile  : ".vswitch.json",
+    Links     : nil,
 }
 
 func RightAddr(listen *string, port int) {

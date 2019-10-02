@@ -15,7 +15,7 @@ const (
 )
 
 type Logger struct {
-    Level int
+    Level  int
     Errors []string
 }
 
@@ -65,7 +65,7 @@ func (this *Logger) SaveError(format string, v ...interface{}) {
 }
 
 var Log = Logger {
-    Level: INFO,
+    Level : INFO,
     Errors: make([]string, 0, 1024),
 }
 

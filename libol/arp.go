@@ -33,9 +33,9 @@ func NewArp() (this *Arp) {
     this = &Arp {
         HrdCode: ARPHRD_ETHER,
         ProCode: ETH_P_IP4,
-        HrdLen: 6,
-        ProLen: 4,
-        OpCode: ARP_REQUEST,
+        HrdLen : 6,
+        ProLen : 4,
+        OpCode : ARP_REQUEST,
         Len: 0,
     }
 

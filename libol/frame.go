@@ -6,7 +6,7 @@ import (
 
 type Frame struct {
     Data []byte
-    Eth *Ether
+    Eth  *Ether
 }
 
 func NewFrame(data []byte) (this *Frame) {

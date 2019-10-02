@@ -17,18 +17,18 @@ import (
 //
 
 type RedisCli struct {
-    addr string `json:"address"` 
+    addr     string `json:"address"`
     password string  `json:"password"`
-    db int `json:"database"`
-    
-    Client *redis.Client 
+    db       int `json:"database"`
+
+    Client   *redis.Client
 }
 
 func NewRedisCli(addr string, password string, db int) (this *RedisCli) {
     this = &RedisCli {
-        addr: addr,
+        addr    : addr,
         password: password,
-        db: db,
+        db      : db,
     }
 
     return 
@@ -40,9 +40,9 @@ func (this *RedisCli) Open() error {
     }
 
     client := redis.NewClient(&redis.Options {
-        Addr:     "localhost:6379",
+        Addr    :     "localhost:6379",
         Password: "", 
-        DB:       0,
+        DB      :       0,
     })
 
     _, err := client.Ping().Result()

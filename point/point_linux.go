@@ -10,17 +10,16 @@ import (
 
 type Point struct {
     Client *libol.TcpClient
-    Ifce *water.Interface
+    Ifce   *water.Interface
     Brname string
     Ifaddr string
     Ifname string
-    
-    //
+
     tcpwroker *TcpWroker 
     tapwroker *TapWroker
-    br tenus.Bridger
-    brip net.IP
-    brnet *net.IPNet
+    br        tenus.Bridger
+    brip      net.IP
+    brnet     *net.IPNet
 }
 
 func NewPoint(config *Config) (this *Point) {
@@ -40,7 +39,7 @@ func NewPoint(config *Config) (this *Point) {
     client := libol.NewTcpClient(config.Addr)
     this = &Point {
         Client: client,
-        Ifce: ifce,
+        Ifce  : ifce,
         Brname: config.Brname,
         Ifaddr: config.Ifaddr,
         Ifname: ifce.Name(),

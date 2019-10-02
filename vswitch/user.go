@@ -3,14 +3,14 @@ package vswitch
 import "fmt"
 
 type User struct {
-    Name string `json:"name"`
-    Token string `json:"token"`
+    Name     string `json:"name"`
+    Token    string `json:"token"`
     Password string `json:"password"`
 }
 
 func NewUser(name string, password string) (this *User) {
     this = &User {
-        Name: name,
+        Name    : name,
         Password: password,
     }
     return

@@ -11,11 +11,11 @@ import (
 )
 
 type Neighbor struct {
-    Client *libol.TcpClient `json:"Client"`
-    HwAddr net.HardwareAddr `json:"HwAddr"`
-    IpAddr net.IP `json:"IpAddr"`
-    NewTime int64 `json:"NewTime"`
-    HitTime int64 `json:"HitTime"`
+    Client   *libol.TcpClient `json:"Client"`
+    HwAddr   net.HardwareAddr `json:"HwAddr"`
+    IpAddr   net.IP `json:"IpAddr"`
+    NewTime  int64 `json:"NewTime"`
+    HitTime  int64 `json:"HitTime"`
 }
 
 func (this *Neighbor) String() string {
@@ -39,19 +39,18 @@ func (this *Neighbor) UpTime() int64 {
 }
 
 type Neighborer struct {
-    lock sync.RWMutex
-    neighbors map[string] *Neighbor
-    wroker *VSwitchWroker
+    lock        sync.RWMutex
+    neighbors   map[string] *Neighbor
+    wroker      *VSwitchWroker
     EnableRedis bool
 }
 
 func NewNeighborer(wroker *VSwitchWroker, c *Config) (this *Neighborer) {
     this = &Neighborer {
-        neighbors: make(map[string]*Neighbor, 1024*10),
-        wroker: wroker,
+        neighbors  : make(map[string]*Neighbor, 1024*10),
+        wroker     : wroker,
         EnableRedis: c.Redis.Enable,
     }
-
     return
 }
 

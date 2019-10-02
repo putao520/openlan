@@ -9,31 +9,31 @@ import (
 )
 
 type Config struct {
-    Addr string `json:"VsAddr"`
-    Auth string `json:"VsAuth"`
-    Verbose int `json:"Verbose"`
-    Ifmtu int `json:"IfMtu"`
-    Ifaddr string `json:"IfAddr"`
-    Brname string `json:"IfBridge"`
-    Iftun bool `json:"IfTun"`
+    Addr     string `json:"VsAddr"`
+    Auth     string `json:"VsAuth"`
+    Verbose  int `json:"Verbose"`
+    Ifmtu    int `json:"IfMtu"`
+    Ifaddr   string `json:"IfAddr"`
+    Brname   string `json:"IfBridge"`
+    Iftun    bool `json:"IfTun"`
     Ifethsrc string `json:"IfEthSrc"`
     Ifethdst string `json:"IfEthDst"`
 
     saveFile string
-    name string
+    name     string
     password string
 }
 
 var Default = Config {
-    Addr: "openlan.net",
-    Auth: "hi:hi@123$",
-    Verbose: libol.INFO,
-    Ifmtu: 1518,
-    Ifaddr: "",
-    Iftun: false,
-    Brname: "",
+    Addr    : "openlan.net",
+    Auth    : "hi:hi@123$",
+    Verbose : libol.INFO,
+    Ifmtu   : 1518,
+    Ifaddr  : "",
+    Iftun   : false,
+    Brname  : "",
     saveFile: ".point.json",
-    name: "",
+    name    : "",
     password: "",
     Ifethdst: "2e:4b:f0:b7:6d:ba",
     Ifethsrc: "",

@@ -8,22 +8,22 @@ import (
 )
 
 type TapWroker struct {
-    ifce *water.Interface
+    ifce      *water.Interface
     writechan chan []byte
-    ifmtu int
-    doRecv func([]byte) error
+    ifmtu     int
+    doRecv    func([]byte) error
 
     //for tunnel device.
     EthDstAddr []byte
     EthSrcAddr [] byte
-    EthSrcIp []byte
+    EthSrcIp   []byte
 }
 
 func NewTapWoker(ifce *water.Interface, c *Config) (this *TapWroker) {
     this = &TapWroker {
-        ifce: ifce,
+        ifce     : ifce,
         writechan: make(chan []byte, 1024*10),
-        ifmtu: c.Ifmtu, //1514
+        ifmtu    : c.Ifmtu, //1514
     }
 
     if this.ifce.IsTUN() {

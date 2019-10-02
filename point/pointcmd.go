@@ -9,8 +9,8 @@ import (
 
 type PointCmd struct {
     tcpwroker *TcpWroker
-    brip net.IP
-    brnet *net.IPNet
+    brip      net.IP
+    brnet     *net.IPNet
 }
 
 func NewPointCmd(config *Config) (this *PointCmd) {

@@ -24,32 +24,31 @@ const (
 )
 
 type TcpClient struct {
-    conn *net.TCPConn
-    maxsize int
-    minsize int
+    conn        *net.TCPConn
+    maxsize     int
+    minsize     int
     onConnected func (*TcpClient) error
 
-    //Public variable
-    TxOkay uint64
-    RxOkay uint64
-    TxError uint64
-    Droped uint64
-    Status uint8
-    Addr string
-    NewTime int64
+    TxOkay   uint64
+    RxOkay   uint64
+    TxError  uint64
+    Droped   uint64
+    Status   uint8
+    Addr     string
+    NewTime  int64
 }
 
 func NewTcpClient(addr string) (this *TcpClient) {
     this = &TcpClient {
-        Addr: addr,
-        conn: nil,
+        Addr   : addr,
+        conn   : nil,
         maxsize: 1514,
         minsize: 15,
-        TxOkay: 0,
-        RxOkay: 0,
+        TxOkay : 0,
+        RxOkay : 0,
         TxError: 0,
-        Droped: 0,
-        Status: CL_INIT,
+        Droped : 0,
+        Status : CL_INIT,
         onConnected: nil,
         NewTime: time.Now().Unix(),
     }

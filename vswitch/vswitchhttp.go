@@ -13,18 +13,18 @@ import (
 )
 
 type VSwitchHttp struct {
-    wroker *VSwitchWroker
-    listen string
+    wroker    *VSwitchWroker
+    listen     string
     adminToken string
-    adminFile string
+    adminFile  string
 }
 
 func NewVSwitchHttp(wroker *VSwitchWroker, c *Config)(this *VSwitchHttp) {
     this = &VSwitchHttp {
-        wroker: wroker,
-        listen: c.HttpListen,
+        wroker    : wroker,
+        listen    : c.HttpListen,
         adminToken: c.Token,
-        adminFile: c.TokenFile,
+        adminFile : c.TokenFile,
     }
 
     if this.adminToken == "" {
@@ -280,7 +280,7 @@ func (this *VSwitchHttp) _Link(w http.ResponseWriter, r *http.Request) {
 }
 
 type ApiReply struct {
-    Code int 
+    Code   int
     Output string
 }
 
@@ -294,7 +294,7 @@ func NewApiReply(code int, output string) (this *ApiReply) {
 
 func ApiReplyer(code int, output string) string {
     this := ApiReply {
-        Code: code,
+        Code  : code,
         Output: output,
     }
     return this.String()
@@ -306,6 +306,5 @@ func (this *ApiReply) String() string {
         libol.Error("ApiReply.String error: %s" , err)
         return ""
     }
-
     return string(str)
 }

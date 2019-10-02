@@ -21,15 +21,15 @@ type Ether struct {
     Dst []byte
     Src []byte
     Type uint16
-    Len int
+    Len  int
 }
 
 func NewEther(t uint16) (this *Ether) {
     this = &Ether {
         Type: t,
-        Src: ZEROETHADDR,
-        Dst: ZEROETHADDR,
-        Len: 14,
+        Src : ZEROETHADDR,
+        Dst : ZEROETHADDR,
+        Len : 14,
     }
     return
 }

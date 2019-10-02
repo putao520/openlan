@@ -3,7 +3,7 @@ package libol
 import "fmt"
 
 type Err struct {
-	Code int
+	Code    int
 	Message string
 }
 

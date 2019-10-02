@@ -7,22 +7,22 @@ import (
 )
 
 type TcpServer struct {
-    Addr string
+    Addr       string
 
-    listener *net.TCPListener
-    maxClient int
-    clients map[*libol.TcpClient] bool
-    onClients chan *libol.TcpClient
+    listener   *net.TCPListener
+    maxClient  int
+    clients    map[*libol.TcpClient] bool
+    onClients  chan *libol.TcpClient
     offClients chan *libol.TcpClient
 }
 
 func NewTcpServer(c *Config) (this *TcpServer) {
     this = &TcpServer {
-        Addr: c.TcpListen,
-        listener: nil,
-        maxClient: 1024,
-        clients: make(map[*libol.TcpClient] bool, 1024),
-        onClients: make(chan *libol.TcpClient, 4),
+        Addr      : c.TcpListen,
+        listener  : nil,
+        maxClient : 1024,
+        clients   : make(map[*libol.TcpClient] bool, 1024),
+        onClients : make(chan *libol.TcpClient, 4),
         offClients: make(chan *libol.TcpClient, 8),
     }
 
