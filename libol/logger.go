@@ -9,7 +9,8 @@ const (
     PRINT  = 0x00
     DEUBG  = 0x01
     INFO   = 0x02
-    ERROR  = 0x03
+    WARN   = 0x03
+    ERROR  = 0x04
     FATAL  = 0xff
 )
 
@@ -18,40 +19,58 @@ type Logger struct {
     Errors []string
 }
 
+func (this *Logger) Debug(format string, v ...interface{}) {
+    if DEUBG >= this.Level {
+        log.Printf(fmt.Sprintf("DEBUG %s", format), v...)
+    }
+}
+
 func (this *Logger) Info(format string, v ...interface{}) {
-    log.Printf(fmt.Sprintf("INFO %s", format), v...)
+    if INFO >= this.Level {
+        log.Printf(fmt.Sprintf("INFO %s", format), v...)
+    }
 }
 
 func (this *Logger) Warn(format string, v ...interface{}) {
-    log.Printf(fmt.Sprintf("WARN %s", format), v...)
+    if WARN >= this.Level {
+        log.Printf(fmt.Sprintf("WARN %s", format), v...)
+    }
 }
 
 func (this *Logger) Error(format string, v ...interface{}) {
-    this.SaveError(fmt.Sprintf("ERROR %s", format), v...)
-    log.Printf(fmt.Sprintf("ERROR %s", format), v...)
-}
+    if ERROR >= this.Level {
+        log.Printf(fmt.Sprintf("ERROR %s", format), v...)
+    }
 
-func (this *Logger) Debug(format string, v ...interface{}) {
-    log.Printf(fmt.Sprintf("DEBUG %s", format), v...)
+    this.SaveError(fmt.Sprintf("ERROR %s", format), v...)
 }
 
 func (this *Logger) Fatal(format string, v ...interface{}) {
+    if FATAL >= this.Level {
+        log.Printf(fmt.Sprintf("FATAL %s", format), v...)
+    }
+
     this.SaveError(fmt.Sprintf("FATAL %s", format), v...)
-    log.Printf(fmt.Sprintf("FATAL %s", format), v...)
 }
 
 func (this *Logger) Print(format string, v ...interface{}) {
-    log.Printf(fmt.Sprintf("PRINT %s", format), v...)
+    if PRINT >= this.Level {
+        log.Printf(fmt.Sprintf("PRINT %s", format), v...)
+    }
 }
 
 func (this *Logger) SaveError(format string, v ...interface{}) {
-    ////TODO save to log when too large.
+    // TODO save to log when too large.
     this.Errors = append(this.Errors, fmt.Sprintf(format, v...))
 }
 
 var Log = Logger {
-    Level: 1,
+    Level: INFO,
     Errors: make([]string, 0, 1024),
+}
+
+func SetLog(level int) {
+    Log.Level = level
 }
 
 func Error(format string, v ...interface{}) {

@@ -14,7 +14,6 @@ type TcpServer struct {
     clients map[*libol.TcpClient] bool
     onClients chan *libol.TcpClient
     offClients chan *libol.TcpClient
-    verbose int
 }
 
 func NewTcpServer(c *Config) (this *TcpServer) {
@@ -25,7 +24,6 @@ func NewTcpServer(c *Config) (this *TcpServer) {
         clients: make(map[*libol.TcpClient] bool, 1024),
         onClients: make(chan *libol.TcpClient, 4),
         offClients: make(chan *libol.TcpClient, 8),
-        verbose: c.Verbose,
     }
 
     if err := this.Listen(); err != nil {
@@ -75,7 +73,7 @@ func (this *TcpServer) GoAccept() {
             return
         }
 
-        this.onClients <- libol.NewTcpClientFromConn(conn, this.verbose)
+        this.onClients <- libol.NewTcpClientFromConn(conn)
     }
 
     return
@@ -119,15 +117,9 @@ func (this *TcpServer) GoRecv(client *libol.TcpClient, onRecv func (*libol.TcpCl
         }
         
         if length > 0 {
-            if this.IsVerbose() {
-                libol.Debug("TcpServer.GoRecv: length: %d ", length)
-                libol.Debug("TcpServer.GoRecv: data  : % x", data[:length])
-            }
+            libol.Debug("TcpServer.GoRecv: length: %d ", length)
+            libol.Debug("TcpServer.GoRecv: data  : % x", data[:length])
             onRecv(client, data[:length])
         }
     }
-}
-
-func (this *TcpServer) IsVerbose() bool {
-    return this.verbose != 0
 }

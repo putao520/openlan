@@ -2,7 +2,6 @@ package libol
 
 import (
     "encoding/binary"
-    "errors"
 )
 
 var (
@@ -53,7 +52,7 @@ func NewEtherFromFrame(frame []byte) (this *Ether, err error) {
 
 func (this *Ether) Decode(frame []byte) error {
     if len(frame) < 14 {
-        return errors.New("too small header") 
+        return Errer("Ether.Decode too small header: %d", len(frame))
     }
 
     this.Dst = frame[:6]

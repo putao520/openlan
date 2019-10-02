@@ -93,9 +93,8 @@ func (this *VSwitchHttp) GoStart() error {
 
 func (this *VSwitchHttp) IsAuth(w http.ResponseWriter, r *http.Request) bool {
     token, pass, ok := r.BasicAuth()
-    if this.wroker.IsVerbose() {
-        libol.Debug("VSwitchHttp.IsAuth token: %s, pass: %s", token, pass)
-    }
+    libol.Debug("VSwitchHttp.IsAuth token: %s, pass: %s", token, pass)
+
     if !ok  || token != this.adminToken {
         w.Header().Set("WWW-Authenticate", "Basic")
         http.Error(w, "Authorization Required.", 401)

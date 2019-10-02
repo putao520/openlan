@@ -21,7 +21,6 @@ type Point struct {
     br tenus.Bridger
     brip net.IP
     brnet *net.IPNet
-    verbose int
 }
 
 func NewPoint(config *Config) (this *Point) {
@@ -38,11 +37,8 @@ func NewPoint(config *Config) (this *Point) {
     }
 
     libol.Info("NewPoint.device %s\n", ifce.Name())
-
-    client := libol.NewTcpClient(config.Addr, config.Verbose)
-
+    client := libol.NewTcpClient(config.Addr)
     this = &Point {
-        verbose: config.Verbose,
         Client: client,
         Ifce: ifce,
         Brname: config.Brname,
@@ -55,9 +51,7 @@ func NewPoint(config *Config) (this *Point) {
 }
 
 func (this *Point) Start() {
-    if this.IsVerbose() {
-        libol.Debug("Point.Start linux.\n")
-    }
+    libol.Debug("Point.Start linux.\n")
 
     if err := this.Client.Connect(); err != nil {
         libol.Error("Point.Start %s\n", err)
@@ -76,7 +70,7 @@ func (this *Point) Close() {
 
     if this.br != nil && this.brip != nil {
         if err := this.br.UnsetLinkIp(this.brip, this.brnet); err != nil {
-            libol.Error("Point.Close.UnsetLinkIp %s : %s", this.br.NetInterface().Name, err)
+            libol.Error("Point.Close.UnsetLinkIp %s: %s", this.br.NetInterface().Name, err)
         }
     }    
 }
@@ -141,8 +135,4 @@ func (this *Point) UpLink() error {
     }
 
     return nil
-}
-
-func (this *Point) IsVerbose() bool {
-    return this.verbose != 0
 }

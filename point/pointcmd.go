@@ -11,14 +11,12 @@ type PointCmd struct {
     tcpwroker *TcpWroker
     brip net.IP
     brnet *net.IPNet
-    verbose int
 }
 
 func NewPointCmd(config *Config) (this *PointCmd) {
-    client := libol.NewTcpClient(config.Addr, config.Verbose)
+    client := libol.NewTcpClient(config.Addr)
 
     this = &PointCmd {
-        verbose: config.Verbose,
         tcpwroker : NewTcpWoker(client, config),
     }
     return
@@ -46,10 +44,7 @@ func (this *PointCmd) Close() {
 }
 
 func (this *PointCmd) onArp(data []byte) {
-    if this.IsVerbose() {
-        libol.Debug("PointCmd.onArp\n")
-    }
-
+    libol.Debug("PointCmd.onArp\n")
     eth, err := libol.NewEtherFromFrame(data)
     if err != nil {
         libol.Warn("PointCmd.onArp %s\n", err)
@@ -84,9 +79,7 @@ func (this *PointCmd) onStp(data []byte) {
 }
 
 func (this *PointCmd) DoRecv(data []byte) error {
-    if this.IsVerbose() {
-        libol.Debug("PointCmd.DoRecv: % x\n", data)
-    }
+    libol.Debug("PointCmd.DoRecv: % x\n", data)
 
     this.onArp(data)
     this.onStp(data)
@@ -97,10 +90,6 @@ func (this *PointCmd) DoRecv(data []byte) error {
 
 func (this *PointCmd) DoSend(data []byte) error {
     return this.tcpwroker.DoSend(data)
-}
-
-func (this *PointCmd) IsVerbose() bool {
-    return this.verbose != 0
 }
 
 func (this *PointCmd) DoOpen(args []string) string {
@@ -120,9 +109,7 @@ func (this *PointCmd) DoOpen(args []string) string {
 
 // arp <source> <destination>
 func (this *PointCmd) DoArp(args []string) string {
-    if this.IsVerbose() {
-        libol.Debug("PointCmd.DoArp %s\n", args)
-    }
+    libol.Debug("PointCmd.DoArp %s\n", args)
     if len(args)  != 2 {
         return "arp <source> <destination>"
     }
@@ -155,9 +142,9 @@ func (this *PointCmd) DoVerbose(args []string) string {
         return "verbose <level>"
     }
 
-    fmt.Sscanf(args[0], "%d", &this.verbose)
+    fmt.Sscanf(args[0], "%d", libol.Log.Level)
 
-    return fmt.Sprintf("%d", this.verbose)
+    return fmt.Sprintf("%d", libol.Log.Level)
 }
 
 func (this *PointCmd) HitInput(args []string) string {

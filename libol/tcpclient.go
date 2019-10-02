@@ -3,8 +3,6 @@ package libol
 import (
     "bytes"
     "encoding/binary"
-    "errors"
-    "fmt"
     "net"
     "time"
 )
@@ -29,7 +27,6 @@ type TcpClient struct {
     conn *net.TCPConn
     maxsize int
     minsize int
-    verbose int
     onConnected func (*TcpClient) error
 
     //Public variable
@@ -42,13 +39,12 @@ type TcpClient struct {
     NewTime int64
 }
 
-func NewTcpClient(addr string, verbose int) (this *TcpClient) {
+func NewTcpClient(addr string) (this *TcpClient) {
     this = &TcpClient {
         Addr: addr,
         conn: nil,
         maxsize: 1514,
         minsize: 15,
-        verbose: verbose,
         TxOkay: 0,
         RxOkay: 0,
         TxError: 0,
@@ -61,13 +57,12 @@ func NewTcpClient(addr string, verbose int) (this *TcpClient) {
     return 
 }
 
-func NewTcpClientFromConn(conn *net.TCPConn, verbose int) (this *TcpClient) {
+func NewTcpClientFromConn(conn *net.TCPConn) (this *TcpClient) {
     this = &TcpClient {
         Addr: conn.RemoteAddr().String(),
         conn: conn,
         maxsize: 1514,
         minsize: 15,
-        verbose: verbose,
         NewTime: time.Now().Unix(),
     }
 
@@ -126,11 +121,9 @@ func (this *TcpClient) recvn(buffer []byte) error {
         offset += n
         left -= n 
     }
-    
-    if this.IsVerbose() {
-        Debug("TcpClient.recvn %d\n", len(buffer))
-        Debug("TcpClient.recvn Data: % x\n", buffer)
-    }
+
+    Debug("TcpClient.recvn %d\n", len(buffer))
+    Debug("TcpClient.recvn Data: % x\n", buffer)
 
     return nil
 }
@@ -139,16 +132,13 @@ func (this *TcpClient) sendn(buffer []byte) error {
     offset := 0
     size := len(buffer)
     left := size - offset
-    if this.IsVerbose() {
-        Debug("TcpClient.sendn %d\n", size)
-        Debug("TcpClient.sendn Data: % x\n", buffer)
-    }
+
+    Debug("TcpClient.sendn %d\n", size)
+    Debug("TcpClient.sendn Data: % x\n", buffer)
 
     for left > 0 {
         tmp := buffer[offset:]
-        if this.IsVerbose() {
-            Debug("TcpClient.sendn tmp %d\n", len(tmp))
-        }
+        Debug("TcpClient.sendn tmp %d\n", len(tmp))
         n, err := this.conn.Write(tmp)
         if err != nil {
             return err 
@@ -180,12 +170,10 @@ func (this *TcpClient) SendMsg(data []byte) error {
 }
 
 func (this *TcpClient) RecvMsg(data []byte) (int, error) {
-    if this.IsVerbose() {
-        Debug("TcpClient.RecvMsg %s", this)
-    }
+    Debug("TcpClient.RecvMsg %s", this)
 
     if !this.IsOk() {
-        return -1, errors.New("Connection isn't okay!")
+        return -1, Errer("%s: connection isn't okay", this)
     }
 
     h := make([]byte, HSIZE)
@@ -194,12 +182,12 @@ func (this *TcpClient) RecvMsg(data []byte) (int, error) {
     }
 
     if !bytes.Equal(h[0:2], MAGIC) {
-        return -1, errors.New("Isn't right magic header!")
+        return -1, Errer("%s: isn't right magic header", this)
     }
 
     size := binary.BigEndian.Uint16(h[2:4])
     if int(size) > this.maxsize || int(size) < this.minsize {
-        return -1, errors.New(fmt.Sprintf("Isn't right data size(%d)!", size))
+        return -1, Errer("%s: isn't right data size (%d)", this, size)
     }
 
     d := make([]byte, size)
@@ -211,10 +199,6 @@ func (this *TcpClient) RecvMsg(data []byte) (int, error) {
     this.RxOkay++
 
     return int(size), nil
-}
-
-func (this *TcpClient) IsVerbose() bool {
-    return this.verbose != 0
 }
 
 func (this *TcpClient) GetMaxSize() int {
@@ -235,10 +219,7 @@ func (this *TcpClient) IsOk() bool {
 
 func (this *TcpClient) SendReq(action string, body string) error {
     data := EncInstReq(action, body)
-
-    if this.IsVerbose() {
-        Debug("TcpClient.SendReq %d %s\n", len(data), data[6:])
-    }
+    Debug("TcpClient.SendReq %d %s\n", len(data), data[6:])
 
     if err := this.SendMsg(data); err != nil {
         return err
@@ -248,10 +229,7 @@ func (this *TcpClient) SendReq(action string, body string) error {
 
 func (this *TcpClient) SendResp(action string, body string) error {
     data := EncInstResp(action, body)
-
-    if this.IsVerbose() {
-        Debug("TcpClient.SendResp %d %s\n", len(data), data[6:])
-    }
+    Debug("TcpClient.SendResp %d %s\n", len(data), data[6:])
 
     if err := this.SendMsg(data); err != nil {
         return err

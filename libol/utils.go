@@ -3,7 +3,9 @@ package libol
 import (
 	"bytes"
 	"encoding/json"
+	"io/ioutil"
 	"math/rand"
+	"os"
 	"time"
 )
 
@@ -54,4 +56,43 @@ func Marshal(v interface {}, pretty bool) (string, error) {
 	}
 
 	return out.String(), nil
+}
+
+func MarshalSave(v interface {}, file string, pretty bool) error {
+	f, err := os.OpenFile(file, os.O_RDWR | os.O_TRUNC | os.O_CREATE, 0600)
+	defer f.Close()
+	if err != nil {
+		Error("MarshalSave: %s", err)
+		return err
+	}
+
+	str, err := Marshal(v, true)
+	if err != nil {
+		Error("MarshalSave error: %s" , err)
+		return err
+	}
+
+	if _, err := f.Write([]byte(str)); err != nil {
+		Error("MarshalSave: %s", err)
+		return err
+	}
+
+	return nil
+}
+
+func UnmarshalLoad(v interface {}, file string) error {
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		return Errer("UnmarshalLoad: file:%s does not exist", file)
+	}
+
+	contents, err := ioutil.ReadFile(file)
+	if err != nil {
+		return Errer("UnmarshalLoad: file:%s %s", file, err)
+	}
+
+	if err := json.Unmarshal([]byte(contents), v); err != nil {
+		return Errer("UnmarshalLoad: %s", err)
+	}
+
+	return nil
 }

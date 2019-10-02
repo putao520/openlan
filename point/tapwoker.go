@@ -11,7 +11,6 @@ type TapWroker struct {
     ifce *water.Interface
     writechan chan []byte
     ifmtu int
-    verbose int
     dorecv func([]byte) error
 
     //for tunnel device.
@@ -25,7 +24,6 @@ func NewTapWoker(ifce *water.Interface, c *Config) (this *TapWroker) {
         ifce: ifce,
         writechan: make(chan []byte, 1024*10),
         ifmtu: c.Ifmtu, //1514
-        verbose: c.Verbose,
     }
 
     if this.ifce.IsTUN() {
@@ -70,10 +68,8 @@ func (this *TapWroker) GoRecv(dorecv func ([]byte) error) {
             libol.Error("TapWroker.GoRev: %s", err)
             break
         }
-        if this.IsVerbose() {
-            libol.Debug("TapWroker.GoRev: % x\n", data[:n])
-        }
 
+        libol.Debug("TapWroker.GoRev: % x\n", data[:n])
         if this.ifce.IsTUN() {
             eth := this.NewEth(libol.ETH_P_IP4)
 
@@ -90,19 +86,15 @@ func (this *TapWroker) GoRecv(dorecv func ([]byte) error) {
 }
 
 func (this *TapWroker) DoSend(data []byte) error {
-    if this.IsVerbose() {
-        libol.Debug("TapWroker.DoSend: % x\n", data)
-    }
+    libol.Debug("TapWroker.DoSend: % x\n", data)
 
     this.writechan <- data
+
     return nil
 }
 
 func (this *TapWroker) onArp(data []byte) bool {
-    if this.IsVerbose() {
-        libol.Debug("TapWroker.onArp\n")
-    }
-
+    libol.Debug("TapWroker.onArp\n")
     eth, err := libol.NewEtherFromFrame(data)
     if err != nil {
         libol.Warn("TapWroker.onArp %s\n", err)
@@ -185,12 +177,9 @@ func (this *TapWroker) GoLoop() {
     }
 }
 
-func (this *TapWroker) IsVerbose() bool {
-    return this.verbose != 0
-}
-
 func (this *TapWroker) Close() {
     libol.Info("TapWroker.Close")
+
     if this.ifce != nil {
         this.ifce.Close()
         this.ifce = nil

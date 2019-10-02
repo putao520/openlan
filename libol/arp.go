@@ -2,7 +2,6 @@ package libol
 
 import (
     "encoding/binary"
-    "errors"
 )
 
 const (
@@ -53,7 +52,7 @@ func NewArpFromFrame(frame []byte) (this *Arp, err error) {
 
 func (this *Arp) Decode(frame []byte) error {
     if len(frame) < 8 {
-        return errors.New("too small header") 
+        return Errer("Arp.Decode: too small header: %d", len(frame))
     }
 
     this.HrdCode = binary.BigEndian.Uint16(frame[0:2])
@@ -64,7 +63,7 @@ func (this *Arp) Decode(frame []byte) error {
 
     p := uint8(8)
     if len(frame) < int(p + 2 * (this.HrdLen + this.ProLen)) {
-        return errors.New("too small frame") 
+        return Errer("Arp.Decode: too small frame: %d", len(frame))
     }
 
     this.SHwAddr = frame[p:p+this.HrdLen]

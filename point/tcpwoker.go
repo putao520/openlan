@@ -12,7 +12,6 @@ type TcpWroker struct {
     client *libol.TcpClient
     readchan chan []byte
     writechan chan []byte
-    verbose int
     maxSize int
     name string
     password string
@@ -22,7 +21,6 @@ func NewTcpWoker(client *libol.TcpClient, c *Config) (this *TcpWroker) {
     this = &TcpWroker {
         client: client,
         writechan: make(chan []byte, 1024*10),
-        verbose: c.Verbose,
         maxSize: c.Ifmtu,
         name: c.Name(),
         password: c.Password(),
@@ -66,9 +64,7 @@ func (this *TcpWroker) onInstruct(data []byte) error {
 }
 
 func (this *TcpWroker) GoRecv(dorecv func ([]byte) error) {
-    if this.IsVerbose() {
-        libol.Debug("TcpWroker.GoRev %s\n", this.client.IsOk())
-    }
+    libol.Debug("TcpWroker.GoRev %s\n", this.client.IsOk())
 
     defer this.client.Close()
     for {
@@ -84,10 +80,8 @@ func (this *TcpWroker) GoRecv(dorecv func ([]byte) error) {
             this.client.Close()
             continue
         }
-        if this.IsVerbose() {
-            libol.Debug("TcpWroker.GoRev: % x\n", data[:n])
-        }
 
+        libol.Debug("TcpWroker.GoRev: % x\n", data[:n])
         if n > 0 {
             data = data[:n]
             if libol.IsInst(data) {
@@ -100,11 +94,10 @@ func (this *TcpWroker) GoRecv(dorecv func ([]byte) error) {
 }
 
 func (this *TcpWroker) DoSend(data []byte) error {
-    if this.IsVerbose() {
-        libol.Debug("TcpWroker.DoSend: % x\n", data)
-    }
+    libol.Debug("TcpWroker.DoSend: % x\n", data)
 
     this.writechan <- data
+
     return nil
 }
 
@@ -115,10 +108,8 @@ func (this *TcpWroker) GoLoop() error {
         case wdata := <- this.writechan:
             if this.client.Status != libol.CL_AUTHED {
                 this.client.Droped++
-                if this.IsVerbose() {
-                    libol.Error("TcpWroker.GoLoop: droping by unauth")
-                    continue
-                }
+                libol.Error("TcpWroker.GoLoop: droping by unauth")
+                continue
             }
 
             if err := this.client.SendMsg(wdata); err != nil {
@@ -126,10 +117,6 @@ func (this *TcpWroker) GoLoop() error {
             }
         }
     }
-}
-
-func (this *TcpWroker) IsVerbose() bool {
-    return this.verbose != 0
 }
 
 func (this *TcpWroker) SetAuth(auth string)  {

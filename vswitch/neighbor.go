@@ -41,7 +41,6 @@ func (this *Neighbor) UpTime() int64 {
 type Neighborer struct {
     lock sync.RWMutex
     neighbors map[string] *Neighbor
-    verbose int
     wroker *VSwitchWroker
     EnableRedis bool
 }
@@ -49,7 +48,6 @@ type Neighborer struct {
 func NewNeighborer(wroker *VSwitchWroker, c *Config) (this *Neighborer) {
     this = &Neighborer {
         neighbors: make(map[string]*Neighbor, 1024*10),
-        verbose: c.Verbose,
         wroker: wroker,
         EnableRedis: c.Redis.Enable,
     }
@@ -85,9 +83,7 @@ func (this *Neighborer) ListNeighbor() chan *Neighbor {
 }
 
 func (this *Neighborer) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
-    if this.IsVerbose() {
-        libol.Debug("Neighborer.OnFrame % x.", frame.Data)
-    }
+    libol.Debug("Neighborer.OnFrame % x.", frame.Data)
 
     if libol.IsInst(frame.Data) {
         return nil
@@ -154,10 +150,6 @@ func (this *Neighborer) DelNeighbor(hwaddr net.HardwareAddr) {
 func (this *Neighborer) OnClientClose(client *libol.TcpClient) {
     //TODO
     libol.Info("Neighborer.OnClientClose %s.", client)
-}
-
-func (this *Neighborer) IsVerbose() bool {
-    return this.verbose != 0
 }
 
 func (this *Neighborer) PubNeighbor(neb *Neighbor, isadd bool) {

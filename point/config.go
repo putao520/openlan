@@ -1,11 +1,8 @@
 package point
 
 import (
-    "encoding/json"
     "flag"
     "fmt"
-    "io/ioutil"
-    "os"
     "strings"
 
     "github.com/lightstar-dev/openlan-go/libol"
@@ -30,7 +27,7 @@ type Config struct {
 var Default = Config {
     Addr: "openlan.net",
     Auth: "hi:hi@123$",
-    Verbose: 0,
+    Verbose: libol.INFO,
     Ifmtu: 1518,
     Ifaddr: "",
     Iftun: false,
@@ -64,6 +61,7 @@ func NewConfig() (this *Config) {
     flag.StringVar(&this.saveFile, "conf", Default.SaveFile(), "The configuration file")
 
     flag.Parse()
+    libol.SetLog(this.Verbose)
 
     this.Load()
     this.Default()
@@ -120,42 +118,11 @@ func (this *Config) Save(file string) error {
         file = this.saveFile
     }
 
-    f, err := os.OpenFile(file, os.O_RDWR | os.O_TRUNC | os.O_CREATE, 0600)
-    defer f.Close()
-    if err != nil {
-        libol.Error("Config.Save: %s", err)
-        return err
-    }
-
-    str, err := libol.Marshal(this,true)
-    if err != nil { 
-        libol.Error("Config.Save error: %s" , err)
-        return err
-    }
-
-    if _, err := f.Write([]byte(str)); err != nil {
-        libol.Error("Config.Save: %s", err)
-        return err
-    }
-
-    return nil
+    return libol.MarshalSave(this, file, true)
 }
 
 func (this *Config) Load() error {
-    if _, err := os.Stat(this.saveFile); os.IsNotExist(err) {
-        libol.Info("Config.Load: file:%s does not exist", this.saveFile)
-        return nil
-    }
-
-    contents, err := ioutil.ReadFile(this.saveFile)
-    if err != nil {
-        libol.Error("Config.Load: file:%s %s", this.saveFile, err)
-        return err
-
-    }
-
-    if err := json.Unmarshal([]byte(contents), this); err != nil {
-        libol.Error("Config.Load: %s", err)
+    if err := libol.UnmarshalLoad(this, this.saveFile); err != nil {
         return err
     }
 

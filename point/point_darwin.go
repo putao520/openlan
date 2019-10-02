@@ -19,7 +19,6 @@ type Point struct {
     tapwroker *TapWroker
     brip net.IP
     brnet *net.IPNet
-    verbose int
 }
 
 func NewPoint(config *Config) (this *Point) {
@@ -29,10 +28,8 @@ func NewPoint(config *Config) (this *Point) {
     }
     libol.Info("NewPoint.device %s\n", ifce.Name())
 
-    client := libol.NewTcpClient(config.Addr, config.Verbose)
-
+    client := libol.NewTcpClient(config.Addr)
     this = &Point {
-        verbose: config.Verbose,
         Client: client,
         Ifce: ifce,
         Brname: config.Brname,

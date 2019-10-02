@@ -2,7 +2,6 @@ package libol
 
 import (
     "encoding/binary"
-    "errors"
 )
 
 type Vlan struct {
@@ -32,7 +31,7 @@ func NewVlanFromFrame(frame []byte) (this *Vlan, err error) {
 
 func (this *Vlan) Decode(frame []byte) error {
     if len(frame) < 4 {
-        return errors.New("too small header") 
+        return Errer("Vlan.Decode: too small header")
     }
 
     v := binary.BigEndian.Uint16(frame[0:2])
