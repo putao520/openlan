@@ -11,7 +11,7 @@ type TapWroker struct {
     ifce *water.Interface
     writechan chan []byte
     ifmtu int
-    dorecv func([]byte) error
+    doRecv func([]byte) error
 
     //for tunnel device.
     EthDstAddr []byte
@@ -54,8 +54,8 @@ func (this *TapWroker) NewEth(t uint16) *libol.Ether {
     return eth
 }
 
-func (this *TapWroker) GoRecv(dorecv func ([]byte) error) {
-    this.dorecv = dorecv
+func (this *TapWroker) GoRecv(doRecv func ([]byte) error) {
+    this.doRecv = doRecv
     defer this.Close()
     for {
         data := make([]byte, this.ifmtu)
@@ -78,9 +78,9 @@ func (this *TapWroker) GoRecv(dorecv func ([]byte) error) {
             buffer = append(buffer, data[0:n]...)
             n += eth.Len
 
-            dorecv(buffer[:n])
+            doRecv(buffer[:n])
         } else {
-            dorecv(data[:n])
+            doRecv(data[:n])
         }
     }
 }
@@ -130,8 +130,8 @@ func (this *TapWroker) onArp(data []byte) bool {
         buffer = append(buffer, reply.Encode()...)
 
         libol.Info("TapWroker.onArp % x.", buffer)
-        if this.dorecv != nil {
-            this.dorecv(buffer)
+        if this.doRecv != nil {
+            this.doRecv(buffer)
         }
 
         return true

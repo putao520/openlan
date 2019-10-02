@@ -63,7 +63,7 @@ func (this *TcpWroker) onInstruct(data []byte) error {
     return nil
 }
 
-func (this *TcpWroker) GoRecv(dorecv func ([]byte) error) {
+func (this *TcpWroker) GoRecv(doRecv func ([]byte) error) {
     libol.Debug("TcpWroker.GoRev %s\n", this.client.IsOk())
 
     defer this.client.Close()
@@ -87,7 +87,7 @@ func (this *TcpWroker) GoRecv(dorecv func ([]byte) error) {
             if libol.IsInst(data) {
                 this.onInstruct(data)
             } else {
-                dorecv(data)
+                doRecv(data)
             }
         }
     }

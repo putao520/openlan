@@ -561,7 +561,7 @@ func (this *PointAuth) onAuth(client *libol.TcpClient) error {
     return nil
 }
 
-func (this *PointAuth) GoRecv(ifce *water.Interface, dorecv func ([]byte) error) {
+func (this *PointAuth) GoRecv(ifce *water.Interface, doRecv func ([]byte) error) {
     libol.Info("PointAuth.GoRecv: %s", ifce.Name())
 
     defer ifce.Close()
@@ -574,7 +574,7 @@ func (this *PointAuth) GoRecv(ifce *water.Interface, dorecv func ([]byte) error)
         }
 
         libol.Debug("PointAuth.GoRev: % x\n", data[:n])
-        if err := dorecv(data[:n]); err != nil {
+        if err := doRecv(data[:n]); err != nil {
             libol.Error("PointAuth.GoRev: do-recv %s %s", ifce.Name(), err)
         }
     }
