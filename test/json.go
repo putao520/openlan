@@ -6,25 +6,29 @@ import (
 	"net"
 )
 
+//
 type Hi struct {
 	Name string
 }
 
+//
 type HardwareAddr struct {
 	net.HardwareAddr
 }
 
-func (this HardwareAddr) MarshalText() ([]byte, error) {
-	if len([]byte(this.HardwareAddr)) == 0 {
+//
+func (h HardwareAddr) MarshalText() ([]byte, error) {
+	if len([]byte(h.HardwareAddr)) == 0 {
 		return []byte(""), nil
 	}
 
-	return []byte(this.String()), nil
+	return []byte(h.String()), nil
 }
 
-func (this *HardwareAddr) UnmarshalText(text []byte) error {
+//
+func (h *HardwareAddr) UnmarshalText(text []byte) error {
 	if len(text) == 0 {
-		*this = HardwareAddr{nil}
+		*h = HardwareAddr{nil}
 		return nil
 	}
 
@@ -34,7 +38,7 @@ func (this *HardwareAddr) UnmarshalText(text []byte) error {
 		return &net.ParseError{Type: "Hardware address", Text: s}
 	}
 
-	*this = HardwareAddr{x}
+	*h = HardwareAddr{x}
 	return nil
 }
 
