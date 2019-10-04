@@ -78,3 +78,4 @@ How to get gateway or remote destination ethernet address for `utun2`
     [point]# exit
     AppledeMBP:openlan-go apple$ ./resource/point.dw -if:ethdst b2:bb:ba:c0:8a:4d
     
+
