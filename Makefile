@@ -12,6 +12,8 @@ linux:
 windows:
 	go build -o ./resource/point.windows.x86_64 main/point_windows.go
 
+osx: darwin
+
 darwin:
 	go build -o ./resource/point.darwin.x86_64 main/point_darwin.go
 	go build -o ./resource/pointctl.darwin.x86_64 main/pointctl.go
