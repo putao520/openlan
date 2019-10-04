@@ -11,19 +11,19 @@ import (
 )
 
 type VSwitch struct {
-	Wroker *vswitch.VSwitchWroker
+	Wroker *vswitch.Worker
 }
 
 func NewVSwitch(c *vswitch.Config) (this *VSwitch) {
 	server := vswitch.NewTcpServer(c)
 	this = &VSwitch{
-		Wroker: vswitch.NewVSwitchWroker(server, c),
+		Wroker: vswitch.NewWorker(server, c),
 	}
 	return
 }
 
 func GoHttp(ope *VSwitch, c *vswitch.Config) {
-	http := vswitch.NewVSwitchHttp(ope.Wroker, c)
+	http := vswitch.NewHttp(ope.Wroker, c)
 	http.GoStart()
 }
 
