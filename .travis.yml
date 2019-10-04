@@ -18,4 +18,10 @@ before_install:
     fi
 
 script:
-  - make "$TRAVIS_OS_NAME"
+  - |
+    if [[ "$TRAVIS_OS_NAME" != "windows" ]]; then
+      make "$TRAVIS_OS_NAME"
+    else
+      go build -o ./resource/point.windows.x86_64 main/point_windows.go
+    fi
+  - echo "building on $TRAVIS_OS_NAME successfully."
