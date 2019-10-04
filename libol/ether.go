@@ -24,8 +24,8 @@ type Ether struct {
 	Len  int
 }
 
-func NewEther(t uint16) (this *Ether) {
-	this = &Ether{
+func NewEther(t uint16) (e *Ether) {
+	e = &Ether{
 		Type: t,
 		Src:  ZEROETHADDR,
 		Dst:  ZEROETHADDR,
@@ -34,53 +34,53 @@ func NewEther(t uint16) (this *Ether) {
 	return
 }
 
-func NewEtherArp() (this *Ether) {
+func NewEtherArp() (e *Ether) {
 	return NewEther(ETH_P_ARP)
 }
 
-func NewEtherIP4() (this *Ether) {
+func NewEtherIP4() (e *Ether) {
 	return NewEther(ETH_P_IP4)
 }
 
-func NewEtherFromFrame(frame []byte) (this *Ether, err error) {
-	this = &Ether{
+func NewEtherFromFrame(frame []byte) (e *Ether, err error) {
+	e = &Ether{
 		Len: 14,
 	}
-	err = this.Decode(frame)
+	err = e.Decode(frame)
 	return
 }
 
-func (this *Ether) Decode(frame []byte) error {
+func (e *Ether) Decode(frame []byte) error {
 	if len(frame) < 14 {
 		return Errer("Ether.Decode too small header: %d", len(frame))
 	}
 
-	this.Dst = frame[:6]
-	this.Src = frame[6:12]
-	this.Type = binary.BigEndian.Uint16(frame[12:14])
-	this.Len = 14
+	e.Dst = frame[:6]
+	e.Src = frame[6:12]
+	e.Type = binary.BigEndian.Uint16(frame[12:14])
+	e.Len = 14
 
 	return nil
 }
 
-func (this *Ether) Encode() []byte {
+func (e *Ether) Encode() []byte {
 	buffer := make([]byte, 14)
 
-	copy(buffer[:6], this.Dst)
-	copy(buffer[6:12], this.Src)
-	binary.BigEndian.PutUint16(buffer[12:14], this.Type)
+	copy(buffer[:6], e.Dst)
+	copy(buffer[6:12], e.Src)
+	binary.BigEndian.PutUint16(buffer[12:14], e.Type)
 
 	return buffer[:14]
 }
 
-func (this *Ether) IsVlan() bool {
-	return this.Type == ETH_P_VLAN
+func (e *Ether) IsVlan() bool {
+	return e.Type == ETH_P_VLAN
 }
 
-func (this *Ether) IsArp() bool {
-	return this.Type == ETH_P_ARP
+func (e *Ether) IsArp() bool {
+	return e.Type == ETH_P_ARP
 }
 
-func (this *Ether) IsIP4() bool {
-	return this.Type == ETH_P_IP4
+func (e *Ether) IsIP4() bool {
+	return e.Type == ETH_P_IP4
 }

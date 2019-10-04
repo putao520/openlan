@@ -21,7 +21,7 @@ type Point struct {
 	brnet     *net.IPNet
 }
 
-func NewPoint(config *Config) (this *Point) {
+func NewPoint(config *Config) (p *Point) {
 	ifce, err := water.New(water.Config{DeviceType: water.TAP})
 	if err != nil {
 		libol.Fatal("NewPoint: %s", err)
@@ -30,7 +30,7 @@ func NewPoint(config *Config) (this *Point) {
 	libol.Info("NewPoint.device %s", ifce.Name())
 
 	client := libol.NewTcpClient(config.Addr)
-	this = &Point{
+	p = &Point{
 		Client:    client,
 		Ifce:      ifce,
 		Brname:    config.Brname,
@@ -42,26 +42,26 @@ func NewPoint(config *Config) (this *Point) {
 	return
 }
 
-func (this *Point) Start() {
+func (p *Point) Start() {
 	libol.Debug("Point.Start linux.")
 
-	if err := this.Client.Connect(); err != nil {
+	if err := p.Client.Connect(); err != nil {
 		libol.Error("Point.Start %s", err)
 	}
 
-	go this.tapwroker.GoRecv(this.tcpwroker.DoSend)
-	go this.tapwroker.GoLoop()
+	go p.tapwroker.GoRecv(p.tcpwroker.DoSend)
+	go p.tapwroker.GoLoop()
 
-	go this.tcpwroker.GoRecv(this.tapwroker.DoSend)
-	go this.tcpwroker.GoLoop()
+	go p.tcpwroker.GoRecv(p.tapwroker.DoSend)
+	go p.tcpwroker.GoLoop()
 }
 
-func (this *Point) Close() {
-	this.Client.Close()
-	this.Ifce.Close()
+func (p *Point) Close() {
+	p.Client.Close()
+	p.Ifce.Close()
 }
 
-func (this *Point) UpLink() error {
+func (p *Point) UpLink() error {
 	//TODO
 	return nil
 }

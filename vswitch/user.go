@@ -16,6 +16,6 @@ func NewUser(name string, password string) (this *User) {
 	return
 }
 
-func (this *User) String() string {
-	return fmt.Sprintf("%s, %s, %s", this.Name, this.Password, this.Token)
+func (u *User) String() string {
+	return fmt.Sprintf("%s, %s, %s", u.Name, u.Password, u.Token)
 }

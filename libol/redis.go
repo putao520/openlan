@@ -24,8 +24,8 @@ type RedisCli struct {
 	Client *redis.Client
 }
 
-func NewRedisCli(addr string, password string, db int) (this *RedisCli) {
-	this = &RedisCli{
+func NewRedisCli(addr string, password string, db int) (r *RedisCli) {
+	r = &RedisCli{
 		addr:     addr,
 		password: password,
 		db:       db,
@@ -34,8 +34,8 @@ func NewRedisCli(addr string, password string, db int) (this *RedisCli) {
 	return
 }
 
-func (this *RedisCli) Open() error {
-	if this.Client != nil {
+func (r *RedisCli) Open() error {
+	if r.Client != nil {
 		return nil
 	}
 
@@ -50,49 +50,49 @@ func (this *RedisCli) Open() error {
 		return err
 	}
 
-	this.Client = client
+	r.Client = client
 
 	return nil
 }
 
-func (this *RedisCli) Close() error {
+func (r *RedisCli) Close() error {
 	return nil
 }
 
-func (this *RedisCli) HMSet(key string, value map[string]interface{}) error {
-	if err := this.Open(); err != nil {
+func (r *RedisCli) HMSet(key string, value map[string]interface{}) error {
+	if err := r.Open(); err != nil {
 		return err
 	}
 
-	if _, err := this.Client.HMSet(key, value).Result(); err != nil {
+	if _, err := r.Client.HMSet(key, value).Result(); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (this *RedisCli) HMDel(key string, field string) error {
-	if err := this.Open(); err != nil {
+func (r *RedisCli) HMDel(key string, field string) error {
+	if err := r.Open(); err != nil {
 		return err
 	}
 
 	if field == "" {
-		if _, err := this.Client.Del(key).Result(); err != nil {
+		if _, err := r.Client.Del(key).Result(); err != nil {
 			return err
 		}
 	} else {
-		if _, err := this.Client.HDel(key, field).Result(); err != nil {
+		if _, err := r.Client.HDel(key, field).Result(); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (this *RedisCli) HGet(key string, field string) interface{} {
-	if err := this.Open(); err != nil {
+func (r *RedisCli) HGet(key string, field string) interface{} {
+	if err := r.Open(); err != nil {
 		return err
 	}
 
-	hget := this.Client.HGet(key, field)
+	hget := r.Client.HGet(key, field)
 	if hget.Err() == nil || hget.Err() == redis.Nil {
 		return nil
 	}

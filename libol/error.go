@@ -8,17 +8,17 @@ type Err struct {
 	Message string
 }
 
-func Errer(message string, v ...interface{}) (this *Err) {
-	this = &Err{
+func Errer(message string, v ...interface{}) (e *Err) {
+	e = &Err{
 		Message: fmt.Sprintf(message, v...),
 	}
 	return
 }
 
-func (this *Err) String() string {
-	return fmt.Sprint("%d: %s", this.Code, this.Message)
+func (e *Err) String() string {
+	return fmt.Sprint("%d: %s", e.Code, e.Message)
 }
 
-func (this *Err) Error() string {
-	return this.String()
+func (e *Err) Error() string {
+	return e.String()
 }

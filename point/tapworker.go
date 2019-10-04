@@ -19,61 +19,61 @@ type TapWorker struct {
 	EthSrcIp   []byte
 }
 
-func NewTapWorker(ifce *water.Interface, c *Config) (this *TapWorker) {
-	this = &TapWorker{
+func NewTapWorker(ifce *water.Interface, c *Config) (a *TapWorker) {
+	a = &TapWorker{
 		ifce:      ifce,
 		writechan: make(chan []byte, 1024*10),
 		ifmtu:     c.Ifmtu, //1514
 	}
 
-	if this.ifce.IsTUN() {
-		this.EthSrcIp = net.ParseIP(c.Ifaddr).To4()
-		libol.Info("NewTapWoker srcIp: % x", this.EthSrcIp)
+	if a.ifce.IsTUN() {
+		a.EthSrcIp = net.ParseIP(c.Ifaddr).To4()
+		libol.Info("NewTapWoker srcIp: % x", a.EthSrcIp)
 
 		if c.Ifethsrc == "" {
-			this.EthSrcAddr = libol.GenEthAddr(6)
+			a.EthSrcAddr = libol.GenEthAddr(6)
 		} else {
 			if hw, err := net.ParseMAC(c.Ifethsrc); err == nil {
-				this.EthSrcAddr = []byte(hw)
+				a.EthSrcAddr = []byte(hw)
 			}
 		}
 		if hw, err := net.ParseMAC(c.Ifethdst); err == nil {
-			this.EthDstAddr = []byte(hw)
+			a.EthDstAddr = []byte(hw)
 		}
-		libol.Info("NewTapWorker src: % x, dst: % x", this.EthSrcAddr, this.EthDstAddr)
+		libol.Info("NewTapWorker src: % x, dst: % x", a.EthSrcAddr, a.EthDstAddr)
 	}
 
 	return
 }
 
-func (this *TapWorker) NewEth(t uint16) *libol.Ether {
+func (a *TapWorker) NewEth(t uint16) *libol.Ether {
 	eth := libol.NewEther(t)
-	eth.Dst = this.EthDstAddr
-	eth.Src = this.EthSrcAddr
+	eth.Dst = a.EthDstAddr
+	eth.Src = a.EthSrcAddr
 
 	return eth
 }
 
-func (this *TapWorker) GoRecv(doRecv func([]byte) error) {
-	this.doRecv = doRecv
-	defer this.Close()
+func (a *TapWorker) GoRecv(doRecv func([]byte) error) {
+	a.doRecv = doRecv
+	defer a.Close()
 	for {
-		data := make([]byte, this.ifmtu)
-		if this.ifce == nil {
+		data := make([]byte, a.ifmtu)
+		if a.ifce == nil {
 			break
 		}
 
-		n, err := this.ifce.Read(data)
+		n, err := a.ifce.Read(data)
 		if err != nil {
 			libol.Error("TapWorker.GoRev: %s", err)
 			break
 		}
 
 		libol.Debug("TapWorker.GoRev: % x", data[:n])
-		if this.ifce.IsTUN() {
-			eth := this.NewEth(libol.ETH_P_IP4)
+		if a.ifce.IsTUN() {
+			eth := a.NewEth(libol.ETH_P_IP4)
 
-			buffer := make([]byte, 0, this.ifmtu)
+			buffer := make([]byte, 0, a.ifmtu)
 			buffer = append(buffer, eth.Encode()...)
 			buffer = append(buffer, data[0:n]...)
 			n += eth.Len
@@ -85,15 +85,15 @@ func (this *TapWorker) GoRecv(doRecv func([]byte) error) {
 	}
 }
 
-func (this *TapWorker) DoSend(data []byte) error {
+func (a *TapWorker) DoSend(data []byte) error {
 	libol.Debug("TapWorker.DoSend: % x", data)
 
-	this.writechan <- data
+	a.writechan <- data
 
 	return nil
 }
 
-func (this *TapWorker) onArp(data []byte) bool {
+func (a *TapWorker) onArp(data []byte) bool {
 	libol.Debug("TapWorker.onArp")
 	eth, err := libol.NewEtherFromFrame(data)
 	if err != nil {
@@ -116,22 +116,22 @@ func (this *TapWorker) onArp(data []byte) bool {
 			return false
 		}
 
-		eth := this.NewEth(libol.ETH_P_ARP)
+		eth := a.NewEth(libol.ETH_P_ARP)
 
 		reply := libol.NewArp()
 		reply.OpCode = libol.ARP_REPLY
-		reply.SIpAddr = this.EthSrcIp
+		reply.SIpAddr = a.EthSrcIp
 		reply.TIpAddr = arp.SIpAddr
-		reply.SHwAddr = this.EthSrcAddr
+		reply.SHwAddr = a.EthSrcAddr
 		reply.THwAddr = arp.SHwAddr
 
-		buffer := make([]byte, 0, this.ifmtu)
+		buffer := make([]byte, 0, a.ifmtu)
 		buffer = append(buffer, eth.Encode()...)
 		buffer = append(buffer, reply.Encode()...)
 
 		libol.Info("TapWorker.onArp % x.", buffer)
-		if this.doRecv != nil {
-			this.doRecv(buffer)
+		if a.doRecv != nil {
+			a.doRecv(buffer)
 		}
 
 		return true
@@ -140,18 +140,18 @@ func (this *TapWorker) onArp(data []byte) bool {
 	return false
 }
 
-func (this *TapWorker) GoLoop() {
-	defer this.Close()
+func (a *TapWorker) GoLoop() {
+	defer a.Close()
 	for {
 		select {
-		case wdata := <-this.writechan:
-			if this.ifce == nil {
+		case wdata := <-a.writechan:
+			if a.ifce == nil {
 				return
 			}
 
-			if this.ifce.IsTUN() {
+			if a.ifce.IsTUN() {
 				//Proxy arp request.
-				if this.onArp(wdata) {
+				if a.onArp(wdata) {
 					libol.Info("TapWorker.GoLoop: Arp proxy.")
 					continue
 				}
@@ -170,18 +170,18 @@ func (this *TapWorker) GoLoop() {
 				}
 			}
 
-			if _, err := this.ifce.Write(wdata); err != nil {
+			if _, err := a.ifce.Write(wdata); err != nil {
 				libol.Error("TapWorker.GoLoop: %s", err)
 			}
 		}
 	}
 }
 
-func (this *TapWorker) Close() {
+func (a *TapWorker) Close() {
 	libol.Info("TapWorker.Close")
 
-	if this.ifce != nil {
-		this.ifce.Close()
-		this.ifce = nil
+	if a.ifce != nil {
+		a.ifce.Close()
+		a.ifce = nil
 	}
 }

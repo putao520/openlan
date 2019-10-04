@@ -10,23 +10,23 @@ type BrCtl struct {
 	Path string
 }
 
-func NewBrCtl(name string) (this *BrCtl) {
-	this = &BrCtl{
+func NewBrCtl(name string) (b *BrCtl) {
+	b = &BrCtl{
 		Name: name,
 	}
 	return
 }
 
-func (this *BrCtl) SysPath(fun string) string {
-	if this.Path == "" {
-		this.Path = fmt.Sprintf("/sys/devices/virtual/net/%s/bridge", this.Name)
+func (b *BrCtl) SysPath(fun string) string {
+	if b.Path == "" {
+		b.Path = fmt.Sprintf("/sys/devices/virtual/net/%s/bridge", b.Name)
 	}
 
-	return fmt.Sprintf("%s/%s", this.Path, fun)
+	return fmt.Sprintf("%s/%s", b.Path, fun)
 }
 
-func (this *BrCtl) Stp(on bool) error {
-	file := this.SysPath("stp_state")
+func (b *BrCtl) Stp(on bool) error {
+	file := b.SysPath("stp_state")
 	fp, err := os.OpenFile(file, os.O_RDWR, 0600)
 	defer fp.Close()
 	if err != nil {

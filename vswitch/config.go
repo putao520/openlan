@@ -61,31 +61,31 @@ func RightAddr(listen *string, port int) {
 	}
 }
 
-func NewConfig() (this *Config) {
-	this = &Config{
+func NewConfig() (c *Config) {
+	c = &Config{
 		Redis: Default.Redis,
 		LogFile: Default.LogFile,
 	}
 
-	flag.IntVar(&this.Verbose, "verbose", Default.Verbose, "open verbose")
-	flag.StringVar(&this.HttpListen, "http:addr", Default.HttpListen, "the http listen on")
-	flag.StringVar(&this.TcpListen, "vs:addr", Default.TcpListen, "the server listen on")
-	flag.StringVar(&this.Token, "admin:token", Default.Token, "Administrator token")
-	flag.StringVar(&this.TokenFile, "admin:file", Default.TokenFile, "The file administrator token saved to")
-	flag.StringVar(&this.Password, "auth:file", Default.Password, "The file password loading from.")
-	flag.IntVar(&this.Ifmtu, "if:mtu", Default.Ifmtu, "the interface MTU include ethernet")
-	flag.StringVar(&this.Ifaddr, "if:addr", Default.Ifaddr, "the interface address")
-	flag.StringVar(&this.Brname, "if:br", Default.Brname, "the bridge name")
-	flag.StringVar(&this.saveFile, "conf", Default.SaveFile(), "The configuration file")
+	flag.IntVar(&c.Verbose, "verbose", Default.Verbose, "open verbose")
+	flag.StringVar(&c.HttpListen, "http:addr", Default.HttpListen, "the http listen on")
+	flag.StringVar(&c.TcpListen, "vs:addr", Default.TcpListen, "the server listen on")
+	flag.StringVar(&c.Token, "admin:token", Default.Token, "Administrator token")
+	flag.StringVar(&c.TokenFile, "admin:file", Default.TokenFile, "The file administrator token saved to")
+	flag.StringVar(&c.Password, "auth:file", Default.Password, "The file password loading from.")
+	flag.IntVar(&c.Ifmtu, "if:mtu", Default.Ifmtu, "the interface MTU include ethernet")
+	flag.StringVar(&c.Ifaddr, "if:addr", Default.Ifaddr, "the interface address")
+	flag.StringVar(&c.Brname, "if:br", Default.Brname, "the bridge name")
+	flag.StringVar(&c.saveFile, "conf", Default.SaveFile(), "The configuration file")
 
 	flag.Parse()
-	libol.Init(this.LogFile, this.Verbose)
+	libol.Init(c.LogFile, c.Verbose)
 
-	this.Default()
-	this.Load()
-	this.Save(fmt.Sprintf("%s.cur", this.saveFile))
+	c.Default()
+	c.Load()
+	c.Save(fmt.Sprintf("%s.cur", c.saveFile))
 
-	str, err := libol.Marshal(this, false)
+	str, err := libol.Marshal(c, false)
 	if err != nil {
 		libol.Error("NewConfig.json error: %s", err)
 	}
@@ -94,32 +94,32 @@ func NewConfig() (this *Config) {
 	return
 }
 
-func (this *Config) Default() {
-	RightAddr(&this.TcpListen, 10002)
-	RightAddr(&this.HttpListen, 10082)
+func (c *Config) Default() {
+	RightAddr(&c.TcpListen, 10002)
+	RightAddr(&c.HttpListen, 10082)
 
 	// TODO reset zero value to default
 }
 
-func (this *Config) SaveFile() string {
-	return this.saveFile
+func (c *Config) SaveFile() string {
+	return c.saveFile
 }
 
-func (this *Config) Save(file string) error {
+func (c *Config) Save(file string) error {
 	if file == "" {
-		file = this.saveFile
+		file = c.saveFile
 	}
 
-	return libol.MarshalSave(this, file, true)
+	return libol.MarshalSave(c, file, true)
 }
 
-func (this *Config) Load() error {
-	if err := libol.UnmarshalLoad(this, this.saveFile); err != nil {
+func (c *Config) Load() error {
+	if err := libol.UnmarshalLoad(c, c.saveFile); err != nil {
 		return err
 	}
 
-	if this.Links != nil {
-		for _, link := range this.Links {
+	if c.Links != nil {
+		for _, link := range c.Links {
 			link.Default()
 		}
 	}

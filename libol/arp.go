@@ -29,8 +29,8 @@ type Arp struct {
 	Len     int
 }
 
-func NewArp() (this *Arp) {
-	this = &Arp{
+func NewArp() (a *Arp) {
+	a = &Arp{
 		HrdCode: ARPHRD_ETHER,
 		ProCode: ETH_P_IP4,
 		HrdLen:  6,
@@ -42,70 +42,70 @@ func NewArp() (this *Arp) {
 	return
 }
 
-func NewArpFromFrame(frame []byte) (this *Arp, err error) {
-	this = &Arp{
+func NewArpFromFrame(frame []byte) (a *Arp, err error) {
+	a = &Arp{
 		Len: 0,
 	}
-	err = this.Decode(frame)
+	err = a.Decode(frame)
 	return
 }
 
-func (this *Arp) Decode(frame []byte) error {
+func (a *Arp) Decode(frame []byte) error {
 	if len(frame) < 8 {
 		return Errer("Arp.Decode: too small header: %d", len(frame))
 	}
 
-	this.HrdCode = binary.BigEndian.Uint16(frame[0:2])
-	this.ProCode = binary.BigEndian.Uint16(frame[2:4])
-	this.HrdLen = uint8(frame[4])
-	this.ProLen = uint8(frame[5])
-	this.OpCode = binary.BigEndian.Uint16(frame[6:8])
+	a.HrdCode = binary.BigEndian.Uint16(frame[0:2])
+	a.ProCode = binary.BigEndian.Uint16(frame[2:4])
+	a.HrdLen = uint8(frame[4])
+	a.ProLen = uint8(frame[5])
+	a.OpCode = binary.BigEndian.Uint16(frame[6:8])
 
 	p := uint8(8)
-	if len(frame) < int(p+2*(this.HrdLen+this.ProLen)) {
+	if len(frame) < int(p+2*(a.HrdLen+a.ProLen)) {
 		return Errer("Arp.Decode: too small frame: %d", len(frame))
 	}
 
-	this.SHwAddr = frame[p : p+this.HrdLen]
-	p += this.HrdLen
-	this.SIpAddr = frame[p : p+this.ProLen]
-	p += this.ProLen
+	a.SHwAddr = frame[p : p+a.HrdLen]
+	p += a.HrdLen
+	a.SIpAddr = frame[p : p+a.ProLen]
+	p += a.ProLen
 
-	this.THwAddr = frame[p : p+this.HrdLen]
-	p += this.HrdLen
-	this.TIpAddr = frame[p : p+this.ProLen]
-	p += this.ProLen
+	a.THwAddr = frame[p : p+a.HrdLen]
+	p += a.HrdLen
+	a.TIpAddr = frame[p : p+a.ProLen]
+	p += a.ProLen
 
-	this.Len = int(p)
+	a.Len = int(p)
 
 	return nil
 }
 
-func (this *Arp) Encode() []byte {
+func (a *Arp) Encode() []byte {
 	buffer := make([]byte, 1024)
 
-	binary.BigEndian.PutUint16(buffer[0:2], this.HrdCode)
-	binary.BigEndian.PutUint16(buffer[2:4], this.ProCode)
-	buffer[4] = byte(this.HrdLen)
-	buffer[5] = byte(this.ProLen)
-	binary.BigEndian.PutUint16(buffer[6:8], this.OpCode)
+	binary.BigEndian.PutUint16(buffer[0:2], a.HrdCode)
+	binary.BigEndian.PutUint16(buffer[2:4], a.ProCode)
+	buffer[4] = byte(a.HrdLen)
+	buffer[5] = byte(a.ProLen)
+	binary.BigEndian.PutUint16(buffer[6:8], a.OpCode)
 
 	p := uint8(8)
-	copy(buffer[p:p+this.HrdLen], this.SHwAddr[0:this.HrdLen])
-	p += this.HrdLen
-	copy(buffer[p:p+this.ProLen], this.SIpAddr[0:this.ProLen])
-	p += this.ProLen
+	copy(buffer[p:p+a.HrdLen], a.SHwAddr[0:a.HrdLen])
+	p += a.HrdLen
+	copy(buffer[p:p+a.ProLen], a.SIpAddr[0:a.ProLen])
+	p += a.ProLen
 
-	copy(buffer[p:p+this.HrdLen], this.THwAddr[0:this.HrdLen])
-	p += this.HrdLen
-	copy(buffer[p:p+this.ProLen], this.TIpAddr[0:this.ProLen])
-	p += this.ProLen
+	copy(buffer[p:p+a.HrdLen], a.THwAddr[0:a.HrdLen])
+	p += a.HrdLen
+	copy(buffer[p:p+a.ProLen], a.TIpAddr[0:a.ProLen])
+	p += a.ProLen
 
-	this.Len = int(p)
+	a.Len = int(p)
 
 	return buffer[:p]
 }
 
-func (this *Arp) IsIP4() bool {
-	return this.ProCode == ETH_P_IP4
+func (a *Arp) IsIP4() bool {
+	return a.ProCode == ETH_P_IP4
 }

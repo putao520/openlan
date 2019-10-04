@@ -22,7 +22,7 @@ type Point struct {
 	brnet     *net.IPNet
 }
 
-func NewPoint(config *Config) (this *Point) {
+func NewPoint(config *Config) (p *Point) {
 	var err error
 	var ifce *water.Interface
 
@@ -37,7 +37,7 @@ func NewPoint(config *Config) (this *Point) {
 
 	libol.Info("NewPoint.device %s", ifce.Name())
 	client := libol.NewTcpClient(config.Addr)
-	this = &Point{
+	p = &Point{
 		Client:    client,
 		Ifce:      ifce,
 		Brname:    config.Brname,
@@ -49,33 +49,33 @@ func NewPoint(config *Config) (this *Point) {
 	return
 }
 
-func (this *Point) Start() {
+func (p *Point) Start() {
 	libol.Debug("Point.Start linux.")
 
-	if err := this.Client.Connect(); err != nil {
+	if err := p.Client.Connect(); err != nil {
 		libol.Error("Point.Start %s", err)
 	}
 
-	go this.tapwroker.GoRecv(this.tcpwroker.DoSend)
-	go this.tapwroker.GoLoop()
+	go p.tapwroker.GoRecv(p.tcpwroker.DoSend)
+	go p.tapwroker.GoLoop()
 
-	go this.tcpwroker.GoRecv(this.tapwroker.DoSend)
-	go this.tcpwroker.GoLoop()
+	go p.tcpwroker.GoRecv(p.tapwroker.DoSend)
+	go p.tcpwroker.GoLoop()
 }
 
-func (this *Point) Close() {
-	this.Client.Close()
-	this.Ifce.Close()
+func (p *Point) Close() {
+	p.Client.Close()
+	p.Ifce.Close()
 
-	if this.br != nil && this.brip != nil {
-		if err := this.br.UnsetLinkIp(this.brip, this.brnet); err != nil {
-			libol.Error("Point.Close.UnsetLinkIp %s: %s", this.br.NetInterface().Name, err)
+	if p.br != nil && p.brip != nil {
+		if err := p.br.UnsetLinkIp(p.brip, p.brnet); err != nil {
+			libol.Error("Point.Close.UnsetLinkIp %s: %s", p.br.NetInterface().Name, err)
 		}
 	}
 }
 
-func (this *Point) UpLink() error {
-	name := this.Ifce.Name()
+func (p *Point) UpLink() error {
+	name := p.Ifce.Name()
 
 	libol.Debug("Point.UpLink: %s", name)
 	link, err := tenus.NewLinkFrom(name)
@@ -89,17 +89,17 @@ func (this *Point) UpLink() error {
 		return err
 	}
 
-	if this.Brname != "" {
-		br, err := tenus.BridgeFromName(this.Brname)
+	if p.Brname != "" {
+		br, err := tenus.BridgeFromName(p.Brname)
 		if err != nil {
 			libol.Error("Point.UpLink.newBr: %s", err)
-			br, err = tenus.NewBridgeWithName(this.Brname)
+			br, err = tenus.NewBridgeWithName(p.Brname)
 			if err != nil {
 				libol.Error("Point.UpLink.newBr: %s", err)
 			}
 		}
 
-		brctl := libol.NewBrCtl(this.Brname)
+		brctl := libol.NewBrCtl(p.Brname)
 		if err := brctl.Stp(true); err != nil {
 			libol.Error("Point.UpLink.Stp: %s", err)
 		}
@@ -112,18 +112,18 @@ func (this *Point) UpLink() error {
 			libol.Error("Point.UpLink.AddSlave: Switch ifce %s: %s", name, err)
 		}
 
-		link, err = tenus.NewLinkFrom(this.Brname)
+		link, err = tenus.NewLinkFrom(p.Brname)
 		if err != nil {
-			libol.Error("Point.UpLink: Get ifce %s: %s", this.Brname, err)
+			libol.Error("Point.UpLink: Get ifce %s: %s", p.Brname, err)
 		}
 
-		this.br = br
+		p.br = br
 	}
 
-	if this.Ifaddr != "" {
-		ip, ipnet, err := net.ParseCIDR(this.Ifaddr)
+	if p.Ifaddr != "" {
+		ip, ipnet, err := net.ParseCIDR(p.Ifaddr)
 		if err != nil {
-			libol.Error("Point.UpLink.ParseCIDR %s: %s", this.Ifaddr, err)
+			libol.Error("Point.UpLink.ParseCIDR %s: %s", p.Ifaddr, err)
 			return err
 		}
 		if err := link.SetLinkIp(ip, ipnet); err != nil {
@@ -131,8 +131,8 @@ func (this *Point) UpLink() error {
 			return err
 		}
 
-		this.brip = ip
-		this.brnet = ipnet
+		p.brip = ip
+		p.brnet = ipnet
 	}
 
 	return nil

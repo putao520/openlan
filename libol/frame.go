@@ -9,15 +9,15 @@ type Frame struct {
 	Eth  *Ether
 }
 
-func NewFrame(data []byte) (this *Frame) {
-	this = &Frame{
+func NewFrame(data []byte) (f *Frame) {
+	f = &Frame{
 		Data: make([]byte, len(data)),
 	}
-	copy(this.Data, data)
+	copy(f.Data, data)
 
-	eth, err := NewEtherFromFrame(this.Data)
+	eth, err := NewEtherFromFrame(f.Data)
 	if err == nil {
-		this.Eth = eth
+		f.Eth = eth
 	} else {
 		Error("NewFrame: %s", err)
 	}
@@ -25,22 +25,22 @@ func NewFrame(data []byte) (this *Frame) {
 	return
 }
 
-func (this *Frame) EthType() uint16 {
-	return binary.BigEndian.Uint16(this.Data[12:14])
+func (f *Frame) EthType() uint16 {
+	return binary.BigEndian.Uint16(f.Data[12:14])
 }
 
-func (this *Frame) EthData() []byte {
-	return this.Data[14:]
+func (f *Frame) EthData() []byte {
+	return f.Data[14:]
 }
 
-func (this *Frame) DstAddr() []byte {
-	return this.Data[0:6]
+func (f *Frame) DstAddr() []byte {
+	return f.Data[0:6]
 }
 
-func (this *Frame) SrcAddr() []byte {
-	return this.Data[6:12]
+func (f *Frame) SrcAddr() []byte {
+	return f.Data[6:12]
 }
 
-func (this *Frame) EthParse() (uint16, []byte) {
-	return this.EthType(), this.EthData()
+func (f *Frame) EthParse() (uint16, []byte) {
+	return f.EthType(), f.EthData()
 }

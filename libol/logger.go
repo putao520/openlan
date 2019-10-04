@@ -22,55 +22,55 @@ type Logger struct {
 	FileLog		*log.Logger
 }
 
-func (this *Logger) Debug(format string, v ...interface{}) {
-	if DEUBG >= this.Level {
+func (l *Logger) Debug(format string, v ...interface{}) {
+	if DEUBG >= l.Level {
 		log.Printf(fmt.Sprintf("DEBUG %s", format), v...)
 	}
 }
 
-func (this *Logger) Info(format string, v ...interface{}) {
-	if INFO >= this.Level {
+func (l *Logger) Info(format string, v ...interface{}) {
+	if INFO >= l.Level {
 		log.Printf(fmt.Sprintf("INFO %s", format), v...)
 	}
 }
 
-func (this *Logger) Warn(format string, v ...interface{}) {
-	if WARN >= this.Level {
+func (l *Logger) Warn(format string, v ...interface{}) {
+	if WARN >= l.Level {
 		log.Printf(fmt.Sprintf("WARN %s", format), v...)
 	}
 
-	this.SaveError(fmt.Sprintf("WARN %s", format), v...)
+	l.SaveError(fmt.Sprintf("WARN %s", format), v...)
 }
 
-func (this *Logger) Error(format string, v ...interface{}) {
-	if ERROR >= this.Level {
+func (l *Logger) Error(format string, v ...interface{}) {
+	if ERROR >= l.Level {
 		log.Printf(fmt.Sprintf("ERROR %s", format), v...)
 	}
-	this.SaveError(fmt.Sprintf("ERROR %s", format), v...)
+	l.SaveError(fmt.Sprintf("ERROR %s", format), v...)
 }
 
-func (this *Logger) Fatal(format string, v ...interface{}) {
-	if FATAL >= this.Level {
+func (l *Logger) Fatal(format string, v ...interface{}) {
+	if FATAL >= l.Level {
 		log.Printf(fmt.Sprintf("FATAL %s", format), v...)
 	}
 
-	this.SaveError(fmt.Sprintf("FATAL %s", format), v...)
+	l.SaveError(fmt.Sprintf("FATAL %s", format), v...)
 }
 
-func (this *Logger) Print(format string, v ...interface{}) {
-	if PRINT >= this.Level {
+func (l *Logger) Print(format string, v ...interface{}) {
+	if PRINT >= l.Level {
 		log.Printf(fmt.Sprintf("PRINT %s", format), v...)
 	}
 }
 
-func (this *Logger) SaveError(format string, v ...interface{}) {
+func (l *Logger) SaveError(format string, v ...interface{}) {
 	m := fmt.Sprintf(format, v...)
-	if this.FileLog != nil {
-		this.FileLog.Println(m)
+	if l.FileLog != nil {
+		l.FileLog.Println(m)
 	}
 
-	if ERROR >= this.Level {
-		this.Errors = append(this.Errors, m)
+	if ERROR >= l.Level {
+		l.Errors = append(l.Errors, m)
 	}
 }
 

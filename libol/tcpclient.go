@@ -38,8 +38,8 @@ type TcpClient struct {
 	NewTime int64
 }
 
-func NewTcpClient(addr string) (this *TcpClient) {
-	this = &TcpClient{
+func NewTcpClient(addr string) (t *TcpClient) {
+	t = &TcpClient{
 		Addr:        addr,
 		conn:        nil,
 		maxsize:     1514,
@@ -56,8 +56,8 @@ func NewTcpClient(addr string) (this *TcpClient) {
 	return
 }
 
-func NewTcpClientFromConn(conn *net.TCPConn) (this *TcpClient) {
-	this = &TcpClient{
+func NewTcpClientFromConn(conn *net.TCPConn) (t *TcpClient) {
+	t = &TcpClient{
 		Addr:    conn.RemoteAddr().String(),
 		conn:    conn,
 		maxsize: 1514,
@@ -68,51 +68,51 @@ func NewTcpClientFromConn(conn *net.TCPConn) (this *TcpClient) {
 	return
 }
 
-func (this *TcpClient) Connect() error {
-	if this.conn != nil {
+func (t *TcpClient) Connect() error {
+	if t.conn != nil {
 		return nil
 	}
 
-	Info("TcpClient.Connect %s", this.Addr)
-	raddr, err := net.ResolveTCPAddr("tcp", this.Addr)
+	Info("TcpClient.Connect %s", t.Addr)
+	raddr, err := net.ResolveTCPAddr("tcp", t.Addr)
 	if err != nil {
 		return err
 	}
 
 	conn, err := net.DialTCP("tcp", nil, raddr)
 	if err != nil {
-		this.conn = nil
+		t.conn = nil
 		return err
 	}
 
-	this.conn = conn
-	this.Status = CL_CONNECTED
+	t.conn = conn
+	t.Status = CL_CONNECTED
 
-	if this.onConnected != nil {
-		this.onConnected(this)
+	if t.onConnected != nil {
+		t.onConnected(t)
 	}
 
 	return nil
 }
 
-func (this *TcpClient) OnConnected(on func(*TcpClient) error) {
-	this.onConnected = on
+func (t *TcpClient) OnConnected(on func(*TcpClient) error) {
+	t.onConnected = on
 }
 
-func (this *TcpClient) Close() {
-	if this.conn != nil {
-		Info("TcpClient.Close %s", this.Addr)
-		this.conn.Close()
-		this.conn = nil
+func (t *TcpClient) Close() {
+	if t.conn != nil {
+		Info("TcpClient.Close %s", t.Addr)
+		t.conn.Close()
+		t.conn = nil
 	}
 }
 
-func (this *TcpClient) recvn(buffer []byte) error {
+func (t *TcpClient) recvn(buffer []byte) error {
 	offset := 0
 	left := len(buffer)
 	for left > 0 {
 		tmp := make([]byte, left)
-		n, err := this.conn.Read(tmp)
+		n, err := t.conn.Read(tmp)
 		if err != nil {
 			return err
 		}
@@ -127,7 +127,7 @@ func (this *TcpClient) recvn(buffer []byte) error {
 	return nil
 }
 
-func (this *TcpClient) sendn(buffer []byte) error {
+func (t *TcpClient) sendn(buffer []byte) error {
 	offset := 0
 	size := len(buffer)
 	left := size - offset
@@ -138,7 +138,7 @@ func (this *TcpClient) sendn(buffer []byte) error {
 	for left > 0 {
 		tmp := buffer[offset:]
 		Debug("TcpClient.sendn tmp %d", len(tmp))
-		n, err := this.conn.Write(tmp)
+		n, err := t.conn.Write(tmp)
 		if err != nil {
 			return err
 		}
@@ -148,8 +148,8 @@ func (this *TcpClient) sendn(buffer []byte) error {
 	return nil
 }
 
-func (this *TcpClient) SendMsg(data []byte) error {
-	if err := this.Connect(); err != nil {
+func (t *TcpClient) SendMsg(data []byte) error {
+	if err := t.Connect(); err != nil {
 		return err
 	}
 
@@ -158,88 +158,88 @@ func (this *TcpClient) SendMsg(data []byte) error {
 	binary.BigEndian.PutUint16(buffer[2:4], uint16(len(data)))
 	copy(buffer[HSIZE:], data)
 
-	if err := this.sendn(buffer); err != nil {
-		this.TxError++
+	if err := t.sendn(buffer); err != nil {
+		t.TxError++
 		return err
 	}
 
-	this.TxOkay++
+	t.TxOkay++
 
 	return nil
 }
 
-func (this *TcpClient) RecvMsg(data []byte) (int, error) {
-	Debug("TcpClient.RecvMsg %s", this)
+func (t *TcpClient) RecvMsg(data []byte) (int, error) {
+	Debug("TcpClient.RecvMsg %s", t)
 
-	if !this.IsOk() {
-		return -1, Errer("%s: connection isn't okay", this)
+	if !t.IsOk() {
+		return -1, Errer("%s: connection isn't okay", t)
 	}
 
 	h := make([]byte, HSIZE)
-	if err := this.recvn(h); err != nil {
+	if err := t.recvn(h); err != nil {
 		return -1, err
 	}
 
 	if !bytes.Equal(h[0:2], MAGIC) {
-		return -1, Errer("%s: isn't right magic header", this)
+		return -1, Errer("%s: isn't right magic header", t)
 	}
 
 	size := binary.BigEndian.Uint16(h[2:4])
-	if int(size) > this.maxsize || int(size) < this.minsize {
-		return -1, Errer("%s: isn't right data size (%d)", this, size)
+	if int(size) > t.maxsize || int(size) < t.minsize {
+		return -1, Errer("%s: isn't right data size (%d)", t, size)
 	}
 
 	d := make([]byte, size)
-	if err := this.recvn(d); err != nil {
+	if err := t.recvn(d); err != nil {
 		return -1, err
 	}
 
 	copy(data, d)
-	this.RxOkay++
+	t.RxOkay++
 
 	return int(size), nil
 }
 
-func (this *TcpClient) GetMaxSize() int {
-	return this.maxsize
+func (t *TcpClient) GetMaxSize() int {
+	return t.maxsize
 }
 
-func (this *TcpClient) SetMaxSize(value int) {
-	this.maxsize = value
+func (t *TcpClient) SetMaxSize(value int) {
+	t.maxsize = value
 }
 
-func (this *TcpClient) GetMinSize() int {
-	return this.minsize
+func (t *TcpClient) GetMinSize() int {
+	return t.minsize
 }
 
-func (this *TcpClient) IsOk() bool {
-	return this.conn != nil
+func (t *TcpClient) IsOk() bool {
+	return t.conn != nil
 }
 
-func (this *TcpClient) SendReq(action string, body string) error {
+func (t *TcpClient) SendReq(action string, body string) error {
 	data := EncInstReq(action, body)
 	Debug("TcpClient.SendReq %d %s", len(data), data[6:])
 
-	if err := this.SendMsg(data); err != nil {
+	if err := t.SendMsg(data); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (this *TcpClient) SendResp(action string, body string) error {
+func (t *TcpClient) SendResp(action string, body string) error {
 	data := EncInstResp(action, body)
 	Debug("TcpClient.SendResp %d %s", len(data), data[6:])
 
-	if err := this.SendMsg(data); err != nil {
+	if err := t.SendMsg(data); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (this *TcpClient) UpTime() int64 {
-	return time.Now().Unix() - this.NewTime
+func (t *TcpClient) UpTime() int64 {
+	return time.Now().Unix() - t.NewTime
 }
 
-func (this *TcpClient) String() string {
-	return this.Addr
+func (t *TcpClient) String() string {
+	return t.Addr
 }

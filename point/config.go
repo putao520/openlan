@@ -48,29 +48,29 @@ func RightAddr(listen *string, port int) {
 	}
 }
 
-func NewConfig() (this *Config) {
-	this = &Config{
+func NewConfig() (c *Config) {
+	c = &Config{
 		LogFile: Default.LogFile,
 	}
 
-	flag.StringVar(&this.Addr, "vs:addr", Default.Addr, "the server connect to")
-	flag.StringVar(&this.Auth, "vs:auth", Default.Auth, "the auth login to")
-	flag.IntVar(&this.Verbose, "verbose", Default.Verbose, "open verbose")
-	flag.IntVar(&this.Ifmtu, "if:mtu", Default.Ifmtu, "the interface MTU include ethernet")
-	flag.StringVar(&this.Ifaddr, "if:addr", Default.Ifaddr, "the interface address")
-	flag.StringVar(&this.Brname, "if:br", Default.Brname, "the bridge name")
-	flag.BoolVar(&this.Iftun, "if:tun", Default.Iftun, "using tun device as interface, otherwise tap")
-	flag.StringVar(&this.Ifethdst, "if:ethdst", Default.Ifethdst, "ethernet destination for tun device")
-	flag.StringVar(&this.Ifethsrc, "if:ethsrc", Default.Ifethsrc, "ethernet source for tun device")
-	flag.StringVar(&this.saveFile, "conf", Default.SaveFile(), "The configuration file")
+	flag.StringVar(&c.Addr, "vs:addr", Default.Addr, "the server connect to")
+	flag.StringVar(&c.Auth, "vs:auth", Default.Auth, "the auth login to")
+	flag.IntVar(&c.Verbose, "verbose", Default.Verbose, "open verbose")
+	flag.IntVar(&c.Ifmtu, "if:mtu", Default.Ifmtu, "the interface MTU include ethernet")
+	flag.StringVar(&c.Ifaddr, "if:addr", Default.Ifaddr, "the interface address")
+	flag.StringVar(&c.Brname, "if:br", Default.Brname, "the bridge name")
+	flag.BoolVar(&c.Iftun, "if:tun", Default.Iftun, "using tun device as interface, otherwise tap")
+	flag.StringVar(&c.Ifethdst, "if:ethdst", Default.Ifethdst, "ethernet destination for tun device")
+	flag.StringVar(&c.Ifethsrc, "if:ethsrc", Default.Ifethsrc, "ethernet source for tun device")
+	flag.StringVar(&c.saveFile, "conf", Default.SaveFile(), "The configuration file")
 
 	flag.Parse()
-	libol.Init(this.LogFile, this.Verbose)
+	libol.Init(c.LogFile, c.Verbose)
 
-	this.Load()
-	this.Default()
-	this.Save(fmt.Sprintf("%s.cur", this.saveFile))
-	str, err := libol.Marshal(this, false)
+	c.Load()
+	c.Default()
+	c.Save(fmt.Sprintf("%s.cur", c.saveFile))
+	str, err := libol.Marshal(c, false)
 	if err != nil {
 		libol.Error("NewConfig.json error: %s", err)
 	}
@@ -79,54 +79,54 @@ func NewConfig() (this *Config) {
 	return
 }
 
-func (this *Config) Default() {
-	if this.Auth != "" {
-		values := strings.Split(this.Auth, ":")
-		this.name = values[0]
+func (c *Config) Default() {
+	if c.Auth != "" {
+		values := strings.Split(c.Auth, ":")
+		c.name = values[0]
 		if len(values) > 1 {
-			this.password = values[1]
+			c.password = values[1]
 		}
 	}
 
-	RightAddr(&this.Addr, 10002)
+	RightAddr(&c.Addr, 10002)
 
 	//reset zero value to default
-	if this.Addr == "" {
-		this.Addr = Default.Addr
+	if c.Addr == "" {
+		c.Addr = Default.Addr
 	}
-	if this.Auth == "" {
-		this.Auth = Default.Auth
+	if c.Auth == "" {
+		c.Auth = Default.Auth
 	}
-	if this.Ifmtu == 0 {
-		this.Ifmtu = Default.Ifmtu
+	if c.Ifmtu == 0 {
+		c.Ifmtu = Default.Ifmtu
 	}
-	if this.Ifaddr == "" {
-		this.Ifaddr = Default.Ifaddr
+	if c.Ifaddr == "" {
+		c.Ifaddr = Default.Ifaddr
 	}
 }
 
-func (this *Config) Name() string {
-	return this.name
+func (c *Config) Name() string {
+	return c.name
 }
 
-func (this *Config) Password() string {
-	return this.password
+func (c *Config) Password() string {
+	return c.password
 }
 
-func (this *Config) SaveFile() string {
-	return this.saveFile
+func (c *Config) SaveFile() string {
+	return c.saveFile
 }
 
-func (this *Config) Save(file string) error {
+func (c *Config) Save(file string) error {
 	if file == "" {
-		file = this.saveFile
+		file = c.saveFile
 	}
 
-	return libol.MarshalSave(this, file, true)
+	return libol.MarshalSave(c, file, true)
 }
 
-func (this *Config) Load() error {
-	if err := libol.UnmarshalLoad(this, this.saveFile); err != nil {
+func (c *Config) Load() error {
+	if err := libol.UnmarshalLoad(c, c.saveFile); err != nil {
 		return err
 	}
 
