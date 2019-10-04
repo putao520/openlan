@@ -1,0 +1,11 @@
+{
+  "vsAddr": "ali.openlan.net:10002",
+  "vsAuth": "yunex:yunex@123",
+  "verbose": 0,
+  "ifMtu": 1518,
+  "ifAddr": "",
+  "ifBridge": "",
+  "ifTun": false,
+  "ifEthSrc": "",
+  "ifEthDst": "2e:4b:f0:b7:6d:ba"
+}

@@ -8,7 +8,7 @@ type Err struct {
 }
 
 func Errer(message string, v ...interface{}) (this *Err) {
-	this = &Err {
+	this = &Err{
 		Message: fmt.Sprintf(message, v...),
 	}
 	return
@@ -21,6 +21,3 @@ func (this *Err) String() string {
 func (this *Err) Error() string {
 	return this.String()
 }
-
-
-

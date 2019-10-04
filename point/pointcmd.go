@@ -1,166 +1,166 @@
 package point
 
 import (
-    "fmt"
-    "net"
+	"fmt"
+	"net"
 
-    "github.com/lightstar-dev/openlan-go/libol"
+	"github.com/lightstar-dev/openlan-go/libol"
 )
 
 type PointCmd struct {
-    tcpwroker *TcpWroker
-    brip      net.IP
-    brnet     *net.IPNet
+	tcpwroker *TcpWroker
+	brip      net.IP
+	brnet     *net.IPNet
 }
 
 func NewPointCmd(config *Config) (this *PointCmd) {
-    client := libol.NewTcpClient(config.Addr)
+	client := libol.NewTcpClient(config.Addr)
 
-    this = &PointCmd {
-        tcpwroker : NewTcpWoker(client, config),
-    }
-    return
+	this = &PointCmd{
+		tcpwroker: NewTcpWoker(client, config),
+	}
+	return
 }
 
 func (this *PointCmd) Connect() string {
-    libol.Info("PointCmd.Connect\n")
+	libol.Info("PointCmd.Connect\n")
 
-    if err := this.tcpwroker.Connect(); err != nil {
-        return fmt.Sprintf("PointCmd.Start %s", err)
-    } 
+	if err := this.tcpwroker.Connect(); err != nil {
+		return fmt.Sprintf("PointCmd.Start %s", err)
+	}
 
-    return ""
+	return ""
 }
 
 func (this *PointCmd) Start() {
-    libol.Info("PointCmd.Start\n")
+	libol.Info("PointCmd.Start\n")
 
-    go this.tcpwroker.GoRecv(this.DoRecv)
-    go this.tcpwroker.GoLoop()
+	go this.tcpwroker.GoRecv(this.DoRecv)
+	go this.tcpwroker.GoLoop()
 }
 
 func (this *PointCmd) Close() {
-    this.tcpwroker.Close()
+	this.tcpwroker.Close()
 }
 
 func (this *PointCmd) onArp(data []byte) {
-    libol.Debug("PointCmd.onArp\n")
-    eth, err := libol.NewEtherFromFrame(data)
-    if err != nil {
-        libol.Warn("PointCmd.onArp %s\n", err)
-        return
-    }
+	libol.Debug("PointCmd.onArp\n")
+	eth, err := libol.NewEtherFromFrame(data)
+	if err != nil {
+		libol.Warn("PointCmd.onArp %s\n", err)
+		return
+	}
 
-    if !eth.IsArp() {
-        return
-    }
+	if !eth.IsArp() {
+		return
+	}
 
-    arp, err := libol.NewArpFromFrame(data[eth.Len:])
-    if err != nil {
-        libol.Error("PointCmd.onArp %s.", err)
-        return
-    }
+	arp, err := libol.NewArpFromFrame(data[eth.Len:])
+	if err != nil {
+		libol.Error("PointCmd.onArp %s.", err)
+		return
+	}
 
-    if arp.IsIP4() {
-        if arp.OpCode != libol.ARP_REQUEST && arp.OpCode != libol.ARP_REPLY {
-            return
-        }
+	if arp.IsIP4() {
+		if arp.OpCode != libol.ARP_REQUEST && arp.OpCode != libol.ARP_REPLY {
+			return
+		}
 
-        libol.Info("PointCmd.onArp: %s on %s", net.HardwareAddr(arp.SHwAddr), net.IP(arp.SIpAddr))
-    }
+		libol.Info("PointCmd.onArp: %s on %s", net.HardwareAddr(arp.SHwAddr), net.IP(arp.SIpAddr))
+	}
 }
 
 func (this *PointCmd) onIp4(data []byte) {
-    //TODO
+	//TODO
 }
 
 func (this *PointCmd) onStp(data []byte) {
-    //TODO
+	//TODO
 }
 
 func (this *PointCmd) DoRecv(data []byte) error {
-    libol.Debug("PointCmd.DoRecv: % x\n", data)
+	libol.Debug("PointCmd.DoRecv: % x\n", data)
 
-    this.onArp(data)
-    this.onStp(data)
-    this.onIp4(data)
+	this.onArp(data)
+	this.onStp(data)
+	this.onIp4(data)
 
-    return nil
+	return nil
 }
 
 func (this *PointCmd) DoSend(data []byte) error {
-    return this.tcpwroker.DoSend(data)
+	return this.tcpwroker.DoSend(data)
 }
 
 func (this *PointCmd) DoOpen(args []string) string {
-    //libol.Debug("PointCmd.DoOpen %s\n", args)
-    if len(args) > 0 {
-        addr := args[0]
-        RightAddr(&addr, 10002)
+	//libol.Debug("PointCmd.DoOpen %s\n", args)
+	if len(args) > 0 {
+		addr := args[0]
+		RightAddr(&addr, 10002)
 
-        this.tcpwroker.SetAddr(addr)
-    }
-    if len(args) > 1 {
-        this.tcpwroker.SetAuth(args[1])
-    }
+		this.tcpwroker.SetAddr(addr)
+	}
+	if len(args) > 1 {
+		this.tcpwroker.SetAuth(args[1])
+	}
 
-    return this.Connect()
+	return this.Connect()
 }
 
 // arp <source> <destination>
 func (this *PointCmd) DoArp(args []string) string {
-    libol.Debug("PointCmd.DoArp %s\n", args)
-    if len(args)  != 2 {
-        return "arp <source> <destination>"
-    }
+	libol.Debug("PointCmd.DoArp %s\n", args)
+	if len(args) != 2 {
+		return "arp <source> <destination>"
+	}
 
-    arp := libol.NewArp()
-    arp.SHwAddr = libol.DEFAULTETHADDR
-    arp.THwAddr = libol.ZEROETHADDR
-    arp.SIpAddr = []byte(net.ParseIP(args[0]).To4())
-    arp.TIpAddr = []byte(net.ParseIP(args[1]).To4())
+	arp := libol.NewArp()
+	arp.SHwAddr = libol.DEFAULTETHADDR
+	arp.THwAddr = libol.ZEROETHADDR
+	arp.SIpAddr = []byte(net.ParseIP(args[0]).To4())
+	arp.TIpAddr = []byte(net.ParseIP(args[1]).To4())
 
-    eth := libol.NewEther(libol.ETH_P_ARP)
-    eth.Dst = libol.BROADETHADDR
-    eth.Src = libol.DEFAULTETHADDR
+	eth := libol.NewEther(libol.ETH_P_ARP)
+	eth.Dst = libol.BROADETHADDR
+	eth.Src = libol.DEFAULTETHADDR
 
-    buffer := make([]byte, 0, 1024)
-    buffer = append(buffer, eth.Encode()...)
-    buffer = append(buffer, arp.Encode()...)
-    this.DoSend(buffer)
+	buffer := make([]byte, 0, 1024)
+	buffer = append(buffer, eth.Encode()...)
+	buffer = append(buffer, arp.Encode()...)
+	this.DoSend(buffer)
 
-    return fmt.Sprintf("%d", len(buffer))
+	return fmt.Sprintf("%d", len(buffer))
 }
 
 func (this *PointCmd) DoClose(args []string) string {
-    this.Close()
-    return ""
+	this.Close()
+	return ""
 }
 
 func (this *PointCmd) DoVerbose(args []string) string {
-    if len(args) <= 0 {
-        return "verbose <level>"
-    }
+	if len(args) <= 0 {
+		return "verbose <level>"
+	}
 
-    fmt.Sscanf(args[0], "%d", libol.Log.Level)
+	fmt.Sscanf(args[0], "%d", libol.Log.Level)
 
-    return fmt.Sprintf("%d", libol.Log.Level)
+	return fmt.Sprintf("%d", libol.Log.Level)
 }
 
 func (this *PointCmd) HitInput(args []string) string {
-    //libol.Debug("PointCmd.HitInput %s\n", args)
-    switch args[0] {
-        case "open":
-            return this.DoOpen(args[1:])
-        case "close":
-            return this.DoClose(args[1:])
-        case "verbose":
-            return this.DoVerbose(args[1:])
-        case "arp":
-            return this.DoArp(args[1:])
-        case "?":
-            return "<command> [argument]..."
-    }
+	//libol.Debug("PointCmd.HitInput %s\n", args)
+	switch args[0] {
+	case "open":
+		return this.DoOpen(args[1:])
+	case "close":
+		return this.DoClose(args[1:])
+	case "verbose":
+		return this.DoVerbose(args[1:])
+	case "arp":
+		return this.DoArp(args[1:])
+	case "?":
+		return "<command> [argument]..."
+	}
 
-    return ""
+	return ""
 }

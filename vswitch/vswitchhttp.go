@@ -1,310 +1,310 @@
 package vswitch
 
 import (
-    "encoding/json"
-    "fmt"
-    "html"
-    "io/ioutil"
-    "net/http"
-    "os"
+	"encoding/json"
+	"fmt"
+	"html"
+	"io/ioutil"
+	"net/http"
+	"os"
 
-    "github.com/lightstar-dev/openlan-go/libol"
-    "github.com/lightstar-dev/openlan-go/point"
+	"github.com/lightstar-dev/openlan-go/libol"
+	"github.com/lightstar-dev/openlan-go/point"
 )
 
 type VSwitchHttp struct {
-    wroker    *VSwitchWroker
-    listen     string
-    adminToken string
-    adminFile  string
+	wroker     *VSwitchWroker
+	listen     string
+	adminToken string
+	adminFile  string
 }
 
-func NewVSwitchHttp(wroker *VSwitchWroker, c *Config)(this *VSwitchHttp) {
-    this = &VSwitchHttp {
-        wroker    : wroker,
-        listen    : c.HttpListen,
-        adminToken: c.Token,
-        adminFile : c.TokenFile,
-    }
+func NewVSwitchHttp(wroker *VSwitchWroker, c *Config) (this *VSwitchHttp) {
+	this = &VSwitchHttp{
+		wroker:     wroker,
+		listen:     c.HttpListen,
+		adminToken: c.Token,
+		adminFile:  c.TokenFile,
+	}
 
-    if this.adminToken == "" {
-        this.LoadToken()
-    }
+	if this.adminToken == "" {
+		this.LoadToken()
+	}
 
-    if this.adminToken == "" {
-        this.adminToken = libol.GenToken(13)
-    }
+	if this.adminToken == "" {
+		this.adminToken = libol.GenToken(13)
+	}
 
-    this.SaveToken()
-    http.HandleFunc("/", this.Index)
-    http.HandleFunc("/hello", this.Hello)
-    http.HandleFunc("/api/user", this._User)
-    http.HandleFunc("/api/neighbor", this._Neighbor)
-    http.HandleFunc("/api/link", this._Link)
+	this.SaveToken()
+	http.HandleFunc("/", this.Index)
+	http.HandleFunc("/hello", this.Hello)
+	http.HandleFunc("/api/user", this._User)
+	http.HandleFunc("/api/neighbor", this._Neighbor)
+	http.HandleFunc("/api/link", this._Link)
 
-    return 
+	return
 }
 
 func (this *VSwitchHttp) SaveToken() error {
-    libol.Info("VSwitchHttp.SaveToken: AdminToken: %s", this.adminToken)
+	libol.Info("VSwitchHttp.SaveToken: AdminToken: %s", this.adminToken)
 
-    f, err := os.OpenFile(this.adminFile, os.O_RDWR | os.O_TRUNC | os.O_CREATE, 0600)
-    defer f.Close()
-    if err != nil {
-        libol.Error("VSwitchHttp.SaveToken: %s", err)
-        return err
-    }
+	f, err := os.OpenFile(this.adminFile, os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0600)
+	defer f.Close()
+	if err != nil {
+		libol.Error("VSwitchHttp.SaveToken: %s", err)
+		return err
+	}
 
-    if _, err := f.Write([]byte(this.adminToken)); err != nil {
-        libol.Error("VSwitchHttp.SaveToken: %s", err)
-        return err
-    }
+	if _, err := f.Write([]byte(this.adminToken)); err != nil {
+		libol.Error("VSwitchHttp.SaveToken: %s", err)
+		return err
+	}
 
-    return nil
+	return nil
 }
 
 func (this *VSwitchHttp) LoadToken() error {
-    if _, err := os.Stat(this.adminFile); os.IsNotExist(err) {
-        libol.Info("VSwitchHttp.LoadToken: file:%s does not exist", this.adminFile)
-        return nil
-    }
+	if _, err := os.Stat(this.adminFile); os.IsNotExist(err) {
+		libol.Info("VSwitchHttp.LoadToken: file:%s does not exist", this.adminFile)
+		return nil
+	}
 
-    contents, err := ioutil.ReadFile(this.adminFile); 
-    if err != nil {
-        libol.Error("VSwitchHttp.LoadToken: file:%s %s", this.adminFile, err)
-        return err
-        
-    }
-    
-    this.adminToken = string(contents)
-    return nil
+	contents, err := ioutil.ReadFile(this.adminFile)
+	if err != nil {
+		libol.Error("VSwitchHttp.LoadToken: file:%s %s", this.adminFile, err)
+		return err
+
+	}
+
+	this.adminToken = string(contents)
+	return nil
 }
 
 func (this *VSwitchHttp) GoStart() error {
-    libol.Debug("NewHttp on %s", this.listen)
+	libol.Debug("NewHttp on %s", this.listen)
 
-    //hfs := http.FileServer(http.Dir("."))
-    if err := http.ListenAndServe(this.listen, nil); err != nil {
-        libol.Error("VSwitchHttp.GoStart on %s: %s", this.listen, err)
-        return err
-    }
-    return nil
+	//hfs := http.FileServer(http.Dir("."))
+	if err := http.ListenAndServe(this.listen, nil); err != nil {
+		libol.Error("VSwitchHttp.GoStart on %s: %s", this.listen, err)
+		return err
+	}
+	return nil
 }
 
 func (this *VSwitchHttp) IsAuth(w http.ResponseWriter, r *http.Request) bool {
-    token, pass, ok := r.BasicAuth()
-    libol.Debug("VSwitchHttp.IsAuth token: %s, pass: %s", token, pass)
+	token, pass, ok := r.BasicAuth()
+	libol.Debug("VSwitchHttp.IsAuth token: %s, pass: %s", token, pass)
 
-    if !ok  || token != this.adminToken {
-        w.Header().Set("WWW-Authenticate", "Basic")
-        http.Error(w, "Authorization Required.", 401)
-        return false
-    }
+	if !ok || token != this.adminToken {
+		w.Header().Set("WWW-Authenticate", "Basic")
+		http.Error(w, "Authorization Required.", 401)
+		return false
+	}
 
-    return true
+	return true
 }
 
 func (this *VSwitchHttp) Hello(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintf(w, "Hello %s %q", r.Method, html.EscapeString(r.URL.Path))
+	fmt.Fprintf(w, "Hello %s %q", r.Method, html.EscapeString(r.URL.Path))
 
-    for name, headers := range r.Header {
-        for _, h := range headers {
-            libol.Info("VSwitchHttp.Hello %v: %v", name, h)
-        }
-    }
+	for name, headers := range r.Header {
+		for _, h := range headers {
+			libol.Info("VSwitchHttp.Hello %v: %v", name, h)
+		}
+	}
 }
 
 func (this *VSwitchHttp) Index(w http.ResponseWriter, r *http.Request) {
-    if (!this.IsAuth(w, r)) {
-        return
-    }
+	if !this.IsAuth(w, r) {
+		return
+	}
 
-    switch (r.Method) {
-    case "GET":  
-        body := fmt.Sprintf("# uptime: %d\n", this.wroker.UpTime())
-        body += "\n"
-        body += "# point accessed to this vswith.\n"
-        body += "uptime, remote, device, receipt, transmis, error\n"
-        for p := range this.wroker.ListPoint() {
-            if p == nil {
-                break
-            }
+	switch r.Method {
+	case "GET":
+		body := fmt.Sprintf("# uptime: %d\n", this.wroker.UpTime())
+		body += "\n"
+		body += "# point accessed to this vswith.\n"
+		body += "uptime, remote, device, receipt, transmis, error\n"
+		for p := range this.wroker.ListPoint() {
+			if p == nil {
+				break
+			}
 
-            client, ifce := p.Client, p.Device
-            body += fmt.Sprintf("%d, %s, %s, %d, %d, %d\n", 
-                                client.UpTime(), client.Addr, ifce.Name(),
-                                client.RxOkay, client.TxOkay, client.TxError)
-        }
+			client, ifce := p.Client, p.Device
+			body += fmt.Sprintf("%d, %s, %s, %d, %d, %d\n",
+				client.UpTime(), client.Addr, ifce.Name(),
+				client.RxOkay, client.TxOkay, client.TxError)
+		}
 
-        body += "\n"
-        body += "# neighbor we discovered on this vswitch.\n"
-        body += "uptime, ethernet, address, remote\n"
-        for n := range this.wroker.Neighbor.ListNeighbor() {
-            if n == nil {
-                break
-            }
-            
-            body += fmt.Sprintf("%d, %s, %s, %s\n", 
-                                n.UpTime(), n.HwAddr, n.IpAddr, n.Client)
-        }
+		body += "\n"
+		body += "# neighbor we discovered on this vswitch.\n"
+		body += "uptime, ethernet, address, remote\n"
+		for n := range this.wroker.Neighbor.ListNeighbor() {
+			if n == nil {
+				break
+			}
 
-        body += "\n"
-        body += "# link which connect to other vswitch.\n"
-        body += "uptime, bridge, device, remote\n"
-        for p := range this.wroker.ListLink() {
-            if p == nil {
-                break
-            }
-            
-            body += fmt.Sprintf("%d, %s, %s, %s\n", 
-                                p.Client.UpTime(), p.Brname, p.Ifname, p.Client.Addr)
-        }
-        
-        fmt.Fprintf(w, body)
-    default:
-        http.Error(w, fmt.Sprintf("Not support %s", r.Method), 400)
-        return 
-    }
+			body += fmt.Sprintf("%d, %s, %s, %s\n",
+				n.UpTime(), n.HwAddr, n.IpAddr, n.Client)
+		}
+
+		body += "\n"
+		body += "# link which connect to other vswitch.\n"
+		body += "uptime, bridge, device, remote\n"
+		for p := range this.wroker.ListLink() {
+			if p == nil {
+				break
+			}
+
+			body += fmt.Sprintf("%d, %s, %s, %s\n",
+				p.Client.UpTime(), p.Brname, p.Ifname, p.Client.Addr)
+		}
+
+		fmt.Fprintf(w, body)
+	default:
+		http.Error(w, fmt.Sprintf("Not support %s", r.Method), 400)
+		return
+	}
 }
 
-func (this *VSwitchHttp) Marshal(v interface {}) (string, error) {
-    str , err := json.Marshal(v)
-    if err != nil { 
-        libol.Error("VSwitchHttp.Marsha1: %s" , err)
-        return "", err
-    }
+func (this *VSwitchHttp) Marshal(v interface{}) (string, error) {
+	str, err := json.Marshal(v)
+	if err != nil {
+		libol.Error("VSwitchHttp.Marsha1: %s", err)
+		return "", err
+	}
 
-    return string(str), nil
+	return string(str), nil
 }
 
 func (this *VSwitchHttp) _User(w http.ResponseWriter, r *http.Request) {
-    if (!this.IsAuth(w, r)) {
-        return
-    }
+	if !this.IsAuth(w, r) {
+		return
+	}
 
-    switch (r.Method) {
-    case "GET":
-        users := make([]*User, 0, 1024)
-        for u := range this.wroker.ListUser() {
-            if u == nil {
-                break
-            }
-            users = append(users, u)
-        }
+	switch r.Method {
+	case "GET":
+		users := make([]*User, 0, 1024)
+		for u := range this.wroker.ListUser() {
+			if u == nil {
+				break
+			}
+			users = append(users, u)
+		}
 
-        body, _:= this.Marshal(users)
-        fmt.Fprintf(w, body)
-    case "POST":
-        defer r.Body.Close()
-        body, err := ioutil.ReadAll(r.Body)
-        if err != nil {
-            http.Error(w, fmt.Sprintf("Error| VSwitchHttp._User: %s", err), 400)
-            return
-        }
+		body, _ := this.Marshal(users)
+		fmt.Fprintf(w, body)
+	case "POST":
+		defer r.Body.Close()
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error| VSwitchHttp._User: %s", err), 400)
+			return
+		}
 
-        user := &User {}
-        if err := json.Unmarshal([]byte(body), user); err != nil {
-            http.Error(w, fmt.Sprintf("Error| VSwitchHttp._User: %s", err), 400)
-            return
-        }
+		user := &User{}
+		if err := json.Unmarshal([]byte(body), user); err != nil {
+			http.Error(w, fmt.Sprintf("Error| VSwitchHttp._User: %s", err), 400)
+			return
+		}
 
-        this.wroker.AddUser(user)
+		this.wroker.AddUser(user)
 
-        fmt.Fprintf(w, ApiReplyer(0, "success"))
-    default:
-        http.Error(w, fmt.Sprintf("Not support %s", r.Method), 400)
-    }
+		fmt.Fprintf(w, ApiReplyer(0, "success"))
+	default:
+		http.Error(w, fmt.Sprintf("Not support %s", r.Method), 400)
+	}
 }
 
 func (this *VSwitchHttp) _Neighbor(w http.ResponseWriter, r *http.Request) {
-    if (!this.IsAuth(w, r)) {
-        return
-    }
+	if !this.IsAuth(w, r) {
+		return
+	}
 
-    switch (r.Method) {
-    case "GET":  
-        neighbors := make([]*Neighbor, 0, 1024)
-        for n := range this.wroker.Neighbor.ListNeighbor() {
-            if n == nil {
-                break
-            }
-            
-            neighbors = append(neighbors, n)
-        }
-        
-        body, _ := this.Marshal(neighbors)
-        fmt.Fprintf(w, body)
-    default:
-        http.Error(w, fmt.Sprintf("Not support %s", r.Method), 400)
-        return 
-    }
+	switch r.Method {
+	case "GET":
+		neighbors := make([]*Neighbor, 0, 1024)
+		for n := range this.wroker.Neighbor.ListNeighbor() {
+			if n == nil {
+				break
+			}
+
+			neighbors = append(neighbors, n)
+		}
+
+		body, _ := this.Marshal(neighbors)
+		fmt.Fprintf(w, body)
+	default:
+		http.Error(w, fmt.Sprintf("Not support %s", r.Method), 400)
+		return
+	}
 }
 
 func (this *VSwitchHttp) _Link(w http.ResponseWriter, r *http.Request) {
-    if (!this.IsAuth(w, r)) {
-        return
-    }
+	if !this.IsAuth(w, r) {
+		return
+	}
 
-    switch (r.Method) {
-    case "GET":
-        links := make([]*point.Point, 0, 1024)
-        for l := range this.wroker.ListLink() {
-            if l == nil {
-                break
-            }
-            links = append(links, l)
-        }
-        body, _ := this.Marshal(links)
-        fmt.Fprintf(w, body)
-    case "POST":
-        defer r.Body.Close()
-        body, err := ioutil.ReadAll(r.Body)
-        if err != nil {
-            http.Error(w, fmt.Sprintf("Error| VSwitchHttp._Link: %s", err), 400)
-            return
-        }
+	switch r.Method {
+	case "GET":
+		links := make([]*point.Point, 0, 1024)
+		for l := range this.wroker.ListLink() {
+			if l == nil {
+				break
+			}
+			links = append(links, l)
+		}
+		body, _ := this.Marshal(links)
+		fmt.Fprintf(w, body)
+	case "POST":
+		defer r.Body.Close()
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error| VSwitchHttp._Link: %s", err), 400)
+			return
+		}
 
-        c := &point.Config {}
-        if err := json.Unmarshal([]byte(body), c); err != nil {
-            http.Error(w, fmt.Sprintf("Error| VSwitchHttp._Link: %s", err), 400)
-            return
-        }
-        
-        c.Default()
-        this.wroker.AddLink(c)
+		c := &point.Config{}
+		if err := json.Unmarshal([]byte(body), c); err != nil {
+			http.Error(w, fmt.Sprintf("Error| VSwitchHttp._Link: %s", err), 400)
+			return
+		}
 
-        fmt.Fprintf(w, ApiReplyer(0, "success"))
-    default:
-        http.Error(w, fmt.Sprintf("Not support %s", r.Method), 400)
-    }
+		c.Default()
+		this.wroker.AddLink(c)
+
+		fmt.Fprintf(w, ApiReplyer(0, "success"))
+	default:
+		http.Error(w, fmt.Sprintf("Not support %s", r.Method), 400)
+	}
 }
 
 type ApiReply struct {
-    Code   int
-    Output string
+	Code   int
+	Output string
 }
 
 func NewApiReply(code int, output string) (this *ApiReply) {
-    this = &ApiReply {
-        Code: code,
-        Output: output,
-    }
-    return
+	this = &ApiReply{
+		Code:   code,
+		Output: output,
+	}
+	return
 }
 
 func ApiReplyer(code int, output string) string {
-    this := ApiReply {
-        Code  : code,
-        Output: output,
-    }
-    return this.String()
+	this := ApiReply{
+		Code:   code,
+		Output: output,
+	}
+	return this.String()
 }
 
 func (this *ApiReply) String() string {
-    str , err := json.Marshal(this)
-    if err != nil { 
-        libol.Error("ApiReply.String error: %s" , err)
-        return ""
-    }
-    return string(str)
+	str, err := json.Marshal(this)
+	if err != nil {
+		libol.Error("ApiReply.String error: %s", err)
+		return ""
+	}
+	return string(str)
 }

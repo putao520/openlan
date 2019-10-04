@@ -11,12 +11,12 @@ import (
 
 func GenToken(n int) string {
 	letters := []byte("0123456789abcdefghijklmnopqrstuvwxyz")
-	buffer  := make([]byte, n)
+	buffer := make([]byte, n)
 
 	size := len(letters)
 	rand.Seed(time.Now().UnixNano())
 	for i := range buffer {
-		buffer[i] = letters[rand.Int63() % int64(size)]
+		buffer[i] = letters[rand.Int63()%int64(size)]
 	}
 
 	return string(buffer)
@@ -38,10 +38,10 @@ func GenEthAddr(n int) []byte {
 	return data
 }
 
-func Marshal(v interface {}, pretty bool) (string, error) {
-	str , err := json.Marshal(v)
+func Marshal(v interface{}, pretty bool) (string, error) {
+	str, err := json.Marshal(v)
 	if err != nil {
-		Error("Marshal error: %s" , err)
+		Error("Marshal error: %s", err)
 		return "", err
 	}
 
@@ -58,8 +58,8 @@ func Marshal(v interface {}, pretty bool) (string, error) {
 	return out.String(), nil
 }
 
-func MarshalSave(v interface {}, file string, pretty bool) error {
-	f, err := os.OpenFile(file, os.O_RDWR | os.O_TRUNC | os.O_CREATE, 0600)
+func MarshalSave(v interface{}, file string, pretty bool) error {
+	f, err := os.OpenFile(file, os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0600)
 	defer f.Close()
 	if err != nil {
 		Error("MarshalSave: %s", err)
@@ -68,7 +68,7 @@ func MarshalSave(v interface {}, file string, pretty bool) error {
 
 	str, err := Marshal(v, true)
 	if err != nil {
-		Error("MarshalSave error: %s" , err)
+		Error("MarshalSave error: %s", err)
 		return err
 	}
 
@@ -80,7 +80,7 @@ func MarshalSave(v interface {}, file string, pretty bool) error {
 	return nil
 }
 
-func UnmarshalLoad(v interface {}, file string) error {
+func UnmarshalLoad(v interface{}, file string) error {
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		return Errer("UnmarshalLoad: file:%s does not exist", file)
 	}

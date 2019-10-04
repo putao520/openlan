@@ -1,9 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
-	"encoding/json"
 )
 
 type Hi struct {
@@ -39,23 +39,23 @@ func (this *HardwareAddr) UnmarshalText(text []byte) error {
 }
 
 type Test struct {
-	Username string `json:"Password,omitempty"`
-	Password string `json:"Password,omit"`
-	HwAddr HardwareAddr `json:"HwAddr"`
-	Hi int `json:"Hi,string"`
+	Username string       `json:"Password,omitempty"`
+	Password string       `json:"Password,omit"`
+	HwAddr   HardwareAddr `json:"HwAddr"`
+	Hi       int          `json:"Hi,string"`
 }
 
-func main () {
-	t := Test {
+func main() {
+	t := Test{
 		Username: "hi",
 		Password: "daniel",
-		Hi: 0x21,
+		Hi:       0x21,
 	}
 
 	hw, _ := net.ParseMAC("2a:60:84:bd:fe:50")
 	t.HwAddr = HardwareAddr{hw}
 
-	str , err := json.Marshal(t)
+	str, err := json.Marshal(t)
 	fmt.Println(string(str), err)
 
 	o := &Test{}

@@ -7,7 +7,7 @@ func InArray(data []int) {
 	fmt.Println(data)
 }
 func main() {
-	var a = []int{1,2,3}
+	var a = []int{1, 2, 3}
 
 	fmt.Println(a)
 	InArray(a)

@@ -1,94 +1,94 @@
 package libol
 
 import (
-    "fmt"
-    "log"
+	"fmt"
+	"log"
 )
 
 const (
-    PRINT  = 0x00
-    DEUBG  = 0x01
-    INFO   = 0x02
-    WARN   = 0x03
-    ERROR  = 0x04
-    FATAL  = 0xff
+	PRINT = 0x00
+	DEUBG = 0x01
+	INFO  = 0x02
+	WARN  = 0x03
+	ERROR = 0x04
+	FATAL = 0xff
 )
 
 type Logger struct {
-    Level  int
-    Errors []string
+	Level  int
+	Errors []string
 }
 
 func (this *Logger) Debug(format string, v ...interface{}) {
-    if DEUBG >= this.Level {
-        log.Printf(fmt.Sprintf("DEBUG %s", format), v...)
-    }
+	if DEUBG >= this.Level {
+		log.Printf(fmt.Sprintf("DEBUG %s", format), v...)
+	}
 }
 
 func (this *Logger) Info(format string, v ...interface{}) {
-    if INFO >= this.Level {
-        log.Printf(fmt.Sprintf("INFO %s", format), v...)
-    }
+	if INFO >= this.Level {
+		log.Printf(fmt.Sprintf("INFO %s", format), v...)
+	}
 }
 
 func (this *Logger) Warn(format string, v ...interface{}) {
-    if WARN >= this.Level {
-        log.Printf(fmt.Sprintf("WARN %s", format), v...)
-    }
+	if WARN >= this.Level {
+		log.Printf(fmt.Sprintf("WARN %s", format), v...)
+	}
 }
 
 func (this *Logger) Error(format string, v ...interface{}) {
-    if ERROR >= this.Level {
-        log.Printf(fmt.Sprintf("ERROR %s", format), v...)
-    }
+	if ERROR >= this.Level {
+		log.Printf(fmt.Sprintf("ERROR %s", format), v...)
+	}
 
-    this.SaveError(fmt.Sprintf("ERROR %s", format), v...)
+	this.SaveError(fmt.Sprintf("ERROR %s", format), v...)
 }
 
 func (this *Logger) Fatal(format string, v ...interface{}) {
-    if FATAL >= this.Level {
-        log.Printf(fmt.Sprintf("FATAL %s", format), v...)
-    }
+	if FATAL >= this.Level {
+		log.Printf(fmt.Sprintf("FATAL %s", format), v...)
+	}
 
-    this.SaveError(fmt.Sprintf("FATAL %s", format), v...)
+	this.SaveError(fmt.Sprintf("FATAL %s", format), v...)
 }
 
 func (this *Logger) Print(format string, v ...interface{}) {
-    if PRINT >= this.Level {
-        log.Printf(fmt.Sprintf("PRINT %s", format), v...)
-    }
+	if PRINT >= this.Level {
+		log.Printf(fmt.Sprintf("PRINT %s", format), v...)
+	}
 }
 
 func (this *Logger) SaveError(format string, v ...interface{}) {
-    // TODO save to log when too large.
-    this.Errors = append(this.Errors, fmt.Sprintf(format, v...))
+	// TODO save to log when too large.
+	this.Errors = append(this.Errors, fmt.Sprintf(format, v...))
 }
 
-var Log = Logger {
-    Level : INFO,
-    Errors: make([]string, 0, 1024),
+var Log = Logger{
+	Level:  INFO,
+	Errors: make([]string, 0, 1024),
 }
 
 func SetLog(level int) {
-    Log.Level = level
+	Log.Level = level
 }
 
 func Error(format string, v ...interface{}) {
-    Log.Error(format, v...)
+	Log.Error(format, v...)
 }
 
 func Debug(format string, v ...interface{}) {
-    Log.Debug(format, v...)
+	Log.Debug(format, v...)
 }
 
 func Info(format string, v ...interface{}) {
-    Log.Info(format, v...)
+	Log.Info(format, v...)
 }
 
 func Warn(format string, v ...interface{}) {
-    Log.Warn(format, v...)
+	Log.Warn(format, v...)
 }
 
 func Fatal(format string, v ...interface{}) {
-    Log.Fatal(format, v...)
+	Log.Fatal(format, v...)
 }
