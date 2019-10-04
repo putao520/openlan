@@ -69,7 +69,7 @@ func (this *TcpWorker) GoRecv(doRecv func([]byte) error) {
 	defer this.client.Close()
 	for {
 		if !this.client.IsOk() {
-			time.Sleep(2 * time.Second) // sleep 2s to release cpu.
+			time.Sleep(2 * time.Second) // sleep 2s and release cpu.
 			continue
 		}
 

@@ -80,22 +80,6 @@ var Log = Logger{
 	Errors: make([]string, 0, 1024),
 }
 
-func Init (file string, level int) {
-	Log.FileName = file
-	if Log.FileName != "" {
-		logFile, err := os.Create(Log.FileName)
-		if err == nil {
-			Log.FileLog = log.New(logFile,"", log.LstdFlags)
-		} else {
-			Warn("logger.Init: %s", err)
-		}
-	}
-}
-
-func SetLog(level int) {
-	Log.Level = level
-}
-
 func Error(format string, v ...interface{}) {
 	Log.Error(format, v...)
 }
@@ -114,4 +98,24 @@ func Warn(format string, v ...interface{}) {
 
 func Fatal(format string, v ...interface{}) {
 	Log.Fatal(format, v...)
+}
+
+func Init (file string, level int) {
+	Log.FileName = file
+	if Log.FileName != "" {
+		logFile, err := os.Create(Log.FileName)
+		if err == nil {
+			Log.FileLog = log.New(logFile,"", log.LstdFlags)
+		} else {
+			Warn("logger.Init: %s", err)
+		}
+	}
+}
+
+func SetLog(level int) {
+	Log.Level = level
+}
+
+func Close() {
+	//TODO
 }
