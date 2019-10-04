@@ -1,6 +1,9 @@
 # Overview 
 
-Refer to https://github.com/danieldin95/openlan-py , and now we change cpe to point, ope to vswitch.
+[![Go Report Card](https://goreportcard.com/badge/github.com/lightstar-dev/openlan-go)](https://goreportcard.com/report/lightstar-dev/openlan-go)
+[![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+
+Refer to [openlan-py](https://github.com/danieldin95/openlan-py), and now we change cpe to point, ope to vswitch.
 
 # Install tap-windows6
 
