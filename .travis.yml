@@ -1,0 +1,10 @@
+language: go
+
+go: 
+  - 1.12.9
+
+before_install:
+  - go get -v github.com/golang/protobuf/proto
+  - go get -v github.com/go-redis/redis
+  - go get -v github.com/songgao/water
+  - go get -v github.com/milosgajdos83/tenus
