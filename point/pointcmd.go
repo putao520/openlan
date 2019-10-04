@@ -8,7 +8,7 @@ import (
 )
 
 type PointCmd struct {
-	tcpwroker *TcpWroker
+	tcpwroker *TcpWorker
 	brip      net.IP
 	brnet     *net.IPNet
 }
@@ -17,7 +17,7 @@ func NewPointCmd(config *Config) (this *PointCmd) {
 	client := libol.NewTcpClient(config.Addr)
 
 	this = &PointCmd{
-		tcpwroker: NewTcpWoker(client, config),
+		tcpwroker: NewTcpWorker(client, config),
 	}
 	return
 }

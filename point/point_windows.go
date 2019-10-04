@@ -15,8 +15,8 @@ type Point struct {
 	Ifname string
 
 	//
-	tcpwroker *TcpWroker
-	tapwroker *TapWroker
+	tcpwroker *TcpWorker
+	tapwroker *TapWorker
 	brip      net.IP
 	brnet     *net.IPNet
 }
@@ -36,8 +36,8 @@ func NewPoint(config *Config) (this *Point) {
 		Brname:    config.Brname,
 		Ifaddr:    config.Ifaddr,
 		Ifname:    ifce.Name(),
-		tapwroker: NewTapWoker(ifce, config),
-		tcpwroker: NewTcpWoker(client, config),
+		tapwroker: NewTapWorker(ifce, config),
+		tcpwroker: NewTcpWorker(client, config),
 	}
 	return
 }

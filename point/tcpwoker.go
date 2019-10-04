@@ -8,7 +8,7 @@ import (
 	"github.com/lightstar-dev/openlan-go/libol"
 )
 
-type TcpWroker struct {
+type TcpWorker struct {
 	client    *libol.TcpClient
 	readchan  chan []byte
 	writechan chan []byte
@@ -17,8 +17,8 @@ type TcpWroker struct {
 	password  string
 }
 
-func NewTcpWoker(client *libol.TcpClient, c *Config) (this *TcpWroker) {
-	this = &TcpWroker{
+func NewTcpWorker(client *libol.TcpClient, c *Config) (this *TcpWorker) {
+	this = &TcpWorker{
 		client:    client,
 		writechan: make(chan []byte, 1024*10),
 		maxSize:   c.Ifmtu,
@@ -31,28 +31,28 @@ func NewTcpWoker(client *libol.TcpClient, c *Config) (this *TcpWroker) {
 	return
 }
 
-func (this *TcpWroker) Close() {
+func (this *TcpWorker) Close() {
 	this.client.Close()
 }
 
-func (this *TcpWroker) Connect() error {
+func (this *TcpWorker) Connect() error {
 	return this.client.Connect()
 }
 
-func (this *TcpWroker) TryLogin(client *libol.TcpClient) error {
+func (this *TcpWorker) TryLogin(client *libol.TcpClient) error {
 	body := fmt.Sprintf(`{"name":"%s","password":"%s"}`, this.name, this.password)
-	libol.Info("TcpWroker.TryLogin: %s", body)
+	libol.Info("TcpWorker.TryLogin: %s", body)
 	if err := client.SendReq("login", body); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (this *TcpWroker) onInstruct(data []byte) error {
+func (this *TcpWorker) onInstruct(data []byte) error {
 	action := libol.DecAction(data)
 	if action == "logi:" {
 		resp := libol.DecBody(data)
-		libol.Info("TcpWroker.onHook.login: %s", resp)
+		libol.Info("TcpWorker.onHook.login: %s", resp)
 		if resp[:4] == "okay" {
 			this.client.Status = libol.CL_AUTHED
 		} else {
@@ -63,8 +63,8 @@ func (this *TcpWroker) onInstruct(data []byte) error {
 	return nil
 }
 
-func (this *TcpWroker) GoRecv(doRecv func([]byte) error) {
-	libol.Debug("TcpWroker.GoRev %s\n", this.client.IsOk())
+func (this *TcpWorker) GoRecv(doRecv func([]byte) error) {
+	libol.Debug("TcpWorker.GoRev %s\n", this.client.IsOk())
 
 	defer this.client.Close()
 	for {
@@ -76,12 +76,12 @@ func (this *TcpWroker) GoRecv(doRecv func([]byte) error) {
 		data := make([]byte, this.maxSize)
 		n, err := this.client.RecvMsg(data)
 		if err != nil {
-			libol.Error("TcpWroker.GoRev: %s", err)
+			libol.Error("TcpWorker.GoRev: %s", err)
 			this.client.Close()
 			continue
 		}
 
-		libol.Debug("TcpWroker.GoRev: % x\n", data[:n])
+		libol.Debug("TcpWorker.GoRev: % x\n", data[:n])
 		if n > 0 {
 			data = data[:n]
 			if libol.IsInst(data) {
@@ -93,33 +93,33 @@ func (this *TcpWroker) GoRecv(doRecv func([]byte) error) {
 	}
 }
 
-func (this *TcpWroker) DoSend(data []byte) error {
-	libol.Debug("TcpWroker.DoSend: % x\n", data)
+func (this *TcpWorker) DoSend(data []byte) error {
+	libol.Debug("TcpWorker.DoSend: % x\n", data)
 
 	this.writechan <- data
 
 	return nil
 }
 
-func (this *TcpWroker) GoLoop() error {
+func (this *TcpWorker) GoLoop() error {
 	defer this.client.Close()
 	for {
 		select {
 		case wdata := <-this.writechan:
 			if this.client.Status != libol.CL_AUTHED {
 				this.client.Droped++
-				libol.Error("TcpWroker.GoLoop: droping by unauth")
+				libol.Error("TcpWorker.GoLoop: droping by unauth")
 				continue
 			}
 
 			if err := this.client.SendMsg(wdata); err != nil {
-				libol.Error("TcpWroker.GoLoop: %s", err)
+				libol.Error("TcpWorker.GoLoop: %s", err)
 			}
 		}
 	}
 }
 
-func (this *TcpWroker) SetAuth(auth string) {
+func (this *TcpWorker) SetAuth(auth string) {
 	values := strings.Split(auth, ":")
 	this.name = values[0]
 	if len(values) > 1 {
@@ -127,6 +127,6 @@ func (this *TcpWroker) SetAuth(auth string) {
 	}
 }
 
-func (this *TcpWroker) SetAddr(addr string) {
+func (this *TcpWorker) SetAddr(addr string) {
 	this.client.Addr = addr
 }

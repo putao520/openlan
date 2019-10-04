@@ -7,7 +7,7 @@ import (
 	"github.com/songgao/water"
 )
 
-type TapWroker struct {
+type TapWorker struct {
 	ifce      *water.Interface
 	writechan chan []byte
 	ifmtu     int
@@ -19,8 +19,8 @@ type TapWroker struct {
 	EthSrcIp   []byte
 }
 
-func NewTapWoker(ifce *water.Interface, c *Config) (this *TapWroker) {
-	this = &TapWroker{
+func NewTapWorker(ifce *water.Interface, c *Config) (this *TapWorker) {
+	this = &TapWorker{
 		ifce:      ifce,
 		writechan: make(chan []byte, 1024*10),
 		ifmtu:     c.Ifmtu, //1514
@@ -40,13 +40,13 @@ func NewTapWoker(ifce *water.Interface, c *Config) (this *TapWroker) {
 		if hw, err := net.ParseMAC(c.Ifethdst); err == nil {
 			this.EthDstAddr = []byte(hw)
 		}
-		libol.Info("NewTapWoker src: % x, dst: % x\n", this.EthSrcAddr, this.EthDstAddr)
+		libol.Info("NewTapWorker src: % x, dst: % x\n", this.EthSrcAddr, this.EthDstAddr)
 	}
 
 	return
 }
 
-func (this *TapWroker) NewEth(t uint16) *libol.Ether {
+func (this *TapWorker) NewEth(t uint16) *libol.Ether {
 	eth := libol.NewEther(t)
 	eth.Dst = this.EthDstAddr
 	eth.Src = this.EthSrcAddr
@@ -54,7 +54,7 @@ func (this *TapWroker) NewEth(t uint16) *libol.Ether {
 	return eth
 }
 
-func (this *TapWroker) GoRecv(doRecv func([]byte) error) {
+func (this *TapWorker) GoRecv(doRecv func([]byte) error) {
 	this.doRecv = doRecv
 	defer this.Close()
 	for {
@@ -65,11 +65,11 @@ func (this *TapWroker) GoRecv(doRecv func([]byte) error) {
 
 		n, err := this.ifce.Read(data)
 		if err != nil {
-			libol.Error("TapWroker.GoRev: %s", err)
+			libol.Error("TapWorker.GoRev: %s", err)
 			break
 		}
 
-		libol.Debug("TapWroker.GoRev: % x\n", data[:n])
+		libol.Debug("TapWorker.GoRev: % x\n", data[:n])
 		if this.ifce.IsTUN() {
 			eth := this.NewEth(libol.ETH_P_IP4)
 
@@ -85,19 +85,19 @@ func (this *TapWroker) GoRecv(doRecv func([]byte) error) {
 	}
 }
 
-func (this *TapWroker) DoSend(data []byte) error {
-	libol.Debug("TapWroker.DoSend: % x\n", data)
+func (this *TapWorker) DoSend(data []byte) error {
+	libol.Debug("TapWorker.DoSend: % x\n", data)
 
 	this.writechan <- data
 
 	return nil
 }
 
-func (this *TapWroker) onArp(data []byte) bool {
-	libol.Debug("TapWroker.onArp\n")
+func (this *TapWorker) onArp(data []byte) bool {
+	libol.Debug("TapWorker.onArp\n")
 	eth, err := libol.NewEtherFromFrame(data)
 	if err != nil {
-		libol.Warn("TapWroker.onArp %s\n", err)
+		libol.Warn("TapWorker.onArp %s\n", err)
 		return false
 	}
 
@@ -107,7 +107,7 @@ func (this *TapWroker) onArp(data []byte) bool {
 
 	arp, err := libol.NewArpFromFrame(data[eth.Len:])
 	if err != nil {
-		libol.Error("TapWroker.onArp %s.", err)
+		libol.Error("TapWorker.onArp %s.", err)
 		return false
 	}
 
@@ -129,7 +129,7 @@ func (this *TapWroker) onArp(data []byte) bool {
 		buffer = append(buffer, eth.Encode()...)
 		buffer = append(buffer, reply.Encode()...)
 
-		libol.Info("TapWroker.onArp % x.", buffer)
+		libol.Info("TapWorker.onArp % x.", buffer)
 		if this.doRecv != nil {
 			this.doRecv(buffer)
 		}
@@ -140,7 +140,7 @@ func (this *TapWroker) onArp(data []byte) bool {
 	return false
 }
 
-func (this *TapWroker) GoLoop() {
+func (this *TapWorker) GoLoop() {
 	defer this.Close()
 	for {
 		select {
@@ -152,13 +152,13 @@ func (this *TapWroker) GoLoop() {
 			if this.ifce.IsTUN() {
 				//Proxy arp request.
 				if this.onArp(wdata) {
-					libol.Info("TapWroker.GoLoop: Arp proxy.")
+					libol.Info("TapWorker.GoLoop: Arp proxy.")
 					continue
 				}
 
 				eth, err := libol.NewEtherFromFrame(wdata)
 				if err != nil {
-					libol.Error("TapWroker.GoLoop: %s", err)
+					libol.Error("TapWorker.GoLoop: %s", err)
 					continue
 				}
 				if eth.IsVlan() {
@@ -171,14 +171,14 @@ func (this *TapWroker) GoLoop() {
 			}
 
 			if _, err := this.ifce.Write(wdata); err != nil {
-				libol.Error("TapWroker.GoLoop: %s", err)
+				libol.Error("TapWorker.GoLoop: %s", err)
 			}
 		}
 	}
 }
 
-func (this *TapWroker) Close() {
-	libol.Info("TapWroker.Close")
+func (this *TapWorker) Close() {
+	libol.Info("TapWorker.Close")
 
 	if this.ifce != nil {
 		this.ifce.Close()

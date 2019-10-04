@@ -30,11 +30,11 @@ func DecActionBody(data []byte) (string, string) {
 }
 
 func EncInstReq(action string, body string) []byte {
-	payload := fmt.Sprintf("%s= %s", action[:4], body)
-	return append(ZEROETHADDR[:6], payload...)
+	p := fmt.Sprintf("%s= %s", action[:4], body)
+	return append(ZEROETHADDR[:6], p...)
 }
 
 func EncInstResp(action string, body string) []byte {
-	payload := fmt.Sprintf("%s: %s", action[:4], body)
-	return append(ZEROETHADDR[:6], payload...)
+	p := fmt.Sprintf("%s: %s", action[:4], body)
+	return append(ZEROETHADDR[:6], p...)
 }

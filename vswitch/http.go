@@ -46,17 +46,17 @@ func NewHttp(wroker *Worker, c *Config) (h *Http) {
 }
 
 func (h *Http) SaveToken() error {
-	libol.Info("VSwitchHttp.SaveToken: AdminToken: %s", h.adminToken)
+	libol.Info("Http.SaveToken: AdminToken: %s", h.adminToken)
 
 	f, err := os.OpenFile(h.adminFile, os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0600)
 	defer f.Close()
 	if err != nil {
-		libol.Error("VSwitchHttp.SaveToken: %s", err)
+		libol.Error("Http.SaveToken: %s", err)
 		return err
 	}
 
 	if _, err := f.Write([]byte(h.adminToken)); err != nil {
-		libol.Error("VSwitchHttp.SaveToken: %s", err)
+		libol.Error("Http.SaveToken: %s", err)
 		return err
 	}
 
@@ -65,13 +65,13 @@ func (h *Http) SaveToken() error {
 
 func (h *Http) LoadToken() error {
 	if _, err := os.Stat(h.adminFile); os.IsNotExist(err) {
-		libol.Info("VSwitchHttp.LoadToken: file:%s does not exist", h.adminFile)
+		libol.Info("Http.LoadToken: file:%s does not exist", h.adminFile)
 		return nil
 	}
 
 	contents, err := ioutil.ReadFile(h.adminFile)
 	if err != nil {
-		libol.Error("VSwitchHttp.LoadToken: file:%s %s", h.adminFile, err)
+		libol.Error("Http.LoadToken: file:%s %s", h.adminFile, err)
 		return err
 
 	}
@@ -85,7 +85,7 @@ func (h *Http) GoStart() error {
 
 	//hfs := http.FileServer(http.Dir("."))
 	if err := http.ListenAndServe(h.listen, nil); err != nil {
-		libol.Error("VSwitchHttp.GoStart on %s: %s", h.listen, err)
+		libol.Error("Http.GoStart on %s: %s", h.listen, err)
 		return err
 	}
 	return nil
@@ -93,7 +93,7 @@ func (h *Http) GoStart() error {
 
 func (h *Http) IsAuth(w http.ResponseWriter, r *http.Request) bool {
 	token, pass, ok := r.BasicAuth()
-	libol.Debug("VSwitchHttp.IsAuth token: %s, pass: %s", token, pass)
+	libol.Debug("Http.IsAuth token: %s, pass: %s", token, pass)
 
 	if !ok || token != h.adminToken {
 		w.Header().Set("WWW-Authenticate", "Basic")
@@ -109,7 +109,7 @@ func (h *Http) Hello(w http.ResponseWriter, r *http.Request) {
 
 	for name, headers := range r.Header {
 		for _, h := range headers {
-			libol.Info("VSwitchHttp.Hello %v: %v", name, h)
+			libol.Info("Http.Hello %v: %v", name, h)
 		}
 	}
 }
@@ -166,7 +166,7 @@ func (h *Http) Index(w http.ResponseWriter, r *http.Request) {
 func (h *Http) Marshal(v interface{}) (string, error) {
 	str, err := json.Marshal(v)
 	if err != nil {
-		libol.Error("VSwitchHttp.Marsha1: %s", err)
+		libol.Error("Http.Marsha1: %s", err)
 		return "", err
 	}
 
@@ -194,13 +194,13 @@ func (h *Http) _User(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Error| VSwitchHttp._User: %s", err), 400)
+			http.Error(w, fmt.Sprintf("Error| Http._User: %s", err), 400)
 			return
 		}
 
 		user := &User{}
 		if err := json.Unmarshal([]byte(body), user); err != nil {
-			http.Error(w, fmt.Sprintf("Error| VSwitchHttp._User: %s", err), 400)
+			http.Error(w, fmt.Sprintf("Error| Http._User: %s", err), 400)
 			return
 		}
 
@@ -256,13 +256,13 @@ func (h *Http) _Link(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Error| VSwitchHttp._Link: %s", err), 400)
+			http.Error(w, fmt.Sprintf("Error| Http._Link: %s", err), 400)
 			return
 		}
 
 		c := &point.Config{}
 		if err := json.Unmarshal([]byte(body), c); err != nil {
-			http.Error(w, fmt.Sprintf("Error| VSwitchHttp._Link: %s", err), 400)
+			http.Error(w, fmt.Sprintf("Error| Http._Link: %s", err), 400)
 			return
 		}
 
