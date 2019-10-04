@@ -24,4 +24,3 @@ script:
     else
       go build -o ./resource/point.windows.x86_64 main/point_windows.go
     fi
-  - echo "building on $TRAVIS_OS_NAME successfully."
