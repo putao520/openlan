@@ -3,6 +3,7 @@ package libol
 import (
 	"fmt"
 	"log"
+	"os"
 )
 
 const (
@@ -15,8 +16,10 @@ const (
 )
 
 type Logger struct {
-	Level  int
-	Errors []string
+	Level		int
+	Errors		[]string
+	FileName	string
+	FileLog		*log.Logger
 }
 
 func (this *Logger) Debug(format string, v ...interface{}) {
@@ -35,13 +38,14 @@ func (this *Logger) Warn(format string, v ...interface{}) {
 	if WARN >= this.Level {
 		log.Printf(fmt.Sprintf("WARN %s", format), v...)
 	}
+
+	this.SaveError(fmt.Sprintf("WARN %s", format), v...)
 }
 
 func (this *Logger) Error(format string, v ...interface{}) {
 	if ERROR >= this.Level {
 		log.Printf(fmt.Sprintf("ERROR %s", format), v...)
 	}
-
 	this.SaveError(fmt.Sprintf("ERROR %s", format), v...)
 }
 
@@ -60,13 +64,32 @@ func (this *Logger) Print(format string, v ...interface{}) {
 }
 
 func (this *Logger) SaveError(format string, v ...interface{}) {
-	// TODO save to log when too large.
-	this.Errors = append(this.Errors, fmt.Sprintf(format, v...))
+	m := fmt.Sprintf(format, v...)
+	if this.FileLog != nil {
+		this.FileLog.Println(m)
+	}
+
+	if ERROR >= this.Level {
+		this.Errors = append(this.Errors, m)
+	}
 }
 
 var Log = Logger{
 	Level:  INFO,
+	FileName: ".log.error",
 	Errors: make([]string, 0, 1024),
+}
+
+func Init (file string, level int) {
+	Log.FileName = file
+	if Log.FileName != "" {
+		logFile, err := os.Create(Log.FileName)
+		if err == nil {
+			Log.FileLog = log.New(logFile,"", log.LstdFlags)
+		} else {
+			Warn("logger.Init: %s", err)
+		}
+	}
 }
 
 func SetLog(level int) {

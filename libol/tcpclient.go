@@ -73,7 +73,7 @@ func (this *TcpClient) Connect() error {
 		return nil
 	}
 
-	Info("TcpClient.Connect %s\n", this.Addr)
+	Info("TcpClient.Connect %s", this.Addr)
 	raddr, err := net.ResolveTCPAddr("tcp", this.Addr)
 	if err != nil {
 		return err
@@ -101,7 +101,7 @@ func (this *TcpClient) OnConnected(on func(*TcpClient) error) {
 
 func (this *TcpClient) Close() {
 	if this.conn != nil {
-		Info("TcpClient.Close %s\n", this.Addr)
+		Info("TcpClient.Close %s", this.Addr)
 		this.conn.Close()
 		this.conn = nil
 	}
@@ -121,8 +121,8 @@ func (this *TcpClient) recvn(buffer []byte) error {
 		left -= n
 	}
 
-	Debug("TcpClient.recvn %d\n", len(buffer))
-	Debug("TcpClient.recvn Data: % x\n", buffer)
+	Debug("TcpClient.recvn %d", len(buffer))
+	Debug("TcpClient.recvn Data: % x", buffer)
 
 	return nil
 }
@@ -132,12 +132,12 @@ func (this *TcpClient) sendn(buffer []byte) error {
 	size := len(buffer)
 	left := size - offset
 
-	Debug("TcpClient.sendn %d\n", size)
-	Debug("TcpClient.sendn Data: % x\n", buffer)
+	Debug("TcpClient.sendn %d", size)
+	Debug("TcpClient.sendn Data: % x", buffer)
 
 	for left > 0 {
 		tmp := buffer[offset:]
-		Debug("TcpClient.sendn tmp %d\n", len(tmp))
+		Debug("TcpClient.sendn tmp %d", len(tmp))
 		n, err := this.conn.Write(tmp)
 		if err != nil {
 			return err
@@ -218,7 +218,7 @@ func (this *TcpClient) IsOk() bool {
 
 func (this *TcpClient) SendReq(action string, body string) error {
 	data := EncInstReq(action, body)
-	Debug("TcpClient.SendReq %d %s\n", len(data), data[6:])
+	Debug("TcpClient.SendReq %d %s", len(data), data[6:])
 
 	if err := this.SendMsg(data); err != nil {
 		return err
@@ -228,7 +228,7 @@ func (this *TcpClient) SendReq(action string, body string) error {
 
 func (this *TcpClient) SendResp(action string, body string) error {
 	data := EncInstResp(action, body)
-	Debug("TcpClient.SendResp %d %s\n", len(data), data[6:])
+	Debug("TcpClient.SendResp %d %s", len(data), data[6:])
 
 	if err := this.SendMsg(data); err != nil {
 		return err

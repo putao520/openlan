@@ -27,14 +27,14 @@ func NewTcpServer(c *Config) (t *TcpServer) {
 	}
 
 	if err := t.Listen(); err != nil {
-		libol.Debug("NewTcpServer %s\n", err)
+		libol.Debug("NewTcpServer %s", err)
 	}
 
 	return
 }
 
 func (t *TcpServer) Listen() error {
-	libol.Debug("TcpServer.Start %s\n", t.Addr)
+	libol.Debug("TcpServer.Start %s", t.Addr)
 
 	laddr, err := net.ResolveTCPAddr("tcp", t.Addr)
 	if err != nil {

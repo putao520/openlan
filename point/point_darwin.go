@@ -23,9 +23,9 @@ type Point struct {
 func NewPoint(config *Config) (this *Point) {
 	ifce, err := water.New(water.Config{DeviceType: water.TUN})
 	if err != nil {
-		libol.Fatal("NewPoint: ", err)
+		libol.Fatal("NewPoint: %s", err)
 	}
-	libol.Info("NewPoint.device %s\n", ifce.Name())
+	libol.Info("NewPoint.device %s", ifce.Name())
 
 	client := libol.NewTcpClient(config.Addr)
 	this = &Point{
@@ -42,7 +42,7 @@ func NewPoint(config *Config) (this *Point) {
 
 func (this *Point) Start() {
 	if err := this.Client.Connect(); err != nil {
-		libol.Error("Point.Start %s\n", err)
+		libol.Error("Point.Start %s", err)
 	}
 
 	go this.tapwroker.GoRecv(this.tcpwroker.DoSend)

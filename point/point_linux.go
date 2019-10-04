@@ -32,10 +32,10 @@ func NewPoint(config *Config) (this *Point) {
 		ifce, err = water.New(water.Config{DeviceType: water.TAP})
 	}
 	if err != nil {
-		libol.Fatal("NewPoint: ", err)
+		libol.Fatal("NewPoint: %s", err)
 	}
 
-	libol.Info("NewPoint.device %s\n", ifce.Name())
+	libol.Info("NewPoint.device %s", ifce.Name())
 	client := libol.NewTcpClient(config.Addr)
 	this = &Point{
 		Client:    client,
@@ -50,10 +50,10 @@ func NewPoint(config *Config) (this *Point) {
 }
 
 func (this *Point) Start() {
-	libol.Debug("Point.Start linux.\n")
+	libol.Debug("Point.Start linux.")
 
 	if err := this.Client.Connect(); err != nil {
-		libol.Error("Point.Start %s\n", err)
+		libol.Error("Point.Start %s", err)
 	}
 
 	go this.tapwroker.GoRecv(this.tcpwroker.DoSend)
@@ -85,7 +85,7 @@ func (this *Point) UpLink() error {
 	}
 
 	if err := link.SetLinkUp(); err != nil {
-		libol.Error("Point.UpLink.SetLinkUp: %s : %s", name, err)
+		libol.Error("Point.UpLink.SetLinkUp: %s: %s", name, err)
 		return err
 	}
 
@@ -123,11 +123,11 @@ func (this *Point) UpLink() error {
 	if this.Ifaddr != "" {
 		ip, ipnet, err := net.ParseCIDR(this.Ifaddr)
 		if err != nil {
-			libol.Error("Point.UpLink.ParseCIDR %s : %s", this.Ifaddr, err)
+			libol.Error("Point.UpLink.ParseCIDR %s: %s", this.Ifaddr, err)
 			return err
 		}
 		if err := link.SetLinkIp(ip, ipnet); err != nil {
-			libol.Error("Point.UpLink.SetLinkIp : %s", err)
+			libol.Error("Point.UpLink.SetLinkIp: %s", err)
 			return err
 		}
 

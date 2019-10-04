@@ -20,6 +20,7 @@ type Config struct {
 	TokenFile  string      `json:"AdminFile"`
 	Password   string      `json:"AuthFile"`
 	Redis      RedisConfig `json:"Redis"`
+	LogFile    string      `json:"LogFile"`
 
 	Links    []*point.Config `json:"Links"`
 	saveFile string
@@ -48,6 +49,7 @@ var Default = Config{
 		Db:     0,
 		Enable: false,
 	},
+	LogFile: ".vswitch.error",
 	saveFile: ".vswitch.json",
 	Links:    nil,
 }
@@ -62,6 +64,7 @@ func RightAddr(listen *string, port int) {
 func NewConfig() (this *Config) {
 	this = &Config{
 		Redis: Default.Redis,
+		LogFile: Default.LogFile,
 	}
 
 	flag.IntVar(&this.Verbose, "verbose", Default.Verbose, "open verbose")
@@ -76,7 +79,7 @@ func NewConfig() (this *Config) {
 	flag.StringVar(&this.saveFile, "conf", Default.SaveFile(), "The configuration file")
 
 	flag.Parse()
-	libol.SetLog(this.Verbose)
+	libol.Init(this.LogFile, this.Verbose)
 
 	this.Default()
 	this.Load()

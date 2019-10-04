@@ -18,6 +18,7 @@ type Config struct {
 	Iftun    bool   `json:"IfTun"`
 	Ifethsrc string `json:"IfEthSrc"`
 	Ifethdst string `json:"IfEthDst"`
+	LogFile  string `json:"LogFile"`
 
 	saveFile string
 	name     string
@@ -37,6 +38,7 @@ var Default = Config{
 	password: "",
 	Ifethdst: "2e:4b:f0:b7:6d:ba",
 	Ifethsrc: "",
+	LogFile: ".point.error",
 }
 
 func RightAddr(listen *string, port int) {
@@ -47,7 +49,9 @@ func RightAddr(listen *string, port int) {
 }
 
 func NewConfig() (this *Config) {
-	this = &Config{}
+	this = &Config{
+		LogFile: Default.LogFile,
+	}
 
 	flag.StringVar(&this.Addr, "vs:addr", Default.Addr, "the server connect to")
 	flag.StringVar(&this.Auth, "vs:auth", Default.Auth, "the auth login to")
@@ -61,7 +65,7 @@ func NewConfig() (this *Config) {
 	flag.StringVar(&this.saveFile, "conf", Default.SaveFile(), "The configuration file")
 
 	flag.Parse()
-	libol.SetLog(this.Verbose)
+	libol.Init(this.LogFile, this.Verbose)
 
 	this.Load()
 	this.Default()

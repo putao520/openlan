@@ -50,7 +50,7 @@ func (cmd *Command) onArp(data []byte) {
 	libol.Debug("Command.onArp\n")
 	eth, err := libol.NewEtherFromFrame(data)
 	if err != nil {
-		libol.Warn("Command.onArp %s\n", err)
+		libol.Warn("Command.onArp %s", err)
 		return
 	}
 
@@ -82,7 +82,7 @@ func (cmd *Command) onStp(data []byte) {
 }
 
 func (cmd *Command) DoRecv(data []byte) error {
-	libol.Debug("Command.DoRecv: % x\n", data)
+	libol.Debug("Command.DoRecv: % x", data)
 
 	cmd.onArp(data)
 	cmd.onStp(data)
@@ -96,7 +96,7 @@ func (cmd *Command) DoSend(data []byte) error {
 }
 
 func (cmd *Command) DoOpen(args []string) string {
-	//libol.Debug("Command.DoOpen %s\n", args)
+	//libol.Debug("Command.DoOpen %s", args)
 	if len(args) > 0 {
 		addr := args[0]
 		RightAddr(&addr, 10002)
@@ -112,7 +112,7 @@ func (cmd *Command) DoOpen(args []string) string {
 
 // arp <source> <destination>
 func (cmd *Command) DoArp(args []string) string {
-	libol.Debug("Command.DoArp %s\n", args)
+	libol.Debug("Command.DoArp %s", args)
 	if len(args) != 2 {
 		return "arp <source> <destination>"
 	}
@@ -151,7 +151,7 @@ func (cmd *Command) DoVerbose(args []string) string {
 }
 
 func (cmd *Command) HitInput(args []string) string {
-	//libol.Debug("Command.HitInput %s\n", args)
+	//libol.Debug("Command.HitInput %s", args)
 	switch args[0] {
 	case "open":
 		return cmd.DoOpen(args[1:])

@@ -64,7 +64,7 @@ func (this *TcpWorker) onInstruct(data []byte) error {
 }
 
 func (this *TcpWorker) GoRecv(doRecv func([]byte) error) {
-	libol.Debug("TcpWorker.GoRev %s\n", this.client.IsOk())
+	libol.Debug("TcpWorker.GoRev %s", this.client.IsOk())
 
 	defer this.client.Close()
 	for {
@@ -81,7 +81,7 @@ func (this *TcpWorker) GoRecv(doRecv func([]byte) error) {
 			continue
 		}
 
-		libol.Debug("TcpWorker.GoRev: % x\n", data[:n])
+		libol.Debug("TcpWorker.GoRev: % x", data[:n])
 		if n > 0 {
 			data = data[:n]
 			if libol.IsInst(data) {
@@ -94,7 +94,7 @@ func (this *TcpWorker) GoRecv(doRecv func([]byte) error) {
 }
 
 func (this *TcpWorker) DoSend(data []byte) error {
-	libol.Debug("TcpWorker.DoSend: % x\n", data)
+	libol.Debug("TcpWorker.DoSend: % x", data)
 
 	this.writechan <- data
 

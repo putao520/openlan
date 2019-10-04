@@ -28,7 +28,7 @@ func NewTapWorker(ifce *water.Interface, c *Config) (this *TapWorker) {
 
 	if this.ifce.IsTUN() {
 		this.EthSrcIp = net.ParseIP(c.Ifaddr).To4()
-		libol.Info("NewTapWoker srcIp: % x\n", this.EthSrcIp)
+		libol.Info("NewTapWoker srcIp: % x", this.EthSrcIp)
 
 		if c.Ifethsrc == "" {
 			this.EthSrcAddr = libol.GenEthAddr(6)
@@ -40,7 +40,7 @@ func NewTapWorker(ifce *water.Interface, c *Config) (this *TapWorker) {
 		if hw, err := net.ParseMAC(c.Ifethdst); err == nil {
 			this.EthDstAddr = []byte(hw)
 		}
-		libol.Info("NewTapWorker src: % x, dst: % x\n", this.EthSrcAddr, this.EthDstAddr)
+		libol.Info("NewTapWorker src: % x, dst: % x", this.EthSrcAddr, this.EthDstAddr)
 	}
 
 	return
@@ -69,7 +69,7 @@ func (this *TapWorker) GoRecv(doRecv func([]byte) error) {
 			break
 		}
 
-		libol.Debug("TapWorker.GoRev: % x\n", data[:n])
+		libol.Debug("TapWorker.GoRev: % x", data[:n])
 		if this.ifce.IsTUN() {
 			eth := this.NewEth(libol.ETH_P_IP4)
 
@@ -86,7 +86,7 @@ func (this *TapWorker) GoRecv(doRecv func([]byte) error) {
 }
 
 func (this *TapWorker) DoSend(data []byte) error {
-	libol.Debug("TapWorker.DoSend: % x\n", data)
+	libol.Debug("TapWorker.DoSend: % x", data)
 
 	this.writechan <- data
 
@@ -94,10 +94,10 @@ func (this *TapWorker) DoSend(data []byte) error {
 }
 
 func (this *TapWorker) onArp(data []byte) bool {
-	libol.Debug("TapWorker.onArp\n")
+	libol.Debug("TapWorker.onArp")
 	eth, err := libol.NewEtherFromFrame(data)
 	if err != nil {
-		libol.Warn("TapWorker.onArp %s\n", err)
+		libol.Warn("TapWorker.onArp %s", err)
 		return false
 	}
 
