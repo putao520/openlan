@@ -59,9 +59,7 @@ func (p *Point) newIfce() {
 func (p *Point) Start() {
 	libol.Debug("Point.Start linux.")
 
-	if p.Ifce == nil {
-		p.newIfce()
-	}
+	p.UpLink()
 	if err := p.Client.Connect(); err != nil {
 		libol.Error("Point.Start %s", err)
 	}
@@ -86,8 +84,14 @@ func (p *Point) Close() {
 }
 
 func (p *Point) UpLink() error {
-	name := p.Ifce.Name()
+	if p.Ifce == nil {
+		p.newIfce()
+	}
+	if p.Ifce == nil {
+		return libol.Errer("create device.")
+	}
 
+	name := p.Ifce.Name()
 	libol.Debug("Point.UpLink: %s", name)
 	link, err := tenus.NewLinkFrom(name)
 	if err != nil {

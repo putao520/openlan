@@ -13,7 +13,6 @@ import (
 func main() {
 	c := point.NewConfig()
 	p := point.NewPoint(c)
-	p.UpLink()
 	p.Start()
 
 	x := make(chan os.Signal)

@@ -47,12 +47,20 @@ func (p *Point) newIfce() {
 	p.tapworker = NewTapWorker(ifce, p.config)
 }
 
-func (p *Point) Start() {
-	libol.Debug("Point.Start Windows.")
-
+func (p *Point) UpLink() error {
 	if p.Ifce == nil {
 		p.newIfce()
 	}
+	if p.Ifce == nil {
+		return libol.Errer("create device.")
+	}
+	return nil
+}
+
+func (p *Point) Start() {
+	libol.Debug("Point.Start Windows.")
+
+	p.UpLink()
 	if err := p.Client.Connect(); err != nil {
 		libol.Error("Point.Start %s", err)
 	}
@@ -68,9 +76,4 @@ func (p *Point) Close() {
 	p.tapworker.Close()
 	p.tcpworker.Close()
 	p.Ifce = nil
-}
-
-func (p *Point) UpLink() error {
-	//TODO
-	return nil
 }

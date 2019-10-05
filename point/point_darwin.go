@@ -47,12 +47,20 @@ func (p *Point) newIfce() {
 	p.tapworker = NewTapWorker(ifce, p.config)
 }
 
+func (p *Point) UpLink() error {
+	if p.Ifce == nil {
+		p.newIfce()
+	}
+	if p.Ifce == nil {
+		return libol.Errer("create device.")
+	}
+	return nil
+}
+
 func (p *Point) Start() {
 	libol.Debug("Point.Start Darwin.")
 
-	if p.Ifce == nil {
-		p.newIface()
-	}
+	p.UpLink()
 	if err := p.Client.Connect(); err != nil {
 		libol.Error("Point.Start %s", err)
 	}
