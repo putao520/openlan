@@ -65,7 +65,7 @@ func (e *Neighborer) GetNeighbor(name string) *Neighbor {
 	return nil
 }
 
-func (e *Neighborer) ListNeighbor() chan *Neighbor {
+func (e *Neighborer) ListNeighbor() <-chan *Neighbor {
 	c := make(chan *Neighbor, 128)
 
 	go func() {

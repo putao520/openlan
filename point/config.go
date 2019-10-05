@@ -9,16 +9,16 @@ import (
 )
 
 type Config struct {
-	Addr     string `json:"VsAddr"`
-	Auth     string `json:"VsAuth"`
-	Verbose  int    `json:"Verbose"`
-	Ifmtu    int    `json:"IfMtu"`
-	Ifaddr   string `json:"IfAddr"`
-	Brname   string `json:"IfBridge"`
-	Iftun    bool   `json:"IfTun"`
-	Ifethsrc string `json:"IfEthSrc"`
-	Ifethdst string `json:"IfEthDst"`
-	LogFile  string `json:"LogFile"`
+	Addr     string `json:"VsAddr,omitempty"`
+	Auth     string `json:"VsAuth,omitempty"`
+	Verbose  int    `json:"Verbose,omitempty"`
+	Ifmtu    int    `json:"IfMtu,omitempty"`
+	Ifaddr   string `json:"IfAddr,omitempty"`
+	Brname   string `json:"IfBridge,omitempty"`
+	Iftun    bool   `json:"IfTun,omitempty"`
+	Ifethsrc string `json:"IfEthSrc,omitempty"`
+	Ifethdst string `json:"IfEthDst,omitempty"`
+	LogFile  string `json:"LogFile,omitempty"`
 
 	saveFile string
 	name     string

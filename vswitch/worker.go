@@ -330,7 +330,7 @@ func (w *Worker) GetUser(name string) *User {
 	return nil
 }
 
-func (w *Worker) ListUser() chan *User {
+func (w *Worker) ListUser() <-chan *User {
 	c := make(chan *User, 128)
 
 	go func() {
@@ -375,7 +375,7 @@ func (w *Worker) DelPoint(c *libol.TcpClient) {
 	}
 }
 
-func (w *Worker) ListPoint() chan *Point {
+func (w *Worker) ListPoint() <-chan *Point {
 	c := make(chan *Point, 128)
 
 	go func() {
@@ -448,7 +448,7 @@ func (w *Worker) GetLink(addr string) *point.Point {
 	return nil
 }
 
-func (w *Worker) ListLink() chan *point.Point {
+func (w *Worker) ListLink() <-chan *point.Point {
 	c := make(chan *point.Point, 128)
 
 	go func() {

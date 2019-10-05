@@ -10,27 +10,27 @@ import (
 )
 
 type Config struct {
-	TcpListen  string      `json:"Listen"`
-	Verbose    int         `json:"Verbose"`
-	HttpListen string      `json:"Http"`
-	Ifmtu      int         `json:"IfMtu"`
-	Ifaddr     string      `json:"IfAddr"`
-	Brname     string      `json:"IfBridge"`
-	Token      string      `json:"AdminToken"`
-	TokenFile  string      `json:"AdminFile"`
-	Password   string      `json:"AuthFile"`
-	Redis      RedisConfig `json:"Redis"`
-	LogFile    string      `json:"LogFile"`
+	TcpListen  string      `json:"Listen,omitempty"`
+	Verbose    int         `json:"Verbose,omitempty"`
+	HttpListen string      `json:"Http,omitempty"`
+	Ifmtu      int         `json:"IfMtu,omitempty"`
+	Ifaddr     string      `json:"IfAddr,omitempty"`
+	Brname     string      `json:"IfBridge,omitempty"`
+	Token      string      `json:"AdminToken,omitempty"`
+	TokenFile  string      `json:"AdminFile,omitempty"`
+	Password   string      `json:"AuthFile,omitempty"`
+	Redis      RedisConfig `json:"Redis,omitempty"`
+	LogFile    string      `json:"LogFile,omitempty"`
 
-	Links    []*point.Config `json:"Links"`
+	Links    []*point.Config `json:"Links,omitempty"`
 	saveFile string
 }
 
 type RedisConfig struct {
-	Enable bool   `json:"Enable"`
-	Addr   string `json:"Addr"`
-	Auth   string `json:"Auth"`
-	Db     int    `json:"Database"`
+	Enable bool   `json:"Enable,omitempty"`
+	Addr   string `json:"Addr,omitempty"`
+	Auth   string `json:"Auth,omitempty"`
+	Db     int    `json:"Database,omitempty"`
 }
 
 var Default = Config{
