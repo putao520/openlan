@@ -64,6 +64,7 @@ func (t *TcpWorker) onInstruct(data []byte) error {
 }
 
 func (t *TcpWorker) GoRecv(doRecv func([]byte) error) {
+	//TODO catch panic
 	libol.Debug("TcpWorker.GoRev %s", t.client.IsOk())
 
 	defer t.client.Close()

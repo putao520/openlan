@@ -55,6 +55,7 @@ func (a *TapWorker) NewEth(t uint16) *libol.Ether {
 }
 
 func (a *TapWorker) GoRecv(doRecv func([]byte) error) {
+	//TODO catch panic
 	a.doRecv = doRecv
 	defer a.Close()
 	for {
