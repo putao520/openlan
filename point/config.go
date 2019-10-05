@@ -38,7 +38,7 @@ var Default = Config{
 	password: "",
 	Ifethdst: "2e:4b:f0:b7:6d:ba",
 	Ifethsrc: "",
-	LogFile: ".point.error",
+	LogFile:  ".point.error",
 }
 
 func RightAddr(listen *string, port int) {

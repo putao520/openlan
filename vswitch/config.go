@@ -49,7 +49,7 @@ var Default = Config{
 		Db:     0,
 		Enable: false,
 	},
-	LogFile: ".vswitch.error",
+	LogFile:  ".vswitch.error",
 	saveFile: ".vswitch.json",
 	Links:    nil,
 }
@@ -63,7 +63,7 @@ func RightAddr(listen *string, port int) {
 
 func NewConfig() (c *Config) {
 	c = &Config{
-		Redis: Default.Redis,
+		Redis:   Default.Redis,
 		LogFile: Default.LogFile,
 	}
 

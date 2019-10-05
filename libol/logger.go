@@ -16,10 +16,10 @@ const (
 )
 
 type Logger struct {
-	Level		int
-	Errors		[]string
-	FileName	string
-	FileLog		*log.Logger
+	Level    int
+	Errors   []string
+	FileName string
+	FileLog  *log.Logger
 }
 
 func (l *Logger) Debug(format string, v ...interface{}) {
@@ -75,9 +75,9 @@ func (l *Logger) SaveError(format string, v ...interface{}) {
 }
 
 var Log = Logger{
-	Level:  INFO,
+	Level:    INFO,
 	FileName: ".log.error",
-	Errors: make([]string, 0, 1024),
+	Errors:   make([]string, 0, 1024),
 }
 
 func Error(format string, v ...interface{}) {
@@ -100,12 +100,12 @@ func Fatal(format string, v ...interface{}) {
 	Log.Fatal(format, v...)
 }
 
-func Init (file string, level int) {
+func Init(file string, level int) {
 	Log.FileName = file
 	if Log.FileName != "" {
 		logFile, err := os.Create(Log.FileName)
 		if err == nil {
-			Log.FileLog = log.New(logFile,"", log.LstdFlags)
+			Log.FileLog = log.New(logFile, "", log.LstdFlags)
 		} else {
 			Warn("logger.Init: %s", err)
 		}
