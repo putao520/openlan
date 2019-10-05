@@ -15,50 +15,59 @@ type Point struct {
 	Ifname string
 
 	//
-	tcpwroker *TcpWorker
-	tapwroker *TapWorker
+	tcpworker *TcpWorker
+	tapworker *TapWorker
 	brip      net.IP
 	brnet     *net.IPNet
+	config    *Config
 }
 
 func NewPoint(config *Config) (p *Point) {
-	ifce, err := water.New(water.Config{DeviceType: water.TAP})
-	if err != nil {
-		libol.Fatal("NewPoint: %s", err)
-	}
-
-	libol.Info("NewPoint.device %s", ifce.Name())
-
 	client := libol.NewTcpClient(config.Addr)
 	p = &Point{
 		Client:    client,
-		Ifce:      ifce,
 		Brname:    config.Brname,
 		Ifaddr:    config.Ifaddr,
-		Ifname:    ifce.Name(),
-		tapwroker: NewTapWorker(ifce, config),
-		tcpwroker: NewTcpWorker(client, config),
+		tcpworker: NewTcpWorker(client, config),
+		config:    config,
 	}
 	return
 }
 
-func (p *Point) Start() {
-	libol.Debug("Point.Start linux.")
+func (p *Point) newIfce() {
+	ifce, err := water.New(water.Config{DeviceType: water.TAP})
+	if err != nil {
+		libol.Fatal("NewPoint: %s", err)
+		return
+	}
 
+	libol.Info("NewPoint.device %s", ifce.Name())
+	p.Ifce   = ifce
+	p.Ifname = ifce.Name()
+	p.tapworker = NewTapWorker(ifce, p.config)
+}
+
+func (p *Point) Start() {
+	libol.Debug("Point.Start Windows.")
+
+	if p.Ifce == nil {
+		p.newIfce()
+	}
 	if err := p.Client.Connect(); err != nil {
 		libol.Error("Point.Start %s", err)
 	}
 
-	go p.tapwroker.GoRecv(p.tcpwroker.DoSend)
-	go p.tapwroker.GoLoop()
+	go p.tapworker.GoRecv(p.tcpworker.DoSend)
+	go p.tapworker.GoLoop()
 
-	go p.tcpwroker.GoRecv(p.tapwroker.DoSend)
-	go p.tcpwroker.GoLoop()
+	go p.tcpworker.GoRecv(p.tapworker.DoSend)
+	go p.tcpworker.GoLoop()
 }
 
 func (p *Point) Close() {
-	p.Client.Close()
-	p.Ifce.Close()
+	p.tapworker.Close()
+	p.tcpworker.Close()
+	p.Ifce = nil
 }
 
 func (p *Point) UpLink() error {

@@ -79,7 +79,7 @@ func NewConfig() (c *Config) {
 	return
 }
 
-func (c *Config) Default() {
+func (c *Config) Right() {
 	if c.Auth != "" {
 		values := strings.Split(c.Auth, ":")
 		c.name = values[0]
@@ -87,8 +87,11 @@ func (c *Config) Default() {
 			c.password = values[1]
 		}
 	}
-
 	RightAddr(&c.Addr, 10002)
+}
+
+func (c *Config) Default() {
+	c.Right()
 
 	//reset zero value to default
 	if c.Addr == "" {
@@ -131,4 +134,8 @@ func (c *Config) Load() error {
 	}
 
 	return nil
+}
+
+func init() {
+	Default.Right()
 }

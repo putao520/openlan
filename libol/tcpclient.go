@@ -101,6 +101,7 @@ func (t *TcpClient) OnConnected(on func(*TcpClient) error) {
 
 func (t *TcpClient) Close() {
 	if t.conn != nil {
+		t.Status = CL_CLOSED
 		Info("TcpClient.Close %s", t.Addr)
 		t.conn.Close()
 		t.conn = nil
@@ -234,6 +235,22 @@ func (t *TcpClient) SendResp(action string, body string) error {
 		return err
 	}
 	return nil
+}
+
+func (t *TcpClient) State() string {
+	switch t.Status {
+	case CL_INIT:
+		return "initialized"
+	case CL_CONNECTED:
+		return "connected"
+	case CL_UNAUTH:
+		return "unauthenticated"
+	case CL_AUTHED:
+		return "authenticated"
+	case CL_CLOSED:
+		return "closed"
+	}
+	return ""
 }
 
 func (t *TcpClient) UpTime() int64 {
