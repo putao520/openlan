@@ -12,7 +12,7 @@ type TapWorker struct {
 	ifmtu     int
 	doRecv    func([]byte) error
 
-	Ifce      *water.Interface
+	Ifce *water.Interface
 	//for tunnel device.
 	EthDstAddr []byte
 	EthSrcAddr []byte

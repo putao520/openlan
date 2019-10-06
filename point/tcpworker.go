@@ -8,7 +8,7 @@ import (
 )
 
 type TcpWorker struct {
-	Client    *libol.TcpClient
+	Client *libol.TcpClient
 
 	readchan  chan []byte
 	writechan chan []byte

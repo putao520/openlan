@@ -25,7 +25,7 @@ func NewPoint(config *Config) (p *Point) {
 		Brname:    config.Brname,
 		Ifaddr:    config.Ifaddr,
 		tcpworker: NewTcpWorker(client, config),
-		config:      config,
+		config:    config,
 	}
 	p.newIfce()
 	return
@@ -73,14 +73,14 @@ func (p *Point) Stop() {
 	p.tcpworker.Stop()
 }
 
-func (p *Point) GetClient() *libol.TcpClient{
+func (p *Point) GetClient() *libol.TcpClient {
 	if p.tcpworker != nil {
 		return p.tcpworker.Client
 	}
 	return nil
 }
 
-func (p *Point) GetIfce() *water.Interface{
+func (p *Point) GetIfce() *water.Interface {
 	if p.tapworker != nil {
 		return p.tapworker.Ifce
 	}

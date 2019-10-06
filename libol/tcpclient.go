@@ -13,13 +13,13 @@ var (
 )
 
 const (
-	CL_INIT      = 0x00
-	CL_CONNECTED = 0x01
-	CL_UNAUTH    = 0x02
-	CL_AUTHED    = 0x03
-	CL_CONNECTING= 0x04
-	CL_TERMINAL  = 0x05
-	CL_CLOSED    = 0x06
+	CL_INIT       = 0x00
+	CL_CONNECTED  = 0x01
+	CL_UNAUTH     = 0x02
+	CL_AUTHED     = 0x03
+	CL_CONNECTING = 0x04
+	CL_TERMINAL   = 0x05
+	CL_CLOSED     = 0x06
 )
 
 const (
