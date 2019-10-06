@@ -250,7 +250,7 @@ func (w *Worker) handleReq(client *libol.TcpClient, frame *libol.Frame) error {
 }
 
 func (w *Worker) onClient(client *libol.TcpClient) error {
-	client.Status = libol.CL_CONNECTED
+	client.SetStatus(libol.CL_CONNECTED)
 
 	libol.Info("Worker.onClient: %s", client.Addr)
 
@@ -292,7 +292,7 @@ func (w *Worker) onClose(client *libol.TcpClient) error {
 	return nil
 }
 
-func (w *Worker) Close() {
+func (w *Worker) Stop() {
 	libol.Info("Worker.Close")
 
 	w.Server.Close()
@@ -304,7 +304,7 @@ func (w *Worker) Close() {
 	}
 
 	for _, p := range w.links {
-		p.Close()
+		p.Stop()
 	}
 }
 
@@ -432,7 +432,7 @@ func (w *Worker) DelLink(addr string) {
 	w.linksLock.Lock()
 	defer w.linksLock.Unlock()
 	if p, ok := w.links[addr]; ok {
-		p.Close()
+		p.Stop()
 		delete(w.links, addr)
 	}
 }
@@ -497,7 +497,7 @@ func (w *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 		return nil
 	}
 
-	if client.Status != libol.CL_AUTHED {
+	if client.GetStatus() != libol.CL_AUTHED {
 		client.Droped++
 		libol.Debug("PointAuth.onRecv: %s unauth", client.Addr)
 		return libol.Errer("Unauthed client.")
@@ -509,7 +509,7 @@ func (w *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 func (w *PointAuth) handleLogin(client *libol.TcpClient, data string) error {
 	libol.Debug("PointAuth.handleLogin: %s", data)
 
-	if client.Status == libol.CL_AUTHED {
+	if client.GetStatus() == libol.CL_AUTHED {
 		libol.Warn("PointAuth.handleLogin: already authed %s", client)
 		return nil
 	}
@@ -526,20 +526,20 @@ func (w *PointAuth) handleLogin(client *libol.TcpClient, data string) error {
 	_user := w.wroker.GetUser(name)
 	if _user != nil {
 		if _user.Password == user.Password {
-			client.Status = libol.CL_AUTHED
+			client.SetStatus(libol.CL_AUTHED)
 			libol.Info("PointAuth.handleLogin: %s Authed", client.Addr)
 			w.onAuth(client)
 			return nil
 		}
 
-		client.Status = libol.CL_UNAUTH
+		client.SetStatus(libol.CL_UNAUTH)
 	}
 
 	return libol.Errer("Auth failed.")
 }
 
 func (w *PointAuth) onAuth(client *libol.TcpClient) error {
-	if client.Status != libol.CL_AUTHED {
+	if client.GetStatus() != libol.CL_AUTHED {
 		return libol.Errer("not authed.")
 	}
 

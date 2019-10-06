@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"net"
+	"sync"
 	"time"
 )
 
@@ -17,7 +18,8 @@ const (
 	CL_UNAUTH    = 0x02
 	CL_AUTHED    = 0x03
 	CL_CONNECTING= 0x04
-	CL_CLOSED    = 0xff
+	CL_TERMINAL  = 0x05
+	CL_CLOSED    = 0x06
 )
 
 const (
@@ -29,6 +31,7 @@ type TcpClient struct {
 	maxsize     int
 	minsize     int
 	onConnected func(*TcpClient) error
+	lock        sync.RWMutex
 
 	TxOkay  uint64
 	RxOkay  uint64
@@ -70,7 +73,7 @@ func NewTcpClientFromConn(conn *net.TCPConn) (t *TcpClient) {
 }
 
 func (t *TcpClient) Connect() error {
-	if t.conn != nil {
+	if t.conn != nil || t.GetStatus() == CL_TERMINAL || t.GetStatus() == CL_UNAUTH {
 		return nil
 	}
 
@@ -80,16 +83,14 @@ func (t *TcpClient) Connect() error {
 		return err
 	}
 
-	t.Status = CL_CONNECTING
+	t.SetStatus(CL_CONNECTING)
 	conn, err := net.DialTCP("tcp", nil, raddr)
 	if err != nil {
 		t.conn = nil
 		return err
 	}
-
 	t.conn = conn
-	t.Status = CL_CONNECTED
-
+	t.SetStatus(CL_CONNECTED)
 	if t.onConnected != nil {
 		t.onConnected(t)
 	}
@@ -103,7 +104,10 @@ func (t *TcpClient) OnConnected(on func(*TcpClient) error) {
 
 func (t *TcpClient) Close() {
 	if t.conn != nil {
-		t.Status = CL_CLOSED
+		if t.GetStatus() != CL_TERMINAL {
+			t.SetStatus(CL_CLOSED)
+		}
+
 		Info("TcpClient.Close %s", t.Addr)
 		t.conn.Close()
 		t.conn = nil
@@ -219,6 +223,10 @@ func (t *TcpClient) IsOk() bool {
 	return t.conn != nil
 }
 
+func (t *TcpClient) IsTerminal() bool {
+	return t.GetStatus() == CL_TERMINAL
+}
+
 func (t *TcpClient) SendReq(action string, body string) error {
 	data := EncInstReq(action, body)
 	Debug("TcpClient.SendReq %d %s", len(data), data[6:])
@@ -240,7 +248,7 @@ func (t *TcpClient) SendResp(action string, body string) error {
 }
 
 func (t *TcpClient) State() string {
-	switch t.Status {
+	switch t.GetStatus() {
 	case CL_INIT:
 		return "initialized"
 	case CL_CONNECTED:
@@ -253,6 +261,8 @@ func (t *TcpClient) State() string {
 		return "closed"
 	case CL_CONNECTING:
 		return "connecting"
+	case CL_TERMINAL:
+		return "terminal"
 	}
 	return ""
 }
@@ -263,4 +273,21 @@ func (t *TcpClient) UpTime() int64 {
 
 func (t *TcpClient) String() string {
 	return t.Addr
+}
+
+func (t *TcpClient) Terminal() {
+	t.SetStatus(CL_TERMINAL)
+	t.Close()
+}
+
+func (t *TcpClient) GetStatus() uint8 {
+	t.lock.RLock()
+	defer t.lock.RUnlock()
+	return t.Status
+}
+
+func (t *TcpClient) SetStatus(v uint8) {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+	t.Status = v
 }

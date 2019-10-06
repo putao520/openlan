@@ -153,7 +153,7 @@ func (h *Http) Index(w http.ResponseWriter, r *http.Request) {
 			}
 
 			body += fmt.Sprintf("%d, %s, %s, %s\n",
-				p.Client.UpTime(), p.Brname, p.Ifname, p.Client.Addr)
+				p.GetClient().UpTime(), p.Brname, p.Ifname, p.GetClient().Addr)
 		}
 
 		fmt.Fprintf(w, body)

@@ -8,8 +8,6 @@ import (
 )
 
 type Point struct {
-	Client *libol.TcpClient
-	Ifce   *water.Interface
 	Brname string
 	Ifaddr string
 	Ifname string
@@ -24,7 +22,6 @@ type Point struct {
 func NewPoint(config *Config) (p *Point) {
 	client := libol.NewTcpClient(config.Addr)
 	p = &Point{
-		Client:    client,
 		Brname:    config.Brname,
 		Ifaddr:    config.Ifaddr,
 		tcpworker: NewTcpWorker(client, config),
@@ -42,16 +39,15 @@ func (p *Point) newIfce() {
 	}
 
 	libol.Info("NewPoint.device %s", ifce.Name())
-	p.Ifce   = ifce
 	p.Ifname = ifce.Name()
 	p.tapworker = NewTapWorker(ifce, p.config)
 }
 
 func (p *Point) UpLink() error {
-	if p.Ifce == nil {
+	if p.GetIfce() == nil {
 		p.newIfce()
 	}
-	if p.Ifce == nil {
+	if p.GetIfce() == nil {
 		return libol.Errer("create device.")
 	}
 	return nil
@@ -61,7 +57,7 @@ func (p *Point) Start() {
 	libol.Debug("Point.Start Darwin.")
 
 	p.UpLink()
-	if err := p.Client.Connect(); err != nil {
+	if err := p.tcpworker.Connect(); err != nil {
 		libol.Error("Point.Start %s", err)
 	}
 
@@ -72,8 +68,21 @@ func (p *Point) Start() {
 	go p.tcpworker.GoLoop()
 }
 
-func (p *Point) Close() {
-	p.tapworker.Close()
-	p.tcpworker.Close()
-	p.Ifce = nil
+func (p *Point) Stop() {
+	p.tapworker.Stop()
+	p.tcpworker.Stop()
+}
+
+func (p *Point) GetClient() *libol.TcpClient{
+	if p.tcpworker != nil {
+		return p.tcpworker.Client
+	}
+	return nil
+}
+
+func (p *Point) GetIfce() *water.Interface{
+	if p.tapworker != nil {
+		return p.tapworker.Ifce
+	}
+	return nil
 }

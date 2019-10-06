@@ -38,7 +38,7 @@ func main() {
 	signal.Notify(x, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-x
-		vs.Wroker.Close()
+		vs.Wroker.Stop()
 		fmt.Println("Done!")
 		os.Exit(0)
 	}()

@@ -2,14 +2,14 @@ package point
 
 import (
 	"fmt"
+	"github.com/lightstar-dev/openlan-go/libol"
 	"strings"
 	"time"
-
-	"github.com/lightstar-dev/openlan-go/libol"
 )
 
 type TcpWorker struct {
-	client    *libol.TcpClient
+	Client    *libol.TcpClient
+
 	readchan  chan []byte
 	writechan chan []byte
 	maxSize   int
@@ -19,24 +19,38 @@ type TcpWorker struct {
 
 func NewTcpWorker(client *libol.TcpClient, c *Config) (t *TcpWorker) {
 	t = &TcpWorker{
-		client:    client,
+		Client:    client,
 		writechan: make(chan []byte, 1024*10),
 		maxSize:   c.Ifmtu,
 		name:      c.Name(),
 		password:  c.Password(),
 	}
-	t.client.SetMaxSize(t.maxSize)
-	t.client.OnConnected(t.TryLogin)
+	t.Client.SetMaxSize(t.maxSize)
+	t.Client.OnConnected(t.TryLogin)
 
 	return
 }
 
+func (t *TcpWorker) Stop() {
+	t.Client.Terminal()
+}
+
 func (t *TcpWorker) Close() {
-	t.client.Close()
+	t.Client.Close()
 }
 
 func (t *TcpWorker) Connect() error {
-	return t.client.Connect()
+	s := t.Client.GetStatus()
+	if s != libol.CL_INIT {
+		libol.Warn("TcpWorker.Connect status %d->%d", s, libol.CL_INIT)
+		t.Client.SetStatus(libol.CL_INIT)
+	}
+
+	if err := t.Client.Connect(); err != nil {
+		libol.Error("TcpWorker.Connect %s", err)
+		return err
+	}
+	return nil
 }
 
 func (t *TcpWorker) TryLogin(client *libol.TcpClient) error {
@@ -54,9 +68,9 @@ func (t *TcpWorker) onInstruct(data []byte) error {
 		resp := libol.DecBody(data)
 		libol.Info("TcpWorker.onHook.login: %s", resp)
 		if resp[:4] == "okay" {
-			t.client.Status = libol.CL_AUTHED
+			t.Client.SetStatus(libol.CL_AUTHED)
 		} else {
-			t.client.Status = libol.CL_UNAUTH
+			t.Client.SetStatus(libol.CL_UNAUTH)
 		}
 	}
 
@@ -65,19 +79,24 @@ func (t *TcpWorker) onInstruct(data []byte) error {
 
 func (t *TcpWorker) GoRecv(doRecv func([]byte) error) {
 	defer libol.Catch()
-	libol.Debug("TcpWorker.GoRev %s", t.client.IsOk())
+	libol.Debug("TcpWorker.GoRev %s", t.Client.IsOk())
 
 	for {
-		if !t.client.IsOk() {
-			time.Sleep(2 * time.Second) // sleep 2s and release cpu.
+		if t.Client.IsTerminal() {
+			break
+		}
+
+		if !t.Client.IsOk() {
+			time.Sleep(60 * time.Second) // sleep 30s and release cpu.
+			t.Connect()
 			continue
 		}
 
 		data := make([]byte, t.maxSize)
-		n, err := t.client.RecvMsg(data)
+		n, err := t.Client.RecvMsg(data)
 		if err != nil {
 			libol.Error("TcpWorker.GoRev: %s", err)
-			t.client.Close()
+			t.Client.Close()
 			continue
 		}
 
@@ -91,8 +110,8 @@ func (t *TcpWorker) GoRecv(doRecv func([]byte) error) {
 			}
 		}
 	}
-	t.client.Close()
-	libol.Warn("TcpWorker.GoRev %s exit.", t.client)
+	t.Client.Close()
+	libol.Warn("TcpWorker.GoRev %s exit.", t.Client)
 }
 
 func (t *TcpWorker) DoSend(data []byte) error {
@@ -109,19 +128,19 @@ func (t *TcpWorker) GoLoop() {
 	for {
 		select {
 		case wdata := <-t.writechan:
-			if t.client.Status != libol.CL_AUTHED {
-				t.client.Droped++
+			if t.Client.GetStatus() != libol.CL_AUTHED {
+				t.Client.Droped++
 				libol.Error("TcpWorker.GoLoop: droping by unauth")
 				continue
 			}
 
-			if err := t.client.SendMsg(wdata); err != nil {
+			if err := t.Client.SendMsg(wdata); err != nil {
 				libol.Error("TcpWorker.GoLoop: %s", err)
 			}
 		}
 	}
-	t.client.Close()
-	libol.Warn("TcpWorker.GoRev %s exit.", t.client)
+	t.Client.Close()
+	libol.Warn("TcpWorker.GoRev %s exit.", t.Client)
 }
 
 func (t *TcpWorker) SetAuth(auth string) {
@@ -133,5 +152,5 @@ func (t *TcpWorker) SetAuth(auth string) {
 }
 
 func (t *TcpWorker) SetAddr(addr string) {
-	t.client.Addr = addr
+	t.Client.Addr = addr
 }

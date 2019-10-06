@@ -19,6 +19,6 @@ func main() {
 		}
 	}
 
-	p.Close()
+	p.Stop()
 	fmt.Println("Done!")
 }

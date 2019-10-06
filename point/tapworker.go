@@ -8,11 +8,11 @@ import (
 )
 
 type TapWorker struct {
-	ifce      *water.Interface
 	writechan chan []byte
 	ifmtu     int
 	doRecv    func([]byte) error
 
+	Ifce      *water.Interface
 	//for tunnel device.
 	EthDstAddr []byte
 	EthSrcAddr []byte
@@ -21,12 +21,12 @@ type TapWorker struct {
 
 func NewTapWorker(ifce *water.Interface, c *Config) (a *TapWorker) {
 	a = &TapWorker{
-		ifce:      ifce,
+		Ifce:      ifce,
 		writechan: make(chan []byte, 1024*10),
 		ifmtu:     c.Ifmtu, //1514
 	}
 
-	if a.ifce.IsTUN() {
+	if a.Ifce.IsTUN() {
 		a.EthSrcIp = net.ParseIP(c.Ifaddr).To4()
 		libol.Info("NewTapWoker srcIp: % x", a.EthSrcIp)
 
@@ -56,23 +56,23 @@ func (a *TapWorker) NewEth(t uint16) *libol.Ether {
 
 func (a *TapWorker) GoRecv(doRecv func([]byte) error) {
 	defer libol.Catch()
-	libol.Warn("TapWorker.GoRev")
+	libol.Info("TapWorker.GoRev")
 	a.doRecv = doRecv
 
 	for {
 		data := make([]byte, a.ifmtu)
-		if a.ifce == nil {
+		if a.Ifce == nil {
 			break
 		}
 
-		n, err := a.ifce.Read(data)
+		n, err := a.Ifce.Read(data)
 		if err != nil {
 			libol.Error("TapWorker.GoRev: %s", err)
 			break
 		}
 
 		libol.Debug("TapWorker.GoRev: % x", data[:n])
-		if a.ifce.IsTUN() {
+		if a.Ifce.IsTUN() {
 			eth := a.NewEth(libol.ETH_P_IP4)
 
 			buffer := make([]byte, 0, a.ifmtu)
@@ -146,16 +146,16 @@ func (a *TapWorker) onArp(data []byte) bool {
 
 func (a *TapWorker) GoLoop() {
 	defer libol.Catch()
-	libol.Warn("TapWorker.GoLoop")
+	libol.Info("TapWorker.GoLoop")
 
 	for {
 		select {
 		case wdata := <-a.writechan:
-			if a.ifce == nil {
+			if a.Ifce == nil {
 				break
 			}
 
-			if a.ifce.IsTUN() {
+			if a.Ifce.IsTUN() {
 				//Proxy arp request.
 				if a.onArp(wdata) {
 					libol.Info("TapWorker.GoLoop: Arp proxy.")
@@ -176,7 +176,7 @@ func (a *TapWorker) GoLoop() {
 				}
 			}
 
-			if _, err := a.ifce.Write(wdata); err != nil {
+			if _, err := a.Ifce.Write(wdata); err != nil {
 				libol.Error("TapWorker.GoLoop: %s", err)
 			}
 		}
@@ -188,8 +188,12 @@ func (a *TapWorker) GoLoop() {
 func (a *TapWorker) Close() {
 	libol.Info("TapWorker.Close")
 
-	if a.ifce != nil {
-		a.ifce.Close()
-		a.ifce = nil
+	if a.Ifce != nil {
+		a.Ifce.Close()
+		a.Ifce = nil
 	}
+}
+
+func (a *TapWorker) Stop() {
+	a.Close()
 }
