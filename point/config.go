@@ -74,7 +74,7 @@ func NewConfig() (c *Config) {
 	if err != nil {
 		libol.Error("NewConfig.json error: %s", err)
 	}
-	libol.Info("NewConfig.json: %s", str)
+	libol.Debug("NewConfig.json: %s", str)
 
 	return
 }

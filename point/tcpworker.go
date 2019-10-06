@@ -79,7 +79,7 @@ func (t *TcpWorker) onInstruct(data []byte) error {
 
 func (t *TcpWorker) GoRecv(doRecv func([]byte) error) {
 	defer libol.Catch()
-	libol.Debug("TcpWorker.GoRev %s", t.Client.IsOk())
+	libol.Info("TcpWorker.GoRev %t", t.Client.IsOk())
 
 	for {
 		if t.Client.IsTerminal() {
