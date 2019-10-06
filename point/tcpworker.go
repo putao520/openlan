@@ -92,6 +92,7 @@ func (t *TcpWorker) GoRecv(doRecv func([]byte) error) {
 		}
 	}
 	t.client.Close()
+	libol.Warn("TcpWorker.GoRev %s exit.", t.client)
 }
 
 func (t *TcpWorker) DoSend(data []byte) error {
@@ -120,6 +121,7 @@ func (t *TcpWorker) GoLoop() {
 		}
 	}
 	t.client.Close()
+	libol.Warn("TcpWorker.GoRev %s exit.", t.client)
 }
 
 func (t *TcpWorker) SetAuth(auth string) {

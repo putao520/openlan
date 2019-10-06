@@ -130,6 +130,10 @@ func (cmd *Command) DoArp(args []string) string {
 	buffer := make([]byte, 0, 1024)
 	buffer = append(buffer, eth.Encode()...)
 	buffer = append(buffer, arp.Encode()...)
+
+	//Send 3 times and thinks arp be ignored.
+	cmd.DoSend(buffer)
+	cmd.DoSend(buffer)
 	cmd.DoSend(buffer)
 
 	return fmt.Sprintf("%d", len(buffer))

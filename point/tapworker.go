@@ -56,6 +56,7 @@ func (a *TapWorker) NewEth(t uint16) *libol.Ether {
 
 func (a *TapWorker) GoRecv(doRecv func([]byte) error) {
 	defer libol.Catch()
+	libol.Warn("TapWorker.GoRev")
 	a.doRecv = doRecv
 
 	for {
@@ -85,6 +86,7 @@ func (a *TapWorker) GoRecv(doRecv func([]byte) error) {
 		}
 	}
 	a.Close()
+	libol.Warn("TapWorker.GoRev exit.")
 }
 
 func (a *TapWorker) DoSend(data []byte) error {
@@ -144,6 +146,7 @@ func (a *TapWorker) onArp(data []byte) bool {
 
 func (a *TapWorker) GoLoop() {
 	defer libol.Catch()
+	libol.Warn("TapWorker.GoLoop")
 
 	for {
 		select {
@@ -179,6 +182,7 @@ func (a *TapWorker) GoLoop() {
 		}
 	}
 	a.Close()
+	libol.Warn("TapWorker.GoLoop exit.")
 }
 
 func (a *TapWorker) Close() {

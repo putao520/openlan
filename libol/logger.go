@@ -109,6 +109,7 @@ func Fatal(format string, v ...interface{}) {
 }
 
 func Init(file string, level int) {
+	SetLog(level)
 	Log.FileName = file
 	if Log.FileName != "" {
 		logFile, err := os.Create(Log.FileName)
