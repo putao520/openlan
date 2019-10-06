@@ -64,10 +64,9 @@ func (t *TcpWorker) onInstruct(data []byte) error {
 }
 
 func (t *TcpWorker) GoRecv(doRecv func([]byte) error) {
-	//TODO catch panic
+	defer libol.Catch()
 	libol.Debug("TcpWorker.GoRev %s", t.client.IsOk())
 
-	defer t.client.Close()
 	for {
 		if !t.client.IsOk() {
 			time.Sleep(2 * time.Second) // sleep 2s and release cpu.
@@ -92,6 +91,7 @@ func (t *TcpWorker) GoRecv(doRecv func([]byte) error) {
 			}
 		}
 	}
+	t.client.Close()
 }
 
 func (t *TcpWorker) DoSend(data []byte) error {
@@ -102,8 +102,9 @@ func (t *TcpWorker) DoSend(data []byte) error {
 	return nil
 }
 
-func (t *TcpWorker) GoLoop() error {
-	defer t.client.Close()
+func (t *TcpWorker) GoLoop() {
+	defer libol.Catch()
+
 	for {
 		select {
 		case wdata := <-t.writechan:
@@ -118,6 +119,7 @@ func (t *TcpWorker) GoLoop() error {
 			}
 		}
 	}
+	t.client.Close()
 }
 
 func (t *TcpWorker) SetAuth(auth string) {

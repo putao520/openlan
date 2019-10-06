@@ -1,9 +1,11 @@
 package libol
 
 import (
+	"container/list"
 	"fmt"
 	"log"
 	"os"
+	"runtime/debug"
 )
 
 const (
@@ -17,7 +19,8 @@ const (
 
 type Logger struct {
 	Level    int
-	Errors   []string
+	Errors   *list.List
+	Logs     *list.List
 	FileName string
 	FileLog  *log.Logger
 }
@@ -32,6 +35,7 @@ func (l *Logger) Info(format string, v ...interface{}) {
 	if INFO >= l.Level {
 		log.Printf(fmt.Sprintf("INFO %s", format), v...)
 	}
+	l.SaveError(fmt.Sprintf("FATAL %s", format), v...)
 }
 
 func (l *Logger) Warn(format string, v ...interface{}) {
@@ -70,14 +74,18 @@ func (l *Logger) SaveError(format string, v ...interface{}) {
 	}
 
 	if ERROR >= l.Level {
-		l.Errors = append(l.Errors, m)
+		if l.Errors.Len() > 1024 {
+			l.Errors.Remove(l.Errors.Front())
+		}
+		l.Errors.PushBack(m)
 	}
 }
 
 var Log = Logger{
 	Level:    INFO,
 	FileName: ".log.error",
-	Errors:   make([]string, 0, 1024),
+	Errors:   list.New(),
+	Logs:     list.New(),
 }
 
 func Error(format string, v ...interface{}) {
@@ -118,4 +126,11 @@ func SetLog(level int) {
 
 func Close() {
 	//TODO
+}
+
+func Catch() {
+	if err := recover(); err != nil {
+		Fatal("Catch panic： <<<< %s >>>>", err)
+		Fatal("Catch stack:  >>>> %s", debug.Stack())
+	}
 }

@@ -16,6 +16,7 @@ const (
 	CL_CONNECTED = 0x01
 	CL_UNAUTH    = 0x02
 	CL_AUTHED    = 0x03
+	CL_CONNECTING= 0x04
 	CL_CLOSED    = 0xff
 )
 
@@ -79,6 +80,7 @@ func (t *TcpClient) Connect() error {
 		return err
 	}
 
+	t.Status = CL_CONNECTING
 	conn, err := net.DialTCP("tcp", nil, raddr)
 	if err != nil {
 		t.conn = nil
@@ -249,6 +251,8 @@ func (t *TcpClient) State() string {
 		return "authenticated"
 	case CL_CLOSED:
 		return "closed"
+	case CL_CONNECTING:
+		return "connecting"
 	}
 	return ""
 }

@@ -55,9 +55,9 @@ func (a *TapWorker) NewEth(t uint16) *libol.Ether {
 }
 
 func (a *TapWorker) GoRecv(doRecv func([]byte) error) {
-	//TODO catch panic
+	defer libol.Catch()
 	a.doRecv = doRecv
-	defer a.Close()
+
 	for {
 		data := make([]byte, a.ifmtu)
 		if a.ifce == nil {
@@ -84,6 +84,7 @@ func (a *TapWorker) GoRecv(doRecv func([]byte) error) {
 			doRecv(data[:n])
 		}
 	}
+	a.Close()
 }
 
 func (a *TapWorker) DoSend(data []byte) error {
@@ -142,12 +143,13 @@ func (a *TapWorker) onArp(data []byte) bool {
 }
 
 func (a *TapWorker) GoLoop() {
-	defer a.Close()
+	defer libol.Catch()
+
 	for {
 		select {
 		case wdata := <-a.writechan:
 			if a.ifce == nil {
-				return
+				break
 			}
 
 			if a.ifce.IsTUN() {
@@ -176,6 +178,7 @@ func (a *TapWorker) GoLoop() {
 			}
 		}
 	}
+	a.Close()
 }
 
 func (a *TapWorker) Close() {
