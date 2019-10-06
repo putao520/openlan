@@ -227,6 +227,10 @@ func (t *TcpClient) IsTerminal() bool {
 	return t.GetStatus() == CL_TERMINAL
 }
 
+func (t *TcpClient) IsInitialized() bool {
+	return t.GetStatus() == CL_INIT
+}
+
 func (t *TcpClient) SendReq(action string, body string) error {
 	data := EncInstReq(action, body)
 	Debug("TcpClient.SendReq %d %s", len(data), data[6:])
