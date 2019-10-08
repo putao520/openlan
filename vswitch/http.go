@@ -120,16 +120,22 @@ func (h *Http) Index(w http.ResponseWriter, r *http.Request) {
 		body := fmt.Sprintf("# uptime: %d\n", h.wroker.UpTime())
 		body += "\n"
 		body += "# point accessed to this vswith.\n"
-		body += "uptime, remote, device, receipt, transmis, error\n"
+		body += "uptime, remote, device, receipt, transmis, error, state\n"
 		for p := range h.wroker.ListPoint() {
 			if p == nil {
 				break
 			}
 
 			client, ifce := p.Client, p.Device
-			body += fmt.Sprintf("%d, %s, %s, %d, %d, %d\n",
-				client.UpTime(), client.Addr, ifce.Name(),
-				client.RxOkay, client.TxOkay, client.TxError)
+			if client != nil && ifce != nil {
+				body += fmt.Sprintf("%d, %s, %s, %d, %d, %d, %s\n",
+					client.UpTime(), client.Addr, ifce.Name(),
+					client.RxOkay, client.TxOkay, client.TxError, client.State())
+			} else {
+				body += fmt.Sprintf("%d, %s, %s, %d, %d, %d, %s\n",
+					0, client.Addr, "--",
+					client.RxOkay, client.TxOkay, client.TxError, "--")
+			}
 		}
 
 		body += "\n"
@@ -146,14 +152,20 @@ func (h *Http) Index(w http.ResponseWriter, r *http.Request) {
 
 		body += "\n"
 		body += "# link which connect to other vswitch.\n"
-		body += "uptime, bridge, device, remote\n"
+		body += "uptime, bridge, device, remote, state\n"
 		for p := range h.wroker.ListLink() {
 			if p == nil {
 				break
 			}
 
-			body += fmt.Sprintf("%d, %s, %s, %s\n",
-				p.GetClient().UpTime(), p.Brname, p.Ifname, p.GetClient().Addr)
+			client := p.GetClient()
+			if client != nil {
+				body += fmt.Sprintf("%d, %s, %s, %s, %s\n",
+					client.UpTime(), p.Brname, p.Ifname, client.Addr, client.State())
+			} else {
+				body += fmt.Sprintf("%d, %s, %s, %s, %s\n",
+					0, p.Brname, p.Ifname, "--", "--")
+			}
 		}
 
 		fmt.Fprintf(w, body)
