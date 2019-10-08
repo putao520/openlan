@@ -26,7 +26,7 @@ func (sm *SMap) Set(k interface{}, v interface{}) {
 	sm.Data[k] = v
 }
 
-func (sm *SMap) Del(k interface{})  {
+func (sm *SMap) Del(k interface{}) {
 	sm.Lock.RLock()
 	defer sm.Lock.RUnlock()
 
@@ -46,6 +46,22 @@ func (sm *SMap) GetEx(k string) (interface{}, bool) {
 	defer sm.Lock.RUnlock()
 	v, ok := sm.Data[k]
 	return v, ok
+}
+
+func (sm *SMap) List() <-chan interface{} {
+	ret := make(chan interface{}, 1024)
+
+	go func() {
+		sm.Lock.RLock()
+		defer sm.Lock.RUnlock()
+
+		for _, u := range sm.Data {
+			ret <- u
+		}
+		ret <- nil //Finish channel by nil.
+	}()
+
+	return ret
 }
 
 // a := SVar
@@ -72,5 +88,3 @@ func (sv *SVar) Get() interface{} {
 	defer sv.Lock.RUnlock()
 	return sv.Data
 }
-
-
