@@ -65,11 +65,12 @@ func NewConfig() (c *Config) {
 	flag.StringVar(&c.saveFile, "conf", Default.SaveFile(), "The configuration file")
 
 	flag.Parse()
-	libol.Init(c.LogFile, c.Verbose)
-
 	c.Load()
 	c.Default()
+
+	libol.Init(c.LogFile, c.Verbose)
 	c.Save(fmt.Sprintf("%s.cur", c.saveFile))
+
 	str, err := libol.Marshal(c, false)
 	if err != nil {
 		libol.Error("NewConfig.json error: %s", err)

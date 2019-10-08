@@ -35,7 +35,7 @@ func (l *Logger) Info(format string, v ...interface{}) {
 	if INFO >= l.Level {
 		log.Printf(fmt.Sprintf("INFO %s", format), v...)
 	}
-	l.SaveError(fmt.Sprintf("FATAL %s", format), v...)
+	l.SaveError(fmt.Sprintf("INFO %s", format), v...)
 }
 
 func (l *Logger) Warn(format string, v ...interface{}) {
