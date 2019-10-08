@@ -127,15 +127,9 @@ func (h *Http) Index(w http.ResponseWriter, r *http.Request) {
 			}
 
 			client, ifce := p.Client, p.Device
-			if client != nil && ifce != nil {
-				body += fmt.Sprintf("%d, %s, %s, %d, %d, %d, %s\n",
-					client.UpTime(), client.Addr, ifce.Name(),
-					client.RxOkay, client.TxOkay, client.TxError, client.State())
-			} else {
-				body += fmt.Sprintf("%d, %s, %s, %d, %d, %d, %s\n",
-					0, client.Addr, "--",
-					client.RxOkay, client.TxOkay, client.TxError, "--")
-			}
+			body += fmt.Sprintf("%d, %s, %s, %d, %d, %d, %s\n",
+				client.UpTime(), client.Addr, ifce.Name(),
+				client.RxOkay, client.TxOkay, client.TxError, client.State())
 		}
 
 		body += "\n"
@@ -157,15 +151,8 @@ func (h *Http) Index(w http.ResponseWriter, r *http.Request) {
 			if p == nil {
 				break
 			}
-
-			client := p.GetClient()
-			if client != nil {
-				body += fmt.Sprintf("%d, %s, %s, %s, %s\n",
-					client.UpTime(), p.Brname, p.Ifname, client.Addr, client.State())
-			} else {
-				body += fmt.Sprintf("%d, %s, %s, %s, %s\n",
-					0, p.Brname, p.Ifname, "--", "--")
-			}
+			body += fmt.Sprintf("%d, %s, %s, %s, %s\n",
+				p.UpTime(), p.Brname, p.Ifname, p.Addr(), p.State())
 		}
 
 		fmt.Fprintf(w, body)

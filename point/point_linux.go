@@ -161,3 +161,35 @@ func (p *Point) GetIfce() *water.Interface {
 	}
 	return nil
 }
+
+func (p *Point) UpTime() int64 {
+	client := p.GetClient()
+	if client != nil {
+		return client.UpTime()
+	}
+	return 0
+}
+
+func (p *Point) State() string {
+	client := p.GetClient()
+	if client != nil {
+		return client.State()
+	}
+	return "-"
+}
+
+func (p *Point) Addr() string {
+	client := p.GetClient()
+	if client != nil {
+		return client.Addr
+	}
+	return "-"
+}
+
+func (p *Point) IfName() string {
+	ifce := p.GetIfce()
+	if ifce != nil {
+		return ifce.Name()
+	}
+	return "-"
+}
