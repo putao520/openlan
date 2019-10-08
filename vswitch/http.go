@@ -119,7 +119,7 @@ func (h *Http) Index(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 		body := fmt.Sprintf("# uptime: %d\n", h.wroker.UpTime())
 		body += "\n"
-		body += "# point accessed to h vswith.\n"
+		body += "# point accessed to this vswith.\n"
 		body += "uptime, remote, device, receipt, transmis, error\n"
 		for p := range h.wroker.ListPoint() {
 			if p == nil {
@@ -133,7 +133,7 @@ func (h *Http) Index(w http.ResponseWriter, r *http.Request) {
 		}
 
 		body += "\n"
-		body += "# neighbor we discovered on h vswitch.\n"
+		body += "# neighbor we discovered on this vswitch.\n"
 		body += "uptime, ethernet, address, remote\n"
 		for n := range h.wroker.Neighbor.ListNeighbor() {
 			if n == nil {
