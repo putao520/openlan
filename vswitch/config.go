@@ -36,7 +36,7 @@ type RedisConfig struct {
 var Default = Config{
 	BrName:     "",
 	Verbose:    libol.INFO,
-	HttpListen: "0.0.0.0:10000",
+	HttpListen: "",
 	TcpListen:  "0.0.0.0:10002",
 	Token:      "",
 	TokenFile:  ".vswitch.token",
