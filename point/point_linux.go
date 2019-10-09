@@ -28,26 +28,26 @@ func NewPoint(config *Config) (p *Point) {
 		tcpWorker: NewTcpWorker(client, config),
 		config:    config,
 	}
-	p.newIfce()
+	p.newDevice()
 	return
 }
 
-func (p *Point) newIfce() {
+func (p *Point) newDevice() {
 	var err error
-	var ifce *water.Interface
+	var dev *water.Interface
 
 	if p.config.IfTun {
-		ifce, err = water.New(water.Config{DeviceType: water.TUN})
+		dev, err = water.New(water.Config{DeviceType: water.TUN})
 	} else {
-		ifce, err = water.New(water.Config{DeviceType: water.TAP})
+		dev, err = water.New(water.Config{DeviceType: water.TAP})
 	}
 	if err != nil {
 		libol.Fatal("NewPoint: %s", err)
 		return
 	}
 
-	libol.Info("NewPoint.device %s", ifce.Name())
-	p.tapWorker = NewTapWorker(ifce, p.config)
+	libol.Info("NewPoint.device %s", dev.Name())
+	p.tapWorker = NewTapWorker(dev, p.config)
 }
 
 func (p *Point) Start() {
@@ -77,18 +77,18 @@ func (p *Point) Stop() {
 }
 
 func (p *Point) UpLink() error {
-	if p.GetIfce() == nil {
-		p.newIfce()
+	if p.GetDevice() == nil {
+		p.newDevice()
 	}
-	if p.GetIfce() == nil {
+	if p.GetDevice() == nil {
 		return libol.Errer("create device.")
 	}
 
-	name := p.GetIfce().Name()
+	name := p.GetDevice().Name()
 	libol.Debug("Point.UpLink: %s", name)
 	link, err := tenus.NewLinkFrom(name)
 	if err != nil {
-		libol.Error("Point.UpLink: Get ifce %s: %s", name, err)
+		libol.Error("Point.UpLink: Get dev %s: %s", name, err)
 		return err
 	}
 
@@ -117,12 +117,12 @@ func (p *Point) UpLink() error {
 		}
 
 		if err := br.AddSlaveIfc(link.NetInterface()); err != nil {
-			libol.Error("Point.UpLink.AddSlave: Switch ifce %s: %s", name, err)
+			libol.Error("Point.UpLink.AddSlave: Switch dev %s: %s", name, err)
 		}
 
 		link, err = tenus.NewLinkFrom(p.BrName)
 		if err != nil {
-			libol.Error("Point.UpLink: Get ifce %s: %s", p.BrName, err)
+			libol.Error("Point.UpLink: Get dev %s: %s", p.BrName, err)
 		}
 
 		p.br = br
@@ -153,7 +153,7 @@ func (p *Point) GetClient() *libol.TcpClient {
 	return nil
 }
 
-func (p *Point) GetIfce() *water.Interface {
+func (p *Point) GetDevice() *water.Interface {
 	if p.tapWorker != nil {
 		return p.tapWorker.device
 	}
@@ -173,7 +173,7 @@ func (p *Point) State() string {
 	if client != nil {
 		return client.State()
 	}
-	return "-"
+	return ""
 }
 
 func (p *Point) Addr() string {
@@ -181,13 +181,13 @@ func (p *Point) Addr() string {
 	if client != nil {
 		return client.Addr
 	}
-	return "-"
+	return ""
 }
 
 func (p *Point) IfName() string {
-	ifce := p.GetIfce()
-	if ifce != nil {
-		return ifce.Name()
+	dev := p.GetDevice()
+	if dev != nil {
+		return dev.Name()
 	}
-	return "-"
+	return ""
 }

@@ -29,22 +29,22 @@ func NewPoint(config *Config) (p *Point) {
 	return
 }
 
-func (p *Point) newIfce() {
-	ifce, err := water.New(water.Config{DeviceType: water.TAP})
+func (p *Point) newDevice() {
+	dev, err := water.New(water.Config{DeviceType: water.TAP})
 	if err != nil {
 		libol.Fatal("NewPoint: %s", err)
 		return
 	}
 
-	libol.Info("NewPoint.device %s", ifce.Name())
-	p.tapWorker = NewTapWorker(ifce, p.config)
+	libol.Info("NewPoint.device %s", dev.Name())
+	p.tapWorker = NewTapWorker(dev, p.config)
 }
 
 func (p *Point) UpLink() error {
-	if p.GetIfce() == nil {
-		p.newIfce()
+	if p.GetDevice() == nil {
+		p.newDevice()
 	}
-	if p.GetIfce() == nil {
+	if p.GetDevice() == nil {
 		return libol.Errer("create device.")
 	}
 	return nil
@@ -77,9 +77,9 @@ func (p *Point) GetClient() *libol.TcpClient {
 	return nil
 }
 
-func (p *Point) GetIfce() *water.Interface {
+func (p *Point) GetDevice() *water.Interface {
 	if p.tapWorker != nil {
-		return p.tapWorker.Ifce
+		return p.tapWorker.Device
 	}
 	return nil
 }
@@ -97,7 +97,7 @@ func (p *Point) State() string {
 	if client != nil {
 		return client.State()
 	}
-	return "-"
+	return ""
 }
 
 func (p *Point) Addr() string {
@@ -105,13 +105,13 @@ func (p *Point) Addr() string {
 	if client != nil {
 		return client.Addr
 	}
-	return "-"
+	return ""
 }
 
 func (p *Point) IfName() string {
-	ifce := p.GetIfce()
-	if ifce != nil {
-		return ifce.Name()
+	dev := p.GetDevice()
+	if dev != nil {
+		return dev.Name()
 	}
-	return "-"
+	return ""
 }
