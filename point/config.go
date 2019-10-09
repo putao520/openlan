@@ -65,7 +65,9 @@ func NewConfig() (c *Config) {
 	flag.StringVar(&c.saveFile, "conf", Default.SaveFile(), "The configuration file")
 
 	flag.Parse()
-	c.Load()
+	if err := c.Load(); err != nil {
+		libol.Error("NewConfig.load %s", err)
+	}
 	c.Default()
 
 	libol.Init(c.LogFile, c.Verbose)

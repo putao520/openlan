@@ -80,7 +80,9 @@ func NewConfig() (c *Config) {
 
 	flag.Parse()
 	c.Default()
-	c.Load()
+	if err := c.Load(); err != nil {
+		libol.Error("NewConfig.load %s", err)
+	}
 
 	libol.Init(c.LogFile, c.Verbose)
 	c.Save(fmt.Sprintf("%s.cur", c.saveFile))
