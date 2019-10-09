@@ -11,16 +11,16 @@ import (
 )
 
 type Command struct {
-	tcpwroker *TcpWorker
-	brip      net.IP
-	brnet     *net.IPNet
+	tcpWorker *TcpWorker
+	brIp      net.IP
+	brNet     *net.IPNet
 }
 
 func NewCommand(config *Config) (cmd *Command) {
 	client := libol.NewTcpClient(config.Addr)
 
 	cmd = &Command{
-		tcpwroker: NewTcpWorker(client, config),
+		tcpWorker: NewTcpWorker(client, config),
 	}
 	return
 }
@@ -28,7 +28,7 @@ func NewCommand(config *Config) (cmd *Command) {
 func (cmd *Command) Connect() string {
 	libol.Info("Command.Connect\n")
 
-	if err := cmd.tcpwroker.Connect(); err != nil {
+	if err := cmd.tcpWorker.Connect(); err != nil {
 		return fmt.Sprintf("Command.Start %s", err)
 	}
 
@@ -38,12 +38,12 @@ func (cmd *Command) Connect() string {
 func (cmd *Command) Start() {
 	libol.Info("Command.Start\n")
 
-	go cmd.tcpwroker.GoRecv(cmd.DoRecv)
-	go cmd.tcpwroker.GoLoop()
+	go cmd.tcpWorker.GoRecv(cmd.DoRecv)
+	go cmd.tcpWorker.GoLoop()
 }
 
 func (cmd *Command) Close() {
-	cmd.tcpwroker.Close()
+	cmd.tcpWorker.Close()
 }
 
 func (cmd *Command) onArp(data []byte) {
@@ -92,7 +92,7 @@ func (cmd *Command) DoRecv(data []byte) error {
 }
 
 func (cmd *Command) DoSend(data []byte) error {
-	return cmd.tcpwroker.DoSend(data)
+	return cmd.tcpWorker.DoSend(data)
 }
 
 func (cmd *Command) DoOpen(args []string) string {
@@ -101,10 +101,10 @@ func (cmd *Command) DoOpen(args []string) string {
 		addr := args[0]
 		RightAddr(&addr, 10002)
 
-		cmd.tcpwroker.SetAddr(addr)
+		cmd.tcpWorker.SetAddr(addr)
 	}
 	if len(args) > 1 {
-		cmd.tcpwroker.SetAuth(args[1])
+		cmd.tcpWorker.SetAuth(args[1])
 	}
 
 	return cmd.Connect()
@@ -118,14 +118,14 @@ func (cmd *Command) DoArp(args []string) string {
 	}
 
 	arp := libol.NewArp()
-	arp.SHwAddr = libol.DEFAULTETHADDR
-	arp.THwAddr = libol.ZEROETHADDR
+	arp.SHwAddr = libol.DEFAULTED
+	arp.THwAddr = libol.ZEROED
 	arp.SIpAddr = []byte(net.ParseIP(args[0]).To4())
 	arp.TIpAddr = []byte(net.ParseIP(args[1]).To4())
 
-	eth := libol.NewEther(libol.ETH_P_ARP)
-	eth.Dst = libol.BROADETHADDR
-	eth.Src = libol.DEFAULTETHADDR
+	eth := libol.NewEther(libol.EthPArp)
+	eth.Dst = libol.BROADER
+	eth.Src = libol.DEFAULTED
 
 	buffer := make([]byte, 0, 1024)
 	buffer = append(buffer, eth.Encode()...)
@@ -173,18 +173,18 @@ func (cmd *Command) HitInput(args []string) string {
 }
 
 func (cmd *Command) Loop() {
-	ioreader := bufio.NewReader(os.Stdin)
+	ioReader := bufio.NewReader(os.Stdin)
 	for {
 		fmt.Print("[point]# ")
 		os.Stdout.Sync()
 
-		cmdstr, err := ioreader.ReadString('\n')
+		cmdStr, err := ioReader.ReadString('\n')
 		if err != nil {
 			fmt.Println(err)
 			break
 		}
 
-		input := strings.TrimSpace(strings.Trim(cmdstr, "\r\n"))
+		input := strings.TrimSpace(strings.Trim(cmdStr, "\r\n"))
 		if input == "quit" || input == "exit" {
 			break
 		}

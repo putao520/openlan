@@ -22,10 +22,10 @@ func (e *Neighbor) String() string {
 	return fmt.Sprintf("%s,%s,%s", e.HwAddr, e.IpAddr, e.Client)
 }
 
-func NewNeighbor(hwaddr net.HardwareAddr, ipaddr net.IP, client *libol.TcpClient) (e *Neighbor) {
+func NewNeighbor(hwAddr net.HardwareAddr, ipAddr net.IP, client *libol.TcpClient) (e *Neighbor) {
 	e = &Neighbor{
-		HwAddr:  hwaddr,
-		IpAddr:  ipaddr,
+		HwAddr:  hwAddr,
+		IpAddr:  ipAddr,
 		Client:  client,
 		NewTime: time.Now().Unix(),
 		HitTime: time.Now().Unix(),
@@ -38,23 +38,23 @@ func (e *Neighbor) UpTime() int64 {
 	return time.Now().Unix() - e.NewTime
 }
 
-type Neighborer struct {
+type Neighber struct {
 	lock        sync.RWMutex
 	neighbors   map[string]*Neighbor
-	wroker      *Worker
+	worker      *Worker
 	EnableRedis bool
 }
 
-func NewNeighborer(wroker *Worker, c *Config) (e *Neighborer) {
-	e = &Neighborer{
+func NewNeighber(worker *Worker, c *Config) (e *Neighber) {
+	e = &Neighber{
 		neighbors:   make(map[string]*Neighbor, 1024*10),
-		wroker:      wroker,
+		worker:      worker,
 		EnableRedis: c.Redis.Enable,
 	}
 	return
 }
 
-func (e *Neighborer) GetNeighbor(name string) *Neighbor {
+func (e *Neighber) GetNeighbor(name string) *Neighbor {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
 
@@ -65,7 +65,7 @@ func (e *Neighborer) GetNeighbor(name string) *Neighbor {
 	return nil
 }
 
-func (e *Neighborer) ListNeighbor() <-chan *Neighbor {
+func (e *Neighber) ListNeighbor() <-chan *Neighbor {
 	c := make(chan *Neighbor, 128)
 
 	go func() {
@@ -81,8 +81,8 @@ func (e *Neighborer) ListNeighbor() <-chan *Neighbor {
 	return c
 }
 
-func (e *Neighborer) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
-	libol.Debug("Neighborer.OnFrame % x.", frame.Data)
+func (e *Neighber) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
+	libol.Debug("Neighber.OnFrame % x.", frame.Data)
 
 	if libol.IsInst(frame.Data) {
 		return nil
@@ -102,7 +102,7 @@ func (e *Neighborer) OnFrame(client *libol.TcpClient, frame *libol.Frame) error 
 
 	arp, err := libol.NewArpFromFrame(frame.Data[eth.Len:])
 	if err != nil {
-		libol.Error("Neighborer.OnFrame %s.", err)
+		libol.Error("Neighber.OnFrame %s.", err)
 		return nil
 	}
 	if arp.IsIP4() {
@@ -116,18 +116,18 @@ func (e *Neighborer) OnFrame(client *libol.TcpClient, frame *libol.Frame) error 
 	return nil
 }
 
-func (e *Neighborer) AddNeighbor(neb *Neighbor) {
+func (e *Neighber) AddNeighbor(neb *Neighbor) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
 	if n, ok := e.neighbors[neb.HwAddr.String()]; ok {
 		//TODO update.
-		libol.Info("Neighborer.AddNeighbor: update %s.", neb)
+		libol.Info("Neighber.AddNeighbor: update %s.", neb)
 		n.IpAddr = neb.IpAddr
 		n.Client = neb.Client
 		n.HitTime = time.Now().Unix()
 	} else {
-		libol.Info("Neighborer.AddNeighbor: new %s.", neb)
+		libol.Info("Neighber.AddNeighbor: new %s.", neb)
 		n = neb
 		e.neighbors[neb.HwAddr.String()] = n
 	}
@@ -135,38 +135,38 @@ func (e *Neighborer) AddNeighbor(neb *Neighbor) {
 	e.PubNeighbor(neb, true)
 }
 
-func (e *Neighborer) DelNeighbor(hwaddr net.HardwareAddr) {
+func (e *Neighber) DelNeighbor(hwAddr net.HardwareAddr) {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
 
-	libol.Info("Neighborer.DelNeighbor %s.", hwaddr)
-	if n := e.neighbors[hwaddr.String()]; n != nil {
+	libol.Info("Neighber.DelNeighbor %s.", hwAddr)
+	if n := e.neighbors[hwAddr.String()]; n != nil {
 		e.PubNeighbor(n, false)
-		delete(e.neighbors, hwaddr.String())
+		delete(e.neighbors, hwAddr.String())
 	}
 }
 
-func (e *Neighborer) OnClientClose(client *libol.TcpClient) {
+func (e *Neighber) OnClientClose(client *libol.TcpClient) {
 	//TODO
-	libol.Info("Neighborer.OnClientClose %s.", client)
+	libol.Info("Neighber.OnClientClose %s.", client)
 }
 
-func (e *Neighborer) PubNeighbor(neb *Neighbor, isadd bool) {
+func (e *Neighber) PubNeighbor(neb *Neighbor, isadd bool) {
 	if !e.EnableRedis {
 		return
 	}
 
 	key := fmt.Sprintf("neighbor:%s", strings.Replace(neb.HwAddr.String(), ":", "-", -1))
 	value := map[string]interface{}{
-		"hwaddr":  neb.HwAddr.String(),
-		"ipaddr":  neb.IpAddr.String(),
+		"hwAddr":  neb.HwAddr.String(),
+		"ipAddr":  neb.IpAddr.String(),
 		"remote":  neb.Client.String(),
-		"newtime": neb.NewTime,
-		"hittime": neb.HitTime,
-		"actived": isadd,
+		"newTime": neb.NewTime,
+		"hitTime": neb.HitTime,
+		"active": isadd,
 	}
 
-	if err := e.wroker.Redis.HMSet(key, value); err != nil {
-		libol.Error("Neighborer.PubNeighbor hset %s", err)
+	if err := e.worker.Redis.HMSet(key, value); err != nil {
+		libol.Error("Neighber.PubNeighbor hset %s", err)
 	}
 }

@@ -36,12 +36,12 @@ func NewTcpServer(c *Config) (t *TcpServer) {
 func (t *TcpServer) Listen() error {
 	libol.Debug("TcpServer.Start %s", t.Addr)
 
-	laddr, err := net.ResolveTCPAddr("tcp", t.Addr)
+	addr, err := net.ResolveTCPAddr("tcp", t.Addr)
 	if err != nil {
 		return err
 	}
 
-	listener, err := net.ListenTCP("tcp", laddr)
+	listener, err := net.ListenTCP("tcp", addr)
 	if err != nil {
 		libol.Info("TcpServer.Listen: %s", err)
 		t.listener = nil

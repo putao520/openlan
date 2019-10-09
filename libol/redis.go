@@ -92,10 +92,10 @@ func (r *RedisCli) HGet(key string, field string) interface{} {
 		return err
 	}
 
-	hget := r.Client.HGet(key, field)
-	if hget.Err() == nil || hget.Err() == redis.Nil {
+	hGet := r.Client.HGet(key, field)
+	if hGet.Err() == nil || hGet.Err() == redis.Nil {
 		return nil
 	}
 
-	return hget.Val()
+	return hGet.Val()
 }

@@ -5,16 +5,16 @@ import (
 )
 
 var (
-	ZEROETHADDR    = []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
-	BROADETHADDR   = []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
-	DEFAULTETHADDR = []byte{0x00, 0x16, 0x3e, 0x02, 0x56, 0x23}
+	ZEROED    = []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+	BROADER   = []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
+	DEFAULTED = []byte{0x00, 0x16, 0x3e, 0x02, 0x56, 0x23}
 )
 
 const (
-	ETH_P_ARP  = 0x0806
-	ETH_P_IP4  = 0x0800
-	ETH_P_IP6  = 0x86DD
-	ETH_P_VLAN = 0x8100
+	EthPArp   = 0x0806
+	EthPIp4   = 0x0800
+	ETHPIP6 = 0x86DD
+	EthPVlan  = 0x8100
 )
 
 type Ether struct {
@@ -27,19 +27,19 @@ type Ether struct {
 func NewEther(t uint16) (e *Ether) {
 	e = &Ether{
 		Type: t,
-		Src:  ZEROETHADDR,
-		Dst:  ZEROETHADDR,
+		Src:  ZEROED,
+		Dst:  ZEROED,
 		Len:  14,
 	}
 	return
 }
 
 func NewEtherArp() (e *Ether) {
-	return NewEther(ETH_P_ARP)
+	return NewEther(EthPArp)
 }
 
 func NewEtherIP4() (e *Ether) {
-	return NewEther(ETH_P_IP4)
+	return NewEther(EthPIp4)
 }
 
 func NewEtherFromFrame(frame []byte) (e *Ether, err error) {
@@ -74,13 +74,13 @@ func (e *Ether) Encode() []byte {
 }
 
 func (e *Ether) IsVlan() bool {
-	return e.Type == ETH_P_VLAN
+	return e.Type == EthPVlan
 }
 
 func (e *Ether) IsArp() bool {
-	return e.Type == ETH_P_ARP
+	return e.Type == EthPArp
 }
 
 func (e *Ether) IsIP4() bool {
-	return e.Type == ETH_P_IP4
+	return e.Type == EthPIp4
 }

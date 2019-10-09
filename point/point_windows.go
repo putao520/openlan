@@ -8,24 +8,22 @@ import (
 )
 
 type Point struct {
-	Brname string
-	Ifaddr string
-	Ifname string
+	BrName string
+	IfAddr string
 
-	//
-	tcpworker *TcpWorker
-	tapworker *TapWorker
-	brip      net.IP
-	brnet     *net.IPNet
+	tcpWorker *TcpWorker
+	tapWorker *TapWorker
+	brIp      net.IP
+	brNet     *net.IPNet
 	config    *Config
 }
 
 func NewPoint(config *Config) (p *Point) {
 	client := libol.NewTcpClient(config.Addr)
 	p = &Point{
-		Brname:    config.Brname,
-		Ifaddr:    config.Ifaddr,
-		tcpworker: NewTcpWorker(client, config),
+		BrName:    config.BrName,
+		IfAddr:    config.IfAddr,
+		tcpWorker: NewTcpWorker(client, config),
 		config:    config,
 	}
 	return
@@ -39,8 +37,7 @@ func (p *Point) newIfce() {
 	}
 
 	libol.Info("NewPoint.device %s", ifce.Name())
-	p.Ifname = ifce.Name()
-	p.tapworker = NewTapWorker(ifce, p.config)
+	p.tapWorker = NewTapWorker(ifce, p.config)
 }
 
 func (p *Point) UpLink() error {
@@ -57,32 +54,32 @@ func (p *Point) Start() {
 	libol.Debug("Point.Start Windows.")
 
 	p.UpLink()
-	if err := p.tcpworker.Connect(); err != nil {
+	if err := p.tcpWorker.Connect(); err != nil {
 		libol.Error("Point.Start %s", err)
 	}
 
-	go p.tapworker.GoRecv(p.tcpworker.DoSend)
-	go p.tapworker.GoLoop()
+	go p.tapWorker.GoRecv(p.tcpWorker.DoSend)
+	go p.tapWorker.GoLoop()
 
-	go p.tcpworker.GoRecv(p.tapworker.DoSend)
-	go p.tcpworker.GoLoop()
+	go p.tcpWorker.GoRecv(p.tapWorker.DoSend)
+	go p.tcpWorker.GoLoop()
 }
 
 func (p *Point) Stop() {
-	p.tapworker.Stop()
-	p.tcpworker.Stop()
+	p.tapWorker.Stop()
+	p.tcpWorker.Stop()
 }
 
 func (p *Point) GetClient() *libol.TcpClient {
-	if p.tcpworker != nil {
-		return p.tcpworker.Client
+	if p.tcpWorker != nil {
+		return p.tcpWorker.Client
 	}
 	return nil
 }
 
 func (p *Point) GetIfce() *water.Interface {
-	if p.tapworker != nil {
-		return p.tapworker.Ifce
+	if p.tapWorker != nil {
+		return p.tapWorker.Ifce
 	}
 	return nil
 }

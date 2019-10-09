@@ -13,15 +13,15 @@ import (
 )
 
 type Http struct {
-	wroker     *Worker
+	worker     *Worker
 	listen     string
 	adminToken string
 	adminFile  string
 }
 
-func NewHttp(wroker *Worker, c *Config) (h *Http) {
+func NewHttp(worker *Worker, c *Config) (h *Http) {
 	h = &Http{
-		wroker:     wroker,
+		worker:     worker,
 		listen:     c.HttpListen,
 		adminToken: c.Token,
 		adminFile:  c.TokenFile,
@@ -117,25 +117,25 @@ func (h *Http) Hello(w http.ResponseWriter, r *http.Request) {
 func (h *Http) Index(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		body := fmt.Sprintf("# uptime: %d\n", h.wroker.UpTime())
+		body := fmt.Sprintf("# uptime: %d\n", h.worker.UpTime())
 		body += "\n"
 		body += "# point accessed to this vswith.\n"
 		body += "uptime, remote, device, receipt, transmis, error, state\n"
-		for p := range h.wroker.ListPoint() {
+		for p := range h.worker.ListPoint() {
 			if p == nil {
 				break
 			}
 
-			client, ifce := p.Client, p.Device
+			client, dev := p.Client, p.Device
 			body += fmt.Sprintf("%d, %s, %s, %d, %d, %d, %s\n",
-				client.UpTime(), client.Addr, ifce.Name(),
+				client.UpTime(), client.Addr, dev.Name(),
 				client.RxOkay, client.TxOkay, client.TxError, client.State())
 		}
 
 		body += "\n"
 		body += "# neighbor we discovered on this vswitch.\n"
 		body += "uptime, ethernet, address, remote\n"
-		for n := range h.wroker.Neighbor.ListNeighbor() {
+		for n := range h.worker.Neighbor.ListNeighbor() {
 			if n == nil {
 				break
 			}
@@ -147,12 +147,12 @@ func (h *Http) Index(w http.ResponseWriter, r *http.Request) {
 		body += "\n"
 		body += "# link which connect to other vswitch.\n"
 		body += "uptime, bridge, device, remote, state\n"
-		for p := range h.wroker.ListLink() {
+		for p := range h.worker.ListLink() {
 			if p == nil {
 				break
 			}
 			body += fmt.Sprintf("%d, %s, %s, %s, %s\n",
-				p.UpTime(), p.Brname, p.Ifname, p.Addr(), p.State())
+				p.UpTime(), p.BrName, p.IfName(), p.Addr(), p.State())
 		}
 
 		fmt.Fprintf(w, body)
@@ -180,7 +180,7 @@ func (h *Http) _User(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		users := make([]*User, 0, 1024)
-		for u := range h.wroker.ListUser() {
+		for u := range h.worker.ListUser() {
 			if u == nil {
 				break
 			}
@@ -203,9 +203,9 @@ func (h *Http) _User(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		h.wroker.AddUser(user)
+		h.worker.AddUser(user)
 
-		fmt.Fprintf(w, ApiReplyer(0, "success"))
+		fmt.Fprintf(w, ApiReplier(0, "success"))
 	default:
 		http.Error(w, fmt.Sprintf("Not support %s", r.Method), 400)
 	}
@@ -219,7 +219,7 @@ func (h *Http) _Neighbor(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		neighbors := make([]*Neighbor, 0, 1024)
-		for n := range h.wroker.Neighbor.ListNeighbor() {
+		for n := range h.worker.Neighbor.ListNeighbor() {
 			if n == nil {
 				break
 			}
@@ -243,7 +243,7 @@ func (h *Http) _Link(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		links := make([]*point.Point, 0, 1024)
-		for l := range h.wroker.ListLink() {
+		for l := range h.worker.ListLink() {
 			if l == nil {
 				break
 			}
@@ -266,9 +266,9 @@ func (h *Http) _Link(w http.ResponseWriter, r *http.Request) {
 		}
 
 		c.Default()
-		h.wroker.AddLink(c)
+		h.worker.AddLink(c)
 
-		fmt.Fprintf(w, ApiReplyer(0, "success"))
+		fmt.Fprintf(w, ApiReplier(0, "success"))
 	default:
 		http.Error(w, fmt.Sprintf("Not support %s", r.Method), 400)
 	}
@@ -287,7 +287,7 @@ func NewApiReply(code int, output string) (h *ApiReply) {
 	return
 }
 
-func ApiReplyer(code int, output string) string {
+func ApiReplier(code int, output string) string {
 	h := ApiReply{
 		Code:   code,
 		Output: output,

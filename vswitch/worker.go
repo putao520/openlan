@@ -35,23 +35,23 @@ type Worker struct {
 	Server      *TcpServer
 	Auth        *PointAuth
 	Request     *WithRequest
-	Neighbor    *Neighborer
+	Neighbor    *Neighber
 	Redis       *libol.RedisCli
 	EnableRedis bool
 	Conf        *Config
 
 	br          tenus.Bridger
-	brip        net.IP
-	brnet       *net.IPNet
+	brIp        net.IP
+	brNet       *net.IPNet
 	keys        []int
 	hooks       map[int]func(*libol.TcpClient, *libol.Frame) error
-	ifmtu       int
+	ifMtu       int
 	clientsLock sync.RWMutex
 	clients     map[*libol.TcpClient]*Point
 	usersLock   sync.RWMutex
 	users       map[string]*User
-	newtime     int64
-	brname      string
+	newTime     int64
+	brName      string
 	linksLock   sync.RWMutex
 	links       map[string]*point.Point
 }
@@ -64,26 +64,21 @@ func NewWorker(server *TcpServer, c *Config) (w *Worker) {
 		EnableRedis: c.Redis.Enable,
 		Conf:        c,
 		br:          nil,
-		ifmtu:       c.Ifmtu,
+		ifMtu:       c.IfMtu,
 		hooks:       make(map[int]func(*libol.TcpClient, *libol.Frame) error),
 		keys:        make([]int, 0, 1024),
 		clients:     make(map[*libol.TcpClient]*Point, 1024),
 		users:       make(map[string]*User, 1024),
-		newtime:     time.Now().Unix(),
-		brname:      c.Brname,
+		newTime:     time.Now().Unix(),
+		brName:      c.BrName,
 		links:       make(map[string]*point.Point),
 	}
 
-	if err := w.Redis.Open(); err != nil {
-		libol.Error("NewWorker: redis.Open %s", err)
-	}
 	w.Auth = NewPointAuth(w, c)
 	w.Request = NewWithRequest(w, c)
-	w.Neighbor = NewNeighborer(w, c)
-	w.NewBr()
+	w.Neighbor = NewNeighber(w, c)
 	w.Register()
 	w.LoadUsers()
-	w.LoadLinks()
 
 	return
 }
@@ -130,34 +125,34 @@ func (w *Worker) LoadLinks() {
 }
 
 func (w *Worker) BrName() string {
-	if w.brname == "" {
-		addrs := strings.Split(w.Server.Addr, ":")
-		if len(addrs) != 2 {
-			w.brname = "brol-default"
+	if w.brName == "" {
+		adds := strings.Split(w.Server.Addr, ":")
+		if len(adds) != 2 {
+			w.brName = "brol-default"
 		} else {
-			w.brname = fmt.Sprintf("brol-%s", addrs[1])
+			w.brName = fmt.Sprintf("brol-%s", adds[1])
 		}
 	}
 
-	return w.brname
+	return w.brName
 }
 
 func (w *Worker) NewBr() {
 	var err error
 	var br tenus.Bridger
 
-	addr := w.Conf.Ifaddr
-	brname := w.BrName()
-	br, err = tenus.BridgeFromName(brname)
+	addr := w.Conf.IfAddr
+	brName := w.BrName()
+	br, err = tenus.BridgeFromName(brName)
 	if err != nil {
-		br, err = tenus.NewBridgeWithName(brname)
+		br, err = tenus.NewBridgeWithName(brName)
 		if err != nil {
 			libol.Error("Worker.newBr: %s", err)
 		}
 	}
 
-	brctl := libol.NewBrCtl(brname)
-	if err := brctl.Stp(true); err != nil {
+	brCtl := libol.NewBrCtl(brName)
+	if err := brCtl.Stp(true); err != nil {
 		libol.Error("Worker.newBr.Stp: %s", err)
 	}
 
@@ -165,7 +160,7 @@ func (w *Worker) NewBr() {
 		libol.Error("Worker.newBr: %s", err)
 	}
 
-	libol.Info("Worker.newBr %s", brname)
+	libol.Info("Worker.newBr %s", brName)
 
 	if addr != "" {
 		ip, net, err := net.ParseCIDR(addr)
@@ -173,11 +168,11 @@ func (w *Worker) NewBr() {
 			libol.Error("Worker.newBr.ParseCIDR %s : %s", addr, err)
 		}
 		if err := br.SetLinkIp(ip, net); err != nil {
-			libol.Error("Worker.newBr.SetLinkIp %s : %s", brname, err)
+			libol.Error("Worker.newBr.SetLinkIp %s : %s", brName, err)
 		}
 
-		w.brip = ip
-		w.brnet = net
+		w.brIp = ip
+		w.brNet = net
 	}
 
 	w.br = br
@@ -185,7 +180,7 @@ func (w *Worker) NewBr() {
 
 func (w *Worker) NewTap() (*water.Interface, error) {
 	libol.Debug("Worker.newTap")
-	ifce, err := water.New(water.Config{
+	dev, err := water.New(water.Config{
 		DeviceType: water.TAP,
 	})
 	if err != nil {
@@ -193,9 +188,9 @@ func (w *Worker) NewTap() (*water.Interface, error) {
 		return nil, err
 	}
 
-	link, err := tenus.NewLinkFrom(ifce.Name())
+	link, err := tenus.NewLinkFrom(dev.Name())
 	if err != nil {
-		libol.Error("Worker.newTap: Get ifce %s: %s", ifce.Name(), err)
+		libol.Error("Worker.newTap: Get dev %s: %s", dev.Name(), err)
 		return nil, err
 	}
 
@@ -204,16 +199,23 @@ func (w *Worker) NewTap() (*water.Interface, error) {
 	}
 
 	if err := w.br.AddSlaveIfc(link.NetInterface()); err != nil {
-		libol.Error("Worker.newTap: Switch ifce %s: %s", ifce.Name(), err)
+		libol.Error("Worker.newTap: Switch dev %s: %s", dev.Name(), err)
 		return nil, err
 	}
 
-	libol.Info("Worker.newTap %s", ifce.Name())
+	libol.Info("Worker.newTap %s", dev.Name())
 
-	return ifce, nil
+	return dev, nil
 }
 
 func (w *Worker) Start() {
+	if err := w.Redis.Open(); err != nil {
+		libol.Error("Worker.Start: redis.Open %s", err)
+	}
+
+	w.NewBr()
+	w.LoadLinks()
+
 	go w.Server.GoAccept()
 	go w.Server.GoLoop(w.onClient, w.onRecv, w.onClose)
 }
@@ -250,7 +252,7 @@ func (w *Worker) handleReq(client *libol.TcpClient, frame *libol.Frame) error {
 }
 
 func (w *Worker) onClient(client *libol.TcpClient) error {
-	client.SetStatus(libol.CL_CONNECTED)
+	client.SetStatus(libol.ClConnected)
 
 	libol.Info("Worker.onClient: %s", client.Addr)
 
@@ -271,12 +273,12 @@ func (w *Worker) onRecv(client *libol.TcpClient, data []byte) error {
 		return libol.Errer("Point not found.")
 	}
 
-	ifce := point.Device
+	dev := point.Device
 	if point == nil || point.Device == nil {
 		return libol.Errer("Tap devices is nil")
 	}
 
-	if _, err := ifce.Write(data); err != nil {
+	if _, err := dev.Write(data); err != nil {
 		libol.Error("Worker.onRecv: %s", err)
 		return err
 	}
@@ -297,8 +299,8 @@ func (w *Worker) Stop() {
 
 	w.Server.Close()
 
-	if w.br != nil && w.brip != nil {
-		if err := w.br.UnsetLinkIp(w.brip, w.brnet); err != nil {
+	if w.br != nil && w.brIp != nil {
+		if err := w.br.UnsetLinkIp(w.brIp, w.brNet); err != nil {
 			libol.Error("Worker.Close.UnsetLinkIp %s : %s", w.br.NetInterface().Name, err)
 		}
 	}
@@ -392,7 +394,7 @@ func (w *Worker) ListPoint() <-chan *Point {
 }
 
 func (w *Worker) UpTime() int64 {
-	return time.Now().Unix() - w.newtime
+	return time.Now().Unix() - w.newTime
 }
 
 func (w *Worker) PubPoint(p *Point, isadd bool) {
@@ -403,9 +405,9 @@ func (w *Worker) PubPoint(p *Point, isadd bool) {
 	key := fmt.Sprintf("point:%s", strings.Replace(p.Client.String(), ":", "-", -1))
 	value := map[string]interface{}{
 		"remote":  p.Client.String(),
-		"newtime": p.Client.NewTime,
+		"newTime": p.Client.NewTime,
 		"device":  p.Device.Name(),
-		"actived": isadd,
+		"active": isadd,
 	}
 
 	if err := w.Redis.HMSet(key, value); err != nil {
@@ -414,7 +416,7 @@ func (w *Worker) PubPoint(p *Point, isadd bool) {
 }
 
 func (w *Worker) AddLink(c *point.Config) {
-	c.Brname = w.BrName() //Reset bridge name.
+	c.BrName = w.BrName() //Reset bridge name.
 
 	go func() {
 		p := point.NewPoint(c)
@@ -465,14 +467,14 @@ func (w *Worker) ListLink() <-chan *point.Point {
 }
 
 type PointAuth struct {
-	ifmtu  int
-	wroker *Worker
+	ifMtu  int
+	worker *Worker
 }
 
-func NewPointAuth(wroker *Worker, c *Config) (w *PointAuth) {
+func NewPointAuth(worker *Worker, c *Config) (w *PointAuth) {
 	w = &PointAuth{
-		ifmtu:  c.Ifmtu,
-		wroker: wroker,
+		ifMtu:  c.IfMtu,
+		worker: worker,
 	}
 	return
 }
@@ -497,8 +499,8 @@ func (w *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 		return nil
 	}
 
-	if client.GetStatus() != libol.CL_AUTHED {
-		client.Droped++
+	if client.GetStatus() != libol.ClAuthed {
+		client.Dropped++
 		libol.Debug("PointAuth.onRecv: %s unauth", client.Addr)
 		return libol.Errer("Unauthed client.")
 	}
@@ -509,7 +511,7 @@ func (w *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 func (w *PointAuth) handleLogin(client *libol.TcpClient, data string) error {
 	libol.Debug("PointAuth.handleLogin: %s", data)
 
-	if client.GetStatus() == libol.CL_AUTHED {
+	if client.GetStatus() == libol.ClAuthed {
 		libol.Warn("PointAuth.handleLogin: already authed %s", client)
 		return nil
 	}
@@ -523,46 +525,47 @@ func (w *PointAuth) handleLogin(client *libol.TcpClient, data string) error {
 	if user.Token != "" {
 		name = user.Token
 	}
-	_user := w.wroker.GetUser(name)
+	_user := w.worker.GetUser(name)
 	if _user != nil {
 		if _user.Password == user.Password {
-			client.SetStatus(libol.CL_AUTHED)
+			client.SetStatus(libol.ClAuthed)
 			libol.Info("PointAuth.handleLogin: %s Authed", client.Addr)
 			w.onAuth(client)
 			return nil
 		}
 
-		client.SetStatus(libol.CL_UNAUTH)
+		client.SetStatus(libol.ClUnauth)
 	}
 
 	return libol.Errer("Auth failed.")
 }
 
 func (w *PointAuth) onAuth(client *libol.TcpClient) error {
-	if client.GetStatus() != libol.CL_AUTHED {
+	if client.GetStatus() != libol.ClAuthed {
 		return libol.Errer("not authed.")
 	}
 
 	libol.Info("PointAuth.onAuth: %s", client.Addr)
-	ifce, err := w.wroker.NewTap()
+	dev, err := w.worker.NewTap()
 	if err != nil {
 		return err
 	}
 
-	w.wroker.AddPoint(NewPoint(client, ifce))
+	p := NewPoint(client, dev)
+	w.worker.AddPoint(p)
 
-	go w.GoRecv(ifce, client.SendMsg)
+	go w.GoRecv(dev, client.SendMsg)
 
 	return nil
 }
 
-func (w *PointAuth) GoRecv(ifce *water.Interface, doRecv func([]byte) error) {
-	libol.Info("PointAuth.GoRecv: %s", ifce.Name())
+func (w *PointAuth) GoRecv(dev *water.Interface, doRecv func([]byte) error) {
+	libol.Info("PointAuth.GoRecv: %s", dev.Name())
 
-	defer ifce.Close()
+	defer dev.Close()
 	for {
-		data := make([]byte, w.ifmtu)
-		n, err := ifce.Read(data)
+		data := make([]byte, w.ifMtu)
+		n, err := dev.Read(data)
 		if err != nil {
 			libol.Error("PointAuth.GoRev: %s", err)
 			break
@@ -570,18 +573,18 @@ func (w *PointAuth) GoRecv(ifce *water.Interface, doRecv func([]byte) error) {
 
 		libol.Debug("PointAuth.GoRev: % x\n", data[:n])
 		if err := doRecv(data[:n]); err != nil {
-			libol.Error("PointAuth.GoRev: do-recv %s %s", ifce.Name(), err)
+			libol.Error("PointAuth.GoRev: do-recv %s %s", dev.Name(), err)
 		}
 	}
 }
 
 type WithRequest struct {
-	wroker *Worker
+	worker *Worker
 }
 
-func NewWithRequest(wroker *Worker, c *Config) (w *WithRequest) {
+func NewWithRequest(worker *Worker, c *Config) (w *WithRequest) {
 	w = &WithRequest{
-		wroker: wroker,
+		worker: worker,
 	}
 	return
 }

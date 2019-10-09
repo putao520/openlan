@@ -13,9 +13,9 @@ type Config struct {
 	TcpListen  string      `json:"Listen,omitempty"`
 	Verbose    int         `json:"Verbose,omitempty"`
 	HttpListen string      `json:"Http,omitempty"`
-	Ifmtu      int         `json:"IfMtu,omitempty"`
-	Ifaddr     string      `json:"IfAddr,omitempty"`
-	Brname     string      `json:"IfBridge,omitempty"`
+	IfMtu      int         `json:"IfMtu,omitempty"`
+	IfAddr     string      `json:"IfAddr,omitempty"`
+	BrName     string      `json:"IfBridge,omitempty"`
 	Token      string      `json:"AdminToken,omitempty"`
 	TokenFile  string      `json:"AdminFile,omitempty"`
 	Password   string      `json:"AuthFile,omitempty"`
@@ -34,15 +34,15 @@ type RedisConfig struct {
 }
 
 var Default = Config{
-	Brname:     "",
+	BrName:     "",
 	Verbose:    libol.INFO,
 	HttpListen: "0.0.0.0:10000",
 	TcpListen:  "0.0.0.0:10002",
 	Token:      "",
 	TokenFile:  ".vswitch.token",
 	Password:   ".password",
-	Ifmtu:      1518,
-	Ifaddr:     "",
+	IfMtu:      1518,
+	IfAddr:     "",
 	Redis: RedisConfig{
 		Addr:   "127.0.0.1",
 		Auth:   "",
@@ -73,9 +73,9 @@ func NewConfig() (c *Config) {
 	flag.StringVar(&c.Token, "admin:token", Default.Token, "Administrator token")
 	flag.StringVar(&c.TokenFile, "admin:file", Default.TokenFile, "The file administrator token saved to")
 	flag.StringVar(&c.Password, "auth:file", Default.Password, "The file password loading from.")
-	flag.IntVar(&c.Ifmtu, "if:mtu", Default.Ifmtu, "the interface MTU include ethernet")
-	flag.StringVar(&c.Ifaddr, "if:addr", Default.Ifaddr, "the interface address")
-	flag.StringVar(&c.Brname, "if:br", Default.Brname, "the bridge name")
+	flag.IntVar(&c.IfMtu, "if:mtu", Default.IfMtu, "the interface MTU include ethernet")
+	flag.StringVar(&c.IfAddr, "if:addr", Default.IfAddr, "the interface address")
+	flag.StringVar(&c.BrName, "if:br", Default.BrName, "the bridge name")
 	flag.StringVar(&c.saveFile, "conf", Default.SaveFile(), "The configuration file")
 
 	flag.Parse()

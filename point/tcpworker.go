@@ -10,8 +10,8 @@ import (
 type TcpWorker struct {
 	Client *libol.TcpClient
 
-	readchan  chan []byte
-	writechan chan []byte
+	readChan  chan []byte
+	writeChan chan []byte
 	maxSize   int
 	name      string
 	password  string
@@ -20,8 +20,8 @@ type TcpWorker struct {
 func NewTcpWorker(client *libol.TcpClient, c *Config) (t *TcpWorker) {
 	t = &TcpWorker{
 		Client:    client,
-		writechan: make(chan []byte, 1024*10),
-		maxSize:   c.Ifmtu,
+		writeChan: make(chan []byte, 1024*10),
+		maxSize:   c.IfMtu,
 		name:      c.Name(),
 		password:  c.Password(),
 	}
@@ -41,9 +41,9 @@ func (t *TcpWorker) Close() {
 
 func (t *TcpWorker) Connect() error {
 	s := t.Client.GetStatus()
-	if s != libol.CL_INIT {
-		libol.Warn("TcpWorker.Connect status %d->%d", s, libol.CL_INIT)
-		t.Client.SetStatus(libol.CL_INIT)
+	if s != libol.ClInit {
+		libol.Warn("TcpWorker.Connect status %d->%d", s, libol.ClInit)
+		t.Client.SetStatus(libol.ClInit)
 	}
 
 	if err := t.Client.Connect(); err != nil {
@@ -68,9 +68,9 @@ func (t *TcpWorker) onInstruct(data []byte) error {
 		resp := libol.DecBody(data)
 		libol.Info("TcpWorker.onHook.login: %s", resp)
 		if resp[:4] == "okay" {
-			t.Client.SetStatus(libol.CL_AUTHED)
+			t.Client.SetStatus(libol.ClAuthed)
 		} else {
-			t.Client.SetStatus(libol.CL_UNAUTH)
+			t.Client.SetStatus(libol.ClUnauth)
 		}
 	}
 
@@ -117,7 +117,7 @@ func (t *TcpWorker) GoRecv(doRecv func([]byte) error) {
 func (t *TcpWorker) DoSend(data []byte) error {
 	libol.Debug("TcpWorker.DoSend: % x", data)
 
-	t.writechan <- data
+	t.writeChan <- data
 
 	return nil
 }
@@ -127,14 +127,14 @@ func (t *TcpWorker) GoLoop() {
 
 	for {
 		select {
-		case wdata := <-t.writechan:
-			if t.Client.GetStatus() != libol.CL_AUTHED {
-				t.Client.Droped++
+		case w := <-t.writeChan:
+			if t.Client.GetStatus() != libol.ClAuthed {
+				t.Client.Dropped++
 				libol.Error("TcpWorker.GoLoop: droping by unauth")
 				continue
 			}
 
-			if err := t.Client.SendMsg(wdata); err != nil {
+			if err := t.Client.SendMsg(w); err != nil {
 				libol.Error("TcpWorker.GoLoop: %s", err)
 			}
 		}

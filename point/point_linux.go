@@ -9,24 +9,23 @@ import (
 )
 
 type Point struct {
-	Brname string
-	Ifaddr string
-	Ifname string
+	BrName string
+	IfAddr string
 
-	tcpworker *TcpWorker
-	tapworker *TapWorker
+	tcpWorker *TcpWorker
+	tapWorker *TapWorker
 	br        tenus.Bridger
-	brip      net.IP
-	brnet     *net.IPNet
+	brIp      net.IP
+	brNet     *net.IPNet
 	config    *Config
 }
 
 func NewPoint(config *Config) (p *Point) {
 	client := libol.NewTcpClient(config.Addr)
 	p = &Point{
-		Brname:    config.Brname,
-		Ifaddr:    config.Ifaddr,
-		tcpworker: NewTcpWorker(client, config),
+		BrName:    config.BrName,
+		IfAddr:    config.IfAddr,
+		tcpWorker: NewTcpWorker(client, config),
 		config:    config,
 	}
 	p.newIfce()
@@ -37,7 +36,7 @@ func (p *Point) newIfce() {
 	var err error
 	var ifce *water.Interface
 
-	if p.config.Iftun {
+	if p.config.IfTun {
 		ifce, err = water.New(water.Config{DeviceType: water.TUN})
 	} else {
 		ifce, err = water.New(water.Config{DeviceType: water.TAP})
@@ -48,34 +47,33 @@ func (p *Point) newIfce() {
 	}
 
 	libol.Info("NewPoint.device %s", ifce.Name())
-	p.Ifname = ifce.Name()
-	p.tapworker = NewTapWorker(ifce, p.config)
+	p.tapWorker = NewTapWorker(ifce, p.config)
 }
 
 func (p *Point) Start() {
 	libol.Debug("Point.Start linux.")
 
 	p.UpLink()
-	if err := p.tcpworker.Connect(); err != nil {
+	if err := p.tcpWorker.Connect(); err != nil {
 		libol.Error("Point.Start %s", err)
 	}
 
-	go p.tapworker.GoRecv(p.tcpworker.DoSend)
-	go p.tapworker.GoLoop()
+	go p.tapWorker.GoRecv(p.tcpWorker.DoSend)
+	go p.tapWorker.GoLoop()
 
-	go p.tcpworker.GoRecv(p.tapworker.DoSend)
-	go p.tcpworker.GoLoop()
+	go p.tcpWorker.GoRecv(p.tapWorker.DoSend)
+	go p.tcpWorker.GoLoop()
 }
 
 func (p *Point) Stop() {
-	p.tcpworker.Stop()
+	p.tcpWorker.Stop()
 
-	if p.br != nil && p.brip != nil {
-		if err := p.br.UnsetLinkIp(p.brip, p.brnet); err != nil {
+	if p.br != nil && p.brIp != nil {
+		if err := p.br.UnsetLinkIp(p.brIp, p.brNet); err != nil {
 			libol.Error("Point.Close.UnsetLinkIp %s: %s", p.br.NetInterface().Name, err)
 		}
 	}
-	p.tapworker.Stop()
+	p.tapWorker.Stop()
 }
 
 func (p *Point) UpLink() error {
@@ -99,18 +97,18 @@ func (p *Point) UpLink() error {
 		return err
 	}
 
-	if p.Brname != "" {
-		br, err := tenus.BridgeFromName(p.Brname)
+	if p.BrName != "" {
+		br, err := tenus.BridgeFromName(p.BrName)
 		if err != nil {
 			libol.Error("Point.UpLink.newBr: %s", err)
-			br, err = tenus.NewBridgeWithName(p.Brname)
+			br, err = tenus.NewBridgeWithName(p.BrName)
 			if err != nil {
 				libol.Error("Point.UpLink.newBr: %s", err)
 			}
 		}
 
-		brctl := libol.NewBrCtl(p.Brname)
-		if err := brctl.Stp(true); err != nil {
+		brCtl := libol.NewBrCtl(p.BrName)
+		if err := brCtl.Stp(true); err != nil {
 			libol.Error("Point.UpLink.Stp: %s", err)
 		}
 
@@ -122,42 +120,42 @@ func (p *Point) UpLink() error {
 			libol.Error("Point.UpLink.AddSlave: Switch ifce %s: %s", name, err)
 		}
 
-		link, err = tenus.NewLinkFrom(p.Brname)
+		link, err = tenus.NewLinkFrom(p.BrName)
 		if err != nil {
-			libol.Error("Point.UpLink: Get ifce %s: %s", p.Brname, err)
+			libol.Error("Point.UpLink: Get ifce %s: %s", p.BrName, err)
 		}
 
 		p.br = br
 	}
 
-	if p.Ifaddr != "" {
-		ip, ipnet, err := net.ParseCIDR(p.Ifaddr)
+	if p.IfAddr != "" {
+		ip, ipNet, err := net.ParseCIDR(p.IfAddr)
 		if err != nil {
-			libol.Error("Point.UpLink.ParseCIDR %s: %s", p.Ifaddr, err)
+			libol.Error("Point.UpLink.ParseCIDR %s: %s", p.IfAddr, err)
 			return err
 		}
-		if err := link.SetLinkIp(ip, ipnet); err != nil {
+		if err := link.SetLinkIp(ip, ipNet); err != nil {
 			libol.Error("Point.UpLink.SetLinkIp: %s", err)
 			return err
 		}
 
-		p.brip = ip
-		p.brnet = ipnet
+		p.brIp = ip
+		p.brNet = ipNet
 	}
 
 	return nil
 }
 
 func (p *Point) GetClient() *libol.TcpClient {
-	if p.tcpworker != nil {
-		return p.tcpworker.Client
+	if p.tcpWorker != nil {
+		return p.tcpWorker.Client
 	}
 	return nil
 }
 
 func (p *Point) GetIfce() *water.Interface {
-	if p.tapworker != nil {
-		return p.tapworker.Ifce
+	if p.tapWorker != nil {
+		return p.tapWorker.device
 	}
 	return nil
 }

@@ -14,7 +14,7 @@ import (
 //    Payload is Ethernat Frame.
 
 func IsInst(data []byte) bool {
-	return bytes.Equal(data[:6], ZEROETHADDR[:6])
+	return bytes.Equal(data[:6], ZEROED[:6])
 }
 
 func DecAction(data []byte) string {
@@ -31,10 +31,10 @@ func DecActionBody(data []byte) (string, string) {
 
 func EncInstReq(action string, body string) []byte {
 	p := fmt.Sprintf("%s= %s", action[:4], body)
-	return append(ZEROETHADDR[:6], p...)
+	return append(ZEROED[:6], p...)
 }
 
 func EncInstResp(action string, body string) []byte {
 	p := fmt.Sprintf("%s: %s", action[:4], body)
-	return append(ZEROETHADDR[:6], p...)
+	return append(ZEROED[:6], p...)
 }

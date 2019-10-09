@@ -5,7 +5,7 @@ type VSwitch struct {
 	http   *Http
 }
 
-func NewVSwitch(c *Config) (*VSwitch) {
+func NewVSwitch(c *Config) *VSwitch {
 	server := NewTcpServer(c)
 	vs := &VSwitch{
 		worker: NewWorker(server, c),

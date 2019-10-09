@@ -12,12 +12,12 @@ type Config struct {
 	Addr     string `json:"VsAddr,omitempty"`
 	Auth     string `json:"VsAuth,omitempty"`
 	Verbose  int    `json:"Verbose,omitempty"`
-	Ifmtu    int    `json:"IfMtu,omitempty"`
-	Ifaddr   string `json:"IfAddr,omitempty"`
-	Brname   string `json:"IfBridge,omitempty"`
-	Iftun    bool   `json:"IfTun,omitempty"`
-	Ifethsrc string `json:"IfEthSrc,omitempty"`
-	Ifethdst string `json:"IfEthDst,omitempty"`
+	IfMtu    int    `json:"IfMtu,omitempty"`
+	IfAddr   string `json:"IfAddr,omitempty"`
+	BrName   string `json:"IfBridge,omitempty"`
+	IfTun    bool   `json:"IfTun,omitempty"`
+	IfEthSrc string `json:"IfEthSrc,omitempty"`
+	IfEthDst string `json:"IfEthDst,omitempty"`
 	LogFile  string `json:"LogFile,omitempty"`
 
 	saveFile string
@@ -29,15 +29,15 @@ var Default = Config{
 	Addr:     "openlan.net",
 	Auth:     "hi:hi@123$",
 	Verbose:  libol.INFO,
-	Ifmtu:    1518,
-	Ifaddr:   "",
-	Iftun:    false,
-	Brname:   "",
+	IfMtu:    1518,
+	IfAddr:   "",
+	IfTun:    false,
+	BrName:   "",
 	saveFile: ".point.json",
 	name:     "",
 	password: "",
-	Ifethdst: "2e:4b:f0:b7:6d:ba",
-	Ifethsrc: "",
+	IfEthDst: "2e:4b:f0:b7:6d:ba",
+	IfEthSrc: "",
 	LogFile:  ".point.error",
 }
 
@@ -56,12 +56,12 @@ func NewConfig() (c *Config) {
 	flag.StringVar(&c.Addr, "vs:addr", Default.Addr, "the server connect to")
 	flag.StringVar(&c.Auth, "vs:auth", Default.Auth, "the auth login to")
 	flag.IntVar(&c.Verbose, "verbose", Default.Verbose, "open verbose")
-	flag.IntVar(&c.Ifmtu, "if:mtu", Default.Ifmtu, "the interface MTU include ethernet")
-	flag.StringVar(&c.Ifaddr, "if:addr", Default.Ifaddr, "the interface address")
-	flag.StringVar(&c.Brname, "if:br", Default.Brname, "the bridge name")
-	flag.BoolVar(&c.Iftun, "if:tun", Default.Iftun, "using tun device as interface, otherwise tap")
-	flag.StringVar(&c.Ifethdst, "if:ethdst", Default.Ifethdst, "ethernet destination for tun device")
-	flag.StringVar(&c.Ifethsrc, "if:ethsrc", Default.Ifethsrc, "ethernet source for tun device")
+	flag.IntVar(&c.IfMtu, "if:mtu", Default.IfMtu, "the interface MTU include ethernet")
+	flag.StringVar(&c.IfAddr, "if:addr", Default.IfAddr, "the interface address")
+	flag.StringVar(&c.BrName, "if:br", Default.BrName, "the bridge name")
+	flag.BoolVar(&c.IfTun, "if:tun", Default.IfTun, "using tun device as interface, otherwise tap")
+	flag.StringVar(&c.IfEthDst, "if:ethdst", Default.IfEthDst, "ethernet destination for tun device")
+	flag.StringVar(&c.IfEthSrc, "if:ethsrc", Default.IfEthSrc, "ethernet source for tun device")
 	flag.StringVar(&c.saveFile, "conf", Default.SaveFile(), "The configuration file")
 
 	flag.Parse()
@@ -103,11 +103,11 @@ func (c *Config) Default() {
 	if c.Auth == "" {
 		c.Auth = Default.Auth
 	}
-	if c.Ifmtu == 0 {
-		c.Ifmtu = Default.Ifmtu
+	if c.IfMtu == 0 {
+		c.IfMtu = Default.IfMtu
 	}
-	if c.Ifaddr == "" {
-		c.Ifaddr = Default.Ifaddr
+	if c.IfAddr == "" {
+		c.IfAddr = Default.IfAddr
 	}
 }
 

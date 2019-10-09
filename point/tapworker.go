@@ -8,36 +8,36 @@ import (
 )
 
 type TapWorker struct {
-	writechan chan []byte
-	ifmtu     int
+	writeChan chan []byte
+	ifMtu     int
 	doRecv    func([]byte) error
 
-	Ifce *water.Interface
+	device *water.Interface
 	//for tunnel device.
 	EthDstAddr []byte
 	EthSrcAddr []byte
 	EthSrcIp   []byte
 }
 
-func NewTapWorker(ifce *water.Interface, c *Config) (a *TapWorker) {
+func NewTapWorker(device *water.Interface, c *Config) (a *TapWorker) {
 	a = &TapWorker{
-		Ifce:      ifce,
-		writechan: make(chan []byte, 1024*10),
-		ifmtu:     c.Ifmtu, //1514
+		device:      device,
+		writeChan: make(chan []byte, 1024*10),
+		ifMtu:     c.IfMtu, //1514
 	}
 
-	if a.Ifce.IsTUN() {
-		a.EthSrcIp = net.ParseIP(c.Ifaddr).To4()
+	if a.device.IsTUN() {
+		a.EthSrcIp = net.ParseIP(c.IfAddr).To4()
 		libol.Info("NewTapWoker srcIp: % x", a.EthSrcIp)
 
-		if c.Ifethsrc == "" {
+		if c.IfEthSrc == "" {
 			a.EthSrcAddr = libol.GenEthAddr(6)
 		} else {
-			if hw, err := net.ParseMAC(c.Ifethsrc); err == nil {
+			if hw, err := net.ParseMAC(c.IfEthSrc); err == nil {
 				a.EthSrcAddr = []byte(hw)
 			}
 		}
-		if hw, err := net.ParseMAC(c.Ifethdst); err == nil {
+		if hw, err := net.ParseMAC(c.IfEthDst); err == nil {
 			a.EthDstAddr = []byte(hw)
 		}
 		libol.Info("NewTapWorker src: % x, dst: % x", a.EthSrcAddr, a.EthDstAddr)
@@ -60,22 +60,22 @@ func (a *TapWorker) GoRecv(doRecv func([]byte) error) {
 	a.doRecv = doRecv
 
 	for {
-		data := make([]byte, a.ifmtu)
-		if a.Ifce == nil {
+		data := make([]byte, a.ifMtu)
+		if a.device == nil {
 			break
 		}
 
-		n, err := a.Ifce.Read(data)
+		n, err := a.device.Read(data)
 		if err != nil {
 			libol.Error("TapWorker.GoRev: %s", err)
 			break
 		}
 
 		libol.Debug("TapWorker.GoRev: % x", data[:n])
-		if a.Ifce.IsTUN() {
-			eth := a.NewEth(libol.ETH_P_IP4)
+		if a.device.IsTUN() {
+			eth := a.NewEth(libol.EthPIp4)
 
-			buffer := make([]byte, 0, a.ifmtu)
+			buffer := make([]byte, 0, a.ifMtu)
 			buffer = append(buffer, eth.Encode()...)
 			buffer = append(buffer, data[0:n]...)
 			n += eth.Len
@@ -92,7 +92,7 @@ func (a *TapWorker) GoRecv(doRecv func([]byte) error) {
 func (a *TapWorker) DoSend(data []byte) error {
 	libol.Debug("TapWorker.DoSend: % x", data)
 
-	a.writechan <- data
+	a.writeChan <- data
 
 	return nil
 }
@@ -120,7 +120,7 @@ func (a *TapWorker) onArp(data []byte) bool {
 			return false
 		}
 
-		eth := a.NewEth(libol.ETH_P_ARP)
+		eth := a.NewEth(libol.EthPArp)
 
 		reply := libol.NewArp()
 		reply.OpCode = libol.ARP_REPLY
@@ -129,7 +129,7 @@ func (a *TapWorker) onArp(data []byte) bool {
 		reply.SHwAddr = a.EthSrcAddr
 		reply.THwAddr = arp.SHwAddr
 
-		buffer := make([]byte, 0, a.ifmtu)
+		buffer := make([]byte, 0, a.ifMtu)
 		buffer = append(buffer, eth.Encode()...)
 		buffer = append(buffer, reply.Encode()...)
 
@@ -150,33 +150,33 @@ func (a *TapWorker) GoLoop() {
 
 	for {
 		select {
-		case wdata := <-a.writechan:
-			if a.Ifce == nil {
+		case w := <-a.writeChan:
+			if a.device == nil {
 				break
 			}
 
-			if a.Ifce.IsTUN() {
+			if a.device.IsTUN() {
 				//Proxy arp request.
-				if a.onArp(wdata) {
+				if a.onArp(w) {
 					libol.Info("TapWorker.GoLoop: Arp proxy.")
 					continue
 				}
 
-				eth, err := libol.NewEtherFromFrame(wdata)
+				eth, err := libol.NewEtherFromFrame(w)
 				if err != nil {
 					libol.Error("TapWorker.GoLoop: %s", err)
 					continue
 				}
 				if eth.IsVlan() {
-					wdata = wdata[18:]
+					w = w[18:]
 				} else if eth.IsIP4() {
-					wdata = wdata[14:]
+					w = w[14:]
 				} else { // default is Ethernet is 14 bytes.
-					wdata = wdata[14:]
+					w = w[14:]
 				}
 			}
 
-			if _, err := a.Ifce.Write(wdata); err != nil {
+			if _, err := a.device.Write(w); err != nil {
 				libol.Error("TapWorker.GoLoop: %s", err)
 			}
 		}
@@ -188,9 +188,9 @@ func (a *TapWorker) GoLoop() {
 func (a *TapWorker) Close() {
 	libol.Info("TapWorker.Close")
 
-	if a.Ifce != nil {
-		a.Ifce.Close()
-		a.Ifce = nil
+	if a.device != nil {
+		a.device.Close()
+		a.device = nil
 	}
 }
 
