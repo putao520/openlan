@@ -1,9 +1,13 @@
 package vswitch
 
+import "sync"
+
 type VSwitch struct {
 	worker *Worker
 	http   *Http
-	State  int
+
+	status  int
+	lock    sync.RWMutex
 }
 
 func NewVSwitch(c *Config) *VSwitch {
@@ -13,29 +17,35 @@ func NewVSwitch(c *Config) *VSwitch {
 		http: nil,
 	}
 	vs.http = NewHttp(vs.worker, c)
-	vs.State = VsInit
+	vs.status = VsInit
 	return vs
 }
 
 func (vs *VSwitch) Start() {
-	if vs.State == VsStarted {
+	vs.lock.Lock()
+	defer vs.lock.Unlock()
+
+	if vs.status == VsStarted {
 		return
 	}
-	vs.State = VsStarted
+	vs.status = VsStarted
 
 	vs.worker.Start()
 	go vs.http.GoStart()
 }
 
 func (vs *VSwitch) Stop() {
-	if vs.State != VsStarted {
+	vs.lock.Lock()
+	defer vs.lock.Unlock()
+	
+	if vs.status != VsStarted {
 		return
 	}
 
 	vs.worker.Stop()
 	vs.http.Shutdown()
 
-	vs.State = VsStopped
+	vs.status = VsStopped
 }
 
 func (vs *VSwitch) GetBrName() string {
