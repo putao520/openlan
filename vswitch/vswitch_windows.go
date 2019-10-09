@@ -6,12 +6,7 @@ type VSwitch struct {
 }
 
 func NewVSwitch(c *Config) *VSwitch {
-	//server := NewTcpServer(c)
-	//vs := &VSwitch{
-	//	worker: NewWorker(server, c),
-	//	http: nil,
-	//}
-	//vs.http = NewHttp(vs.worker, c)
+	//TODO
 	return &VSwitch{}
 }
 
