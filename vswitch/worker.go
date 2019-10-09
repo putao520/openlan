@@ -51,6 +51,7 @@ type Worker struct {
 	usersLock   sync.RWMutex
 	users       map[string]*User
 	newTime     int64
+	startTime   int64
 	brName      string
 	linksLock   sync.RWMutex
 	links       map[string]*point.Point
@@ -70,6 +71,7 @@ func NewWorker(server *TcpServer, c *Config) (w *Worker) {
 		clients:     make(map[*libol.TcpClient]*Point, 1024),
 		users:       make(map[string]*User, 1024),
 		newTime:     time.Now().Unix(),
+		startTime:   0,
 		brName:      c.BrName,
 		links:       make(map[string]*point.Point),
 	}
@@ -209,6 +211,7 @@ func (w *Worker) NewTap() (*water.Interface, error) {
 }
 
 func (w *Worker) Start() {
+	w.startTime = time.Now().Unix()
 	if err := w.Redis.Open(); err != nil {
 		libol.Error("Worker.Start: redis.Open %s", err)
 	}
@@ -308,6 +311,8 @@ func (w *Worker) Stop() {
 	for _, p := range w.links {
 		p.Stop()
 	}
+
+	w.startTime = 0
 }
 
 func (w *Worker) AddUser(user *User) {
@@ -394,7 +399,10 @@ func (w *Worker) ListPoint() <-chan *Point {
 }
 
 func (w *Worker) UpTime() int64 {
-	return time.Now().Unix() - w.newTime
+	if w.startTime != 0 {
+		return time.Now().Unix() - w.startTime
+	}
+	return 0
 }
 
 func (w *Worker) PubPoint(p *Point, isadd bool) {

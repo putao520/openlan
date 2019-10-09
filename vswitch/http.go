@@ -1,6 +1,7 @@
 package vswitch
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"html"
@@ -17,6 +18,7 @@ type Http struct {
 	listen     string
 	adminToken string
 	adminFile  string
+	server     *http.Server
 }
 
 func NewHttp(worker *Worker, c *Config) (h *Http) {
@@ -25,6 +27,7 @@ func NewHttp(worker *Worker, c *Config) (h *Http) {
 		listen:     c.HttpListen,
 		adminToken: c.Token,
 		adminFile:  c.TokenFile,
+		server:	    &http.Server{Addr: c.HttpListen},
 	}
 
 	if h.adminToken == "" {
@@ -81,14 +84,22 @@ func (h *Http) LoadToken() error {
 }
 
 func (h *Http) GoStart() error {
-	libol.Debug("NewHttp on %s", h.listen)
+	libol.Info("Http.GoStart %s", h.listen)
 
 	//hfs := http.FileServer(http.Dir("."))
-	if err := http.ListenAndServe(h.listen, nil); err != nil {
+	if err := h.server.ListenAndServe(); err != nil {
 		libol.Error("Http.GoStart on %s: %s", h.listen, err)
 		return err
 	}
 	return nil
+}
+
+func (h *Http) Shutdown() {
+	libol.Info("Http.Shutdown %s", h.listen)
+	if err := h.server.Shutdown(context.Background()); err != nil {
+		// Error from closing listeners, or context timeout:
+		libol.Error("Http.Shutdown: %v", err)
+	}
 }
 
 func (h *Http) IsAuth(w http.ResponseWriter, r *http.Request) bool {
