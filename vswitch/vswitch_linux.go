@@ -16,7 +16,9 @@ func NewVSwitch(c *Config) *VSwitch {
 		worker: NewWorker(server, c),
 		http: nil,
 	}
-	vs.http = NewHttp(vs.worker, c)
+	if c.HttpListen != "" {
+		vs.http = NewHttp(vs.worker, c)
+	}
 	vs.status = VsInit
 	return vs
 }
@@ -31,7 +33,9 @@ func (vs *VSwitch) Start() {
 	vs.status = VsStarted
 
 	vs.worker.Start()
-	go vs.http.GoStart()
+	if vs.http != nil {
+		go vs.http.GoStart()
+	}
 }
 
 func (vs *VSwitch) Stop() {
@@ -41,11 +45,12 @@ func (vs *VSwitch) Stop() {
 	if vs.status != VsStarted {
 		return
 	}
+	vs.status = VsStopped
 
 	vs.worker.Stop()
-	vs.http.Shutdown()
-
-	vs.status = VsStopped
+	if vs.http != nil {
+		vs.http.Shutdown()
+	}
 }
 
 func (vs *VSwitch) GetBrName() string {
