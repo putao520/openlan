@@ -1,11 +1,8 @@
 {
-  "vsAddr": "ali.openlan.net:10002",
-  "vsAuth": "yunex:yunex@123",
-  "verbose": 0,
-  "ifMtu": 1518,
-  "ifAddr": "",
-  "ifBridge": "",
-  "ifTun": false,
-  "ifEthSrc": "",
-  "ifEthDst": "2e:4b:f0:b7:6d:ba"
+  "VsAddr": "openlan.3cm.us:10002",
+  "VsAuth": "yunex:yunex123",
+  "Verbose": 2,
+  "IfMtu": 1518,
+  "IfEthDst": "2e:4b:f0:b7:6d:ba",
+  "LogFile": ".point.error"
 }
