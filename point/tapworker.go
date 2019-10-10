@@ -12,7 +12,7 @@ type TapWorker struct {
 	ifMtu     int
 	doRecv    func([]byte) error
 
-	device *water.Interface
+	Device *water.Interface
 	//for tunnel device.
 	EthDstAddr []byte
 	EthSrcAddr []byte
@@ -21,12 +21,12 @@ type TapWorker struct {
 
 func NewTapWorker(device *water.Interface, c *Config) (a *TapWorker) {
 	a = &TapWorker{
-		device:      device,
+		Device:      device,
 		writeChan: make(chan []byte, 1024*10),
 		ifMtu:     c.IfMtu, //1514
 	}
 
-	if a.device.IsTUN() {
+	if a.Device.IsTUN() {
 		a.EthSrcIp = net.ParseIP(c.IfAddr).To4()
 		libol.Info("NewTapWoker srcIp: % x", a.EthSrcIp)
 
@@ -61,18 +61,18 @@ func (a *TapWorker) GoRecv(doRecv func([]byte) error) {
 
 	for {
 		data := make([]byte, a.ifMtu)
-		if a.device == nil {
+		if a.Device == nil {
 			break
 		}
 
-		n, err := a.device.Read(data)
+		n, err := a.Device.Read(data)
 		if err != nil {
 			libol.Error("TapWorker.GoRev: %s", err)
 			break
 		}
 
 		libol.Debug("TapWorker.GoRev: % x", data[:n])
-		if a.device.IsTUN() {
+		if a.Device.IsTUN() {
 			eth := a.NewEth(libol.EthPIp4)
 
 			buffer := make([]byte, 0, a.ifMtu)
@@ -151,11 +151,11 @@ func (a *TapWorker) GoLoop() {
 	for {
 		select {
 		case w := <-a.writeChan:
-			if a.device == nil {
+			if a.Device == nil {
 				break
 			}
 
-			if a.device.IsTUN() {
+			if a.Device.IsTUN() {
 				//Proxy arp request.
 				if a.onArp(w) {
 					libol.Info("TapWorker.GoLoop: Arp proxy.")
@@ -176,7 +176,7 @@ func (a *TapWorker) GoLoop() {
 				}
 			}
 
-			if _, err := a.device.Write(w); err != nil {
+			if _, err := a.Device.Write(w); err != nil {
 				libol.Error("TapWorker.GoLoop: %s", err)
 			}
 		}
@@ -188,9 +188,9 @@ func (a *TapWorker) GoLoop() {
 func (a *TapWorker) Close() {
 	libol.Info("TapWorker.Close")
 
-	if a.device != nil {
-		a.device.Close()
-		a.device = nil
+	if a.Device != nil {
+		a.Device.Close()
+		a.Device = nil
 	}
 }
 

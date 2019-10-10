@@ -155,7 +155,7 @@ func (p *Point) GetClient() *libol.TcpClient {
 
 func (p *Point) GetDevice() *water.Interface {
 	if p.tapWorker != nil {
-		return p.tapWorker.device
+		return p.tapWorker.Device
 	}
 	return nil
 }

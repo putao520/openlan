@@ -17,3 +17,11 @@ func (vs *VSwitch) Start() {
 func (vs *VSwitch) Stop() {
 	//TODO
 }
+
+func (vs *VSwitch) GetBrName() string {
+	return ""
+}
+
+func (vs *VSwitch) GetUpTime() int64 {
+	return 0
+}
