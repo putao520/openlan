@@ -13,13 +13,13 @@ var (
 )
 
 const (
-	ClInit       = 0x00
-	ClConnected  = 0x01
-	ClUnauth     = 0x02
-	ClAuthed     = 0x03
-	ClConnecting = 0x04
-	ClTerminal   = 0x05
-	ClClosed     = 0x06
+	CLINIT       = 0x00
+	CLCONNECTED  = 0x01
+	CLUNAUTH     = 0x02
+	CLAUEHED     = 0x03
+	CLCONNECTING = 0x04
+	CLTERMINAL   = 0x05
+	CLCLOSED     = 0x06
 )
 
 const (
@@ -52,7 +52,7 @@ func NewTcpClient(addr string) (t *TcpClient) {
 		RxOkay:      0,
 		TxError:     0,
 		Dropped:     0,
-		Status:      ClInit,
+		Status:      CLINIT,
 		onConnected: nil,
 		NewTime:     time.Now().Unix(),
 	}
@@ -73,7 +73,7 @@ func NewTcpClientFromConn(conn *net.TCPConn) (t *TcpClient) {
 }
 
 func (t *TcpClient) Connect() error {
-	if t.conn != nil || t.GetStatus() == ClTerminal || t.GetStatus() == ClUnauth {
+	if t.conn != nil || t.GetStatus() == CLTERMINAL || t.GetStatus() == CLUNAUTH {
 		return nil
 	}
 
@@ -83,14 +83,14 @@ func (t *TcpClient) Connect() error {
 		return err
 	}
 
-	t.SetStatus(ClConnecting)
+	t.SetStatus(CLCONNECTING)
 	conn, err := net.DialTCP("tcp", nil, rAddr)
 	if err != nil {
 		t.conn = nil
 		return err
 	}
 	t.conn = conn
-	t.SetStatus(ClConnected)
+	t.SetStatus(CLCONNECTED)
 	if t.onConnected != nil {
 		t.onConnected(t)
 	}
@@ -104,8 +104,8 @@ func (t *TcpClient) OnConnected(on func(*TcpClient) error) {
 
 func (t *TcpClient) Close() {
 	if t.conn != nil {
-		if t.GetStatus() != ClTerminal {
-			t.SetStatus(ClClosed)
+		if t.GetStatus() != CLTERMINAL {
+			t.SetStatus(CLCLOSED)
 		}
 
 		Info("TcpClient.Close %s", t.Addr)
@@ -224,11 +224,11 @@ func (t *TcpClient) IsOk() bool {
 }
 
 func (t *TcpClient) IsTerminal() bool {
-	return t.GetStatus() == ClTerminal
+	return t.GetStatus() == CLTERMINAL
 }
 
 func (t *TcpClient) IsInitialized() bool {
-	return t.GetStatus() == ClInit
+	return t.GetStatus() == CLINIT
 }
 
 func (t *TcpClient) SendReq(action string, body string) error {
@@ -253,19 +253,19 @@ func (t *TcpClient) SendResp(action string, body string) error {
 
 func (t *TcpClient) State() string {
 	switch t.GetStatus() {
-	case ClInit:
+	case CLINIT:
 		return "initialized"
-	case ClConnected:
+	case CLCONNECTED:
 		return "connected"
-	case ClUnauth:
+	case CLUNAUTH:
 		return "unauthenticated"
-	case ClAuthed:
+	case CLAUEHED:
 		return "authenticated"
-	case ClClosed:
+	case CLCLOSED:
 		return "closed"
-	case ClConnecting:
+	case CLCONNECTING:
 		return "connecting"
-	case ClTerminal:
+	case CLTERMINAL:
 		return "terminal"
 	}
 	return ""
@@ -280,7 +280,7 @@ func (t *TcpClient) String() string {
 }
 
 func (t *TcpClient) Terminal() {
-	t.SetStatus(ClTerminal)
+	t.SetStatus(CLTERMINAL)
 	t.Close()
 }
 

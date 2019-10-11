@@ -16,7 +16,7 @@ func GenToken(n int) string {
 	size := len(letters)
 	rand.Seed(time.Now().UnixNano())
 	for i := range buffer {
-		buffer[i] = letters[rand.Int63()%int64(size)]
+		buffer[i] = letters[rand.Int63() % int64(size)]
 	}
 
 	return string(buffer)

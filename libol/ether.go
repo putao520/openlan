@@ -6,15 +6,15 @@ import (
 
 var (
 	ZEROED    = []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
-	BROADER   = []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
+	BROADED   = []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
 	DEFAULTED = []byte{0x00, 0x16, 0x3e, 0x02, 0x56, 0x23}
 )
 
 const (
-	EthPArp  = 0x0806
-	EthPIp4  = 0x0800
+	ETHPARP  = 0x0806
+	ETHPIP4  = 0x0800
 	ETHPIP6  = 0x86DD
-	EthPVlan = 0x8100
+	ETHPVLAN = 0x8100
 )
 
 type Ether struct {
@@ -35,11 +35,11 @@ func NewEther(t uint16) (e *Ether) {
 }
 
 func NewEtherArp() (e *Ether) {
-	return NewEther(EthPArp)
+	return NewEther(ETHPARP)
 }
 
 func NewEtherIP4() (e *Ether) {
-	return NewEther(EthPIp4)
+	return NewEther(ETHPIP4)
 }
 
 func NewEtherFromFrame(frame []byte) (e *Ether, err error) {
@@ -74,13 +74,13 @@ func (e *Ether) Encode() []byte {
 }
 
 func (e *Ether) IsVlan() bool {
-	return e.Type == EthPVlan
+	return e.Type == ETHPVLAN
 }
 
 func (e *Ether) IsArp() bool {
-	return e.Type == EthPArp
+	return e.Type == ETHPARP
 }
 
 func (e *Ether) IsIP4() bool {
-	return e.Type == EthPIp4
+	return e.Type == ETHPIP4
 }

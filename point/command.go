@@ -123,8 +123,8 @@ func (cmd *Command) DoArp(args []string) string {
 	arp.SIpAddr = []byte(net.ParseIP(args[0]).To4())
 	arp.TIpAddr = []byte(net.ParseIP(args[1]).To4())
 
-	eth := libol.NewEther(libol.EthPArp)
-	eth.Dst = libol.BROADER
+	eth := libol.NewEther(libol.ETHPARP)
+	eth.Dst = libol.BROADED
 	eth.Src = libol.DEFAULTED
 
 	buffer := make([]byte, 0, 1024)

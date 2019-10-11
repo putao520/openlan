@@ -73,7 +73,7 @@ func (a *TapWorker) GoRecv(doRecv func([]byte) error) {
 
 		libol.Debug("TapWorker.GoRev: % x", data[:n])
 		if a.Device.IsTUN() {
-			eth := a.NewEth(libol.EthPIp4)
+			eth := a.NewEth(libol.ETHPIP4)
 
 			buffer := make([]byte, 0, a.ifMtu)
 			buffer = append(buffer, eth.Encode()...)
@@ -120,7 +120,7 @@ func (a *TapWorker) onArp(data []byte) bool {
 			return false
 		}
 
-		eth := a.NewEth(libol.EthPArp)
+		eth := a.NewEth(libol.ETHPARP)
 
 		reply := libol.NewArp()
 		reply.OpCode = libol.ARP_REPLY

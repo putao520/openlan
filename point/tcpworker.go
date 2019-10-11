@@ -41,9 +41,9 @@ func (t *TcpWorker) Close() {
 
 func (t *TcpWorker) Connect() error {
 	s := t.Client.GetStatus()
-	if s != libol.ClInit {
-		libol.Warn("TcpWorker.Connect status %d->%d", s, libol.ClInit)
-		t.Client.SetStatus(libol.ClInit)
+	if s != libol.CLINIT {
+		libol.Warn("TcpWorker.Connect status %d->%d", s, libol.CLINIT)
+		t.Client.SetStatus(libol.CLINIT)
 	}
 
 	if err := t.Client.Connect(); err != nil {
@@ -68,9 +68,9 @@ func (t *TcpWorker) onInstruct(data []byte) error {
 		resp := libol.DecBody(data)
 		libol.Info("TcpWorker.onHook.login: %s", resp)
 		if resp[:4] == "okay" {
-			t.Client.SetStatus(libol.ClAuthed)
+			t.Client.SetStatus(libol.CLAUEHED)
 		} else {
-			t.Client.SetStatus(libol.ClUnauth)
+			t.Client.SetStatus(libol.CLUNAUTH)
 		}
 	}
 
@@ -128,7 +128,7 @@ func (t *TcpWorker) GoLoop() {
 	for {
 		select {
 		case w := <-t.writeChan:
-			if t.Client.GetStatus() != libol.ClAuthed {
+			if t.Client.GetStatus() != libol.CLAUEHED {
 				t.Client.Dropped++
 				libol.Error("TcpWorker.GoLoop: droping by unauth")
 				continue

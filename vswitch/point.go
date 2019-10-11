@@ -53,7 +53,7 @@ func (w *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 		return nil
 	}
 
-	if client.GetStatus() != libol.ClAuthed {
+	if client.GetStatus() != libol.CLAUEHED {
 		client.Dropped++
 		libol.Debug("PointAuth.onRecv: %s unauth", client.Addr)
 		return libol.Errer("Unauthed client.")
@@ -65,7 +65,7 @@ func (w *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 func (w *PointAuth) handleLogin(client *libol.TcpClient, data string) error {
 	libol.Debug("PointAuth.handleLogin: %s", data)
 
-	if client.GetStatus() == libol.ClAuthed {
+	if client.GetStatus() == libol.CLAUEHED {
 		libol.Warn("PointAuth.handleLogin: already authed %s", client)
 		return nil
 	}
@@ -82,20 +82,20 @@ func (w *PointAuth) handleLogin(client *libol.TcpClient, data string) error {
 	_user := w.worker.GetUser(name)
 	if _user != nil {
 		if _user.Password == user.Password {
-			client.SetStatus(libol.ClAuthed)
+			client.SetStatus(libol.CLAUEHED)
 			libol.Info("PointAuth.handleLogin: %s Authed", client.Addr)
 			w.onAuth(client)
 			return nil
 		}
 
-		client.SetStatus(libol.ClUnauth)
+		client.SetStatus(libol.CLUNAUTH)
 	}
 
 	return libol.Errer("Auth failed.")
 }
 
 func (w *PointAuth) onAuth(client *libol.TcpClient) error {
-	if client.GetStatus() != libol.ClAuthed {
+	if client.GetStatus() != libol.CLAUEHED {
 		return libol.Errer("not authed.")
 	}
 

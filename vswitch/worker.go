@@ -146,7 +146,7 @@ func (w *WorkerBase) handleReq(client *libol.TcpClient, frame *libol.Frame) erro
 }
 
 func (w *WorkerBase) onClient(client *libol.TcpClient) error {
-	client.SetStatus(libol.ClConnected)
+	client.SetStatus(libol.CLCONNECTED)
 
 	libol.Info("WorkerBase.onClient: %s", client.Addr)
 

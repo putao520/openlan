@@ -1,7 +1,7 @@
 package vswitch
 
 const (
-	VsInit    = 0x01
-	VsStarted = 0x02
-	VsStopped = 0x03
+	VSINIT    = 0x01
+	VSSTARTED = 0x02
+	VSTOPPED  = 0x03
 )

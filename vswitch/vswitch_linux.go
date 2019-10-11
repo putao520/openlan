@@ -19,7 +19,7 @@ func NewVSwitch(c *Config) *VSwitch {
 	if c.HttpListen != "" {
 		vs.http = NewHttp(vs.worker, c)
 	}
-	vs.status = VsInit
+	vs.status = VSINIT
 	return vs
 }
 
@@ -27,10 +27,10 @@ func (vs *VSwitch) Start() {
 	vs.lock.Lock()
 	defer vs.lock.Unlock()
 
-	if vs.status == VsStarted {
+	if vs.status == VSSTARTED {
 		return
 	}
-	vs.status = VsStarted
+	vs.status = VSSTARTED
 
 	vs.worker.Start()
 	if vs.http != nil {
@@ -42,10 +42,10 @@ func (vs *VSwitch) Stop() {
 	vs.lock.Lock()
 	defer vs.lock.Unlock()
 
-	if vs.status != VsStarted {
+	if vs.status != VSSTARTED {
 		return
 	}
-	vs.status = VsStopped
+	vs.status = VSTOPPED
 
 	vs.worker.Stop()
 	if vs.http != nil {

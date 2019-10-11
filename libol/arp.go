@@ -32,7 +32,7 @@ type Arp struct {
 func NewArp() (a *Arp) {
 	a = &Arp{
 		HrdCode: ARPHRD_ETHER,
-		ProCode: EthPIp4,
+		ProCode: ETHPIP4,
 		HrdLen:  6,
 		ProLen:  4,
 		OpCode:  ARP_REQUEST,
@@ -107,5 +107,5 @@ func (a *Arp) Encode() []byte {
 }
 
 func (a *Arp) IsIP4() bool {
-	return a.ProCode == EthPIp4
+	return a.ProCode == ETHPIP4
 }
