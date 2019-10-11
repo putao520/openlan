@@ -163,7 +163,7 @@ func (e *Neighber) PubNeighbor(neb *Neighbor, isadd bool) {
 		"remote":  neb.Client.String(),
 		"newTime": neb.NewTime,
 		"hitTime": neb.HitTime,
-		"active": isadd,
+		"active":  isadd,
 	}
 
 	if err := e.worker.Redis.HMSet(key, value); err != nil {

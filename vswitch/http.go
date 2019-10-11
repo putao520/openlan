@@ -27,7 +27,7 @@ func NewHttp(worker *Worker, c *Config) (h *Http) {
 		listen:     c.HttpListen,
 		adminToken: c.Token,
 		adminFile:  c.TokenFile,
-		server:	    &http.Server{Addr: c.HttpListen},
+		server:     &http.Server{Addr: c.HttpListen},
 	}
 
 	if h.adminToken == "" {

@@ -6,17 +6,16 @@ import (
 )
 
 type Bridger struct {
-
 }
 
 type Worker struct {
 	WorkerBase
-	br          *Bridger
+	br *Bridger
 }
 
 func NewWorker(server *TcpServer, c *Config) *Worker {
 	w := &Worker{
-		br:          nil,
+		br: nil,
 	}
 
 	w.WorkerBase = NewWorkerBase(server, c)

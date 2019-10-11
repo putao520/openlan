@@ -6,15 +6,15 @@ type VSwitch struct {
 	worker *Worker
 	http   *Http
 
-	status  int
-	lock    sync.RWMutex
+	status int
+	lock   sync.RWMutex
 }
 
 func NewVSwitch(c *Config) *VSwitch {
 	server := NewTcpServer(c)
 	vs := &VSwitch{
 		worker: NewWorker(server, c),
-		http: nil,
+		http:   nil,
 	}
 	if c.HttpListen != "" {
 		vs.http = NewHttp(vs.worker, c)
@@ -41,7 +41,7 @@ func (vs *VSwitch) Start() {
 func (vs *VSwitch) Stop() {
 	vs.lock.Lock()
 	defer vs.lock.Unlock()
-	
+
 	if vs.status != VsStarted {
 		return
 	}

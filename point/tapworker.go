@@ -21,7 +21,7 @@ type TapWorker struct {
 
 func NewTapWorker(device *water.Interface, c *Config) (a *TapWorker) {
 	a = &TapWorker{
-		Device:      device,
+		Device:    device,
 		writeChan: make(chan []byte, 1024*10),
 		ifMtu:     c.IfMtu, //1514
 	}

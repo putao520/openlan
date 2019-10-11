@@ -36,7 +36,7 @@ type TcpClient struct {
 	TxOkay  uint64
 	RxOkay  uint64
 	TxError uint64
-	Dropped  uint64
+	Dropped uint64
 	Status  uint8
 	Addr    string
 	NewTime int64
@@ -51,7 +51,7 @@ func NewTcpClient(addr string) (t *TcpClient) {
 		TxOkay:      0,
 		RxOkay:      0,
 		TxError:     0,
-		Dropped:      0,
+		Dropped:     0,
 		Status:      ClInit,
 		onConnected: nil,
 		NewTime:     time.Now().Unix(),

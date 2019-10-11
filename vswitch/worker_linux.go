@@ -9,12 +9,12 @@ import (
 
 type Worker struct {
 	WorkerBase
-	br          tenus.Bridger
+	br tenus.Bridger
 }
 
 func NewWorker(server *TcpServer, c *Config) *Worker {
 	w := &Worker{
-		br:          nil,
+		br: nil,
 	}
 
 	w.WorkerBase = NewWorkerBase(server, c)

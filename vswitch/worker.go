@@ -39,7 +39,7 @@ type WorkerBase struct {
 	links       map[string]*point.Point
 }
 
-func NewWorkerBase(server *TcpServer, c *Config)  WorkerBase {
+func NewWorkerBase(server *TcpServer, c *Config) WorkerBase {
 	w := WorkerBase{
 		Server:      server,
 		Neighbor:    nil,
@@ -311,7 +311,7 @@ func (w *WorkerBase) PubPoint(p *Point, isAdd bool) {
 		"remote":  p.Client.String(),
 		"newTime": p.Client.NewTime,
 		"device":  p.Device.Name(),
-		"active": isAdd,
+		"active":  isAdd,
 	}
 
 	if err := w.Redis.HMSet(key, value); err != nil {

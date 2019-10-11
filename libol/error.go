@@ -9,7 +9,7 @@ type Err struct {
 
 func Errer(message string, v ...interface{}) (e *Err) {
 	e = &Err{
-		Code: 0xFFff,
+		Code:    0xFFff,
 		Message: fmt.Sprintf(message, v...),
 	}
 	return

@@ -11,10 +11,10 @@ var (
 )
 
 const (
-	EthPArp   = 0x0806
-	EthPIp4   = 0x0800
-	ETHPIP6 = 0x86DD
-	EthPVlan  = 0x8100
+	EthPArp  = 0x0806
+	EthPIp4  = 0x0800
+	ETHPIP6  = 0x86DD
+	EthPVlan = 0x8100
 )
 
 type Ether struct {

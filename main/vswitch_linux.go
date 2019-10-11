@@ -10,7 +10,6 @@ import (
 	"github.com/lightstar-dev/openlan-go/vswitch"
 )
 
-
 func main() {
 	c := vswitch.NewConfig()
 	vs := vswitch.NewVSwitch(c)
