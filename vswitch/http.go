@@ -140,7 +140,7 @@ func (h *Http) Index(w http.ResponseWriter, r *http.Request) {
 			client, dev := p.Client, p.Device
 			body += fmt.Sprintf("%d, %s, %s, %d, %d, %d, %s\n",
 				client.UpTime(), client.Addr, dev.Name(),
-				client.RxOkay, client.TxOkay, client.TxError, client.State())
+				client.RxOkay, client.TxOkay, client.TxError, client.GetState())
 		}
 
 		body += "\n"

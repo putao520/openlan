@@ -6,8 +6,10 @@ type VSwitch struct {
 }
 
 func NewVSwitch(c *Config) *VSwitch {
-	//TODO
-	return &VSwitch{}
+	vs := &VSwitch{}
+	vs.Base = NewBase(c)
+
+	return vs
 }
 
 func (vs *VSwitch) Start() {
@@ -16,12 +18,4 @@ func (vs *VSwitch) Start() {
 
 func (vs *VSwitch) Stop() {
 	//TODO
-}
-
-func (vs *VSwitch) GetBrName() string {
-	return ""
-}
-
-func (vs *VSwitch) GetUpTime() int64 {
-	return 0
 }

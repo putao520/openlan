@@ -73,12 +73,10 @@ func (l *Logger) SaveError(format string, v ...interface{}) {
 		l.FileLog.Println(m)
 	}
 
-	if ERROR >= l.Level {
-		if l.Errors.Len() > 1024 {
-			l.Errors.Remove(l.Errors.Front())
-		}
-		l.Errors.PushBack(m)
+	if l.Errors.Len() > 1024 {
+		l.Errors.Remove(l.Errors.Front())
 	}
+	l.Errors.PushBack(m)
 }
 
 var Log = Logger{

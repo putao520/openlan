@@ -21,6 +21,9 @@ func NewPoint(c *libol.TcpClient, d *water.Interface) (w *Point) {
 }
 
 type PointAuth struct {
+	Success int
+	Failed  int
+
 	ifMtu  int
 	worker *Worker
 }
@@ -55,6 +58,7 @@ func (w *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 
 	if client.GetStatus() != libol.CLAUEHED {
 		client.Dropped++
+		w.worker.Server.DrpCount++
 		libol.Debug("PointAuth.onRecv: %s unauth", client.Addr)
 		return libol.Errer("Unauthed client.")
 	}
@@ -82,15 +86,16 @@ func (w *PointAuth) handleLogin(client *libol.TcpClient, data string) error {
 	_user := w.worker.GetUser(name)
 	if _user != nil {
 		if _user.Password == user.Password {
+			w.Success++
 			client.SetStatus(libol.CLAUEHED)
 			libol.Info("PointAuth.handleLogin: %s Authed", client.Addr)
 			w.onAuth(client)
 			return nil
 		}
-
-		client.SetStatus(libol.CLUNAUTH)
 	}
 
+	w.Failed++
+	client.SetStatus(libol.CLUNAUTH)
 	return libol.Errer("Auth failed.")
 }
 
@@ -126,6 +131,7 @@ func (w *PointAuth) GoRecv(dev *water.Interface, doRecv func([]byte) error) {
 		}
 
 		libol.Debug("PointAuth.GoRev: % x\n", data[:n])
+		w.worker.Server.TxCount++
 		if err := doRecv(data[:n]); err != nil {
 			libol.Error("PointAuth.GoRev: do-recv %s %s", dev.Name(), err)
 		}

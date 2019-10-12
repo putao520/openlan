@@ -154,7 +154,6 @@ func (w *WorkerBase) onClient(client *libol.TcpClient) error {
 }
 
 func (w *WorkerBase) onRecv(client *libol.TcpClient, data []byte) error {
-	//TODO Hook packets such as ARP Learning.
 	libol.Debug("WorkerBase.onRecv: %s % x", client.Addr, data)
 
 	if err := w.onHook(client, data); err != nil {
@@ -220,6 +219,15 @@ func (w *WorkerBase) AddUser(user *User) {
 		name = user.Token
 	}
 	w.users[name] = user
+}
+
+func (w *WorkerBase) DelUser(name string) {
+	w.usersLock.Lock()
+	defer w.usersLock.Unlock()
+
+	if _, ok := w.users[name]; ok {
+		delete(w.users, name)
+	}
 }
 
 func (w *WorkerBase) GetUser(name string) *User {

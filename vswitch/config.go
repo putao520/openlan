@@ -98,7 +98,7 @@ func NewConfig() (c *Config) {
 
 func (c *Config) Default() {
 	RightAddr(&c.TcpListen, 10002)
-	RightAddr(&c.HttpListen, 10082)
+	RightAddr(&c.HttpListen, 10000)
 
 	// TODO reset zero value to default
 }

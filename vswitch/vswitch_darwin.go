@@ -1,13 +1,14 @@
 package vswitch
 
 type VSwitch struct {
-	worker *Worker
-	http   *Http
+	Base
 }
 
 func NewVSwitch(c *Config) *VSwitch {
-	//TODO
-	return &VSwitch{}
+	vs := &VSwitch{}
+	vs.Base = NewBase(c)
+
+	return vs
 }
 
 func (vs *VSwitch) Start() {

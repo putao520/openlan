@@ -251,7 +251,7 @@ func (t *TcpClient) SendResp(action string, body string) error {
 	return nil
 }
 
-func (t *TcpClient) State() string {
+func (t *TcpClient) GetState() string {
 	switch t.GetStatus() {
 	case CLINIT:
 		return "initialized"

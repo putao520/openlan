@@ -8,6 +8,11 @@ import (
 
 type TcpServer struct {
 	Addr string
+	RxCount int64
+	TxCount int64
+	DrpCount int64
+	AcpCount int64
+	ClsCount int64
 
 	listener   *net.TCPListener
 	maxClient  int
@@ -73,6 +78,7 @@ func (t *TcpServer) GoAccept() {
 			return
 		}
 
+		t.AcpCount++
 		t.onClients <- libol.NewTcpClientFromConn(conn)
 	}
 
@@ -96,6 +102,7 @@ func (t *TcpServer) GoLoop(onClient func(*libol.TcpClient) error,
 		case client := <-t.offClients:
 			if ok := t.clients[client]; ok {
 				libol.Debug("TcpServer.delClient %s", client.Addr)
+				t.ClsCount++
 				if onClose != nil {
 					onClose(client)
 				}
@@ -117,6 +124,7 @@ func (t *TcpServer) GoRecv(client *libol.TcpClient, onRecv func(*libol.TcpClient
 		}
 
 		if length > 0 {
+			t.RxCount++
 			libol.Debug("TcpServer.GoRecv: length: %d ", length)
 			libol.Debug("TcpServer.GoRecv: data  : % x", data[:length])
 			onRecv(client, data[:length])
