@@ -58,6 +58,12 @@ func (b *Base) Stop() bool {
 	return true
 }
 
+func (b *Base) IsStated() bool {
+	b.lock.Lock()
+	defer b.lock.Unlock()
+	return b.status == SWSTARTED
+}
+
 func (b *Base) GetState() string {
 	b.lock.Lock()
 	defer b.lock.Unlock()
