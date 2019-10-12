@@ -191,3 +191,10 @@ func (p *Point) IfName() string {
 	}
 	return ""
 }
+
+func (p *Point) GetWorker() *TcpWorker {
+	if p.tcpWorker != nil {
+		return p.tcpWorker
+	}
+	return nil
+}

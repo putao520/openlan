@@ -142,6 +142,9 @@ func (t *TcpWorker) GoLoop() {
 	t.Client.Close()
 	libol.Warn("TcpWorker.GoRev %s exit.", t.Client)
 }
+func (t *TcpWorker) GetAuth() (string, string) {
+	return t.name, t.password
+}
 
 func (t *TcpWorker) SetAuth(auth string) {
 	values := strings.Split(auth, ":")
