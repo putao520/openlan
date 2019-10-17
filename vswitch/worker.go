@@ -5,14 +5,22 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"sort"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/lightstar-dev/openlan-go/libol"
 	"github.com/lightstar-dev/openlan-go/point"
+	"github.com/songgao/water"
 )
+
+type WorkerApi interface {
+	GetRedis() *libol.RedisCli
+	GetServer() *libol.TcpServer
+	GetUser(name string) *User
+	NewTap() (*water.Interface, error)
+	AddPoint(p *Point)
+}
 
 type WorkerBase struct {
 	Server      *libol.TcpServer
@@ -25,8 +33,7 @@ type WorkerBase struct {
 
 	brIp        net.IP
 	brNet       *net.IPNet
-	keys        []int
-	hooks       map[int]func(*libol.TcpClient, *libol.Frame) error
+	hooks       []func(*libol.TcpClient, *libol.Frame) error
 	ifMtu       int
 	clientsLock sync.RWMutex
 	clients     map[*libol.TcpClient]*Point
@@ -47,8 +54,7 @@ func NewWorkerBase(server *libol.TcpServer, c *Config) WorkerBase {
 		EnableRedis: c.Redis.Enable,
 		Conf:        c,
 		ifMtu:       c.IfMtu,
-		hooks:       make(map[int]func(*libol.TcpClient, *libol.Frame) error),
-		keys:        make([]int, 0, 1024),
+		hooks:       make([]func(*libol.TcpClient, *libol.Frame) error, 0, 64),
 		clients:     make(map[*libol.TcpClient]*Point, 1024),
 		users:       make(map[string]*User, 1024),
 		newTime:     time.Now().Unix(),
@@ -57,15 +63,21 @@ func NewWorkerBase(server *libol.TcpServer, c *Config) WorkerBase {
 		links:       make(map[string]*point.Point),
 	}
 
-	w.LoadUsers()
-
 	return w
 }
 
+func (w *WorkerBase) Init(api WorkerApi) {
+	w.Auth = NewPointAuth(api, w.Conf)
+	w.Request = NewWithRequest(api, w.Conf)
+	w.Neighbor = NewNeighbors(api, w.Conf)
+	w.Register()
+	w.LoadUsers()
+}
+
 func (w *WorkerBase) Register() {
-	w.setHook(0x10, w.Neighbor.OnFrame)
-	w.setHook(0x00, w.Auth.OnFrame)
-	w.setHook(0x01, w.Request.OnFrame)
+	w.setHook(w.Auth.OnFrame)
+	w.setHook(w.Neighbor.OnFrame)
+	w.setHook(w.Request.OnFrame)
 	w.showHook()
 }
 
@@ -117,24 +129,22 @@ func (w *WorkerBase) BrName() string {
 }
 
 func (w *WorkerBase) showHook() {
-	for _, k := range w.keys {
-		libol.Debug("WorkerBase.showHool k:%d func: %p", k, w.hooks[k])
+	for i, h := range w.hooks {
+		libol.Info("WorkerBase.showHook k:%d func: %p, %s", i, h, libol.FunName(h))
 	}
 }
 
-func (w *WorkerBase) setHook(index int, hook func(*libol.TcpClient, *libol.Frame) error) {
-	w.hooks[index] = hook
-	w.keys = append(w.keys, index)
-	sort.Ints(w.keys)
+func (w *WorkerBase) setHook(hook func(*libol.TcpClient, *libol.Frame) error) {
+	w.hooks = append(w.hooks, hook)
 }
 
 func (w *WorkerBase) onHook(client *libol.TcpClient, data []byte) error {
 	frame := libol.NewFrame(data)
 
-	for _, k := range w.keys {
-		libol.Debug("WorkerBase.onHook k:%d", k)
-		if f, ok := w.hooks[k]; ok {
-			if err := f(client, frame); err != nil {
+	for _, h := range w.hooks {
+		libol.Debug("WorkerBase.onHook h:%p", h)
+		if h != nil {
+			if err := h(client, frame); err != nil {
 				return err
 			}
 		}
@@ -378,4 +388,16 @@ func (w *WorkerBase) ListLink() <-chan *point.Point {
 	}()
 
 	return c
+}
+
+func (w *WorkerBase) GetRedis() *libol.RedisCli {
+	return w.Redis
+}
+func (w *WorkerBase) GetServer() *libol.TcpServer {
+	return w.Server
+}
+
+func (w *WorkerBase) NewTap() (*water.Interface, error){
+	//TODO
+	return nil, nil
 }
