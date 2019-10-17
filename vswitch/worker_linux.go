@@ -17,12 +17,10 @@ func NewWorker(server *libol.TcpServer, c *Config) *Worker {
 		br: nil,
 	}
 
-	w.WorkerBase = NewWorkerBase(server, c)
 	w.Auth = NewPointAuth(w, c)
 	w.Request = NewWithRequest(w, c)
-	w.Neighbor = NewNeighber(w, c)
+	w.Neighbor = NewNeighbors(w, c)
 	w.Register()
-	w.LoadUsers()
 
 	return w
 }

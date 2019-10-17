@@ -4,6 +4,12 @@ import (
 	"net"
 )
 
+type OnTcpServer interface {
+	OnClient(*TcpClient) error
+	OnRecv(*TcpClient, []byte) error
+	OnClose(*TcpClient) error
+}
+
 type TcpServer struct {
 	Addr string
 	RxCount int64
@@ -83,26 +89,24 @@ func (t *TcpServer) GoAccept() {
 	return
 }
 
-func (t *TcpServer) GoLoop(onClient func(*TcpClient) error,
-	onRecv func(*TcpClient, []byte) error,
-	onClose func(*TcpClient) error) {
+func (t *TcpServer) GoLoop(on OnTcpServer) {
 	Debug("TcpServer.GoLoop")
 	defer t.Close()
 	for {
 		select {
 		case client := <-t.onClients:
 			Debug("TcpServer.addClient %s", client.Addr)
-			if onClient != nil {
-				onClient(client)
+			if on.OnClient != nil {
+				on.OnClient(client)
 			}
 			t.clients[client] = true
-			go t.GoRecv(client, onRecv)
+			go t.GoRecv(client, on.OnRecv)
 		case client := <-t.offClients:
 			if ok := t.clients[client]; ok {
 				Debug("TcpServer.delClient %s", client.Addr)
 				t.ClsCount++
-				if onClose != nil {
-					onClose(client)
+				if on.OnClose != nil {
+					on.OnClose(client)
 				}
 				client.Close()
 				delete(t.clients, client)

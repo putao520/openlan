@@ -1,6 +1,5 @@
 package vswitch
 
-
 type VSwitch struct {
 	Base
 }

@@ -18,7 +18,7 @@ type WorkerBase struct {
 	Server      *libol.TcpServer
 	Auth        *PointAuth
 	Request     *WithRequest
-	Neighbor    *Neighber
+	Neighbor    *Neighbors
 	Redis       *libol.RedisCli
 	EnableRedis bool
 	Conf        *Config
@@ -56,6 +56,8 @@ func NewWorkerBase(server *libol.TcpServer, c *Config) WorkerBase {
 		brName:      c.BrName,
 		links:       make(map[string]*point.Point),
 	}
+
+	w.LoadUsers()
 
 	return w
 }
@@ -145,7 +147,7 @@ func (w *WorkerBase) handleReq(client *libol.TcpClient, frame *libol.Frame) erro
 	return nil
 }
 
-func (w *WorkerBase) onClient(client *libol.TcpClient) error {
+func (w *WorkerBase) OnClient(client *libol.TcpClient) error {
 	client.SetStatus(libol.CLCONNECTED)
 
 	libol.Info("WorkerBase.onClient: %s", client.Addr)
@@ -153,7 +155,7 @@ func (w *WorkerBase) onClient(client *libol.TcpClient) error {
 	return nil
 }
 
-func (w *WorkerBase) onRecv(client *libol.TcpClient, data []byte) error {
+func (w *WorkerBase) OnRecv(client *libol.TcpClient, data []byte) error {
 	libol.Debug("WorkerBase.onRecv: %s % x", client.Addr, data)
 
 	if err := w.onHook(client, data); err != nil {
@@ -179,7 +181,7 @@ func (w *WorkerBase) onRecv(client *libol.TcpClient, data []byte) error {
 	return nil
 }
 
-func (w *WorkerBase) onClose(client *libol.TcpClient) error {
+func (w *WorkerBase) OnClose(client *libol.TcpClient) error {
 	libol.Info("WorkerBase.onClose: %s", client.Addr)
 
 	w.DelPoint(client)
@@ -196,7 +198,7 @@ func (w *WorkerBase) Start() {
 	w.LoadLinks()
 
 	go w.Server.GoAccept()
-	go w.Server.GoLoop(w.onClient, w.onRecv, w.onClose)
+	go w.Server.GoLoop(w)
 }
 
 func (w *WorkerBase) Stop() {

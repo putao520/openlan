@@ -2,6 +2,7 @@ package vswitch
 
 import (
 	"github.com/lightstar-dev/openlan-go/libol"
+	"github.com/lightstar-dev/openlan-go/vswitch/hooks"
 	"github.com/songgao/water"
 )
 
@@ -21,7 +22,7 @@ func NewWorker(server *libol.TcpServer, c *Config) *Worker {
 	w.WorkerBase = NewWorkerBase(server, c)
 	w.Auth = NewPointAuth(w, c)
 	w.Request = NewWithRequest(w, c)
-	w.Neighbor = NewNeighber(w, c)
+	w.Neighbor = hooks.NewNeighber(w, c)
 	w.Register()
 	w.LoadUsers()
 
