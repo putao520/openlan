@@ -1,6 +1,9 @@
 package vswitch
 
-import "sync"
+import (
+	"github.com/lightstar-dev/openlan-go/libol"
+	"sync"
+)
 
 type Base struct {
 	worker *Worker
@@ -11,7 +14,7 @@ type Base struct {
 }
 
 func NewBase(c *Config) Base {
-	server := NewTcpServer(c)
+	server := libol.NewTcpServer(c.TcpListen)
 	b := Base{
 		worker: NewWorker(server, c),
 		http:   nil,
@@ -92,6 +95,6 @@ func (b *Base) GetWorker() *Worker {
 	return b.worker
 }
 
-func (b *Base) GetServer() *TcpServer {
+func (b *Base) GetServer() *libol.TcpServer {
 	return b.worker.Server
 }

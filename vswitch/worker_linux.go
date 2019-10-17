@@ -12,7 +12,7 @@ type Worker struct {
 	br tenus.Bridger
 }
 
-func NewWorker(server *TcpServer, c *Config) *Worker {
+func NewWorker(server *libol.TcpServer, c *Config) *Worker {
 	w := &Worker{
 		br: nil,
 	}

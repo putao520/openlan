@@ -15,7 +15,7 @@ import (
 )
 
 type WorkerBase struct {
-	Server      *TcpServer
+	Server      *libol.TcpServer
 	Auth        *PointAuth
 	Request     *WithRequest
 	Neighbor    *Neighber
@@ -39,7 +39,7 @@ type WorkerBase struct {
 	links       map[string]*point.Point
 }
 
-func NewWorkerBase(server *TcpServer, c *Config) WorkerBase {
+func NewWorkerBase(server *libol.TcpServer, c *Config) WorkerBase {
 	w := WorkerBase{
 		Server:      server,
 		Neighbor:    nil,

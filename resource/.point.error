@@ -1,0 +1,33 @@
+2019/10/13 20:52:09 INFO NewPoint.device Ethernet 2
+2019/10/13 20:52:09 INFO TcpClient.Connect ali.openlan.net:10002
+2019/10/13 20:52:09 INFO TcpWorker.TryLogin: {"name":"yunex","password":"yunex@123"}
+2019/10/13 20:52:09 INFO TapWorker.GoRev
+2019/10/13 20:52:09 INFO TapWorker.GoLoop
+2019/10/13 20:52:09 INFO TcpWorker.GoRev true
+2019/10/13 20:52:09 ERROR TcpWorker.GoLoop: droping by unauth
+2019/10/13 20:52:09 ERROR TcpWorker.GoLoop: droping by unauth
+2019/10/13 20:52:09 ERROR TcpWorker.GoLoop: droping by unauth
+2019/10/13 20:52:09 ERROR TcpWorker.GoLoop: droping by unauth
+2019/10/13 20:52:09 ERROR TcpWorker.GoLoop: droping by unauth
+2019/10/13 20:52:09 ERROR TcpWorker.GoLoop: droping by unauth
+2019/10/13 20:52:09 INFO TcpWorker.onHook.login: okay.
+2019/10/13 21:34:33 ERROR TcpWorker.GoRev: read tcp 10.168.0.104:53949->47.56.173.255:10002: wsarecv: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond.
+2019/10/13 21:34:33 INFO TcpClient.Close ali.openlan.net:10002
+2019/10/13 21:34:37 ERROR TcpWorker.GoLoop: droping by unauth
+2019/10/13 21:34:40 ERROR TcpWorker.GoLoop: droping by unauth
+2019/10/13 21:34:43 ERROR TcpWorker.GoLoop: droping by unauth
+2019/10/13 21:34:46 ERROR TcpWorker.GoLoop: droping by unauth
+2019/10/13 21:34:49 ERROR TcpWorker.GoLoop: droping by unauth
+2019/10/13 21:34:52 ERROR TcpWorker.GoLoop: droping by unauth
+2019/10/13 21:35:33 WARN TcpWorker.Connect status 6->0
+2019/10/13 21:35:33 INFO TcpClient.Connect ali.openlan.net:10002
+2019/10/13 21:35:33 INFO TcpWorker.TryLogin: {"name":"yunex","password":"yunex@123"}
+2019/10/13 21:35:33 INFO TcpWorker.onHook.login: okay.
+2019/10/13 22:34:33 ERROR TcpWorker.GoRev: read tcp 10.168.0.104:55027->47.56.173.255:10002: wsarecv: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond.
+2019/10/13 22:34:33 INFO TcpClient.Close ali.openlan.net:10002
+2019/10/13 22:35:30 ERROR TcpWorker.GoLoop: droping by unauth
+2019/10/13 22:35:33 WARN TcpWorker.Connect status 6->0
+2019/10/13 22:35:33 INFO TcpClient.Connect ali.openlan.net:10002
+2019/10/13 22:35:33 ERROR TcpWorker.GoLoop: droping by unauth
+2019/10/13 22:35:33 INFO TcpWorker.TryLogin: {"name":"yunex","password":"yunex@123"}
+2019/10/13 22:35:34 INFO TcpWorker.onHook.login: okay.
