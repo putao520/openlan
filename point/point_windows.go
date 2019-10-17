@@ -95,7 +95,7 @@ func (p *Point) UpTime() int64 {
 func (p *Point) State() string {
 	client := p.GetClient()
 	if client != nil {
-		return client.State()
+		return client.GetState()
 	}
 	return ""
 }
