@@ -11,13 +11,13 @@ type PointAuth struct {
 	Failed  int
 
 	ifMtu  int
-	worker *Worker
+	worker WorkerApi
 }
 
-func NewPointAuth(worker *Worker, c *Config) (w *PointAuth) {
+func NewPointAuth(api WorkerApi, c *Config) (w *PointAuth) {
 	w = &PointAuth{
 		ifMtu:  c.IfMtu,
-		worker: worker,
+		worker: api,
 	}
 	return
 }
@@ -44,7 +44,7 @@ func (w *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 
 	if client.GetStatus() != libol.CLAUEHED {
 		client.Dropped++
-		w.worker.Server.DrpCount++
+		w.worker.GetServer().DrpCount++
 		libol.Debug("PointAuth.onRecv: %s unauth", client.Addr)
 		return libol.Errer("Unauthed client.")
 	}
@@ -117,7 +117,7 @@ func (w *PointAuth) GoRecv(dev *water.Interface, doRecv func([]byte) error) {
 		}
 
 		libol.Debug("PointAuth.GoRev: % x\n", data[:n])
-		w.worker.Server.TxCount++
+		w.worker.GetServer().TxCount++
 		if err := doRecv(data[:n]); err != nil {
 			libol.Error("PointAuth.GoRev: do-recv %s %s", dev.Name(), err)
 		}

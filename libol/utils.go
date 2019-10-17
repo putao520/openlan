@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"os"
+	"reflect"
+	"runtime"
 	"time"
 )
 
@@ -16,7 +18,7 @@ func GenToken(n int) string {
 	size := len(letters)
 	rand.Seed(time.Now().UnixNano())
 	for i := range buffer {
-		buffer[i] = letters[rand.Int63() % int64(size)]
+		buffer[i] = letters[rand.Int63()%int64(size)]
 	}
 
 	return string(buffer)
@@ -95,4 +97,8 @@ func UnmarshalLoad(v interface{}, file string) error {
 	}
 
 	return nil
+}
+
+func FunName(i interface{}) string {
+	return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
 }

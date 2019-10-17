@@ -5,12 +5,12 @@ import (
 )
 
 type WithRequest struct {
-	worker *Worker
+	worker WorkerApi
 }
 
-func NewWithRequest(worker *Worker, c *Config) (w *WithRequest) {
+func NewWithRequest(api WorkerApi, c *Config) (w *WithRequest) {
 	w = &WithRequest{
-		worker: worker,
+		worker: api,
 	}
 	return
 }

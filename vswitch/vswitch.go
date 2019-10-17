@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-type Base struct {
+type VSwitch struct {
 	worker *Worker
 	http   *Http
 
@@ -13,9 +13,9 @@ type Base struct {
 	lock   sync.RWMutex
 }
 
-func NewBase(c *Config) Base {
+func NewVSwitch(c *Config) VSwitch {
 	server := libol.NewTcpServer(c.TcpListen)
-	b := Base{
+	b := VSwitch{
 		worker: NewWorker(server, c),
 		http:   nil,
 	}
@@ -27,7 +27,7 @@ func NewBase(c *Config) Base {
 	return b
 }
 
-func (b *Base) Start() bool {
+func (b *VSwitch) Start() bool {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 
@@ -44,7 +44,7 @@ func (b *Base) Start() bool {
 	return true
 }
 
-func (b *Base) Stop() bool {
+func (b *VSwitch) Stop() bool {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 
@@ -61,13 +61,13 @@ func (b *Base) Stop() bool {
 	return true
 }
 
-func (b *Base) IsStated() bool {
+func (b *VSwitch) IsStated() bool {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	return b.status == SWSTARTED
 }
 
-func (b *Base) GetState() string {
+func (b *VSwitch) GetState() string {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 
@@ -83,18 +83,18 @@ func (b *Base) GetState() string {
 	return ""
 }
 
-func (b *Base) GetBrName() string {
+func (b *VSwitch) GetBrName() string {
 	return b.worker.BrName()
 }
 
-func (b *Base) GetUpTime() int64 {
+func (b *VSwitch) GetUpTime() int64 {
 	return b.worker.UpTime()
 }
 
-func (b *Base) GetWorker() *Worker {
+func (b *VSwitch) GetWorker() *Worker {
 	return b.worker
 }
 
-func (b *Base) GetServer() *libol.TcpServer {
+func (b *VSwitch) GetServer() *libol.TcpServer {
 	return b.worker.Server
 }

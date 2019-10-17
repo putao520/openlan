@@ -14,14 +14,11 @@ type Worker struct {
 
 func NewWorker(server *libol.TcpServer, c *Config) *Worker {
 	w := &Worker{
-		br: nil,
+		WorkerBase: NewWorkerBase(server, c),
+		br:         nil,
 	}
 
-	w.Auth = NewPointAuth(w, c)
-	w.Request = NewWithRequest(w, c)
-	w.Neighbor = NewNeighbors(w, c)
-	w.Register()
-
+	w.Init(w)
 	return w
 }
 

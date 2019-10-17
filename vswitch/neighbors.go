@@ -13,14 +13,14 @@ import (
 type Neighbors struct {
 	lock        sync.RWMutex
 	neighbors   map[string]*Neighbor
-	worker      *Worker
+	worker      WorkerApi
 	EnableRedis bool
 }
 
-func NewNeighbors(worker *Worker, c *Config) (e *Neighbors) {
+func NewNeighbors(api WorkerApi, c *Config) (e *Neighbors) {
 	e = &Neighbors{
 		neighbors:   make(map[string]*Neighbor, 1024*10),
-		worker:      worker,
+		worker:      api,
 		EnableRedis: c.Redis.Enable,
 	}
 	return
@@ -138,7 +138,7 @@ func (e *Neighbors) PubNeighbor(neb *Neighbor, isadd bool) {
 		"active":  isadd,
 	}
 
-	if err := e.worker.Redis.HMSet(key, value); err != nil {
+	if err := e.worker.GetRedis().HMSet(key, value); err != nil {
 		libol.Error("Neighbors.PubNeighbor hset %s", err)
 	}
 }

@@ -2,7 +2,6 @@ package vswitch
 
 import (
 	"github.com/lightstar-dev/openlan-go/libol"
-	"github.com/lightstar-dev/openlan-go/vswitch/hooks"
 	"github.com/songgao/water"
 )
 
@@ -17,14 +16,10 @@ type Worker struct {
 func NewWorker(server *libol.TcpServer, c *Config) *Worker {
 	w := &Worker{
 		br: nil,
+		NewWorkerBase(server, c),
 	}
 
-	w.WorkerBase = NewWorkerBase(server, c)
-	w.Auth = NewPointAuth(w, c)
-	w.Request = NewWithRequest(w, c)
-	w.Neighbor = hooks.NewNeighber(w, c)
-	w.Register()
-	w.LoadUsers()
+	w.Init(w)
 
 	return w
 }

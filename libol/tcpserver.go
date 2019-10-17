@@ -11,9 +11,9 @@ type OnTcpServer interface {
 }
 
 type TcpServer struct {
-	Addr string
-	RxCount int64
-	TxCount int64
+	Addr     string
+	RxCount  int64
+	TxCount  int64
 	DrpCount int64
 	AcpCount int64
 	ClsCount int64
