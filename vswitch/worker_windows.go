@@ -9,14 +9,14 @@ type Bridger struct {
 }
 
 type Worker struct {
-	WorkerBase
+	*WorkerBase
 	br *Bridger
 }
 
 func NewWorker(server *libol.TcpServer, c *Config) *Worker {
 	w := &Worker{
+		WorkerBase: NewWorkerBase(server, c),
 		br: nil,
-		NewWorkerBase(server, c),
 	}
 
 	w.Init(w)

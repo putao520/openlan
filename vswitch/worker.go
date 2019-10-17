@@ -46,7 +46,7 @@ type WorkerBase struct {
 	links       map[string]*point.Point
 }
 
-func NewWorkerBase(server *libol.TcpServer, c *Config) WorkerBase {
+func NewWorkerBase(server *libol.TcpServer, c *Config) *WorkerBase {
 	w := WorkerBase{
 		Server:      server,
 		Neighbor:    nil,
@@ -63,7 +63,7 @@ func NewWorkerBase(server *libol.TcpServer, c *Config) WorkerBase {
 		links:       make(map[string]*point.Point),
 	}
 
-	return w
+	return &w
 }
 
 func (w *WorkerBase) Init(api WorkerApi) {

@@ -8,7 +8,7 @@ import (
 )
 
 type Worker struct {
-	WorkerBase
+	*WorkerBase
 	br tenus.Bridger
 }
 
