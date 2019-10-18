@@ -7,11 +7,11 @@ import (
 )
 
 type Bridger struct {
-	Ip        net.IP
-	Net       *net.IPNet
-	Mtu       int
-	Name      string
-	Device    tenus.Bridger
+	Ip     net.IP
+	Net    *net.IPNet
+	Mtu    int
+	Name   string
+	Device tenus.Bridger
 }
 
 func NewBridger(name string, mtu int) *Bridger {
@@ -88,5 +88,3 @@ func (b *Bridger) AddSlave(name string) error {
 
 	return nil
 }
-
-

@@ -33,7 +33,7 @@ func (w *Worker) FreeBr() {
 
 func (w *Worker) NewTap() (*water.Interface, error) {
 	libol.Debug("Worker.newTap")
-	dev, err := water.New(water.Config{ DeviceType: water.TAP })
+	dev, err := water.New(water.Config{DeviceType: water.TAP})
 	if err != nil {
 		libol.Error("Worker.newTap: %s", err)
 		return nil, err

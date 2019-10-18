@@ -397,7 +397,7 @@ func (w *WorkerBase) GetServer() *libol.TcpServer {
 	return w.Server
 }
 
-func (w *WorkerBase) NewTap() (*water.Interface, error){
+func (w *WorkerBase) NewTap() (*water.Interface, error) {
 	//TODO
 	return nil, nil
 }

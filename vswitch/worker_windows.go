@@ -13,7 +13,7 @@ type Worker struct {
 func NewWorker(server *libol.TcpServer, c *Config) *Worker {
 	w := &Worker{
 		WorkerBase: NewWorkerBase(server, c),
-		Br: 		NewBridger(c.BrName, c.IfMtu),
+		Br:         NewBridger(c.BrName, c.IfMtu),
 	}
 	if w.Br.Name == "" {
 		w.Br.Name = w.BrName()
