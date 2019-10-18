@@ -14,7 +14,7 @@ type VSwitch struct {
 	lock   sync.RWMutex
 }
 
-func NewVSwitch(c *models.Config) VSwitch {
+func NewVSwitch(c *models.Config) *VSwitch {
 	server := libol.NewTcpServer(c.TcpListen)
 	b := VSwitch{
 		worker: NewWorker(server, c),
@@ -25,7 +25,7 @@ func NewVSwitch(c *models.Config) VSwitch {
 	}
 	b.status = SWINIT
 
-	return b
+	return &b
 }
 
 func (b *VSwitch) Start() bool {
