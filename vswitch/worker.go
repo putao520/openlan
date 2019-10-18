@@ -27,6 +27,7 @@ type WorkerBase struct {
 	Auth        *PointAuth
 	Request     *WithRequest
 	Neighbor    *Neighbors
+	OnLines     *Online
 	Redis       *libol.RedisCli
 	EnableRedis bool
 	Conf        *Config
@@ -70,15 +71,15 @@ func (w *WorkerBase) Init(api WorkerApi) {
 	w.Auth = NewPointAuth(api, w.Conf)
 	w.Request = NewWithRequest(api, w.Conf)
 	w.Neighbor = NewNeighbors(api, w.Conf)
-	w.Register()
-	w.LoadUsers()
-}
+	w.OnLines = NewOnline(api, w.Conf)
 
-func (w *WorkerBase) Register() {
 	w.setHook(w.Auth.OnFrame)
 	w.setHook(w.Neighbor.OnFrame)
 	w.setHook(w.Request.OnFrame)
+	w.setHook(w.OnLines.OnFrame)
 	w.showHook()
+
+	w.LoadUsers()
 }
 
 func (w *WorkerBase) LoadUsers() error {

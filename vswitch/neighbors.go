@@ -62,7 +62,7 @@ func (e *Neighbors) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 
 	eth, err := libol.NewEtherFromFrame(frame.Data)
 	if err != nil {
-		libol.Warn("PointCmd.onArp %s", err)
+		libol.Warn("Neighbors.OnFrame %s", err)
 		return err
 	}
 	if !eth.IsArp() {
