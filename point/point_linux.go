@@ -1,6 +1,7 @@
 package point
 
 import (
+	"github.com/lightstar-dev/openlan-go/point/models"
 	"net"
 
 	"github.com/lightstar-dev/openlan-go/libol"
@@ -17,10 +18,10 @@ type Point struct {
 	br        tenus.Bridger
 	brIp      net.IP
 	brNet     *net.IPNet
-	config    *Config
+	config    *models.Config
 }
 
-func NewPoint(config *Config) (p *Point) {
+func NewPoint(config *models.Config) (p *Point) {
 	client := libol.NewTcpClient(config.Addr)
 	p = &Point{
 		BrName:    config.BrName,

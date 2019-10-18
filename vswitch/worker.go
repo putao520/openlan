@@ -3,6 +3,10 @@ package vswitch
 import (
 	"bufio"
 	"fmt"
+	models2 "github.com/lightstar-dev/openlan-go/point/models"
+	"github.com/lightstar-dev/openlan-go/vswitch/api"
+	"github.com/lightstar-dev/openlan-go/vswitch/app"
+	"github.com/lightstar-dev/openlan-go/vswitch/models"
 	"net"
 	"os"
 	"strings"
@@ -14,32 +18,24 @@ import (
 	"github.com/songgao/water"
 )
 
-type WorkerApi interface {
-	GetRedis() *libol.RedisCli
-	GetServer() *libol.TcpServer
-	GetUser(name string) *User
-	NewTap() (*water.Interface, error)
-	AddPoint(p *Point)
-}
-
 type WorkerBase struct {
 	Server      *libol.TcpServer
-	Auth        *PointAuth
-	Request     *WithRequest
-	Neighbor    *Neighbors
-	OnLines     *Online
+	Auth        *app.PointAuth
+	Request     *app.WithRequest
+	Neighbor    *app.Neighbors
+	OnLines     *app.Online
 	Redis       *libol.RedisCli
 	EnableRedis bool
-	Conf        *Config
+	Conf        *models.Config
 
 	brIp        net.IP
 	brNet       *net.IPNet
 	hooks       []func(*libol.TcpClient, *libol.Frame) error
 	ifMtu       int
 	clientsLock sync.RWMutex
-	clients     map[*libol.TcpClient]*Point
+	clients     map[*libol.TcpClient]*models.Point
 	usersLock   sync.RWMutex
-	users       map[string]*User
+	users       map[string]*models.User
 	newTime     int64
 	startTime   int64
 	brName      string
@@ -47,7 +43,7 @@ type WorkerBase struct {
 	links       map[string]*point.Point
 }
 
-func NewWorkerBase(server *libol.TcpServer, c *Config) *WorkerBase {
+func NewWorkerBase(server *libol.TcpServer, c *models.Config) *WorkerBase {
 	w := WorkerBase{
 		Server:      server,
 		Neighbor:    nil,
@@ -56,8 +52,8 @@ func NewWorkerBase(server *libol.TcpServer, c *Config) *WorkerBase {
 		Conf:        c,
 		ifMtu:       c.IfMtu,
 		hooks:       make([]func(*libol.TcpClient, *libol.Frame) error, 0, 64),
-		clients:     make(map[*libol.TcpClient]*Point, 1024),
-		users:       make(map[string]*User, 1024),
+		clients:     make(map[*libol.TcpClient]*models.Point, 1024),
+		users:       make(map[string]*models.User, 1024),
 		newTime:     time.Now().Unix(),
 		startTime:   0,
 		brName:      c.BrName,
@@ -67,11 +63,11 @@ func NewWorkerBase(server *libol.TcpServer, c *Config) *WorkerBase {
 	return &w
 }
 
-func (w *WorkerBase) Init(api WorkerApi) {
-	w.Auth = NewPointAuth(api, w.Conf)
-	w.Request = NewWithRequest(api, w.Conf)
-	w.Neighbor = NewNeighbors(api, w.Conf)
-	w.OnLines = NewOnline(api, w.Conf)
+func (w *WorkerBase) Init(a api.Worker) {
+	w.Auth = app.NewPointAuth(a, w.Conf)
+	w.Request = app.NewWithRequest(a, w.Conf)
+	w.Neighbor = app.NewNeighbors(a, w.Conf)
+	w.OnLines = app.NewOnline(a, w.Conf)
 
 	w.setHook(w.Auth.OnFrame)
 	w.setHook(w.Neighbor.OnFrame)
@@ -98,7 +94,7 @@ func (w *WorkerBase) LoadUsers() error {
 
 		values := strings.Split(line, ":")
 		if len(values) == 2 {
-			user := NewUser(values[0], strings.TrimSpace(values[1]))
+			user := models.NewUser(values[0], strings.TrimSpace(values[1]))
 			w.AddUser(user)
 		}
 	}
@@ -223,7 +219,7 @@ func (w *WorkerBase) Stop() {
 	w.startTime = 0
 }
 
-func (w *WorkerBase) AddUser(user *User) {
+func (w *WorkerBase) AddUser(user *models.User) {
 	w.usersLock.Lock()
 	defer w.usersLock.Unlock()
 
@@ -243,7 +239,7 @@ func (w *WorkerBase) DelUser(name string) {
 	}
 }
 
-func (w *WorkerBase) GetUser(name string) *User {
+func (w *WorkerBase) GetUser(name string) *models.User {
 	w.usersLock.RLock()
 	defer w.usersLock.RUnlock()
 
@@ -254,8 +250,8 @@ func (w *WorkerBase) GetUser(name string) *User {
 	return nil
 }
 
-func (w *WorkerBase) ListUser() <-chan *User {
-	c := make(chan *User, 128)
+func (w *WorkerBase) ListUser() <-chan *models.User {
+	c := make(chan *models.User, 128)
 
 	go func() {
 		w.usersLock.RLock()
@@ -270,7 +266,7 @@ func (w *WorkerBase) ListUser() <-chan *User {
 	return c
 }
 
-func (w *WorkerBase) AddPoint(p *Point) {
+func (w *WorkerBase) AddPoint(p *models.Point) {
 	w.clientsLock.Lock()
 	defer w.clientsLock.Unlock()
 
@@ -278,7 +274,7 @@ func (w *WorkerBase) AddPoint(p *Point) {
 	w.clients[p.Client] = p
 }
 
-func (w *WorkerBase) GetPoint(c *libol.TcpClient) *Point {
+func (w *WorkerBase) GetPoint(c *libol.TcpClient) *models.Point {
 	w.clientsLock.RLock()
 	defer w.clientsLock.RUnlock()
 
@@ -299,8 +295,8 @@ func (w *WorkerBase) DelPoint(c *libol.TcpClient) {
 	}
 }
 
-func (w *WorkerBase) ListPoint() <-chan *Point {
-	c := make(chan *Point, 128)
+func (w *WorkerBase) ListPoint() <-chan *models.Point {
+	c := make(chan *models.Point, 128)
 
 	go func() {
 		w.clientsLock.RLock()
@@ -322,7 +318,7 @@ func (w *WorkerBase) UpTime() int64 {
 	return 0
 }
 
-func (w *WorkerBase) PubPoint(p *Point, isAdd bool) {
+func (w *WorkerBase) PubPoint(p *models.Point, isAdd bool) {
 	if !w.EnableRedis {
 		return
 	}
@@ -340,7 +336,7 @@ func (w *WorkerBase) PubPoint(p *Point, isAdd bool) {
 	}
 }
 
-func (w *WorkerBase) AddLink(c *point.Config) {
+func (w *WorkerBase) AddLink(c *models2.Config) {
 	c.BrName = w.BrName() //Reset bridge name.
 
 	go func() {

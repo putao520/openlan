@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	models2 "github.com/lightstar-dev/openlan-go/point/models"
+	"github.com/lightstar-dev/openlan-go/vswitch/models"
 	"html"
 	"io/ioutil"
 	"net/http"
@@ -21,7 +23,7 @@ type Http struct {
 	server     *http.Server
 }
 
-func NewHttp(worker *Worker, c *Config) (h *Http) {
+func NewHttp(worker *Worker, c *models.Config) (h *Http) {
 	h = &Http{
 		worker:     worker,
 		listen:     c.HttpListen,
@@ -201,7 +203,7 @@ func (h *Http) User(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "GET":
-		users := make([]*User, 0, 1024)
+		users := make([]*models.User, 0, 1024)
 		for u := range h.worker.ListUser() {
 			if u == nil {
 				break
@@ -219,7 +221,7 @@ func (h *Http) User(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		user := &User{}
+		user := &models.User{}
 		if err := json.Unmarshal([]byte(body), user); err != nil {
 			http.Error(w, fmt.Sprintf("Error| Http._User: %s", err), 400)
 			return
@@ -240,7 +242,7 @@ func (h *Http) Neighbor(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "GET":
-		neighbors := make([]*Neighbor, 0, 1024)
+		neighbors := make([]*models.Neighbor, 0, 1024)
 		for n := range h.worker.Neighbor.ListNeighbor() {
 			if n == nil {
 				break
@@ -281,7 +283,7 @@ func (h *Http) Link(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		c := &point.Config{}
+		c := &models2.Config{}
 		if err := json.Unmarshal([]byte(body), c); err != nil {
 			http.Error(w, fmt.Sprintf("Error| Http._Link: %s", err), 400)
 			return

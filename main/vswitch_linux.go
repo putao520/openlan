@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/lightstar-dev/openlan-go/vswitch/models"
 	"os"
 	"os/signal"
 	"syscall"
@@ -11,7 +12,7 @@ import (
 )
 
 func main() {
-	c := vswitch.NewConfig()
+	c := models.NewConfig()
 	vs := vswitch.NewVSwitch(c)
 	vs.Start()
 

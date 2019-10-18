@@ -2,6 +2,7 @@ package vswitch
 
 import (
 	"github.com/lightstar-dev/openlan-go/libol"
+	"github.com/lightstar-dev/openlan-go/vswitch/models"
 	"github.com/songgao/water"
 )
 
@@ -10,7 +11,7 @@ type Worker struct {
 	Br *Bridger
 }
 
-func NewWorker(server *libol.TcpServer, c *Config) *Worker {
+func NewWorker(server *libol.TcpServer, c *models.Config) *Worker {
 	w := &Worker{
 		WorkerBase: NewWorkerBase(server, c),
 		Br:         NewBridger(c.BrName, c.IfMtu),

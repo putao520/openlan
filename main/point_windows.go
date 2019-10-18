@@ -3,10 +3,11 @@ package main
 import (
 	"fmt"
 	"github.com/lightstar-dev/openlan-go/point"
+	"github.com/lightstar-dev/openlan-go/point/models"
 )
 
 func main() {
-	c := point.NewConfig()
+	c := models.NewConfig()
 	p := point.NewPoint(c)
 	p.Start()
 

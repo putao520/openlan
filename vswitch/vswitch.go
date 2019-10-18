@@ -2,6 +2,7 @@ package vswitch
 
 import (
 	"github.com/lightstar-dev/openlan-go/libol"
+	"github.com/lightstar-dev/openlan-go/vswitch/models"
 	"sync"
 )
 
@@ -13,7 +14,7 @@ type VSwitch struct {
 	lock   sync.RWMutex
 }
 
-func NewVSwitch(c *Config) VSwitch {
+func NewVSwitch(c *models.Config) VSwitch {
 	server := libol.NewTcpServer(c.TcpListen)
 	b := VSwitch{
 		worker: NewWorker(server, c),

@@ -3,6 +3,7 @@ package point
 import (
 	"bufio"
 	"fmt"
+	"github.com/lightstar-dev/openlan-go/point/models"
 	"net"
 	"os"
 	"strings"
@@ -16,7 +17,7 @@ type Command struct {
 	brNet     *net.IPNet
 }
 
-func NewCommand(config *Config) (cmd *Command) {
+func NewCommand(config *models.Config) (cmd *Command) {
 	client := libol.NewTcpClient(config.Addr)
 
 	cmd = &Command{
@@ -99,7 +100,7 @@ func (cmd *Command) DoOpen(args []string) string {
 	//libol.Debug("Command.DoOpen %s", args)
 	if len(args) > 0 {
 		addr := args[0]
-		RightAddr(&addr, 10002)
+		models.RightAddr(&addr, 10002)
 
 		cmd.tcpWorker.SetAddr(addr)
 	}
