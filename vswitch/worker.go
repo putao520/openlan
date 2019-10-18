@@ -7,7 +7,6 @@ import (
 	"github.com/lightstar-dev/openlan-go/vswitch/api"
 	"github.com/lightstar-dev/openlan-go/vswitch/app"
 	"github.com/lightstar-dev/openlan-go/vswitch/models"
-	"net"
 	"os"
 	"strings"
 	"sync"
@@ -28,17 +27,14 @@ type WorkerBase struct {
 	EnableRedis bool
 	Conf        *models.Config
 
-	brIp      net.IP
-	brNet     *net.IPNet
 	hooks     []func(*libol.TcpClient, *libol.Frame) error
-	ifMtu     int
 	usersLock sync.RWMutex
 	users     map[string]*models.User
 	newTime   int64
 	startTime int64
-	brName    string
 	linksLock sync.RWMutex
 	links     map[string]*point.Point
+	brName    string
 }
 
 func NewWorkerBase(server *libol.TcpServer, c *models.Config) *WorkerBase {
@@ -47,7 +43,6 @@ func NewWorkerBase(server *libol.TcpServer, c *models.Config) *WorkerBase {
 		Neighbor:  nil,
 		Redis:     nil,
 		Conf:      c,
-		ifMtu:     c.IfMtu,
 		hooks:     make([]func(*libol.TcpClient, *libol.Frame) error, 0, 64),
 		users:     make(map[string]*models.User, 1024),
 		newTime:   time.Now().Unix(),
