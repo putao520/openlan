@@ -11,6 +11,7 @@ linux:
 
 windows:
 	go build -o ./resource/point.windows.x86_64 main/point_windows.go
+	go build -o ./resource/vswitch.windows.x86_64 main/vswitch_linux.go
 
 osx: darwin
 

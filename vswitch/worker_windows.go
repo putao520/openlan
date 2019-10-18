@@ -5,18 +5,18 @@ import (
 	"github.com/songgao/water"
 )
 
-type Bridger struct {
-}
-
 type Worker struct {
 	*WorkerBase
-	br *Bridger
+	Br *Bridger
 }
 
 func NewWorker(server *libol.TcpServer, c *Config) *Worker {
 	w := &Worker{
 		WorkerBase: NewWorkerBase(server, c),
-		br: nil,
+		Br: 		NewBridger(c.BrName, c.IfMtu),
+	}
+	if w.Br.Name == "" {
+		w.Br.Name = w.BrName()
 	}
 
 	w.Init(w)
@@ -25,8 +25,11 @@ func NewWorker(server *libol.TcpServer, c *Config) *Worker {
 }
 
 func (w *Worker) NewBr() {
-	//TODO
-	libol.Warn("Worker.NewBr: TODO")
+	w.Br.Open(w.Conf.IfAddr)
+}
+
+func (w *Worker) FreeBr() {
+	w.Br.Close()
 }
 
 func (w *Worker) NewTap() (*water.Interface, error) {
@@ -42,7 +45,5 @@ func (w *Worker) Start() {
 
 func (w *Worker) Stop() {
 	w.WorkerBase.Stop()
-	if w.br != nil && w.brIp != nil {
-		//TODO
-	}
+	w.FreeBr()
 }
