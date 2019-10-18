@@ -41,9 +41,9 @@ func NewHttp(worker *Worker, c *Config) (h *Http) {
 	h.SaveToken()
 	http.HandleFunc("/", h.Index)
 	http.HandleFunc("/hello", h.Hello)
-	http.HandleFunc("/api/user", h._User)
-	http.HandleFunc("/api/neighbor", h._Neighbor)
-	http.HandleFunc("/api/link", h._Link)
+	http.HandleFunc("/api/user", h.User)
+	http.HandleFunc("/api/neighbor", h.Neighbor)
+	http.HandleFunc("/api/link", h.Link)
 
 	return
 }
@@ -166,6 +166,17 @@ func (h *Http) Index(w http.ResponseWriter, r *http.Request) {
 				p.UpTime(), p.BrName, p.IfName(), p.Addr(), p.State())
 		}
 
+		body += "\n"
+		body += "# Onlines.\n"
+		body += "ethernet, address, protocol, destination port\n"
+		for l := range h.worker.OnLines.ListLine() {
+			if l == nil {
+				break
+			}
+			body += fmt.Sprintf("0x%04x, %s->%s, 0x%02x, %d\n",
+				l.EthType, l.IpSource, l.IPDest, l.IpProtocol, l.PortDest)
+		}
+
 		fmt.Fprintf(w, body)
 	default:
 		http.Error(w, fmt.Sprintf("Not support %s", r.Method), 400)
@@ -183,7 +194,7 @@ func (h *Http) Marshal(v interface{}) (string, error) {
 	return string(str), nil
 }
 
-func (h *Http) _User(w http.ResponseWriter, r *http.Request) {
+func (h *Http) User(w http.ResponseWriter, r *http.Request) {
 	if !h.IsAuth(w, r) {
 		return
 	}
@@ -222,7 +233,7 @@ func (h *Http) _User(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Http) _Neighbor(w http.ResponseWriter, r *http.Request) {
+func (h *Http) Neighbor(w http.ResponseWriter, r *http.Request) {
 	if !h.IsAuth(w, r) {
 		return
 	}
@@ -246,7 +257,7 @@ func (h *Http) _Neighbor(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Http) _Link(w http.ResponseWriter, r *http.Request) {
+func (h *Http) Link(w http.ResponseWriter, r *http.Request) {
 	if !h.IsAuth(w, r) {
 		return
 	}

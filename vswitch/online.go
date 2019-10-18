@@ -8,24 +8,27 @@ import (
 )
 
 type Line struct {
-	EthType uint16
-	IpAddr  net.IP
-	IpProto uint8
-	L4Port  uint16
+	EthType    uint16
+	IpSource   net.IP
+	IPDest     net.IP
+	IpProtocol uint8
+	PortDest   uint16
+	PortSource uint16
 }
 
 func NewLine(t uint16) *Line {
 	l := &Line{
 		EthType: t,
-		IpAddr:  nil,
-		IpProto: 0,
-		L4Port:  0,
+		IpSource:  nil,
+		IpProtocol: 0,
+		PortDest:  0,
 	}
 	return l
 }
 
 func (l *Line) String() string {
-	return fmt.Sprintf("%d:%s:%d:%d", l.EthType, l.IpAddr, l.IpProto, l.L4Port)
+	return fmt.Sprintf("%d:%s:%s:%d:%d",
+		l.EthType, l.IpSource, l.IPDest, l.IpProtocol, l.PortDest)
 }
 
 type Online struct {
@@ -71,7 +74,7 @@ func (o *Online) ListLine() <-chan *Line {
 
 func (o *Online) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 	data := frame.Data
-	libol.Debug("Onlino.OnFrame % x.", data)
+	libol.Debug("Online.OnFrame % x.", data)
 
 	if libol.IsInst(data) {
 		return nil
@@ -79,7 +82,7 @@ func (o *Online) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 
 	eth, err := libol.NewEtherFromFrame(data)
 	if err != nil {
-		libol.Warn("Onlino.OnFrame %s", err)
+		libol.Warn("Online.OnFrame %s", err)
 		return err
 	}
 
@@ -87,14 +90,15 @@ func (o *Online) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 	if eth.IsIP4() {
 		ip, err := libol.NewIpv4FromFrame(data)
 		if err != nil {
-			libol.Warn("Onlino.OnFrame %s", err)
+			libol.Warn("Online.OnFrame %s", err)
 			return err
 		}
 		data = data[ip.Len:]
 
 		line := NewLine(eth.Type)
-		line.IpAddr = ip.Destination
-		line.IpProto = ip.Protocol
+		line.IpSource = ip.Source
+		line.IPDest = ip.Destination
+		line.IpProtocol = ip.Protocol
 
 		switch ip.Protocol {
 		case libol.IPPROTO_ICMP:
@@ -102,17 +106,17 @@ func (o *Online) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 		case libol.IPPROTO_TCP:
 			tcp, err := libol.NewTcpFromFrame(data)
 			if err != nil {
-				libol.Warn("Onlino.OnFrame %s", err)
+				libol.Warn("Online.OnFrame %s", err)
 			}
-			line.L4Port = tcp.Destination
+			line.PortDest = tcp.Destination
 		case libol.IPPROTO_UDP:
 			udp, err := libol.NewUdpFromFrame(data)
 			if err != nil {
-				libol.Warn("Onlino.OnFrame %s", err)
+				libol.Warn("Online.OnFrame %s", err)
 			}
-			line.L4Port = udp.Destination
+			line.PortDest = udp.Destination
 		default:
-			line.L4Port = 0
+			line.PortSource = 0
 		}
 
 		o.AddLine(line)
@@ -126,7 +130,7 @@ func (o *Online) AddLine(line *Line) {
 	defer o.lock.Unlock()
 
 	if _, ok := o.lines[line.String()]; !ok {
-		libol.Info("OnLino.AddLine %s", line)
+		libol.Info("Online.AddLine %s", line)
 		o.lines[line.String()] = line
 	}
 }
