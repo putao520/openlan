@@ -1,7 +1,5 @@
 #!/bin/bash
 
-mkdir ca && cd ca
-
 ### Private
 
 openssl genrsa -out private.key 2048 ###
@@ -14,7 +12,7 @@ openssl rsa -in private.key -pubout -out public.key
 
 # using private to sign pem and generate a csr request.
 
-openssl req -new -key private.key -out csr.pem -subj "/C=CN/ST=JS/L=NJ/O=openlan/OU=dev/CN=sky.openlan.net/emailAddress=danieldin95@163.com"
+openssl req -new -key private.key -out csr.pem -subj "/C=CN/ST=JS/L=NJ/O=openlan/OU=dev/CN=www.openlan.net/emailAddress=danieldin95@163.com"
 
 # openssl req -noout -text -in csr.pem
 

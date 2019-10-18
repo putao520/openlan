@@ -1,0 +1,9 @@
+{
+  "VsAddr": "192.168.209.141:10002",
+  "VsAuth": "hi:hi",
+  "VsTls": true,
+  "Verbose": 2,
+  "IfMtu": 1518,
+  "IfEthDst": "2e:4b:f0:b7:6d:ba",
+  "LogFile": ".point.error"
+}

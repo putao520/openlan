@@ -19,8 +19,6 @@ type Point struct {
 	brIp      net.IP
 	brNet     *net.IPNet
 	config    *models.Config
-	ctx       context.Context
-	cancel    context.CancelFunc
 }
 
 func NewPoint(config *models.Config) (p *Point) {
@@ -35,7 +33,6 @@ func NewPoint(config *models.Config) (p *Point) {
 		tcpWorker: NewTcpWorker(client, config),
 		config:    config,
 	}
-	p.ctx, p.cancel = context.WithCancel(context.Background())
 	return
 }
 
@@ -68,17 +65,17 @@ func (p *Point) Start() {
 		libol.Error("Point.Start %s", err)
 	}
 
-	go p.tapWorker.GoRecv(p.ctx, p.tcpWorker.DoSend)
-	go p.tapWorker.GoLoop(p.ctx)
+	ctx := context.Background()
+	go p.tapWorker.GoRecv(ctx, p.tcpWorker.DoSend)
+	go p.tapWorker.GoLoop(ctx)
 
-	go p.tcpWorker.GoRecv(p.ctx, p.tapWorker.DoSend)
-	go p.tcpWorker.GoLoop(p.ctx)
+	go p.tcpWorker.GoRecv(ctx, p.tapWorker.DoSend)
+	go p.tcpWorker.GoLoop(ctx)
 }
 
 func (p *Point) Stop() {
 	defer libol.Catch("Point.Stop")
 
-	p.cancel()
 	p.tapWorker.Stop()
 	p.tcpWorker.Stop()
 }

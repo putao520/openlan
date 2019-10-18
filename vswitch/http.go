@@ -21,6 +21,8 @@ type Http struct {
 	adminToken string
 	adminFile  string
 	server     *http.Server
+	crtFile    string
+	keyFile    string
 }
 
 func NewHttp(worker *Worker, c *models.Config) (h *Http) {
@@ -30,6 +32,8 @@ func NewHttp(worker *Worker, c *models.Config) (h *Http) {
 		adminToken: c.Token,
 		adminFile:  c.TokenFile,
 		server:     &http.Server{Addr: c.HttpListen},
+		crtFile:    c.CrtFile,
+		keyFile:    c.KeyFile,
 	}
 
 	if h.adminToken == "" {
@@ -88,10 +92,16 @@ func (h *Http) LoadToken() error {
 func (h *Http) GoStart() error {
 	libol.Info("Http.GoStart %s", h.listen)
 
-	//hfs := http.FileServer(http.Dir("."))
-	if err := h.server.ListenAndServe(); err != nil {
-		libol.Error("Http.GoStart on %s: %s", h.listen, err)
-		return err
+	if h.keyFile == "" || h.crtFile == "" {
+		if err := h.server.ListenAndServe(); err != nil {
+			libol.Error("Http.GoStart on %s: %s", h.listen, err)
+			return err
+		}
+	} else {
+		if err := h.server.ListenAndServeTLS(h.crtFile, h.keyFile); err != nil {
+			libol.Error("Http.GoStart on %s: %s", h.listen, err)
+			return err
+		}
 	}
 	return nil
 }
