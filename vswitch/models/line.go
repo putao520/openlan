@@ -16,10 +16,10 @@ type Line struct {
 
 func NewLine(t uint16) *Line {
 	l := &Line{
-		EthType: t,
-		IpSource:  nil,
+		EthType:    t,
+		IpSource:   nil,
 		IpProtocol: 0,
-		PortDest:  0,
+		PortDest:   0,
 	}
 	return l
 }

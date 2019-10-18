@@ -20,47 +20,55 @@ import (
 
 type WorkerBase struct {
 	Server      *libol.TcpServer
+	Redis       *libol.RedisCli
 	Auth        *app.PointAuth
 	Request     *app.WithRequest
 	Neighbor    *app.Neighbors
 	OnLines     *app.Online
-	Redis       *libol.RedisCli
 	EnableRedis bool
 	Conf        *models.Config
 
-	brIp        net.IP
-	brNet       *net.IPNet
-	hooks       []func(*libol.TcpClient, *libol.Frame) error
-	ifMtu       int
-	clientsLock sync.RWMutex
-	clients     map[*libol.TcpClient]*models.Point
-	usersLock   sync.RWMutex
-	users       map[string]*models.User
-	newTime     int64
-	startTime   int64
-	brName      string
-	linksLock   sync.RWMutex
-	links       map[string]*point.Point
+	brIp      net.IP
+	brNet     *net.IPNet
+	hooks     []func(*libol.TcpClient, *libol.Frame) error
+	ifMtu     int
+	usersLock sync.RWMutex
+	users     map[string]*models.User
+	newTime   int64
+	startTime int64
+	brName    string
+	linksLock sync.RWMutex
+	links     map[string]*point.Point
 }
 
 func NewWorkerBase(server *libol.TcpServer, c *models.Config) *WorkerBase {
 	w := WorkerBase{
-		Server:      server,
-		Neighbor:    nil,
-		Redis:       libol.NewRedisCli(c.Redis.Addr, c.Redis.Auth, c.Redis.Db),
-		EnableRedis: c.Redis.Enable,
-		Conf:        c,
-		ifMtu:       c.IfMtu,
-		hooks:       make([]func(*libol.TcpClient, *libol.Frame) error, 0, 64),
-		clients:     make(map[*libol.TcpClient]*models.Point, 1024),
-		users:       make(map[string]*models.User, 1024),
-		newTime:     time.Now().Unix(),
-		startTime:   0,
-		brName:      c.BrName,
-		links:       make(map[string]*point.Point),
+		Server:    server,
+		Neighbor:  nil,
+		Redis:     nil,
+		Conf:      c,
+		ifMtu:     c.IfMtu,
+		hooks:     make([]func(*libol.TcpClient, *libol.Frame) error, 0, 64),
+		users:     make(map[string]*models.User, 1024),
+		newTime:   time.Now().Unix(),
+		startTime: 0,
+		brName:    c.BrName,
+		links:     make(map[string]*point.Point),
+	}
+
+	if c.Redis.Enable {
+		w.Redis = libol.NewRedisCli(c.Redis.Addr, c.Redis.Auth, c.Redis.Db)
 	}
 
 	return &w
+}
+
+func (w *WorkerBase) GetId() string {
+	return w.Server.Addr
+}
+
+func (w *WorkerBase) String() string {
+	return w.GetId()
 }
 
 func (w *WorkerBase) Init(a api.Worker) {
@@ -150,10 +158,6 @@ func (w *WorkerBase) onHook(client *libol.TcpClient, data []byte) error {
 	return nil
 }
 
-func (w *WorkerBase) handleReq(client *libol.TcpClient, frame *libol.Frame) error {
-	return nil
-}
-
 func (w *WorkerBase) OnClient(client *libol.TcpClient) error {
 	client.SetStatus(libol.CLCONNECTED)
 
@@ -167,10 +171,13 @@ func (w *WorkerBase) OnRecv(client *libol.TcpClient, data []byte) error {
 
 	if err := w.onHook(client, data); err != nil {
 		libol.Debug("WorkerBase.onRecv: %s dropping by %s", client.Addr, err)
+		if client.GetStatus() != libol.CLAUEHED {
+			w.Server.DrpCount++
+		}
 		return err
 	}
 
-	point := w.GetPoint(client)
+	point := w.Auth.GetPoint(client)
 	if point == nil {
 		return libol.Errer("Point not found.")
 	}
@@ -191,15 +198,17 @@ func (w *WorkerBase) OnRecv(client *libol.TcpClient, data []byte) error {
 func (w *WorkerBase) OnClose(client *libol.TcpClient) error {
 	libol.Info("WorkerBase.onClose: %s", client.Addr)
 
-	w.DelPoint(client)
+	w.Auth.DelPoint(client)
 
 	return nil
 }
 
 func (w *WorkerBase) Start() {
 	w.startTime = time.Now().Unix()
-	if err := w.Redis.Open(); err != nil {
-		libol.Error("WorkerBase.Start: redis.Open %s", err)
+	if w.Redis != nil {
+		if err := w.Redis.Open(); err != nil {
+			libol.Error("WorkerBase.Start: redis.Open %s", err)
+		}
 	}
 
 	w.LoadLinks()
@@ -266,74 +275,11 @@ func (w *WorkerBase) ListUser() <-chan *models.User {
 	return c
 }
 
-func (w *WorkerBase) AddPoint(p *models.Point) {
-	w.clientsLock.Lock()
-	defer w.clientsLock.Unlock()
-
-	w.PubPoint(p, true)
-	w.clients[p.Client] = p
-}
-
-func (w *WorkerBase) GetPoint(c *libol.TcpClient) *models.Point {
-	w.clientsLock.RLock()
-	defer w.clientsLock.RUnlock()
-
-	if p, ok := w.clients[c]; ok {
-		return p
-	}
-	return nil
-}
-
-func (w *WorkerBase) DelPoint(c *libol.TcpClient) {
-	w.clientsLock.Lock()
-	defer w.clientsLock.Unlock()
-
-	if p, ok := w.clients[c]; ok {
-		p.Device.Close()
-		w.PubPoint(p, false)
-		delete(w.clients, c)
-	}
-}
-
-func (w *WorkerBase) ListPoint() <-chan *models.Point {
-	c := make(chan *models.Point, 128)
-
-	go func() {
-		w.clientsLock.RLock()
-		defer w.clientsLock.RUnlock()
-
-		for _, p := range w.clients {
-			c <- p
-		}
-		c <- nil //Finish channel by nil.
-	}()
-
-	return c
-}
-
 func (w *WorkerBase) UpTime() int64 {
 	if w.startTime != 0 {
 		return time.Now().Unix() - w.startTime
 	}
 	return 0
-}
-
-func (w *WorkerBase) PubPoint(p *models.Point, isAdd bool) {
-	if !w.EnableRedis {
-		return
-	}
-
-	key := fmt.Sprintf("point:%s", strings.Replace(p.Client.String(), ":", "-", -1))
-	value := map[string]interface{}{
-		"remote":  p.Client.String(),
-		"newTime": p.Client.NewTime,
-		"device":  p.Device.Name(),
-		"active":  isAdd,
-	}
-
-	if err := w.Redis.HMSet(key, value); err != nil {
-		libol.Error("WorkerBase.PubPoint hset %s", err)
-	}
 }
 
 func (w *WorkerBase) AddLink(c *models2.Config) {
@@ -397,4 +343,8 @@ func (w *WorkerBase) GetServer() *libol.TcpServer {
 func (w *WorkerBase) NewTap() (*water.Interface, error) {
 	//TODO
 	return nil, nil
+}
+
+func (w *WorkerBase) Send(dev *water.Interface, frame []byte) {
+	w.Server.TxCount++
 }

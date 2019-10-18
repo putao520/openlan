@@ -13,17 +13,15 @@ import (
 )
 
 type Neighbors struct {
-	lock        sync.RWMutex
-	neighbors   map[string]*models.Neighbor
-	worker      api.Worker
-	EnableRedis bool
+	lock      sync.RWMutex
+	neighbors map[string]*models.Neighbor
+	worker    api.Worker
 }
 
 func NewNeighbors(w api.Worker, c *models.Config) (e *Neighbors) {
 	e = &Neighbors{
-		neighbors:   make(map[string]*models.Neighbor, 1024*10),
-		worker:      w,
-		EnableRedis: c.Redis.Enable,
+		neighbors: make(map[string]*models.Neighbor, 1024*10),
+		worker:    w,
 	}
 	return
 }
@@ -125,11 +123,7 @@ func (e *Neighbors) OnClientClose(client *libol.TcpClient) {
 	libol.Info("Neighbors.OnClientClose %s.", client)
 }
 
-func (e *Neighbors) PubNeighbor(neb *models.Neighbor, isadd bool) {
-	if !e.EnableRedis {
-		return
-	}
-
+func (e *Neighbors) PubNeighbor(neb *models.Neighbor, isAdd bool) {
 	key := fmt.Sprintf("neighbor:%s", strings.Replace(neb.HwAddr.String(), ":", "-", -1))
 	value := map[string]interface{}{
 		"hwAddr":  neb.HwAddr.String(),
@@ -137,10 +131,12 @@ func (e *Neighbors) PubNeighbor(neb *models.Neighbor, isadd bool) {
 		"remote":  neb.Client.String(),
 		"newTime": neb.NewTime,
 		"hitTime": neb.HitTime,
-		"active":  isadd,
+		"active":  isAdd,
 	}
 
-	if err := e.worker.GetRedis().HMSet(key, value); err != nil {
-		libol.Error("Neighbors.PubNeighbor hset %s", err)
+	if r := e.worker.GetRedis(); r != nil {
+		if err := r.HMSet(key, value); err != nil {
+			libol.Error("Neighbors.PubNeighbor hset %s", err)
+		}
 	}
 }

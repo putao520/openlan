@@ -134,7 +134,7 @@ func (h *Http) Index(w http.ResponseWriter, r *http.Request) {
 		body += "\n"
 		body += "# point accessed to this vswith.\n"
 		body += "uptime, remote, device, receipt, transmis, error, state\n"
-		for p := range h.worker.ListPoint() {
+		for p := range h.worker.Auth.ListPoint() {
 			if p == nil {
 				break
 			}

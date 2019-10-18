@@ -7,9 +7,10 @@ import (
 )
 
 type Worker interface {
+	GetId() string
 	GetRedis() *libol.RedisCli
 	GetServer() *libol.TcpServer
 	GetUser(name string) *models.User
 	NewTap() (*water.Interface, error)
-	AddPoint(p *models.Point)
+	Send(*water.Interface, []byte)
 }

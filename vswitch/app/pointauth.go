@@ -2,24 +2,30 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/lightstar-dev/openlan-go/libol"
 	"github.com/lightstar-dev/openlan-go/vswitch/api"
 	"github.com/lightstar-dev/openlan-go/vswitch/models"
 	"github.com/songgao/water"
+	"strings"
+	"sync"
 )
 
 type PointAuth struct {
 	Success int
 	Failed  int
 
-	ifMtu  int
-	worker api.Worker
+	ifMtu   int
+	worker  api.Worker
+	lock    sync.RWMutex
+	clients map[*libol.TcpClient]*models.Point
 }
 
 func NewPointAuth(w api.Worker, c *models.Config) (p *PointAuth) {
 	p = &PointAuth{
-		ifMtu:  c.IfMtu,
-		worker: w,
+		ifMtu:   c.IfMtu,
+		worker:  w,
+		clients: make(map[*libol.TcpClient]*models.Point, 1024),
 	}
 	return
 }
@@ -31,7 +37,8 @@ func (p *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 		action := libol.DecAction(frame.Data)
 		libol.Debug("PointAuth.OnFrame.action: %s", action)
 
-		if action == "logi=" {
+		switch action {
+		case "logi=":
 			if err := p.handleLogin(client, libol.DecBody(frame.Data)); err != nil {
 				libol.Error("PointAuth.OnFrame: %s", err)
 				client.SendResp("login", err.Error())
@@ -41,12 +48,13 @@ func (p *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 			client.SendResp("login", "okay.")
 		}
 
+		//If instruct is not login, continue to process.
 		return nil
 	}
 
+	//Dropped all frames if not authed.
 	if client.GetStatus() != libol.CLAUEHED {
 		client.Dropped++
-		p.worker.GetServer().DrpCount++
 		libol.Debug("PointAuth.onRecv: %s unauth", client.Addr)
 		return libol.Errer("Unauthed client.")
 	}
@@ -98,8 +106,8 @@ func (p *PointAuth) onAuth(client *libol.TcpClient) error {
 		return err
 	}
 
-	_p := models.NewPoint(client, dev)
-	p.worker.AddPoint(_p)
+	m := models.NewPoint(client, dev)
+	p.AddPoint(m)
 
 	go p.GoRecv(dev, client.SendMsg)
 
@@ -119,9 +127,70 @@ func (p *PointAuth) GoRecv(dev *water.Interface, doRecv func([]byte) error) {
 		}
 
 		libol.Debug("PointAuth.GoRev: % x\n", data[:n])
-		p.worker.GetServer().TxCount++
+		p.worker.Send(dev, data[:n])
 		if err := doRecv(data[:n]); err != nil {
 			libol.Error("PointAuth.GoRev: do-recv %s %s", dev.Name(), err)
+		}
+	}
+}
+
+func (p *PointAuth) AddPoint(m *models.Point) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	p.PubPoint(m, true)
+	p.clients[m.Client] = m
+}
+
+func (p *PointAuth) GetPoint(c *libol.TcpClient) *models.Point {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+
+	if m, ok := p.clients[c]; ok {
+		return m
+	}
+	return nil
+}
+
+func (p *PointAuth) DelPoint(c *libol.TcpClient) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	if m, ok := p.clients[c]; ok {
+		m.Device.Close()
+		p.PubPoint(m, false)
+		delete(p.clients, c)
+	}
+}
+
+func (p *PointAuth) ListPoint() <-chan *models.Point {
+	c := make(chan *models.Point, 128)
+
+	go func() {
+		p.lock.RLock()
+		defer p.lock.RUnlock()
+
+		for _, m := range p.clients {
+			c <- m
+		}
+		c <- nil //Finish channel by nil.
+	}()
+
+	return c
+}
+
+func (p *PointAuth) PubPoint(m *models.Point, isAdd bool) {
+	key := fmt.Sprintf("point:%s", strings.Replace(m.Client.String(), ":", "-", -1))
+	value := map[string]interface{}{
+		"remote":  m.Client.String(),
+		"newTime": m.Client.NewTime,
+		"device":  m.Device.Name(),
+		"active":  isAdd,
+	}
+
+	if r := p.worker.GetRedis(); r != nil {
+		if err := r.HMSet(key, value); err != nil {
+			libol.Error("PointAuth.PubPoint hset %s", err)
 		}
 	}
 }

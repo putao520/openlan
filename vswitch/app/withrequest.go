@@ -24,7 +24,10 @@ func (r *WithRequest) OnFrame(client *libol.TcpClient, frame *libol.Frame) error
 		action, body := libol.DecActionBody(frame.Data)
 		libol.Debug("WithRequest.OnFrame.action: %s %s", action, body)
 
-		if action == "neig=" {
+		switch action {
+		case "neig=":
+			//TODO
+		default:
 			//TODO
 		}
 	}
