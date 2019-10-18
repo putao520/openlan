@@ -1,9 +1,0 @@
-2019/10/18 13:32:04 INFO NewPoint.device Ethernet 2
-2019/10/18 13:32:04 INFO TcpClient.Connect ali.openlan.net:10002
-2019/10/18 13:32:04 INFO TcpWorker.TryLogin: {"name":"yunex","password":"yunex@123"}
-2019/10/18 13:32:04 INFO TapWorker.GoRev
-2019/10/18 13:32:04 INFO TapWorker.GoLoop
-2019/10/18 13:32:04 ERROR TcpWorker.GoLoop: droping by unauth
-2019/10/18 13:32:04 INFO TcpWorker.GoRev true
-2019/10/18 13:32:04 ERROR TcpWorker.GoLoop: droping by unauth
-2019/10/18 13:32:04 INFO TcpWorker.onHook.login: okay.

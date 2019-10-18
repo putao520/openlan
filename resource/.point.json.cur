@@ -1,9 +1,0 @@
-{
-  "VsAddr": "ali.openlan.net:10002",
-  "VsAuth": "yunex:yunex@123",
-  "Verbose": 2,
-  "IfMtu": 1518,
-  "IfAddr": "192.168.10.31/24",
-  "IfEthDst": "2e:4b:f0:b7:6d:ba",
-  "LogFile": ".point.error"
-}
