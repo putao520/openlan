@@ -1,6 +1,7 @@
 package vswitch
 
 import (
+	"crypto/tls"
 	"github.com/lightstar-dev/openlan-go/libol"
 	"github.com/lightstar-dev/openlan-go/vswitch/models"
 	"sync"
@@ -15,11 +16,22 @@ type VSwitch struct {
 }
 
 func NewVSwitch(c *models.Config) *VSwitch {
-	server := libol.NewTcpServer(c.TcpListen)
+	var tlsConf *tls.Config
+
+	if c.KeyFile != "" && c.CrtFile != "" {
+		cer, err := tls.LoadX509KeyPair(c.CrtFile, c.KeyFile)
+		if err != nil {
+			libol.Error("NewVSwitch: %s", err)
+		}
+		tlsConf = &tls.Config{Certificates: []tls.Certificate{cer}}
+	}
+	server := libol.NewTcpServer(c.TcpListen, tlsConf)
+
 	b := VSwitch{
 		worker: NewWorker(server, c),
 		http:   nil,
 	}
+
 	if c.HttpListen != "" {
 		b.http = NewHttp(b.worker, c)
 	}

@@ -10,20 +10,21 @@ import (
 )
 
 type Config struct {
-	TcpListen  string      `json:"Listen,omitempty"`
-	Verbose    int         `json:"Verbose,omitempty"`
-	HttpListen string      `json:"Http,omitempty"`
-	IfMtu      int         `json:"IfMtu,omitempty"`
-	IfAddr     string      `json:"IfAddr,omitempty"`
-	BrName     string      `json:"IfBridge,omitempty"`
-	Token      string      `json:"AdminToken,omitempty"`
-	TokenFile  string      `json:"AdminFile,omitempty"`
-	Password   string      `json:"AuthFile,omitempty"`
-	Redis      RedisConfig `json:"Redis,omitempty"`
-	LogFile    string      `json:"LogFile,omitempty"`
-
-	Links    []*models.Config `json:"Links,omitempty"`
-	saveFile string
+	TcpListen  string           `json:"Listen,omitempty"`
+	Verbose    int              `json:"Verbose,omitempty"`
+	HttpListen string           `json:"Http,omitempty"`
+	IfMtu      int              `json:"IfMtu,omitempty"`
+	IfAddr     string           `json:"IfAddr,omitempty"`
+	BrName     string           `json:"IfBridge,omitempty"`
+	Token      string           `json:"AdminToken,omitempty"`
+	TokenFile  string           `json:"AdminFile,omitempty"`
+	Password   string           `json:"AuthFile,omitempty"`
+	Redis      RedisConfig      `json:"Redis,omitempty"`
+	LogFile    string           `json:"LogFile,omitempty"`
+	CrtFile    string           `json:"CrtFile,omitempty"`
+	KeyFile    string           `json:"KeyFile,omitempty"`
+	Links      []*models.Config `json:"Links,omitempty"`
+	SaveFile   string           `json:"-"`
 }
 
 type RedisConfig struct {
@@ -50,7 +51,9 @@ var Default = Config{
 		Enable: false,
 	},
 	LogFile:  ".vswitch.error",
-	saveFile: ".vswitch.json",
+	SaveFile: ".vswitch.json",
+	CrtFile:  "",
+	KeyFile:  "",
 	Links:    nil,
 }
 
@@ -76,7 +79,9 @@ func NewConfig() (c *Config) {
 	flag.IntVar(&c.IfMtu, "if:mtu", Default.IfMtu, "the interface MTU include ethernet")
 	flag.StringVar(&c.IfAddr, "if:addr", Default.IfAddr, "the interface address")
 	flag.StringVar(&c.BrName, "if:br", Default.BrName, "the bridge name")
-	flag.StringVar(&c.saveFile, "conf", Default.SaveFile(), "The configuration file")
+	flag.StringVar(&c.SaveFile, "conf", Default.SaveFile, "The configuration file")
+	flag.StringVar(&c.CrtFile, "tls:crt", Default.CrtFile, "The X509 certificate file for TLS")
+	flag.StringVar(&c.KeyFile, "tls:key", Default.KeyFile, "The X509 certificate key for TLS")
 
 	flag.Parse()
 	c.Default()
@@ -85,7 +90,7 @@ func NewConfig() (c *Config) {
 	}
 
 	libol.Init(c.LogFile, c.Verbose)
-	c.Save(fmt.Sprintf("%s.cur", c.saveFile))
+	c.Save(fmt.Sprintf("%s.cur", c.SaveFile))
 
 	str, err := libol.Marshal(c, false)
 	if err != nil {
@@ -103,20 +108,16 @@ func (c *Config) Default() {
 	// TODO reset zero value to default
 }
 
-func (c *Config) SaveFile() string {
-	return c.saveFile
-}
-
 func (c *Config) Save(file string) error {
 	if file == "" {
-		file = c.saveFile
+		file = c.SaveFile
 	}
 
 	return libol.MarshalSave(c, file, true)
 }
 
 func (c *Config) Load() error {
-	if err := libol.UnmarshalLoad(c, c.saveFile); err != nil {
+	if err := libol.UnmarshalLoad(c, c.SaveFile); err != nil {
 		return err
 	}
 

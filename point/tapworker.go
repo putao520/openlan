@@ -1,6 +1,7 @@
 package point
 
 import (
+	"context"
 	"github.com/lightstar-dev/openlan-go/point/models"
 	"net"
 
@@ -55,21 +56,23 @@ func (a *TapWorker) NewEth(t uint16) *libol.Ether {
 	return eth
 }
 
-func (a *TapWorker) GoRecv(doRecv func([]byte) error) {
-	defer libol.Catch()
+func (a *TapWorker) GoRecv(ctx context.Context, doRecv func([]byte) error) {
+	defer libol.Catch("TapWroker.GoRecv")
+	defer a.Close()
+
 	libol.Info("TapWorker.GoRev")
 	a.doRecv = doRecv
 
 	for {
 		data := make([]byte, a.ifMtu)
 		if a.Device == nil {
-			break
+			return
 		}
 
 		n, err := a.Device.Read(data)
 		if err != nil {
 			libol.Error("TapWorker.GoRev: %s", err)
-			break
+			return
 		}
 
 		libol.Debug("TapWorker.GoRev: % x", data[:n])
@@ -85,9 +88,12 @@ func (a *TapWorker) GoRecv(doRecv func([]byte) error) {
 		} else {
 			doRecv(data[:n])
 		}
+
+		select {
+		case <-ctx.Done():
+			return
+		}
 	}
-	a.Close()
-	libol.Warn("TapWorker.GoRev exit.")
 }
 
 func (a *TapWorker) DoSend(data []byte) error {
@@ -145,15 +151,17 @@ func (a *TapWorker) onArp(data []byte) bool {
 	return false
 }
 
-func (a *TapWorker) GoLoop() {
-	defer libol.Catch()
+func (a *TapWorker) GoLoop(ctx context.Context) {
+	defer libol.Catch("TapWroker.GoLoop")
+	defer a.Close()
+
 	libol.Info("TapWorker.GoLoop")
 
 	for {
 		select {
 		case w := <-a.writeChan:
 			if a.Device == nil {
-				break
+				return
 			}
 
 			if a.Device.IsTUN() {
@@ -180,10 +188,10 @@ func (a *TapWorker) GoLoop() {
 			if _, err := a.Device.Write(w); err != nil {
 				libol.Error("TapWorker.GoLoop: %s", err)
 			}
+		case <-ctx.Done():
+			return
 		}
 	}
-	a.Close()
-	libol.Warn("TapWorker.GoLoop exit.")
 }
 
 func (a *TapWorker) Close() {

@@ -2,6 +2,7 @@ package libol
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/binary"
 	"net"
 	"sync"
@@ -27,7 +28,7 @@ const (
 )
 
 type TcpClient struct {
-	conn        *net.TCPConn
+	conn        net.Conn
 	maxSize     int
 	minSize     int
 	onConnected func(*TcpClient) error
@@ -40,9 +41,10 @@ type TcpClient struct {
 	Status  uint8
 	Addr    string
 	NewTime int64
+	TlsConf *tls.Config
 }
 
-func NewTcpClient(addr string) (t *TcpClient) {
+func NewTcpClient(addr string, config *tls.Config) (t *TcpClient) {
 	t = &TcpClient{
 		Addr:        addr,
 		conn:        nil,
@@ -55,12 +57,13 @@ func NewTcpClient(addr string) (t *TcpClient) {
 		Status:      CLINIT,
 		onConnected: nil,
 		NewTime:     time.Now().Unix(),
+		TlsConf:     config,
 	}
 
 	return
 }
 
-func NewTcpClientFromConn(conn *net.TCPConn) (t *TcpClient) {
+func NewTcpClientFromConn(conn net.Conn) (t *TcpClient) {
 	t = &TcpClient{
 		Addr:    conn.RemoteAddr().String(),
 		conn:    conn,
@@ -72,24 +75,23 @@ func NewTcpClientFromConn(conn *net.TCPConn) (t *TcpClient) {
 	return
 }
 
-func (t *TcpClient) Connect() error {
+func (t *TcpClient) Connect() (err error) {
 	if t.conn != nil || t.GetStatus() == CLTERMINAL || t.GetStatus() == CLUNAUTH {
 		return nil
 	}
 
-	Info("TcpClient.Connect %s", t.Addr)
-	rAddr, err := net.ResolveTCPAddr("tcp", t.Addr)
-	if err != nil {
-		return err
-	}
+	Info("TcpClient.Connect %s,%p", t.Addr, t.TlsConf)
 
 	t.SetStatus(CLCONNECTING)
-	conn, err := net.DialTCP("tcp", nil, rAddr)
+	if t.TlsConf != nil {
+		t.conn, err = tls.Dial("tcp", t.Addr, t.TlsConf)
+	} else {
+		t.conn, err = net.Dial("tcp", t.Addr)
+	}
 	if err != nil {
 		t.conn = nil
 		return err
 	}
-	t.conn = conn
 	t.SetStatus(CLCONNECTED)
 	if t.onConnected != nil {
 		t.onConnected(t)

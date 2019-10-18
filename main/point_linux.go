@@ -14,6 +14,7 @@ import (
 func main() {
 	c := models.NewConfig()
 	p := point.NewPoint(c)
+
 	p.Start()
 
 	x := make(chan os.Signal)

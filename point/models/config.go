@@ -11,6 +11,7 @@ import (
 type Config struct {
 	Addr     string `json:"VsAddr,omitempty"`
 	Auth     string `json:"VsAuth,omitempty"`
+	Tls      bool   `json:"VsTls,omitempty"`
 	Verbose  int    `json:"Verbose,omitempty"`
 	IfMtu    int    `json:"IfMtu,omitempty"`
 	IfAddr   string `json:"IfAddr,omitempty"`
@@ -20,7 +21,7 @@ type Config struct {
 	IfEthDst string `json:"IfEthDst,omitempty"`
 	LogFile  string `json:"LogFile,omitempty"`
 
-	saveFile string
+	SaveFile string `json:"-"`
 	name     string
 	password string
 }
@@ -33,7 +34,7 @@ var Default = Config{
 	IfAddr:   "",
 	IfTun:    false,
 	BrName:   "",
-	saveFile: ".point.json",
+	SaveFile: ".point.json",
 	name:     "",
 	password: "",
 	IfEthDst: "2e:4b:f0:b7:6d:ba",
@@ -55,6 +56,7 @@ func NewConfig() (c *Config) {
 
 	flag.StringVar(&c.Addr, "vs:addr", Default.Addr, "the server connect to")
 	flag.StringVar(&c.Auth, "vs:auth", Default.Auth, "the auth login to")
+	flag.BoolVar(&c.Tls, "vs:tls", Default.Tls, "Enable TLS to decrypt")
 	flag.IntVar(&c.Verbose, "verbose", Default.Verbose, "open verbose")
 	flag.IntVar(&c.IfMtu, "if:mtu", Default.IfMtu, "the interface MTU include ethernet")
 	flag.StringVar(&c.IfAddr, "if:addr", Default.IfAddr, "the interface address")
@@ -62,7 +64,7 @@ func NewConfig() (c *Config) {
 	flag.BoolVar(&c.IfTun, "if:tun", Default.IfTun, "using tun device as interface, otherwise tap")
 	flag.StringVar(&c.IfEthDst, "if:ethdst", Default.IfEthDst, "ethernet destination for tun device")
 	flag.StringVar(&c.IfEthSrc, "if:ethsrc", Default.IfEthSrc, "ethernet source for tun device")
-	flag.StringVar(&c.saveFile, "conf", Default.SaveFile(), "The configuration file")
+	flag.StringVar(&c.SaveFile, "conf", Default.SaveFile, "The configuration file")
 
 	flag.Parse()
 	if err := c.Load(); err != nil {
@@ -71,7 +73,7 @@ func NewConfig() (c *Config) {
 	c.Default()
 
 	libol.Init(c.LogFile, c.Verbose)
-	c.Save(fmt.Sprintf("%s.cur", c.saveFile))
+	c.Save(fmt.Sprintf("%s.cur", c.SaveFile))
 
 	str, err := libol.Marshal(c, false)
 	if err != nil {
@@ -119,20 +121,16 @@ func (c *Config) Password() string {
 	return c.password
 }
 
-func (c *Config) SaveFile() string {
-	return c.saveFile
-}
-
 func (c *Config) Save(file string) error {
 	if file == "" {
-		file = c.saveFile
+		file = c.SaveFile
 	}
 
 	return libol.MarshalSave(c, file, true)
 }
 
 func (c *Config) Load() error {
-	if err := libol.UnmarshalLoad(c, c.saveFile); err != nil {
+	if err := libol.UnmarshalLoad(c, c.SaveFile); err != nil {
 		return err
 	}
 

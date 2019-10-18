@@ -1,6 +1,8 @@
 package point
 
 import (
+	"context"
+	"crypto/tls"
 	"github.com/lightstar-dev/openlan-go/point/models"
 	"net"
 
@@ -17,16 +19,23 @@ type Point struct {
 	brIp      net.IP
 	brNet     *net.IPNet
 	config    *models.Config
+	ctx       context.Context
+	cancel    context.CancelFunc
 }
 
 func NewPoint(config *models.Config) (p *Point) {
-	client := libol.NewTcpClient(config.Addr)
+	var tlsConf *tls.Config
+	if config.Tls {
+		tlsConf = &tls.Config{InsecureSkipVerify: true}
+	}
+	client := libol.NewTcpClient(config.Addr, tlsConf)
 	p = &Point{
 		BrName:    config.BrName,
 		IfAddr:    config.IfAddr,
 		tcpWorker: NewTcpWorker(client, config),
 		config:    config,
 	}
+	p.ctx, p.cancel = context.WithCancel(context.Background())
 	p.newDevice()
 	return
 }
@@ -39,7 +48,6 @@ func (p *Point) newDevice() {
 	}
 
 	libol.Info("NewPoint.device %s", dev.Name())
-	p.IfName = dev.Name()
 	p.tapWorker = NewTapWorker(dev, p.config)
 }
 
@@ -61,14 +69,17 @@ func (p *Point) Start() {
 		libol.Error("Point.Start %s", err)
 	}
 
-	go p.tapWorker.GoRecv(p.tcpWorker.DoSend)
-	go p.tapWorker.GoLoop()
+	go p.tapWorker.GoRecv(p.ctx, p.tcpWorker.DoSend)
+	go p.tapWorker.GoLoop(p.ctx)
 
-	go p.tcpWorker.GoRecv(p.tapWorker.DoSend)
-	go p.tcpWorker.GoLoop()
+	go p.tcpWorker.GoRecv(p.ctx, p.tapWorker.DoSend)
+	go p.tcpWorker.GoLoop(p.ctx)
 }
 
 func (p *Point) Stop() {
+	defer libol.Catch("Point.Stop")
+
+	p.cancel()
 	p.tapWorker.Stop()
 	p.tcpWorker.Stop()
 }

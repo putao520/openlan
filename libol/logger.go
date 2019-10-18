@@ -127,9 +127,9 @@ func Close() {
 	//TODO
 }
 
-func Catch() {
+func Catch(name string) {
 	if err := recover(); err != nil {
-		Fatal("Catch panic： <<<< %s >>>>", err)
-		Fatal("Catch stack:  >>>> %s", debug.Stack())
+		Fatal("%s Panic: ===%s===", name, err)
+		Fatal("%s Stack: ===%s===", name, debug.Stack())
 	}
 }

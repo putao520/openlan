@@ -1,6 +1,7 @@
 package point
 
 import (
+	"context"
 	"fmt"
 	"github.com/lightstar-dev/openlan-go/libol"
 	"github.com/lightstar-dev/openlan-go/point/models"
@@ -78,13 +79,15 @@ func (t *TcpWorker) onInstruct(data []byte) error {
 	return nil
 }
 
-func (t *TcpWorker) GoRecv(doRecv func([]byte) error) {
-	defer libol.Catch()
+func (t *TcpWorker) GoRecv(ctx context.Context, doRecv func([]byte) error) {
+	defer libol.Catch("TcpWroker.GoRecv")
+	defer t.Close()
+
 	libol.Info("TcpWorker.GoRev %t", t.Client.IsOk())
 
 	for {
 		if t.Client.IsTerminal() {
-			break
+			return
 		}
 
 		if !t.Client.IsOk() {
@@ -110,9 +113,12 @@ func (t *TcpWorker) GoRecv(doRecv func([]byte) error) {
 				doRecv(data)
 			}
 		}
+
+		select {
+		case <-ctx.Done():
+			return
+		}
 	}
-	t.Client.Close()
-	libol.Warn("TcpWorker.GoRev %s exit.", t.Client)
 }
 
 func (t *TcpWorker) DoSend(data []byte) error {
@@ -123,8 +129,9 @@ func (t *TcpWorker) DoSend(data []byte) error {
 	return nil
 }
 
-func (t *TcpWorker) GoLoop() {
-	defer libol.Catch()
+func (t *TcpWorker) GoLoop(ctx context.Context) {
+	defer libol.Catch("TcpWroker.GoLoop")
+	defer t.Client.Close()
 
 	for {
 		select {
@@ -138,10 +145,10 @@ func (t *TcpWorker) GoLoop() {
 			if err := t.Client.SendMsg(w); err != nil {
 				libol.Error("TcpWorker.GoLoop: %s", err)
 			}
+		case <-ctx.Done():
+			return
 		}
 	}
-	t.Client.Close()
-	libol.Warn("TcpWorker.GoRev %s exit.", t.Client)
 }
 func (t *TcpWorker) GetAuth() (string, string) {
 	return t.name, t.password

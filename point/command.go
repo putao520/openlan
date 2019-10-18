@@ -2,6 +2,8 @@ package point
 
 import (
 	"bufio"
+	"context"
+	"crypto/tls"
 	"fmt"
 	"github.com/lightstar-dev/openlan-go/point/models"
 	"net"
@@ -15,14 +17,20 @@ type Command struct {
 	tcpWorker *TcpWorker
 	brIp      net.IP
 	brNet     *net.IPNet
+	ctx       context.Context
+	cancel    context.CancelFunc
 }
 
 func NewCommand(config *models.Config) (cmd *Command) {
-	client := libol.NewTcpClient(config.Addr)
-
+	var tlsConf *tls.Config
+	if config.Tls {
+		tlsConf = &tls.Config{InsecureSkipVerify: true}
+	}
+	client := libol.NewTcpClient(config.Addr, tlsConf)
 	cmd = &Command{
 		tcpWorker: NewTcpWorker(client, config),
 	}
+	cmd.ctx, cmd.cancel = context.WithCancel(context.Background())
 	return
 }
 
@@ -39,11 +47,12 @@ func (cmd *Command) Connect() string {
 func (cmd *Command) Start() {
 	libol.Info("Command.Start\n")
 
-	go cmd.tcpWorker.GoRecv(cmd.DoRecv)
-	go cmd.tcpWorker.GoLoop()
+	go cmd.tcpWorker.GoRecv(cmd.ctx, cmd.DoRecv)
+	go cmd.tcpWorker.GoLoop(cmd.ctx)
 }
 
 func (cmd *Command) Close() {
+	cmd.cancel()
 	cmd.tcpWorker.Close()
 }
 
