@@ -2,7 +2,7 @@ package api
 
 import (
 	"github.com/lightstar-dev/openlan-go/libol"
-	"github.com/lightstar-dev/openlan-go/vswitch/models"
+	"github.com/lightstar-dev/openlan-go/models"
 	"github.com/songgao/water"
 )
 

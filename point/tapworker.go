@@ -2,7 +2,7 @@ package point
 
 import (
 	"context"
-	"github.com/lightstar-dev/openlan-go/point/models"
+	"github.com/lightstar-dev/openlan-go/config"
 	"net"
 
 	"github.com/lightstar-dev/openlan-go/libol"
@@ -21,7 +21,7 @@ type TapWorker struct {
 	EthSrcIp   []byte
 }
 
-func NewTapWorker(device *water.Interface, c *models.Config) (a *TapWorker) {
+func NewTapWorker(device *water.Interface, c *config.Point) (a *TapWorker) {
 	a = &TapWorker{
 		Device:    device,
 		writeChan: make(chan []byte, 1024*10),

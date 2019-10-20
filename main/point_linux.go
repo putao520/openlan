@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/lightstar-dev/openlan-go/point/models"
+	"github.com/lightstar-dev/openlan-go/config"
 	"os"
 	"os/signal"
 	"syscall"
@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	c := models.NewConfig()
+	c := config.NewPoint()
 	p := point.NewPoint(c)
 
 	p.Start()

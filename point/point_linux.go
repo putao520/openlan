@@ -3,7 +3,7 @@ package point
 import (
 	"context"
 	"crypto/tls"
-	"github.com/lightstar-dev/openlan-go/point/models"
+	"github.com/lightstar-dev/openlan-go/config"
 	"net"
 
 	"github.com/lightstar-dev/openlan-go/libol"
@@ -20,10 +20,10 @@ type Point struct {
 	br        tenus.Bridger
 	brIp      net.IP
 	brNet     *net.IPNet
-	config    *models.Config
+	config    *config.Point
 }
 
-func NewPoint(config *models.Config) (p *Point) {
+func NewPoint(config *config.Point) (p *Point) {
 	var tlsConf *tls.Config
 	if config.Tls {
 		tlsConf = &tls.Config{InsecureSkipVerify: true}

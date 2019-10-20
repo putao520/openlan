@@ -1,16 +1,16 @@
 package app
 
 import (
+	"github.com/lightstar-dev/openlan-go/config"
 	"github.com/lightstar-dev/openlan-go/libol"
 	"github.com/lightstar-dev/openlan-go/vswitch/api"
-	"github.com/lightstar-dev/openlan-go/vswitch/models"
 )
 
 type WithRequest struct {
 	worker api.Worker
 }
 
-func NewWithRequest(w api.Worker, c *models.Config) (r *WithRequest) {
+func NewWithRequest(w api.Worker, c *config.VSwitch) (r *WithRequest) {
 	r = &WithRequest{
 		worker: w,
 	}

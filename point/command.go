@@ -5,7 +5,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/lightstar-dev/openlan-go/point/models"
+	"github.com/lightstar-dev/openlan-go/config"
 	"net"
 	"os"
 	"strings"
@@ -21,7 +21,7 @@ type Command struct {
 	cancel    context.CancelFunc
 }
 
-func NewCommand(config *models.Config) (cmd *Command) {
+func NewCommand(config *config.Point) (cmd *Command) {
 	var tlsConf *tls.Config
 	if config.Tls {
 		tlsConf = &tls.Config{InsecureSkipVerify: true}
@@ -109,7 +109,7 @@ func (cmd *Command) DoOpen(args []string) string {
 	//libol.Debug("Command.DoOpen %s", args)
 	if len(args) > 0 {
 		addr := args[0]
-		models.RightAddr(&addr, 10002)
+		config.RightAddr(&addr, 10002)
 
 		cmd.tcpWorker.SetAddr(addr)
 	}

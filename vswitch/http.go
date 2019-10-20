@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	models2 "github.com/lightstar-dev/openlan-go/point/models"
-	"github.com/lightstar-dev/openlan-go/vswitch/models"
+	"github.com/lightstar-dev/openlan-go/config"
+	"github.com/lightstar-dev/openlan-go/models"
 	"html"
 	"io/ioutil"
 	"net/http"
@@ -25,7 +25,7 @@ type Http struct {
 	keyFile    string
 }
 
-func NewHttp(worker *Worker, c *models.Config) (h *Http) {
+func NewHttp(worker *Worker, c *config.VSwitch) (h *Http) {
 	h = &Http{
 		worker:     worker,
 		listen:     c.HttpListen,
@@ -293,7 +293,7 @@ func (h *Http) Link(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		c := &models2.Config{}
+		c := &config.Point{}
 		if err := json.Unmarshal([]byte(body), c); err != nil {
 			http.Error(w, fmt.Sprintf("Error| Http._Link: %s", err), 400)
 			return

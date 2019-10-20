@@ -3,9 +3,10 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/lightstar-dev/openlan-go/config"
 	"github.com/lightstar-dev/openlan-go/libol"
+	"github.com/lightstar-dev/openlan-go/models"
 	"github.com/lightstar-dev/openlan-go/vswitch/api"
-	"github.com/lightstar-dev/openlan-go/vswitch/models"
 	"github.com/songgao/water"
 	"strings"
 	"sync"
@@ -21,7 +22,7 @@ type PointAuth struct {
 	clients map[*libol.TcpClient]*models.Point
 }
 
-func NewPointAuth(w api.Worker, c *models.Config) (p *PointAuth) {
+func NewPointAuth(w api.Worker, c *config.VSwitch) (p *PointAuth) {
 	p = &PointAuth{
 		ifMtu:   c.IfMtu,
 		worker:  w,

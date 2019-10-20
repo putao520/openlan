@@ -3,8 +3,8 @@ package point
 import (
 	"context"
 	"fmt"
+	"github.com/lightstar-dev/openlan-go/config"
 	"github.com/lightstar-dev/openlan-go/libol"
-	"github.com/lightstar-dev/openlan-go/point/models"
 	"strings"
 	"time"
 )
@@ -19,7 +19,7 @@ type TcpWorker struct {
 	password  string
 }
 
-func NewTcpWorker(client *libol.TcpClient, c *models.Config) (t *TcpWorker) {
+func NewTcpWorker(client *libol.TcpClient, c *config.Point) (t *TcpWorker) {
 	t = &TcpWorker{
 		Client:    client,
 		writeChan: make(chan []byte, 1024*10),

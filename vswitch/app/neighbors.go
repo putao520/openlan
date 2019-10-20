@@ -2,8 +2,9 @@ package app
 
 import (
 	"fmt"
+	"github.com/lightstar-dev/openlan-go/config"
+	"github.com/lightstar-dev/openlan-go/models"
 	"github.com/lightstar-dev/openlan-go/vswitch/api"
-	"github.com/lightstar-dev/openlan-go/vswitch/models"
 	"net"
 	"strings"
 	"sync"
@@ -18,7 +19,7 @@ type Neighbors struct {
 	worker    api.Worker
 }
 
-func NewNeighbors(w api.Worker, c *models.Config) (e *Neighbors) {
+func NewNeighbors(w api.Worker, c *config.VSwitch) (e *Neighbors) {
 	e = &Neighbors{
 		neighbors: make(map[string]*models.Neighbor, 1024*10),
 		worker:    w,

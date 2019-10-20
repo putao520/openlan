@@ -2,8 +2,8 @@ package vswitch
 
 import (
 	"crypto/tls"
+	"github.com/lightstar-dev/openlan-go/config"
 	"github.com/lightstar-dev/openlan-go/libol"
-	"github.com/lightstar-dev/openlan-go/vswitch/models"
 	"sync"
 )
 
@@ -15,7 +15,7 @@ type VSwitch struct {
 	lock   sync.RWMutex
 }
 
-func NewVSwitch(c *models.Config) *VSwitch {
+func NewVSwitch(c *config.VSwitch) *VSwitch {
 	var tlsConf *tls.Config
 
 	if c.KeyFile != "" && c.CrtFile != "" {

@@ -3,10 +3,10 @@ package vswitch
 import (
 	"bufio"
 	"fmt"
-	models2 "github.com/lightstar-dev/openlan-go/point/models"
+	"github.com/lightstar-dev/openlan-go/config"
+	"github.com/lightstar-dev/openlan-go/models"
 	"github.com/lightstar-dev/openlan-go/vswitch/api"
 	"github.com/lightstar-dev/openlan-go/vswitch/app"
-	"github.com/lightstar-dev/openlan-go/vswitch/models"
 	"os"
 	"strings"
 	"sync"
@@ -25,7 +25,7 @@ type WorkerBase struct {
 	Neighbor    *app.Neighbors
 	OnLines     *app.Online
 	EnableRedis bool
-	Conf        *models.Config
+	Conf        *config.VSwitch
 
 	hooks     []func(*libol.TcpClient, *libol.Frame) error
 	usersLock sync.RWMutex
@@ -37,7 +37,7 @@ type WorkerBase struct {
 	brName    string
 }
 
-func NewWorkerBase(server *libol.TcpServer, c *models.Config) *WorkerBase {
+func NewWorkerBase(server *libol.TcpServer, c *config.VSwitch) *WorkerBase {
 	w := WorkerBase{
 		Server:    server,
 		Neighbor:  nil,
@@ -277,7 +277,7 @@ func (w *WorkerBase) UpTime() int64 {
 	return 0
 }
 
-func (w *WorkerBase) AddLink(c *models2.Config) {
+func (w *WorkerBase) AddLink(c *config.Point) {
 	c.BrName = w.BrName() //Reset bridge name.
 
 	go func() {

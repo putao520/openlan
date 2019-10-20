@@ -1,9 +1,10 @@
 package app
 
 import (
+	"github.com/lightstar-dev/openlan-go/config"
 	"github.com/lightstar-dev/openlan-go/libol"
+	"github.com/lightstar-dev/openlan-go/models"
 	"github.com/lightstar-dev/openlan-go/vswitch/api"
-	"github.com/lightstar-dev/openlan-go/vswitch/models"
 	"sync"
 )
 
@@ -13,7 +14,7 @@ type Online struct {
 	worker api.Worker
 }
 
-func NewOnline(w api.Worker, c *models.Config) (o *Online) {
+func NewOnline(w api.Worker, c *config.VSwitch) (o *Online) {
 	o = &Online{
 		lines:  make(map[string]*models.Line, 1024*4),
 		worker: w,
