@@ -1,0 +1,8 @@
+2019/10/18 22:36:06 INFO NewPoint.device Ethernet 2
+2019/10/18 22:36:06 INFO TcpClient.Connect 192.168.209.141:10002,0xc00009c180
+2019/10/18 22:36:06 INFO TcpWorker.TryLogin: {"name":"hi","password":"hi"}
+2019/10/18 22:36:06 INFO TapWorker.GoRev
+2019/10/18 22:36:06 ERROR TcpWorker.GoLoop: droping by unauth
+2019/10/18 22:36:06 INFO TapWorker.GoLoop
+2019/10/18 22:36:06 INFO TcpWorker.GoRev true
+2019/10/18 22:36:06 INFO TcpWorker.onHook.login: okay.

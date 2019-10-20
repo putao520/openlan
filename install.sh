@@ -1,8 +1,8 @@
 #!/bin/bash
 
 systemctl status firewalld && {
-  firewall-cmd --zone=public --add-port=10002/tcp --permanent
-  firewall-cmd --zone=public --add-port=10082/tcp --permanent
+  firewall-cmd --permanent --zone=public --add-port=10000/tcp --permanent
+  firewall-cmd --permanent --zone=public --add-port=10002/tcp --permanent
   firewall-cmd --reload
 }
 
@@ -15,12 +15,14 @@ systemctl status firewalld && {
   #iptables -t nat -I PREROUTING -d 117.89.132.47 -p tcp -m tcp --dport 10082 -j DNAT --to-destination 192.168.4.151:10082
 }
 
-cp -rvf ./resource/point /usr/bin
-cp -rvf ./resource/vswitch /usr/bin
+cp -rvf ./resource/point.linux.x86_64 /usr/bin/point
+cp -rvf ./resource/vswitch.linux.x86_64 /usr/bin/vswitch
 
 [ -e /etc/point.cfg ] || cp -rvf ./resource/point.cfg /etc
+[ -e /etc/point.json ] || cp -rvf ./resource/point.json /etc
 cp -rvf ./resource/point.service /usr/lib/systemd/system
 
+[ -e /etc/vswitch.json ] || cp -rvf ./resource/vswitch.json /etc
 [ -e /etc/vswitch.cfg ] || cp -rvf ./resource/vswitch.cfg /etc
 cp -rvf ./resource/vswitch.service /usr/lib/systemd/system
 

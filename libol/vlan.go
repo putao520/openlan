@@ -1,49 +1,54 @@
 package libol
 
 import (
-    "errors"
-    "encoding/binary"
-)
-
-const (
-    ETH_P_VLAN  = 0x8100
+	"encoding/binary"
 )
 
 type Vlan struct {
-    Tci uint8
-    Vid uint16
-    Pro uint16
+	Tci uint8
+	Vid uint16
+	Pro uint16
+	Len int
 }
 
-func NewVlan(tci uint8, vid uint16) (this *Vlan) {
-    this = &Vlan {
-        Tci: tci,
-        Vid: vid,
-    }
+func NewVlan(tci uint8, vid uint16) (n *Vlan) {
+	n = &Vlan{
+		Tci: tci,
+		Vid: vid,
+		Len: 4,
+	}
 
-    return
+	return
 }
 
-func (this *Vlan) Decode(frame []byte) error {
-    if len(frame) < 4 {
-        return errors.New("too small header") 
-    }
-
-    v := binary.BigEndian.Uint16(frame[0:2])
-    this.Tci = uint8(0x000f & (v >> 12))
-    this.Vid = uint16(0x0fff & v)
-    this.Pro = binary.BigEndian.Uint16(frame[2:4]) 
-
-    return nil
+func NewVlanFromFrame(frame []byte) (n *Vlan, err error) {
+	n = &Vlan{
+		Len: 4,
+	}
+	err = n.Decode(frame)
+	return
 }
 
-func (this *Vlan) Encode()[]byte {
-    buffer := make([]byte, 16)
+func (n *Vlan) Decode(frame []byte) error {
+	if len(frame) < 4 {
+		return Errer("Vlan.Decode: too small header")
+	}
 
-    v := (uint16(this.Tci) << 12) | this.Vid
+	v := binary.BigEndian.Uint16(frame[0:2])
+	n.Tci = uint8(0x000f & (v >> 12))
+	n.Vid = uint16(0x0fff & v)
+	n.Pro = binary.BigEndian.Uint16(frame[2:4])
 
-    binary.BigEndian.PutUint16(buffer[0:2], v)
-    binary.BigEndian.PutUint16(buffer[2:4], this.Pro)
+	return nil
+}
 
-    return buffer[:4]
+func (n *Vlan) Encode() []byte {
+	buffer := make([]byte, 16)
+
+	v := (uint16(n.Tci) << 12) | n.Vid
+
+	binary.BigEndian.PutUint16(buffer[0:2], v)
+	binary.BigEndian.PutUint16(buffer[2:4], n.Pro)
+
+	return buffer[:4]
 }
