@@ -122,7 +122,6 @@ func (c *VSwitch) Load() error {
 	return nil
 }
 
-
 func init() {
 	VSwitchDefault.Right()
 }
