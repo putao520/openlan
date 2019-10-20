@@ -23,6 +23,7 @@ type Http struct {
 	server     *http.Server
 	crtFile    string
 	keyFile    string
+	pubDir     string
 }
 
 func NewHttp(worker *Worker, c *config.VSwitch) (h *Http) {
@@ -34,6 +35,7 @@ func NewHttp(worker *Worker, c *config.VSwitch) (h *Http) {
 		server:     &http.Server{Addr: c.HttpListen},
 		crtFile:    c.CrtFile,
 		keyFile:    c.KeyFile,
+		pubDir:     "public",
 	}
 
 	if h.adminToken == "" {
@@ -50,6 +52,7 @@ func NewHttp(worker *Worker, c *config.VSwitch) (h *Http) {
 	http.HandleFunc("/api/user", h.User)
 	http.HandleFunc("/api/neighbor", h.Neighbor)
 	http.HandleFunc("/api/link", h.Link)
+	http.HandleFunc("/favicon.ico", h.Public)
 
 	return
 }
@@ -135,6 +138,19 @@ func (h *Http) Hello(w http.ResponseWriter, r *http.Request) {
 			libol.Info("Http.Hello %v: %v", name, h)
 		}
 	}
+}
+
+func (h *Http) Public(w http.ResponseWriter, r *http.Request) {
+	realpath := fmt.Sprintf("%s%s", h.pubDir, r.URL.Path)
+
+	libol.Info("Http.Public %s", realpath)
+	contents, err := ioutil.ReadFile(realpath)
+	if err != nil {
+		fmt.Fprintf(w, "404")
+		return
+	}
+
+	fmt.Fprintf(w, "%s\n", contents)
 }
 
 func (h *Http) Index(w http.ResponseWriter, r *http.Request) {

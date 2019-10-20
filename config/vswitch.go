@@ -9,7 +9,8 @@ import (
 type VSwitch struct {
 	TcpListen  string      `json:"Listen"`
 	Verbose    int         `json:"Verbose"`
-	HttpListen string      `json:"Http"`
+	HttpDir    string      `json:"HttpDir"`
+	HttpListen string      `json:"HttpListen"`
 	IfMtu      int         `json:"IfMtu"`
 	IfAddr     string      `json:"IfAddr"`
 	BrName     string      `json:"IfBridge"`
@@ -51,6 +52,7 @@ var VSwitchDefault = VSwitch{
 	SaveFile: ".vswitch.json",
 	CrtFile:  "",
 	KeyFile:  "",
+	HttpDir:  "public",
 	Links:    nil,
 }
 
@@ -62,6 +64,7 @@ func NewVSwitch() (c *VSwitch) {
 
 	flag.IntVar(&c.Verbose, "verbose", VSwitchDefault.Verbose, "open verbose")
 	flag.StringVar(&c.HttpListen, "http:addr", VSwitchDefault.HttpListen, "the http listen on")
+	flag.StringVar(&c.HttpDir, "http:dir", VSwitchDefault.HttpDir, "the http working directory")
 	flag.StringVar(&c.TcpListen, "vs:addr", VSwitchDefault.TcpListen, "the server listen on")
 	flag.StringVar(&c.Token, "admin:token", VSwitchDefault.Token, "Administrator token")
 	flag.StringVar(&c.TokenFile, "admin:file", VSwitchDefault.TokenFile, "The file administrator token saved to")
