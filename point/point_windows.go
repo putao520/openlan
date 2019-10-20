@@ -18,7 +18,7 @@ type Point struct {
 	tapWorker *TapWorker
 	brIp      net.IP
 	brNet     *net.IPNet
-	config    *config.Config
+	config    *config.Point
 }
 
 func NewPoint(config *config.Point) (p *Point) {
