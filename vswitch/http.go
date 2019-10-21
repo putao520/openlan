@@ -35,7 +35,7 @@ func NewHttp(worker *Worker, c *config.VSwitch) (h *Http) {
 		server:     &http.Server{Addr: c.HttpListen},
 		crtFile:    c.CrtFile,
 		keyFile:    c.KeyFile,
-		pubDir:     "public",
+		pubDir:     c.HttpDir,
 	}
 
 	if h.adminToken == "" {
