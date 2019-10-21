@@ -25,7 +25,7 @@ func NewTcpWorker(client *libol.TcpClient, c *config.Point) (t *TcpWorker) {
 		Client:    client,
 		writeChan: make(chan []byte, 1024*10),
 		maxSize:   c.IfMtu,
-		user:       models.NewUser(c.Name(), c.Password()),
+		user:      models.NewUser(c.Name(), c.Password()),
 	}
 	t.user.Alias = c.Alias
 	t.Client.SetMaxSize(t.maxSize)
