@@ -16,7 +16,7 @@
   },
   "log.file": ".vswitch.error",
   "log.level": 2,
-  "tls.crt": "",
-  "tls.key": "",
+  "tls.crt": "/var/openlan/ca/crt.pem",
+  "tls.key": "/var/openlan/ca/private.key",
   "links": []
 }
