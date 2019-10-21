@@ -7,7 +7,6 @@ import (
 	"github.com/lightstar-dev/openlan-go/libol"
 	"github.com/lightstar-dev/openlan-go/models"
 	"github.com/lightstar-dev/openlan-go/vswitch/api"
-	"github.com/songgao/water"
 	"strings"
 	"sync"
 )
@@ -116,7 +115,7 @@ func (p *PointAuth) onAuth(client *libol.TcpClient, user *models.User) error {
 	return nil
 }
 
-func (p *PointAuth) GoRecv(dev *water.Interface, doRecv func([]byte) error) {
+func (p *PointAuth) GoRecv(dev *models.TapDevice, doRecv func([]byte) error) {
 	libol.Info("PointAuth.GoRecv: %s", dev.Name())
 
 	defer dev.Close()

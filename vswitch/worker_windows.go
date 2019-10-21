@@ -3,7 +3,7 @@ package vswitch
 import (
 	"github.com/lightstar-dev/openlan-go/config"
 	"github.com/lightstar-dev/openlan-go/libol"
-	"github.com/songgao/water"
+	"github.com/lightstar-dev/openlan-go/models"
 )
 
 type Worker struct {
@@ -33,7 +33,7 @@ func (w *Worker) FreeBr() {
 	w.Br.Close()
 }
 
-func (w *Worker) NewTap() (*water.Interface, error) {
+func (w *Worker) NewTap() (*models.TapDevice, error) {
 	//TODO
 	libol.Warn("Worker.NewTap: TODO")
 	return nil, nil

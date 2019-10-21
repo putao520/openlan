@@ -14,7 +14,6 @@ import (
 
 	"github.com/lightstar-dev/openlan-go/libol"
 	"github.com/lightstar-dev/openlan-go/point"
-	"github.com/songgao/water"
 )
 
 type WorkerBase struct {
@@ -338,11 +337,11 @@ func (w *WorkerBase) GetServer() *libol.TcpServer {
 	return w.Server
 }
 
-func (w *WorkerBase) NewTap() (*water.Interface, error) {
+func (w *WorkerBase) NewTap() (*models.TapDevice, error) {
 	//TODO
 	return nil, nil
 }
 
-func (w *WorkerBase) Send(dev *water.Interface, frame []byte) {
+func (w *WorkerBase) Send(dev *models.TapDevice, frame []byte) {
 	w.Server.TxCount++
 }
