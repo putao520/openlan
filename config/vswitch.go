@@ -7,29 +7,29 @@ import (
 )
 
 type VSwitch struct {
-	TcpListen  string      `json:"Listen"`
-	Verbose    int         `json:"Verbose"`
-	HttpDir    string      `json:"HttpDir"`
-	HttpListen string      `json:"HttpListen"`
-	IfMtu      int         `json:"IfMtu"`
-	IfAddr     string      `json:"IfAddr"`
-	BrName     string      `json:"IfBridge"`
-	Token      string      `json:"AdminToken"`
-	TokenFile  string      `json:"AdminFile"`
-	Password   string      `json:"AuthFile"`
-	Redis      RedisConfig `json:"Redis"`
-	LogFile    string      `json:"LogFile"`
-	CrtFile    string      `json:"CrtFile"`
-	KeyFile    string      `json:"KeyFile"`
-	Links      []*Point    `json:"Links"`
+	TcpListen  string      `json:"vs.addr"`
+	HttpDir    string      `json:"http.dir"`
+	HttpListen string      `json:"http.addr"`
+	IfMtu      int         `json:"if.mtu"`
+	IfAddr     string      `json:"if.addr"`
+	BrName     string      `json:"if.br"`
+	Token      string      `json:"admin.token"`
+	TokenFile  string      `json:"admin.file"`
+	Password   string      `json:"auth.file"`
+	Redis      RedisConfig `json:"redis"`
+	LogFile    string      `json:"log.file"`
+	Verbose    int         `json:"log.level"`
+	CrtFile    string      `json:"tls.crt"`
+	KeyFile    string      `json:"tls.key"`
+	Links      []*Point    `json:"links"`
 	SaveFile   string      `json:"-"`
 }
 
 type RedisConfig struct {
-	Enable bool   `json:"Enable"`
-	Addr   string `json:"Addr"`
-	Auth   string `json:"Auth"`
-	Db     int    `json:"Database"`
+	Enable bool   `json:"enable"`
+	Addr   string `json:"addr"`
+	Auth   string `json:"auth"`
+	Db     int    `json:"database"`
 }
 
 var VSwitchDefault = VSwitch{
@@ -62,7 +62,7 @@ func NewVSwitch() (c *VSwitch) {
 		LogFile: VSwitchDefault.LogFile,
 	}
 
-	flag.IntVar(&c.Verbose, "verbose", VSwitchDefault.Verbose, "open verbose")
+	flag.IntVar(&c.Verbose, "level", VSwitchDefault.Verbose, "logger level")
 	flag.StringVar(&c.HttpListen, "http:addr", VSwitchDefault.HttpListen, "the http listen on")
 	flag.StringVar(&c.HttpDir, "http:dir", VSwitchDefault.HttpDir, "the http working directory")
 	flag.StringVar(&c.TcpListen, "vs:addr", VSwitchDefault.TcpListen, "the server listen on")

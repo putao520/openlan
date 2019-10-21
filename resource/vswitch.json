@@ -1,20 +1,22 @@
 {
-  "Listen": "0.0.0.0:10002",
-  "Http": "0.0.0.0:10000",
-  "Redis": {
-    "Enable": false,
-    "Addr": "127.0.0.1",
-    "Auth": "",
-    "Database": 0
+  "vs.addr": "0.0.0.0:10002",
+  "http.dir": "public",
+  "http.addr": ":10000",
+  "if.mtu": 1518,
+  "if.addr": "",
+  "if.br": "",
+  "admin.token": "",
+  "admin.file": ".vswitch.token",
+  "auth.file": ".password",
+  "redis": {
+    "enable": false,
+    "addr": "127.0.0.1",
+    "auth": "",
+    "database": 0
   },
-  "Links": [
-    {
-      "VsAddr": "openlan.net",
-      "VsAuth": "hi:hi@123$"
-    },
-    {
-      "VsAddr": "localhost",
-      "VsAuth": "hi:hi@123$"
-    }
-  ]
+  "log.file": ".vswitch.error",
+  "log.level": 2,
+  "tls.crt": "",
+  "tls.key": "",
+  "links": []
 }
