@@ -3,6 +3,7 @@ package models
 import "fmt"
 
 type User struct {
+	Alias    string `json:"alias"`
 	Name     string `json:"name"`
 	Token    string `json:"token"`
 	Password string `json:"password"`

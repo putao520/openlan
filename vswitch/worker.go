@@ -14,10 +14,10 @@ import (
 
 	"github.com/lightstar-dev/openlan-go/libol"
 	"github.com/lightstar-dev/openlan-go/point"
-	"github.com/songgao/water"
 )
 
 type WorkerBase struct {
+	Alias       string
 	Server      *libol.TcpServer
 	Redis       *libol.RedisCli
 	Auth        *app.PointAuth
@@ -39,6 +39,7 @@ type WorkerBase struct {
 
 func NewWorkerBase(server *libol.TcpServer, c *config.VSwitch) *WorkerBase {
 	w := WorkerBase{
+		Alias:     c.Alias,
 		Server:    server,
 		Neighbor:  nil,
 		Redis:     nil,
@@ -278,6 +279,7 @@ func (w *WorkerBase) UpTime() int64 {
 }
 
 func (w *WorkerBase) AddLink(c *config.Point) {
+	c.Alias = w.Alias
 	c.BrName = w.BrName() //Reset bridge name.
 
 	go func() {
@@ -335,11 +337,11 @@ func (w *WorkerBase) GetServer() *libol.TcpServer {
 	return w.Server
 }
 
-func (w *WorkerBase) NewTap() (*water.Interface, error) {
+func (w *WorkerBase) NewTap() (*models.TapDevice, error) {
 	//TODO
 	return nil, nil
 }
 
-func (w *WorkerBase) Send(dev *water.Interface, frame []byte) {
+func (w *WorkerBase) Send(dev *models.TapDevice, frame []byte) {
 	w.Server.TxCount++
 }

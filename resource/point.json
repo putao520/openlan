@@ -1,5 +1,13 @@
 {
-  "VsAddr": "openlan.net:10002",
-  "VsAuth": "hi:hi@123$",
-  "IfAddr": "192.168.100.254/24"
+  "vs.addr": "openlan.net:10002",
+  "vs.auth": "hi:hi@123$",
+  "vs.tls": false,
+  "if.mtu": 1518,
+  "if.addr": "",
+  "if.br": "",
+  "if.tun": false,
+  "if.eth.src": "",
+  "If.eth.dst": "2e:4b:f0:b7:6d:ba",
+  "log.file": ".point.error",
+  "log.level": 2
 }

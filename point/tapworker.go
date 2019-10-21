@@ -88,11 +88,6 @@ func (a *TapWorker) GoRecv(ctx context.Context, doRecv func([]byte) error) {
 		} else {
 			doRecv(data[:n])
 		}
-
-		select {
-		case <-ctx.Done():
-			return
-		}
 	}
 }
 

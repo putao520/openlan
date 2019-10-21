@@ -3,6 +3,7 @@ package vswitch
 import (
 	"github.com/lightstar-dev/openlan-go/config"
 	"github.com/lightstar-dev/openlan-go/libol"
+	"github.com/lightstar-dev/openlan-go/models"
 	"github.com/songgao/water"
 )
 
@@ -32,7 +33,7 @@ func (w *Worker) FreeBr() {
 	w.Br.Close()
 }
 
-func (w *Worker) NewTap() (*water.Interface, error) {
+func (w *Worker) NewTap() (*models.TapDevice, error) {
 	libol.Debug("Worker.newTap")
 	dev, err := water.New(water.Config{DeviceType: water.TAP})
 	if err != nil {
@@ -44,7 +45,7 @@ func (w *Worker) NewTap() (*water.Interface, error) {
 
 	libol.Info("Worker.newTap %s", dev.Name())
 
-	return dev, nil
+	return models.NewTapDevice(dev), nil
 }
 
 func (w *Worker) Start() {
