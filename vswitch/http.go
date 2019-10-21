@@ -159,15 +159,15 @@ func (h *Http) Index(w http.ResponseWriter, r *http.Request) {
 		body := fmt.Sprintf("# uptime: %d\n", h.worker.UpTime())
 		body += "\n"
 		body += "# point accessed to this vswith.\n"
-		body += "uptime, remote, device, receipt, transmis, error, state\n"
+		body += "uptime, alias, remote, device, receipt, transmis, error, state\n"
 		for p := range h.worker.Auth.ListPoint() {
 			if p == nil {
 				break
 			}
 
 			client, dev := p.Client, p.Device
-			body += fmt.Sprintf("%d, %s, %s, %d, %d, %d, %s\n",
-				client.UpTime(), client.Addr, dev.Name(),
+			body += fmt.Sprintf("%d, %s, %s, %s, %d, %d, %d, %s\n",
+				client.UpTime(), p.Alias, client.Addr, dev.Name(),
 				client.RxOkay, client.TxOkay, client.TxError, client.GetState())
 		}
 

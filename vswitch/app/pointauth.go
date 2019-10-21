@@ -53,11 +53,11 @@ func (p *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 		return nil
 	}
 
-	//Dropped all frames if not authed.
+	//Dropped all frames if not auth.
 	if client.GetStatus() != libol.CLAUEHED {
 		client.Dropped++
-		libol.Debug("PointAuth.onRecv: %s unauth", client.Addr)
-		return libol.Errer("Unauthed client.")
+		libol.Debug("PointAuth.onRecv: %s unAuth", client.Addr)
+		return libol.Errer("unAuth client.")
 	}
 
 	return nil
@@ -67,7 +67,7 @@ func (p *PointAuth) handleLogin(client *libol.TcpClient, data string) error {
 	libol.Debug("PointAuth.handleLogin: %s", data)
 
 	if client.GetStatus() == libol.CLAUEHED {
-		libol.Warn("PointAuth.handleLogin: already authed %s", client)
+		libol.Warn("PointAuth.handleLogin: already auth %s", client)
 		return nil
 	}
 
@@ -80,13 +80,13 @@ func (p *PointAuth) handleLogin(client *libol.TcpClient, data string) error {
 	if user.Token != "" {
 		name = user.Token
 	}
-	_user := p.worker.GetUser(name)
-	if _user != nil {
-		if _user.Password == user.Password {
+	nowUser := p.worker.GetUser(name)
+	if nowUser != nil {
+		if nowUser.Password == user.Password {
 			p.Success++
 			client.SetStatus(libol.CLAUEHED)
-			libol.Info("PointAuth.handleLogin: %s Authed", client.Addr)
-			p.onAuth(client)
+			libol.Info("PointAuth.handleLogin: %s auth", client.Addr)
+			p.onAuth(client, user)
 			return nil
 		}
 	}
@@ -96,9 +96,9 @@ func (p *PointAuth) handleLogin(client *libol.TcpClient, data string) error {
 	return libol.Errer("Auth failed.")
 }
 
-func (p *PointAuth) onAuth(client *libol.TcpClient) error {
+func (p *PointAuth) onAuth(client *libol.TcpClient, user *models.User) error {
 	if client.GetStatus() != libol.CLAUEHED {
-		return libol.Errer("not authed.")
+		return libol.Errer("not auth.")
 	}
 
 	libol.Info("PointAuth.onAuth: %s", client.Addr)
@@ -108,8 +108,9 @@ func (p *PointAuth) onAuth(client *libol.TcpClient) error {
 	}
 
 	m := models.NewPoint(client, dev)
-	p.AddPoint(m)
+	m.Alias = user.Alias
 
+	p.AddPoint(m)
 	go p.GoRecv(dev, client.SendMsg)
 
 	return nil

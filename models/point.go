@@ -6,6 +6,7 @@ import (
 )
 
 type Point struct {
+	Alias  string
 	Client *libol.TcpClient
 	Device *water.Interface
 }

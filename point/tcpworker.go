@@ -2,9 +2,10 @@ package point
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 	"github.com/lightstar-dev/openlan-go/config"
 	"github.com/lightstar-dev/openlan-go/libol"
+	"github.com/lightstar-dev/openlan-go/models"
 	"strings"
 	"time"
 )
@@ -15,8 +16,8 @@ type TcpWorker struct {
 	readChan  chan []byte
 	writeChan chan []byte
 	maxSize   int
-	name      string
-	password  string
+	alias     string
+	user      *models.User
 }
 
 func NewTcpWorker(client *libol.TcpClient, c *config.Point) (t *TcpWorker) {
@@ -24,9 +25,9 @@ func NewTcpWorker(client *libol.TcpClient, c *config.Point) (t *TcpWorker) {
 		Client:    client,
 		writeChan: make(chan []byte, 1024*10),
 		maxSize:   c.IfMtu,
-		name:      c.Name(),
-		password:  c.Password(),
+		user:       models.NewUser(c.Name(), c.Password()),
 	}
+	t.user.Alias = c.Alias
 	t.Client.SetMaxSize(t.maxSize)
 	t.Client.OnConnected(t.TryLogin)
 
@@ -56,9 +57,14 @@ func (t *TcpWorker) Connect() error {
 }
 
 func (t *TcpWorker) TryLogin(client *libol.TcpClient) error {
-	body := fmt.Sprintf(`{"name":"%s","password":"%s"}`, t.name, t.password)
+	body, err := json.Marshal(t.user)
+	if err != nil {
+		libol.Error("TcpWorker.TryLogin: %s", err)
+		return err
+	}
+
 	libol.Info("TcpWorker.TryLogin: %s", body)
-	if err := client.SendReq("login", body); err != nil {
+	if err := client.SendReq("login", string(body)); err != nil {
 		return err
 	}
 	return nil
@@ -80,7 +86,7 @@ func (t *TcpWorker) onInstruct(data []byte) error {
 }
 
 func (t *TcpWorker) GoRecv(ctx context.Context, doRecv func([]byte) error) {
-	defer libol.Catch("TcpWroker.GoRecv")
+	defer libol.Catch("TcpWorker.GoRecv")
 	defer t.Close()
 
 	libol.Info("TcpWorker.GoRev %t", t.Client.IsOk())
@@ -125,7 +131,7 @@ func (t *TcpWorker) DoSend(data []byte) error {
 }
 
 func (t *TcpWorker) GoLoop(ctx context.Context) {
-	defer libol.Catch("TcpWroker.GoLoop")
+	defer libol.Catch("TcpWorker.GoLoop")
 	defer t.Client.Close()
 
 	for {
@@ -133,7 +139,7 @@ func (t *TcpWorker) GoLoop(ctx context.Context) {
 		case w := <-t.writeChan:
 			if t.Client.GetStatus() != libol.CLAUEHED {
 				t.Client.Dropped++
-				libol.Error("TcpWorker.GoLoop: droping by unauth")
+				libol.Error("TcpWorker.GoLoop: dropping by unAuth")
 				continue
 			}
 
@@ -146,14 +152,14 @@ func (t *TcpWorker) GoLoop(ctx context.Context) {
 	}
 }
 func (t *TcpWorker) GetAuth() (string, string) {
-	return t.name, t.password
+	return t.user.Name, t.user.Password
 }
 
 func (t *TcpWorker) SetAuth(auth string) {
 	values := strings.Split(auth, ":")
-	t.name = values[0]
+	t.user.Name = values[0]
 	if len(values) > 1 {
-		t.password = values[1]
+		t.user.Password = values[1]
 	}
 }
 

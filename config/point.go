@@ -9,6 +9,7 @@ import (
 )
 
 type Point struct {
+	Alias    string `json:"alias"`
 	Addr     string `json:"vs.addr"`
 	Auth     string `json:"vs.auth"`
 	Tls      bool   `json:"vs.tls"`
@@ -27,6 +28,7 @@ type Point struct {
 }
 
 var PointDefault = Point{
+	Alias:    "",
 	Addr:     "openlan.net",
 	Auth:     "hi:hi@123$",
 	Verbose:  libol.INFO,
@@ -47,6 +49,7 @@ func NewPoint() (c *Point) {
 		LogFile: PointDefault.LogFile,
 	}
 
+	flag.StringVar(&c.Alias, "alias", PointDefault.Alias, "the alias for this point")
 	flag.StringVar(&c.Addr, "vs:addr", PointDefault.Addr, "the server connect to")
 	flag.StringVar(&c.Auth, "vs:auth", PointDefault.Auth, "the auth login to")
 	flag.BoolVar(&c.Tls, "vs:tls", PointDefault.Tls, "Enable TLS to decrypt")
@@ -78,6 +81,9 @@ func NewPoint() (c *Point) {
 }
 
 func (c *Point) Right() {
+	if c.Alias == "" {
+		c.Alias = libol.GenToken(13)
+	}
 	if c.Auth != "" {
 		values := strings.Split(c.Auth, ":")
 		c.name = values[0]

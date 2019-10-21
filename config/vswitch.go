@@ -7,6 +7,7 @@ import (
 )
 
 type VSwitch struct {
+	Alias      string      `json:"alias"`
 	TcpListen  string      `json:"vs.addr"`
 	HttpDir    string      `json:"http.dir"`
 	HttpListen string      `json:"http.addr"`
@@ -33,6 +34,7 @@ type RedisConfig struct {
 }
 
 var VSwitchDefault = VSwitch{
+	Alias:      "",
 	BrName:     "",
 	Verbose:    libol.INFO,
 	HttpListen: "",
@@ -62,6 +64,7 @@ func NewVSwitch() (c *VSwitch) {
 		LogFile: VSwitchDefault.LogFile,
 	}
 
+	flag.StringVar(&c.Alias, "alias", VSwitchDefault.Alias, "the alias for this switch")
 	flag.IntVar(&c.Verbose, "log:level", VSwitchDefault.Verbose, "logger level")
 	flag.StringVar(&c.HttpListen, "http:addr", VSwitchDefault.HttpListen, "the http listen on")
 	flag.StringVar(&c.HttpDir, "http:dir", VSwitchDefault.HttpDir, "the http working directory")
@@ -95,6 +98,9 @@ func NewVSwitch() (c *VSwitch) {
 }
 
 func (c *VSwitch) Right() {
+	if c.Alias == "" {
+		c.Alias = libol.GenToken(13)
+	}
 	RightAddr(&c.TcpListen, 10002)
 	RightAddr(&c.HttpListen, 10000)
 }

@@ -18,6 +18,7 @@ import (
 )
 
 type WorkerBase struct {
+	Alias       string
 	Server      *libol.TcpServer
 	Redis       *libol.RedisCli
 	Auth        *app.PointAuth
@@ -39,6 +40,7 @@ type WorkerBase struct {
 
 func NewWorkerBase(server *libol.TcpServer, c *config.VSwitch) *WorkerBase {
 	w := WorkerBase{
+		Alias:     c.Alias,
 		Server:    server,
 		Neighbor:  nil,
 		Redis:     nil,
@@ -278,6 +280,7 @@ func (w *WorkerBase) UpTime() int64 {
 }
 
 func (w *WorkerBase) AddLink(c *config.Point) {
+	c.Alias = w.Alias
 	c.BrName = w.BrName() //Reset bridge name.
 
 	go func() {
