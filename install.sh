@@ -26,6 +26,9 @@ cp -rvf ./resource/point.service /usr/lib/systemd/system
 [ -e /etc/vswitch.cfg ] || cp -rvf ./resource/vswitch.cfg /etc
 cp -rvf ./resource/vswitch.service /usr/lib/systemd/system
 
+
+mkdir -p /var/openlan && cp -rvf ./public /var/openlan
+
 [ -e /etc/vswitch.password ] || {
 cat > /etc/vswitch.password << EOF
 hi:hi@123$
