@@ -50,7 +50,7 @@ func NewPoint() (c *Point) {
 	flag.StringVar(&c.Addr, "vs:addr", PointDefault.Addr, "the server connect to")
 	flag.StringVar(&c.Auth, "vs:auth", PointDefault.Auth, "the auth login to")
 	flag.BoolVar(&c.Tls, "vs:tls", PointDefault.Tls, "Enable TLS to decrypt")
-	flag.IntVar(&c.Verbose, "level", PointDefault.Verbose, "logger level")
+	flag.IntVar(&c.Verbose, "log:level", PointDefault.Verbose, "logger level")
 	flag.IntVar(&c.IfMtu, "if:mtu", PointDefault.IfMtu, "the interface MTU include ethernet")
 	flag.StringVar(&c.IfAddr, "if:addr", PointDefault.IfAddr, "the interface address")
 	flag.StringVar(&c.BrName, "if:br", PointDefault.BrName, "the bridge name")

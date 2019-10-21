@@ -62,7 +62,7 @@ func NewVSwitch() (c *VSwitch) {
 		LogFile: VSwitchDefault.LogFile,
 	}
 
-	flag.IntVar(&c.Verbose, "level", VSwitchDefault.Verbose, "logger level")
+	flag.IntVar(&c.Verbose, "log:level", VSwitchDefault.Verbose, "logger level")
 	flag.StringVar(&c.HttpListen, "http:addr", VSwitchDefault.HttpListen, "the http listen on")
 	flag.StringVar(&c.HttpDir, "http:dir", VSwitchDefault.HttpDir, "the http working directory")
 	flag.StringVar(&c.TcpListen, "vs:addr", VSwitchDefault.TcpListen, "the server listen on")
