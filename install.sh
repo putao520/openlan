@@ -27,7 +27,11 @@ cp -rvf ./resource/point.service /usr/lib/systemd/system
 cp -rvf ./resource/vswitch.service /usr/lib/systemd/system
 
 
-mkdir -p /var/openlan && cp -rvf ./public /var/openlan
+mkdir -p /var/openlan && {
+  cp -rvf ./resource/ca /var/openlan
+  cp -rvf ./public /var/openlan
+}
+
 
 [ -e /etc/vswitch.password ] || {
 cat > /etc/vswitch.password << EOF
