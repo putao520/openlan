@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"text/template"
 
 	"github.com/lightstar-dev/openlan-go/libol"
 	"github.com/lightstar-dev/openlan-go/point"
@@ -140,10 +141,13 @@ func (h *Http) Hello(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Http) Public(w http.ResponseWriter, r *http.Request) {
-	realpath := fmt.Sprintf("%s%s", h.pubDir, r.URL.Path)
+func (h *Http) getPublicFile(name string) string {
+	return fmt.Sprintf("%s%s", h.pubDir, name)
+}
 
-	libol.Info("Http.Public %s", realpath)
+func (h *Http) Public(w http.ResponseWriter, r *http.Request) {
+	realpath := h.getPublicFile(r.URL.Path)
+	//libol.Info("Http.Public %s", realpath)
 	contents, err := ioutil.ReadFile(realpath)
 	if err != nil {
 		fmt.Fprintf(w, "404")
@@ -153,59 +157,76 @@ func (h *Http) Public(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "%s\n", contents)
 }
 
+func (h *Http) indexBody() string {
+	body := fmt.Sprintf("# uptime: %d\n", h.worker.UpTime())
+	body += "\n"
+	body += "# point accessed to this vswith.\n"
+	body += "uptime, alias, remote, device, receipt, transmis, error, state\n"
+	for p := range h.worker.Auth.ListPoint() {
+		if p == nil {
+			break
+		}
+
+		client, dev := p.Client, p.Device
+		body += fmt.Sprintf("%d, %s, %s, %s, %d, %d, %d, %s\n",
+			client.UpTime(), p.Alias, client.Addr, dev.Name(),
+			client.RxOkay, client.TxOkay, client.TxError, client.GetState())
+	}
+
+	body += "\n"
+	body += "# neighbor we discovered on this vswitch.\n"
+	body += "uptime, ethernet, address, remote\n"
+	for n := range h.worker.Neighbor.ListNeighbor() {
+		if n == nil {
+			break
+		}
+
+		body += fmt.Sprintf("%d, %s, %s, %s\n",
+			n.UpTime(), n.HwAddr, n.IpAddr, n.Client)
+	}
+
+	body += "\n"
+	body += "# link which connect to other vswitch.\n"
+	body += "uptime, bridge, device, remote, state\n"
+	for p := range h.worker.ListLink() {
+		if p == nil {
+			break
+		}
+		body += fmt.Sprintf("%d, %s, %s, %s, %s\n",
+			p.UpTime(), p.BrName, p.IfName(), p.Addr(), p.State())
+	}
+
+	body += "\n"
+	body += "# OnLines.\n"
+	body += "ethernet, address, protocol, destination port\n"
+	for l := range h.worker.OnLines.ListLine() {
+		if l == nil {
+			break
+		}
+		body += fmt.Sprintf("0x%04x, %s->%s, 0x%02x, %d\n",
+			l.EthType, l.IpSource, l.IPDest, l.IpProtocol, l.PortDest)
+	}
+	return body
+}
+
 func (h *Http) Index(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		body := fmt.Sprintf("# uptime: %d\n", h.worker.UpTime())
-		body += "\n"
-		body += "# point accessed to this vswith.\n"
-		body += "uptime, alias, remote, device, receipt, transmis, error, state\n"
-		for p := range h.worker.Auth.ListPoint() {
-			if p == nil {
-				break
+		body := h.indexBody()
+		file := h.getPublicFile("/index.html")
+		if t, err := template.ParseFiles(file); err == nil {
+			data := struct {
+				Body string
+			}{
+				Body: body,
 			}
-
-			client, dev := p.Client, p.Device
-			body += fmt.Sprintf("%d, %s, %s, %s, %d, %d, %d, %s\n",
-				client.UpTime(), p.Alias, client.Addr, dev.Name(),
-				client.RxOkay, client.TxOkay, client.TxError, client.GetState())
+			t.Execute(w, data)
+		} else {
+			libol.Error("Http.Index %s", err)
+			fmt.Fprintf(w, body)
 		}
 
-		body += "\n"
-		body += "# neighbor we discovered on this vswitch.\n"
-		body += "uptime, ethernet, address, remote\n"
-		for n := range h.worker.Neighbor.ListNeighbor() {
-			if n == nil {
-				break
-			}
-
-			body += fmt.Sprintf("%d, %s, %s, %s\n",
-				n.UpTime(), n.HwAddr, n.IpAddr, n.Client)
-		}
-
-		body += "\n"
-		body += "# link which connect to other vswitch.\n"
-		body += "uptime, bridge, device, remote, state\n"
-		for p := range h.worker.ListLink() {
-			if p == nil {
-				break
-			}
-			body += fmt.Sprintf("%d, %s, %s, %s, %s\n",
-				p.UpTime(), p.BrName, p.IfName(), p.Addr(), p.State())
-		}
-
-		body += "\n"
-		body += "# Onlines.\n"
-		body += "ethernet, address, protocol, destination port\n"
-		for l := range h.worker.OnLines.ListLine() {
-			if l == nil {
-				break
-			}
-			body += fmt.Sprintf("0x%04x, %s->%s, 0x%02x, %d\n",
-				l.EthType, l.IpSource, l.IPDest, l.IpProtocol, l.PortDest)
-		}
-
-		fmt.Fprintf(w, body)
+		return
 	default:
 		http.Error(w, fmt.Sprintf("Not support %s", r.Method), 400)
 		return
