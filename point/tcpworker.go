@@ -113,11 +113,6 @@ func (t *TcpWorker) GoRecv(ctx context.Context, doRecv func([]byte) error) {
 				doRecv(data)
 			}
 		}
-
-		select {
-		case <-ctx.Done():
-			return
-		}
 	}
 }
 
