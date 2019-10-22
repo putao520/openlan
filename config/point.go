@@ -52,8 +52,9 @@ func NewPoint() (c *Point) {
 	flag.StringVar(&c.Alias, "alias", PointDefault.Alias, "the alias for this point")
 	flag.StringVar(&c.Addr, "vs:addr", PointDefault.Addr, "the server connect to")
 	flag.StringVar(&c.Auth, "vs:auth", PointDefault.Auth, "the auth login to")
-	flag.BoolVar(&c.Tls, "vs:tls", PointDefault.Tls, "Enable TLS to decrypt")
+	flag.BoolVar(&c.Tls, "vs:tls", PointDefault.Tls, "enable TLS to decrypt")
 	flag.IntVar(&c.Verbose, "log:level", PointDefault.Verbose, "logger level")
+	flag.StringVar(&c.LogFile, "log:file", PointDefault.LogFile, "logger file")
 	flag.IntVar(&c.IfMtu, "if:mtu", PointDefault.IfMtu, "the interface MTU include ethernet")
 	flag.StringVar(&c.IfAddr, "if:addr", PointDefault.IfAddr, "the interface address")
 	flag.StringVar(&c.BrName, "if:br", PointDefault.BrName, "the bridge name")
@@ -82,7 +83,7 @@ func NewPoint() (c *Point) {
 
 func (c *Point) Right() {
 	if c.Alias == "" {
-		c.Alias = libol.GenToken(13)
+		c.Alias = GetAlias()
 	}
 	if c.Auth != "" {
 		values := strings.Split(c.Auth, ":")

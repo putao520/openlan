@@ -197,7 +197,7 @@ func (h *Http) indexBody() string {
 	}
 
 	body += "\n"
-	body += "# OnLines.\n"
+	body += "# online that traces the destination from point.\n"
 	body += "ethernet, address, protocol, destination port\n"
 	for l := range h.worker.OnLines.ListLine() {
 		if l == nil {
