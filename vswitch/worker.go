@@ -289,7 +289,6 @@ func (w *WorkerBase) AddLink(c *config.Point) {
 		w.links[c.Addr] = p
 		w.linksLock.Unlock()
 
-		p.UpLink()
 		p.Start()
 	}()
 }

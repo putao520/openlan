@@ -97,7 +97,7 @@ func (t *TcpWorker) GoRecv(ctx context.Context, doRecv func([]byte) error) {
 		}
 
 		if !t.Client.IsOk() {
-			time.Sleep(60 * time.Second) // sleep 30s and release cpu.
+			time.Sleep(30 * time.Second) // sleep 30s and release cpu.
 			t.Connect()
 			continue
 		}

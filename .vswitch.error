@@ -1,0 +1,33 @@
+2019/10/21 04:40:51 INFO TcpServer.Start 0.0.0.0:10002,0x0
+2019/10/21 04:40:51 INFO WorkerBase.showHook k:0 func: 0x78c9b0, github.com/lightstar-dev/openlan-go/vswitch/app.(*PointAuth).OnFrame-fm
+2019/10/21 04:40:51 INFO WorkerBase.showHook k:1 func: 0x78ca20, github.com/lightstar-dev/openlan-go/vswitch/app.(*Neighbors).OnFrame-fm
+2019/10/21 04:40:51 INFO WorkerBase.showHook k:2 func: 0x78ca90, github.com/lightstar-dev/openlan-go/vswitch/app.(*WithRequest).OnFrame-fm
+2019/10/21 04:40:51 INFO WorkerBase.showHook k:3 func: 0x78cb00, github.com/lightstar-dev/openlan-go/vswitch/app.(*Online).OnFrame-fm
+2019/10/21 04:40:51 INFO Http.SaveToken: AdminToken: 7a74585nck35k
+2019/10/21 04:40:51 INFO Worker.newBr brol-10002
+2019/10/21 04:40:51 INFO WorkerBase.LoadLinks &{meprxd4w900cw localhost:10002 hi:hi %!s(bool=false) %!s(int=1518)   %!s(bool=false)    %!s(int=0)  hi hi}
+2019/10/21 04:40:51 INFO Http.GoStart :10000
+2019/10/21 04:40:51 INFO NewPoint.device tap0
+2019/10/21 04:40:51 INFO TcpClient.Connect localhost:10002,0x0
+2019/10/21 04:40:51 INFO TcpWorker.TryLogin: {"alias":"local","name":"hi","token":"","password":"hi"}
+2019/10/21 04:40:51 INFO WorkerBase.onClient: [::1]:51788
+2019/10/21 04:40:51 INFO TapWorker.GoRev
+2019/10/21 04:40:51 INFO TapWorker.GoLoop
+2019/10/21 04:40:51 INFO TcpWorker.GoRev true
+2019/10/21 04:40:51 INFO PointAuth.handleLogin: [::1]:51788 auth
+2019/10/21 04:40:51 INFO PointAuth.onAuth: [::1]:51788
+2019/10/21 04:40:51 ERROR TcpWorker.GoLoop: dropping by unAuth
+2019/10/21 04:40:51 INFO Worker.newTap tap1
+2019/10/21 04:40:51 INFO PointAuth.GoRecv: tap1
+2019/10/21 04:40:51 INFO TcpWorker.onHook.login: okay.
+2019/10/21 04:41:13 INFO WorkerBase.Close
+2019/10/21 04:41:13 INFO TcpServer.Close: 0.0.0.0:10002
+2019/10/21 04:41:13 ERROR TcpServer.GoAccept: accept tcp [::]:10002: use of closed network connection
+2019/10/21 04:41:13 INFO TcpClient.Close localhost:10002
+2019/10/21 04:41:13 ERROR TcpWorker.GoRev: read tcp [::1]:51788->[::1]:10002: use of closed network connection
+2019/10/21 04:41:13 INFO TcpClient.Close localhost:10002
+2019/10/21 04:41:13 INFO TapWorker.Close
+2019/10/21 04:41:13 INFO WorkerBase.onClose: [::1]:51788
+2019/10/21 04:41:13 INFO Http.Shutdown :10000
+2019/10/21 04:41:13 ERROR TapWorker.GoRev: read tun: file already closed
+2019/10/21 04:41:13 INFO TapWorker.Close

@@ -1,0 +1,11 @@
+2019/10/29 03:25:44 INFO TapWorker.Open tap1
+2019/10/29 03:25:44 INFO TcpClient.Connect ali.openlan.net:10002,0xc000001980
+2019/10/29 03:25:44 INFO TcpWorker.TryLogin: {"alias":"209-141","name":"yunex","token":"","password":"yunex@123"}
+2019/10/29 03:25:44 INFO TcpWorker.GoRev true
+2019/10/29 03:25:44 INFO TapWorker.GoRev
+2019/10/29 03:25:44 INFO TapWorker.GoLoop
+2019/10/29 03:25:44 INFO TcpWorker.onHook.login: okay.
+2019/10/29 03:25:55 ERROR TapWorker.GoRev: read tun: file descriptor in bad state
+2019/10/29 03:25:57 ERROR TapWorker.GoLoop: write tun: file already closed
+2019/10/29 03:25:59 ERROR TapWorker.GoLoop: write tun: file already closed
+2019/10/29 03:26:00 INFO TapWorker.Open tap1

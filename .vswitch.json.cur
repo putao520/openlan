@@ -1,0 +1,38 @@
+{
+  "alias": "local",
+  "vs.addr": "0.0.0.0:10002",
+  "http.dir": "public",
+  "http.addr": ":10000",
+  "if.mtu": 1518,
+  "if.addr": "",
+  "if.br": "",
+  "admin.token": "",
+  "admin.file": ".vswitch.token",
+  "auth.file": ".password",
+  "redis": {
+    "enable": false,
+    "addr": "127.0.0.1",
+    "auth": "",
+    "database": 0
+  },
+  "log.file": ".vswitch.error",
+  "log.level": 2,
+  "tls.crt": "",
+  "tls.key": "",
+  "links": [
+    {
+      "alias": "meprxd4w900cw",
+      "vs.addr": "localhost:10002",
+      "vs.auth": "hi:hi",
+      "vs.tls": false,
+      "if.mtu": 1518,
+      "if.addr": "",
+      "if.br": "",
+      "if.tun": false,
+      "if.eth.src": "",
+      "If.eth.dst": "",
+      "log.file": "",
+      "log.level": 0
+    }
+  ]
+}

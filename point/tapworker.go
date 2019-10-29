@@ -3,17 +3,19 @@ package point
 import (
 	"context"
 	"github.com/lightstar-dev/openlan-go/config"
-	"net"
-
 	"github.com/lightstar-dev/openlan-go/libol"
 	"github.com/songgao/water"
+	"net"
+	"time"
 )
 
 type TapWorker struct {
 	writeChan chan []byte
 	ifMtu     int
 	doRecv    func([]byte) error
+	config    *water.Config
 
+	OnOpen func(*TapWorker) error
 	Device *water.Interface
 	//for tunnel device.
 	EthDstAddr []byte
@@ -21,14 +23,16 @@ type TapWorker struct {
 	EthSrcIp   []byte
 }
 
-func NewTapWorker(device *water.Interface, c *config.Point) (a *TapWorker) {
+func NewTapWorker(devCfg *water.Config, c *config.Point) (a *TapWorker) {
 	a = &TapWorker{
-		Device:    device,
+		Device:    nil,
+		config:    devCfg,
 		writeChan: make(chan []byte, 1024*10),
 		ifMtu:     c.IfMtu, //1514
 	}
 
-	if a.Device.IsTUN() {
+	a.Open()
+	if a.Device != nil && a.Device.IsTUN() {
 		a.EthSrcIp = net.ParseIP(c.IfAddr).To4()
 		libol.Info("NewTapWoker srcIp: % x", a.EthSrcIp)
 
@@ -46,6 +50,24 @@ func NewTapWorker(device *water.Interface, c *config.Point) (a *TapWorker) {
 	}
 
 	return
+}
+
+func (a *TapWorker) Open() {
+	if a.Device != nil {
+		a.Device.Close()
+		time.Sleep(5 * time.Second) // sleep 5s and release cpu.
+	}
+
+	dev, err := water.New(*a.config)
+	if err != nil {
+		libol.Error("TapWorker.Open %s", err)
+		return
+	}
+	libol.Info("TapWorker.Open %s", dev.Name())
+	a.Device = dev
+	if a.OnOpen != nil {
+		a.OnOpen(a)
+	}
 }
 
 func (a *TapWorker) NewEth(t uint16) *libol.Ether {
@@ -72,7 +94,8 @@ func (a *TapWorker) GoRecv(ctx context.Context, doRecv func([]byte) error) {
 		n, err := a.Device.Read(data)
 		if err != nil {
 			libol.Error("TapWorker.GoRev: %s", err)
-			return
+			a.Open()
+			continue
 		}
 
 		libol.Debug("TapWorker.GoRev: % x", data[:n])
