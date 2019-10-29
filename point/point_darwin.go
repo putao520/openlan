@@ -37,30 +37,17 @@ func NewPoint(config *config.Point) (p *Point) {
 }
 
 func (p *Point) newDevice() {
-	dev, err := water.New(water.Config{DeviceType: water.TUN})
-	if err != nil {
-		libol.Fatal("NewPoint: %s", err)
-		return
-	}
-
-	libol.Info("NewPoint.device %s", dev.Name())
-	p.tapWorker = NewTapWorker(dev, p.config)
+	conf := &water.Config{DeviceType: water.TUN}
+	p.tapWorker = NewTapWorker(conf, p.config)
 }
 
-func (p *Point) UpLink() error {
-	if p.GetDevice() == nil {
-		p.newDevice()
-	}
-	if p.GetDevice() == nil {
-		return libol.Errer("create device.")
-	}
+func (p *Point) UpLink(tap *TapWorker) error {
 	return nil
 }
 
 func (p *Point) Start() {
 	libol.Debug("Point.Start Darwin.")
-
-	p.UpLink()
+	
 	if err := p.tcpWorker.Connect(); err != nil {
 		libol.Error("Point.Start %s", err)
 	}

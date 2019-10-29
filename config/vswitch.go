@@ -66,6 +66,7 @@ func NewVSwitch() (c *VSwitch) {
 
 	flag.StringVar(&c.Alias, "alias", VSwitchDefault.Alias, "the alias for this switch")
 	flag.IntVar(&c.Verbose, "log:level", VSwitchDefault.Verbose, "logger level")
+	flag.StringVar(&c.LogFile, "log:file", VSwitchDefault.LogFile, "logger file")
 	flag.StringVar(&c.HttpListen, "http:addr", VSwitchDefault.HttpListen, "the http listen on")
 	flag.StringVar(&c.HttpDir, "http:dir", VSwitchDefault.HttpDir, "the http working directory")
 	flag.StringVar(&c.TcpListen, "vs:addr", VSwitchDefault.TcpListen, "the server listen on")
@@ -99,7 +100,7 @@ func NewVSwitch() (c *VSwitch) {
 
 func (c *VSwitch) Right() {
 	if c.Alias == "" {
-		c.Alias = libol.GenToken(13)
+		c.Alias = GetAlias()
 	}
 	RightAddr(&c.TcpListen, 10002)
 	RightAddr(&c.HttpListen, 10000)

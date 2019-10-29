@@ -8,33 +8,33 @@ import (
 //[MAGIC(2)][Length(2)][DSTMAC(6)]
 // if DSTMAC is ZERO
 //    [Action(4+(=/:))[Space(1)][Json Body]
-//    Action: Instruct such as 'logi=', 'logi:'.
-//    Json Body: length - 6 bytes.
+//    Cmd: Instruct such as 'logi=', 'logi:'.
+//    Json Params: length - 6 bytes.
 // else
-//    Payload is Ethernat Frame.
+//    Payload is Ethernet Frame.
 
-func IsInst(data []byte) bool {
+func IsControl(data []byte) bool {
 	return bytes.Equal(data[:6], ZEROED[:6])
 }
 
-func DecAction(data []byte) string {
+func DecodeCmd(data []byte) string {
 	return string(data[6:11])
 }
 
-func DecBody(data []byte) string {
+func DecodeParams(data []byte) string {
 	return string(data[12:])
 }
 
-func DecActionBody(data []byte) (string, string) {
-	return DecAction(data), DecBody(data)
+func DecodeCmdAndParams(data []byte) (string, string) {
+	return DecodeCmd(data), DecodeParams(data)
 }
 
-func EncInstReq(action string, body string) []byte {
+func EncodeRequestCmd(action string, body string) []byte {
 	p := fmt.Sprintf("%s= %s", action[:4], body)
 	return append(ZEROED[:6], p...)
 }
 
-func EncInstResp(action string, body string) []byte {
+func EncodeReplyCmd(action string, body string) []byte {
 	p := fmt.Sprintf("%s: %s", action[:4], body)
 	return append(ZEROED[:6], p...)
 }

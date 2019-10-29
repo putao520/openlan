@@ -25,7 +25,7 @@ func NewTcpWorker(client *libol.TcpClient, c *config.Point) (t *TcpWorker) {
 		Client:    client,
 		writeChan: make(chan []byte, 1024*10),
 		maxSize:   c.IfMtu,
-		user:       models.NewUser(c.Name(), c.Password()),
+		user:      models.NewUser(c.Name(), c.Password()),
 	}
 	t.user.Alias = c.Alias
 	t.Client.SetMaxSize(t.maxSize)
@@ -71,9 +71,9 @@ func (t *TcpWorker) TryLogin(client *libol.TcpClient) error {
 }
 
 func (t *TcpWorker) onInstruct(data []byte) error {
-	action := libol.DecAction(data)
+	action := libol.DecodeCmd(data)
 	if action == "logi:" {
-		resp := libol.DecBody(data)
+		resp := libol.DecodeParams(data)
 		libol.Info("TcpWorker.onHook.login: %s", resp)
 		if resp[:4] == "okay" {
 			t.Client.SetStatus(libol.CLAUEHED)
@@ -97,7 +97,7 @@ func (t *TcpWorker) GoRecv(ctx context.Context, doRecv func([]byte) error) {
 		}
 
 		if !t.Client.IsOk() {
-			time.Sleep(60 * time.Second) // sleep 30s and release cpu.
+			time.Sleep(30 * time.Second) // sleep 30s and release cpu.
 			t.Connect()
 			continue
 		}
@@ -113,7 +113,7 @@ func (t *TcpWorker) GoRecv(ctx context.Context, doRecv func([]byte) error) {
 		libol.Debug("TcpWorker.GoRev: % x", data[:n])
 		if n > 0 {
 			data = data[:n]
-			if libol.IsInst(data) {
+			if libol.IsControl(data) {
 				t.onInstruct(data)
 			} else {
 				doRecv(data)

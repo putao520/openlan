@@ -234,7 +234,7 @@ func (t *TcpClient) IsInitialized() bool {
 }
 
 func (t *TcpClient) SendReq(action string, body string) error {
-	data := EncInstReq(action, body)
+	data := EncodeRequestCmd(action, body)
 	Debug("TcpClient.SendReq %d %s", len(data), data[6:])
 
 	if err := t.SendMsg(data); err != nil {
@@ -244,7 +244,7 @@ func (t *TcpClient) SendReq(action string, body string) error {
 }
 
 func (t *TcpClient) SendResp(action string, body string) error {
-	data := EncInstResp(action, body)
+	data := EncodeReplyCmd(action, body)
 	Debug("TcpClient.SendResp %d %s", len(data), data[6:])
 
 	if err := t.SendMsg(data); err != nil {

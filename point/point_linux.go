@@ -40,27 +40,21 @@ func NewPoint(config *config.Point) (p *Point) {
 }
 
 func (p *Point) newDevice() {
-	var err error
-	var dev *water.Interface
+	var conf *water.Config
 
 	if p.config.IfTun {
-		dev, err = water.New(water.Config{DeviceType: water.TUN})
+		conf = &water.Config{DeviceType: water.TUN}
 	} else {
-		dev, err = water.New(water.Config{DeviceType: water.TAP})
-	}
-	if err != nil {
-		libol.Fatal("NewPoint: %s", err)
-		return
+		conf = &water.Config{DeviceType: water.TAP}
 	}
 
-	libol.Info("NewPoint.device %s", dev.Name())
-	p.tapWorker = NewTapWorker(dev, p.config)
+	p.tapWorker = NewTapWorker(conf, p.config)
+	p.tapWorker.OnOpen = p.UpLink
 }
 
 func (p *Point) Start() {
 	libol.Debug("Point.Start linux.")
 
-	p.UpLink()
 	if err := p.tcpWorker.Connect(); err != nil {
 		libol.Error("Point.Start %s", err)
 	}
@@ -86,15 +80,8 @@ func (p *Point) Stop() {
 	p.tapWorker.Stop()
 }
 
-func (p *Point) UpLink() error {
-	if p.GetDevice() == nil {
-		p.newDevice()
-	}
-	if p.GetDevice() == nil {
-		return libol.Errer("create device.")
-	}
-
-	name := p.GetDevice().Name()
+func (p *Point) UpLink(tap *TapWorker) error {
+	name := tap.Device.Name()
 	libol.Debug("Point.UpLink: %s", name)
 	link, err := tenus.NewLinkFrom(name)
 	if err != nil {

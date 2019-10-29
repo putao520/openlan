@@ -2,7 +2,7 @@ package models
 
 type TapDevice struct {
 	isTAP bool
-	name string
+	name  string
 }
 
 func (t *TapDevice) IsTUN() bool {
