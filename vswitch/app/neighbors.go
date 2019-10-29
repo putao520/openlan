@@ -57,7 +57,7 @@ func (e *Neighbors) ListNeighbor() <-chan *models.Neighbor {
 func (e *Neighbors) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 	libol.Debug("Neighbors.OnFrame % x.", frame.Data)
 
-	if libol.IsInst(frame.Data) {
+	if libol.IsControl(frame.Data) {
 		return nil
 	}
 

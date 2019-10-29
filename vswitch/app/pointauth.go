@@ -33,13 +33,13 @@ func NewPointAuth(w api.Worker, c *config.VSwitch) (p *PointAuth) {
 func (p *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 	libol.Debug("PointAuth.OnFrame % x.", frame.Data)
 
-	if libol.IsInst(frame.Data) {
-		action := libol.DecAction(frame.Data)
+	if libol.IsControl(frame.Data) {
+		action := libol.DecodeCmd(frame.Data)
 		libol.Debug("PointAuth.OnFrame.action: %s", action)
 
 		switch action {
 		case "logi=":
-			if err := p.handleLogin(client, libol.DecBody(frame.Data)); err != nil {
+			if err := p.handleLogin(client, libol.DecodeParams(frame.Data)); err != nil {
 				libol.Error("PointAuth.OnFrame: %s", err)
 				client.SendResp("login", err.Error())
 				client.Close()

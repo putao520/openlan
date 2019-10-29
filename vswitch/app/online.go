@@ -53,7 +53,7 @@ func (o *Online) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 	data := frame.Data
 	libol.Debug("Online.OnFrame % x.", data)
 
-	if libol.IsInst(data) {
+	if libol.IsControl(data) {
 		return nil
 	}
 
