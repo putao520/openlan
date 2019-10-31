@@ -14,10 +14,10 @@ Download `resource/tap-windows-9.21.2.exe`, then install it. And run Point in Wi
 ### Get source code and it's dependents
 
     go get -u -v github.com/lightstar-dev/openlan-go
-    
+
 ### Execute building command.
 
-    PS L:\vswitchnlan-go\olv1> go build -o ./resource/point.exe cpe_windows.go
+    PS L:\Go\src\ithub.com\lightstar-dev\openlan-go> go build -o ./resource/point.exe cpe_windows.go
 
 ## Configure Windows TAP Device
 
@@ -31,45 +31,45 @@ Or Configure by Powershell.
 # Linux
 ## Start vSwitch on Linux
 
-    [root@localhost olv1]# cat .passowrd
+    [root@localhost openlan-go]# cat .passowrd
     zzz:wwww
     xxxx:aaaaa
-    [root@localhost olv1]# nohup ./resource/vswitch -vs:addr x.x.x.x -if:addr 192.168.x.a/24 &
-    [root@localhost olv1]# cat .vswitchtoken
+    [root@localhost openlan-go]# nohup ./resource/vswitch -vs:addr x.x.x.x -if:addr 192.168.x.a/24 &
+    [root@localhost openlan-go]# cat .vswitchtoken
     m64rxofsqkvlb4cj
-    
-### Show Points
 
-    [root@localhost olv1]# curl -um64rxofsqkvlb4cj: -XGET http://localhost:10082/
+### Show points and vswitch status
 
-### Show Neightbors
+    [root@localhost openlan-go]# curl -um64rxofsqkvlb4cj: -XGET http://localhost:10000/
 
-    [root@localhost olv1]# curl -um64rxofsqkvlb4cj: -XGET http://localhost:10082/neighbor
+### Show neighbors
+
+    [root@localhost openlan-go]# curl -um64rxofsqkvlb4cj: -XGET http://localhost:10000/neighbor
+
 
 ## Start Point on Linux
 
-    [root@localhost olv1]# nohup ./resource/point -vs:addr x.x.x.x -vs:auth zzz:wwww -if:addr 192.168.x.b/24 &
-    [root@localhost olv1]# ping 192.168.x.a
+    [root@localhost openlan-go]# nohup ./resource/point -vs:addr x.x.x.x -vs:auth zzz:wwww -if:addr 192.168.x.b/24 &
+    [root@localhost openlan-go]# ping 192.168.x.a
 
-    
 # Start Point on macOS
 
     AppledeMBP:openlan-go apple$ make darwin
     AppledeMBP:openlan-go apple$ sudo ./resource/point.dw -if:ethdst b2:bb:ba:c0:8a:4d -if:addr 192.168.10.14
 
 ### Configure IP address on `utun2`
-    
+
     AppledeMBP:~ apple$ sudo ifconfig utun2 192.168.10.14 192.168.10.11
     AppledeMBP:~ apple$ ping 192.168.10.11
-    
+ 
 ### How to get gateway ethernet address for `utun2`
 
     AppledeMBP:openlan-go apple$ ./resource/pointctl.dw 
     [point]# 
-    [point]# open openlan.net hi:hi@123$
+    [point]# open openlan.net hi:hi
     2019/09/30 16:53:00 INFO PointCmd.Connect
     2019/09/30 16:53:00 INFO TcpClient.Connect openlan.net:10002
-    2019/09/30 16:53:01 INFO TcpWroker.TryLogin: {"name":"hi","password":"hi@123$"}
+    2019/09/30 16:53:01 INFO TcpWroker.TryLogin: {"name":"hi","password":"hi"}
     [point]# 2019/09/30 16:53:01 INFO TcpWroker.onHook.login: okay.
     [point]# arp
     arp <source> <destination>
@@ -79,5 +79,3 @@ Or Configure by Powershell.
     [point]# 2019/09/30 16:53:58 INFO PointCmd.onArp: b2:bb:ba:c0:8a:4d on 192.168.10.11
     [point]# exit
     AppledeMBP:openlan-go apple$ ./resource/point.dw -if:ethdst b2:bb:ba:c0:8a:4d
-    
-
