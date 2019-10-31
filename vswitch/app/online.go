@@ -1,10 +1,12 @@
 package app
 
 import (
+	"fmt"
 	"github.com/lightstar-dev/openlan-go/config"
 	"github.com/lightstar-dev/openlan-go/libol"
 	"github.com/lightstar-dev/openlan-go/models"
 	"github.com/lightstar-dev/openlan-go/vswitch/api"
+	"strings"
 	"sync"
 )
 
@@ -109,9 +111,33 @@ func (o *Online) AddLine(line *models.Line) {
 	if _, ok := o.lines[line.String()]; !ok {
 		libol.Info("Online.AddLine %s", line)
 		o.lines[line.String()] = line
+		o.PubLine(line, true)
 	}
 }
 
 func (o *Online) OnClientClose(client *libol.TcpClient) {
 	//TODO
+}
+
+func (o *Online) RedisId() string {
+	wid := strings.Replace(o.worker.GetId(), ":", "/", -1)
+	return fmt.Sprintf("%s:online", wid)
+}
+
+func (o *Online) PubLine(l *models.Line, isAdd bool) {
+	lid := strings.Replace(l.String(), ":", "/", -1)
+	key := fmt.Sprintf("%s:%s", o.RedisId(), lid)
+	value := map[string]interface{}{
+		"ethernet":  fmt.Sprintf("0x%04x", l.EthType),
+		"source":  l.IpSource.String(),
+		"destination":  l.IPDest.String(),
+		"protocol": fmt.Sprintf("0x%02x", l.IpProtocol),
+		"port": fmt.Sprintf("%d", l.PortDest),
+	}
+
+	if r := o.worker.GetRedis(); r != nil {
+		if err := r.HMSet(key, value); err != nil {
+			libol.Error("Online.PubLine HMSet %s", err)
+		}
+	}
 }
