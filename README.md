@@ -17,7 +17,7 @@ Download `resource/tap-windows-9.21.2.exe`, then install it. And run Point in Wi
 
 ### Execute building command.
 
-    PS L:\Go\src\ithub.com\lightstar-dev\openlan-go> go build -o ./resource/point.exe cpe_windows.go
+    PS L:\Go\src\ithub.com\lightstar-dev\openlan-go> go build -o ./resource/point.exe main/point_windows.go
 
 ## Configure Windows TAP Device
 
