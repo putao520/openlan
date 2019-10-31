@@ -289,6 +289,8 @@ func (w *WorkerBase) AddLink(c *config.Point) {
 		w.links[c.Addr] = p
 		w.linksLock.Unlock()
 
+		w.PubLink(p, true)
+
 		p.Start()
 	}()
 }
@@ -343,4 +345,24 @@ func (w *WorkerBase) NewTap() (*models.TapDevice, error) {
 
 func (w *WorkerBase) Send(dev *models.TapDevice, frame []byte) {
 	w.Server.TxCount++
+}
+
+func (w *WorkerBase) PubLink(link *point.Point, isAdd bool) {
+	lid := strings.Replace(link.Addr(), ":", "/", -1)
+	wid := strings.Replace(w.GetId(), ":", "/", -1)
+
+	key := fmt.Sprintf("%s:link:%s", wid, lid)
+	value := map[string]interface{}{
+		"remote": link.Addr(),
+		"upTime": link.UpTime(),
+		"device": link.IfName(),
+		"state": link.State(),
+		"isAddr": isAdd,
+	}
+
+	if r := w.GetRedis(); r != nil {
+		if err := r.HMSet(key, value); err != nil {
+			libol.Error("WorkerBase.PubLink HMSet %s", err)
+		}
+	}
 }

@@ -124,8 +124,14 @@ func (e *Neighbors) OnClientClose(client *libol.TcpClient) {
 	libol.Info("Neighbors.OnClientClose %s.", client)
 }
 
+func (e *Neighbors) RedisId() string {
+	wid := strings.Replace(e.worker.GetId(), ":", "/", -1)
+	return fmt.Sprintf("%s:neighbor", wid)
+}
+
 func (e *Neighbors) PubNeighbor(neb *models.Neighbor, isAdd bool) {
-	key := fmt.Sprintf("neighbor:%s", strings.Replace(neb.HwAddr.String(), ":", "-", -1))
+	nid := strings.Replace(neb.HwAddr.String(), ":", "/", -1)
+	key := fmt.Sprintf("%s:%s", e.RedisId(), nid)
 	value := map[string]interface{}{
 		"hwAddr":  neb.HwAddr.String(),
 		"ipAddr":  neb.IpAddr.String(),
@@ -137,7 +143,7 @@ func (e *Neighbors) PubNeighbor(neb *models.Neighbor, isAdd bool) {
 
 	if r := e.worker.GetRedis(); r != nil {
 		if err := r.HMSet(key, value); err != nil {
-			libol.Error("Neighbors.PubNeighbor hset %s", err)
+			libol.Error("Neighbors.PubNeighbor HMSet %s", err)
 		}
 	}
 }

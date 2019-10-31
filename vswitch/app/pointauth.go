@@ -180,8 +180,14 @@ func (p *PointAuth) ListPoint() <-chan *models.Point {
 	return c
 }
 
+func (p *PointAuth) RedisId() string {
+	wid := strings.Replace(p.worker.GetId(), ":", "/", -1)
+	return fmt.Sprintf("%s:point", wid)
+}
+
 func (p *PointAuth) PubPoint(m *models.Point, isAdd bool) {
-	key := fmt.Sprintf("point:%s", strings.Replace(m.Client.String(), ":", "-", -1))
+	cid := strings.Replace(m.Client.String(), ":", "/", -1)
+	key := fmt.Sprintf("%s:%s", p.RedisId(), cid)
 	value := map[string]interface{}{
 		"remote":  m.Client.String(),
 		"newTime": m.Client.NewTime,
@@ -191,7 +197,7 @@ func (p *PointAuth) PubPoint(m *models.Point, isAdd bool) {
 
 	if r := p.worker.GetRedis(); r != nil {
 		if err := r.HMSet(key, value); err != nil {
-			libol.Error("PointAuth.PubPoint hset %s", err)
+			libol.Error("PointAuth.PubPoint HMSet %s", err)
 		}
 	}
 }
