@@ -33,6 +33,7 @@ func NewPoint(config *config.Point) (p *Point) {
 		tcpWorker: NewTcpWorker(client, config),
 		config:    config,
 	}
+	p.newDevice()
 	return
 }
 
