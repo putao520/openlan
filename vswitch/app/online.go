@@ -88,13 +88,16 @@ func (o *Online) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 				libol.Warn("Online.OnFrame %s", err)
 			}
 			line.PortDest = tcp.Destination
+			line.PortSource = tcp.Source
 		case libol.IPPROTO_UDP:
 			udp, err := libol.NewUdpFromFrame(data)
 			if err != nil {
 				libol.Warn("Online.OnFrame %s", err)
 			}
 			line.PortDest = udp.Destination
+			line.PortSource = udp.Source
 		default:
+			line.PortDest = 0
 			line.PortSource = 0
 		}
 
@@ -128,11 +131,11 @@ func (o *Online) PubLine(l *models.Line, isAdd bool) {
 	lid := strings.Replace(l.String(), ":", "/", -1)
 	key := fmt.Sprintf("%s:%s", o.RedisId(), lid)
 	value := map[string]interface{}{
-		"ethernet":  fmt.Sprintf("0x%04x", l.EthType),
-		"source":  l.IpSource.String(),
-		"destination":  l.IPDest.String(),
-		"protocol": fmt.Sprintf("0x%02x", l.IpProtocol),
-		"port": fmt.Sprintf("%d", l.PortDest),
+		"ethernet":    fmt.Sprintf("0x%04x", l.EthType),
+		"source":      l.IpSource.String(),
+		"destination": l.IPDest.String(),
+		"protocol":    fmt.Sprintf("0x%02x", l.IpProtocol),
+		"port":        fmt.Sprintf("%d", l.PortDest),
 	}
 
 	if r := o.worker.GetRedis(); r != nil {

@@ -38,10 +38,10 @@ func NewPoint(config *config.Point) (p *Point) {
 
 func (p *Point) newDevice() {
 	conf := &water.Config{DeviceType: water.TAP}
-	p.tapWorker = NewTapWorker(conf, p.config)
+	p.tapWorker = NewTapWorker(conf, p.config, p)
 }
 
-func (p *Point) UpLink(tap *TapWorker) error {
+func (p *Point) OnTap(tap *TapWorker) error {
 	return nil
 }
 

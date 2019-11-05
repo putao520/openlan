@@ -356,7 +356,7 @@ func (w *WorkerBase) PubLink(link *point.Point, isAdd bool) {
 		"remote": link.Addr(),
 		"upTime": link.UpTime(),
 		"device": link.IfName(),
-		"state": link.State(),
+		"state":  link.State(),
 		"isAddr": isAdd,
 	}
 
