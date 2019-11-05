@@ -48,8 +48,7 @@ func (p *Point) newDevice() {
 		conf = &water.Config{DeviceType: water.TAP}
 	}
 
-	p.tapWorker = NewTapWorker(conf, p.config)
-	p.tapWorker.OnOpen = p.UpLink
+	p.tapWorker = NewTapWorker(conf, p.config, p)
 }
 
 func (p *Point) Start() {
@@ -80,7 +79,7 @@ func (p *Point) Stop() {
 	p.tapWorker.Stop()
 }
 
-func (p *Point) UpLink(tap *TapWorker) error {
+func (p *Point) OnTap(tap *TapWorker) error {
 	name := tap.Device.Name()
 	libol.Debug("Point.UpLink: %s", name)
 	link, err := tenus.NewLinkFrom(name)

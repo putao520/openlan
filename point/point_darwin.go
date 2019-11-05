@@ -41,13 +41,13 @@ func (p *Point) newDevice() {
 	p.tapWorker = NewTapWorker(conf, p.config)
 }
 
-func (p *Point) UpLink(tap *TapWorker) error {
+func (p *Point) OnTap(tap *TapWorker) error {
 	return nil
 }
 
 func (p *Point) Start() {
 	libol.Debug("Point.Start Darwin.")
-	
+
 	if err := p.tcpWorker.Connect(); err != nil {
 		libol.Error("Point.Start %s", err)
 	}

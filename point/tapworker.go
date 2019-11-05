@@ -9,13 +9,17 @@ import (
 	"time"
 )
 
+type OnTapWorker interface {
+	OnTap(*TapWorker) error
+}
+
 type TapWorker struct {
 	writeChan chan []byte
 	ifMtu     int
 	doRecv    func([]byte) error
 	config    *water.Config
 
-	OnOpen func(*TapWorker) error
+	On     OnTapWorker
 	Device *water.Interface
 	//for tunnel device.
 	EthDstAddr []byte
@@ -23,18 +27,19 @@ type TapWorker struct {
 	EthSrcIp   []byte
 }
 
-func NewTapWorker(devCfg *water.Config, c *config.Point) (a *TapWorker) {
+func NewTapWorker(devCfg *water.Config, c *config.Point, on OnTapWorker) (a *TapWorker) {
 	a = &TapWorker{
 		Device:    nil,
 		config:    devCfg,
 		writeChan: make(chan []byte, 1024*10),
 		ifMtu:     c.IfMtu, //1514
+		On:        on,
 	}
 
 	a.Open()
 	if a.Device != nil && a.Device.IsTUN() {
 		a.EthSrcIp = net.ParseIP(c.IfAddr).To4()
-		libol.Info("NewTapWoker srcIp: % x", a.EthSrcIp)
+		libol.Info("NewTapWorker srcIp: % x", a.EthSrcIp)
 
 		if c.IfEthSrc == "" {
 			a.EthSrcAddr = libol.GenEthAddr(6)
@@ -65,8 +70,8 @@ func (a *TapWorker) Open() {
 	}
 	libol.Info("TapWorker.Open %s", dev.Name())
 	a.Device = dev
-	if a.OnOpen != nil {
-		a.OnOpen(a)
+	if a.On != nil {
+		a.On.OnTap(a)
 	}
 }
 
@@ -79,7 +84,7 @@ func (a *TapWorker) NewEth(t uint16) *libol.Ether {
 }
 
 func (a *TapWorker) GoRecv(ctx context.Context, doRecv func([]byte) error) {
-	defer libol.Catch("TapWroker.GoRecv")
+	defer libol.Catch("TapWorker.GoRecv")
 	defer a.Close()
 
 	libol.Info("TapWorker.GoRev")
@@ -170,7 +175,7 @@ func (a *TapWorker) onArp(data []byte) bool {
 }
 
 func (a *TapWorker) GoLoop(ctx context.Context) {
-	defer libol.Catch("TapWroker.GoLoop")
+	defer libol.Catch("TapWorker.GoLoop")
 	defer a.Close()
 
 	libol.Info("TapWorker.GoLoop")

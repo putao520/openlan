@@ -2,6 +2,7 @@ package libol
 
 import (
 	"encoding/binary"
+	"fmt"
 )
 
 const (
@@ -22,6 +23,35 @@ const (
 	IPPROTO_VRRP = 0x70
 	IPPROTO_ISIS = 0x7c
 )
+
+func IpProto2Str(proto uint8) string {
+	switch proto {
+	case IPPROTO_ICMP:
+		return "icmp"
+	case IPPROTO_IGMP:
+		return "igmp"
+	case IPPROTO_IPIP:
+		return "ipip"
+	case IPPROTO_ESP:
+		return "esp"
+	case IPPROTO_AH:
+		return "ah"
+	case IPPROTO_OSPF:
+		return "ospf"
+	case IPPROTO_ISIS:
+		return "isis"
+	case IPPROTO_UDP:
+		return "udp"
+	case IPPROTO_TCP:
+		return "tcp"
+	case IPPROTO_PIM:
+		return "pim"
+	case IPPROTO_VRRP:
+		return "vrrp"
+	default:
+		return fmt.Sprintf("%02x", proto)
+	}
+}
 
 const IPV4_LEN = 20
 
