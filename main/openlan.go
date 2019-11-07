@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -18,14 +19,6 @@ import (
 	"github.com/lightstar-dev/openlan-go/point"
 	"github.com/lightstar-dev/openlan-go/vswitch"
 )
-
-type HttpResource interface {
-	Get (http.ResponseWriter, *http.Request)
-	Post (http.ResponseWriter, *http.Request)
-	Put (http.ResponseWriter, *http.Request)
-	Delete (http.ResponseWriter, *http.Request)
-	Patch (http.ResponseWriter, *http.Request)
-}
 
 type HttpServer struct {
 	listen     string
@@ -39,24 +32,24 @@ type HttpServer struct {
 	switchs    map[string]*vswitch.VSwitch
 	points     map[string]*point.Point
 	router     *mux.Router
+	lock       sync.RWMutex
 }
 
 func (h *HttpServer) Initialize(c *config.OpenLan) {
-	if h.router == nil {
-		h.router = mux.NewRouter()
-	}
-	h.listen = c.HttpListen
-	h.adminToken = c.Token
-	h.adminFile = c.TokenFile
+	r := h.GetRouter()
 	if h.server == nil {
 		h.server = &http.Server{
-			Addr: c.HttpListen,
+			Addr:         c.HttpListen,
 			WriteTimeout: time.Second * 15,
 			ReadTimeout:  time.Second * 15,
 			IdleTimeout:  time.Second * 60,
-			Handler: h.router,
+			Handler:      r,
 		}
 	}
+
+	h.listen = c.HttpListen
+	h.adminToken = c.Token
+	h.adminFile = c.TokenFile
 	h.crtFile = c.CrtFile
 	h.keyFile = c.KeyFile
 	h.pubDir = c.HttpDir
@@ -75,14 +68,23 @@ func (h *HttpServer) Initialize(c *config.OpenLan) {
 	h.SaveToken()
 }
 
-func (h *HttpServer) AddResource(path string, hr HttpResource) {
-	libol.Info("HttpServer.AddResource: %s on %s", path, hr)
-
-	h.router.HandleFunc(path, hr.Get).Methods("GET")
-	h.router.HandleFunc(path, hr.Post).Methods("POST")
-	h.router.HandleFunc(path, hr.Put).Methods("PUT")
-	h.router.HandleFunc(path, hr.Delete).Methods("Delete")
-	h.router.HandleFunc(path, hr.Patch).Methods("PATCH")
+func (h *HttpServer) LoadRouter() {
+	h.GetRouter().HandleFunc("/", h.GetHi).Methods("GET")
+	h.GetRouter().HandleFunc("/app", h.GetApp).Methods("GET")
+	h.GetRouter().HandleFunc("/point", h.GetPoint).Methods("GET")
+	h.GetRouter().HandleFunc("/point/{id}", h.GetPoint).Methods("GET")
+	h.GetRouter().HandleFunc("/point/{id}", h.PostPoint).Methods("POST")
+	h.GetRouter().HandleFunc("/point/{id}", h.DeletePoint).Methods("DELETE")
+	h.GetRouter().HandleFunc("/switch", h.GetSwitch).Methods("GET")
+	h.GetRouter().HandleFunc("/switch/{id}", h.GetSwitch).Methods("GET")
+	h.GetRouter().HandleFunc("/switch/{id}", h.PostSwitch).Methods("POST")
+	h.GetRouter().HandleFunc("/switch/{id}", h.DeleteSwitch).Methods("DELETE")
+	h.GetRouter().HandleFunc("/switch/{id}/link", h.GetSwitch).Methods("GET")
+	h.GetRouter().HandleFunc("/switch/{id}/link", h.GetHi).Methods("POST")
+	h.GetRouter().HandleFunc("/switch/{id}/link", h.GetHi).Methods("DELETE")
+	h.GetRouter().HandleFunc("/switch/{id}/neighbor", h.GetSwitch).Methods("GET")
+	h.GetRouter().HandleFunc("/switch/{id}/point", h.GetHi).Methods("GET")
+	h.GetRouter().HandleFunc("/switch/{id}/online", h.GetHi).Methods("GET")
 }
 
 func (h *HttpServer) SaveToken() error {
@@ -123,6 +125,7 @@ func (h *HttpServer) LoadToken() error {
 func (h *HttpServer) GoStart() error {
 	libol.Info("HttpServer.GoStart %s", h.listen)
 
+	h.LoadRouter()
 	if h.keyFile == "" || h.crtFile == "" {
 		if err := h.server.ListenAndServe(); err != nil {
 			libol.Error("HttpServer.GoStart on %s: %s", h.listen, err)
@@ -150,12 +153,21 @@ func (h *HttpServer) IsAuth(w http.ResponseWriter, r *http.Request) bool {
 	libol.Debug("HttpServer.IsAuth token: %s, pass: %s", token, pass)
 
 	if !ok || token != h.adminToken {
-		w.Header().Set("WWW-Authenticate", "Basic")
-		http.Error(w, "Authorization Required.", http.StatusUnauthorized)
 		return false
 	}
 
 	return true
+}
+
+func (h *HttpServer) Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if h.IsAuth(w, r) {
+			next.ServeHTTP(w, r)
+		} else {
+			w.Header().Set("WWW-Authenticate", "Basic")
+			http.Error(w, "Authorization Required.", http.StatusUnauthorized)
+		}
+	})
 }
 
 func (h *HttpServer) UpTime() int64 {
@@ -172,47 +184,332 @@ func (h *HttpServer) Marshal(v interface{}) (string, error) {
 	return string(str), nil
 }
 
-var App = &HttpServer{
-	router: mux.NewRouter(),
+func (h *HttpServer) GetRouter() *mux.Router {
+	if h.router == nil {
+		h.router = mux.NewRouter()
+		h.router.Use(h.Middleware)
+	}
+
+	return h.router
 }
 
-type InterfaceResource struct {
+func (h *HttpServer) listPoint() <-chan *point.Point {
+	c := make(chan *point.Point, 128)
+
+	go func() {
+		h.lock.RLock()
+		defer h.lock.RUnlock()
+
+		for _, p := range h.points {
+			c <- p
+		}
+		c <- nil //Finish channel by nil.
+	}()
+
+	return c
 }
 
-func (ir *InterfaceResource) Get(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "This Method not allowed", http.StatusMethodNotAllowed)
+func (h *HttpServer) getPoint(addr string) *point.Point {
+	h.lock.RLock()
+	defer h.lock.RUnlock()
+
+	return h.points[addr]
 }
 
-func (ir *InterfaceResource) Post(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "This Method not allowed", http.StatusMethodNotAllowed)
+func (h *HttpServer) addPoint(addr string, c *config.Point) error {
+	h.lock.Lock()
+	defer h.lock.Unlock()
+
+	if _, ok := h.points[addr]; !ok {
+		p := point.NewPoint(c)
+		h.points[addr] = p
+
+		go p.Start()
+	}
+
+	return nil
 }
 
-func (ir *InterfaceResource) Put(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "This Method not allowed", http.StatusMethodNotAllowed)
+func (h *HttpServer) delPoint(addr string) error {
+	h.lock.Lock()
+	defer h.lock.Unlock()
+
+	if p, ok := h.points[addr]; ok {
+		p.Stop()
+		delete(h.points, addr)
+	}
+
+	return nil
 }
 
-func (ir *InterfaceResource) Delete(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "This Method not allowed", http.StatusMethodNotAllowed)
+func (h *HttpServer) listSwitch() <-chan *vswitch.VSwitch {
+	c := make(chan *vswitch.VSwitch, 128)
+
+	go func() {
+		h.lock.RLock()
+		defer h.lock.RUnlock()
+
+		for _, s := range h.switchs {
+			c <- s
+		}
+		c <- nil //Finish channel by nil.
+	}()
+
+	return c
 }
 
-func (ir *InterfaceResource) Patch(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "This Method not allowed", http.StatusMethodNotAllowed)
+func (h *HttpServer) getSwitch(addr string) *vswitch.VSwitch {
+	h.lock.RLock()
+	defer h.lock.RUnlock()
+
+	return h.switchs[addr]
 }
 
+func (h *HttpServer) addSwitch(addr string, c *config.VSwitch) error {
+	h.lock.Lock()
+	defer h.lock.Unlock()
 
-type HiResource struct {
-	InterfaceResource
+	if _, ok := h.switchs[addr]; !ok {
+		s := vswitch.NewVSwitch(c)
+		h.switchs[addr] = s
+
+		s.Start()
+	}
+
+	return nil
 }
 
-func (h *HiResource) Get(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hi"))
+func (h *HttpServer) delSwitch(addr string) error {
+	h.lock.Lock()
+	defer h.lock.Unlock()
+
+	if s, ok := h.switchs[addr]; ok {
+		s.Stop()
+		delete(h.switchs, addr)
+	}
+
+	return nil
 }
 
-func init() {
-	App.AddResource("/hi", &HiResource{})
+func (h *HttpServer) GetHi(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte(fmt.Sprintf("Welcome to OpenLan by <%s>!", r.URL.Path)))
+}
+
+func (h *HttpServer) GetApp(w http.ResponseWriter, r *http.Request) {
+	type App struct {
+		UpTime int64
+	}
+
+	app := App{UpTime: h.UpTime()}
+
+	result, err := json.Marshal(app)
+	if err == nil {
+		w.Write(result)
+	} else {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	return
+}
+
+func (h *HttpServer) GetPoint(w http.ResponseWriter, r *http.Request) {
+	type Point struct {
+		UpTime int64
+		BrName string `json:",omitempty"`
+		IfName string
+		Remote string
+		State  string
+	}
+	vars := mux.Vars(r)
+	libol.Info("GetPoint %s", vars["id"])
+
+	if id, ok := vars["id"]; ok {
+		p := h.getPoint(id)
+		if p == nil {
+			http.Error(w, id, http.StatusNotFound)
+			return
+		} else {
+			data := Point{
+				UpTime: p.UpTime(),
+				BrName: p.BrName,
+				IfName: p.IfName(),
+				Remote: p.Addr(),
+				State:  p.State(),
+			}
+
+			result, err := json.Marshal(data)
+			if err == nil {
+				w.Write(result)
+			} else {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+		}
+		return
+	}
+
+	points := make([]interface{}, 0, 32)
+	for p := range h.listPoint() {
+		if p == nil {
+			break
+		}
+
+		data := Point{
+			UpTime: p.UpTime(),
+			BrName: p.BrName,
+			IfName: p.IfName(),
+			Remote: p.Addr(),
+			State:  p.State(),
+		}
+		points = append(points, data)
+	}
+
+	result, err := json.Marshal(points)
+	if err == nil {
+		w.Write(result)
+	} else {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	return
+}
+
+func (h *HttpServer) PostPoint(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	vars := mux.Vars(r)
+	id := vars["id"]
+	libol.Info("PostPoint %s", id)
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	c := config.PointDefault
+	if err := json.Unmarshal([]byte(body), &c); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	c.Addr = id
+	c.Right()
+
+	h.addPoint(id, &c)
+
+	fmt.Fprintf(w, "success")
+}
+
+func (h *HttpServer) DeletePoint(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	libol.Info("DeletePoint %s", id)
+
+	h.delPoint(id)
+
+	fmt.Fprintf(w, "success")
+}
+
+func (h *HttpServer) GetSwitch(w http.ResponseWriter, r *http.Request) {
+	//type Point struct {
+	//	UpTime int64
+	//	BrName string `json:",omitempty"`
+	//	IfName string
+	//	Remote string
+	//	State  string
+	//}
+	type Switch struct {
+		UpTime int64
+		//Links  []*Point
+		//Points []*Point
+		State   string
+		Address string
+	}
+
+	vars := mux.Vars(r)
+	libol.Info("GetSwitch %s", vars["id"])
+
+	if id, ok := vars["id"]; ok {
+		s := h.getSwitch(id)
+		if s == nil {
+			http.Error(w, id, http.StatusNotFound)
+			return
+		} else {
+			data := Switch{
+				UpTime:  s.GetWorker().UpTime(),
+				State:   s.GetState(),
+				Address: id,
+			}
+
+			result, err := json.Marshal(data)
+			if err == nil {
+				w.Write(result)
+			} else {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+		}
+		return
+	}
+
+	switchs := make([]interface{}, 0, 32)
+	for s := range h.listSwitch() {
+		if s == nil {
+			break
+		}
+
+		data := Switch{
+			UpTime:  s.GetWorker().UpTime(),
+			State:   s.GetState(),
+			Address: s.GetWorker().GetId(),
+		}
+		switchs = append(switchs, data)
+	}
+
+	result, err := json.Marshal(switchs)
+	if err == nil {
+		w.Write(result)
+	} else {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	return
+}
+
+func (h *HttpServer) PostSwitch(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	vars := mux.Vars(r)
+	id := vars["id"]
+	libol.Info("PostPoint %s", id)
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	c := config.VSwitchDefault
+	if err := json.Unmarshal([]byte(body), &c); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	c.TcpListen = id
+	c.Right()
+
+	h.addSwitch(id, &c)
+
+	fmt.Fprintf(w, "success")
+}
+
+func (h *HttpServer) DeleteSwitch(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	libol.Info("DeleteSwitch %s", id)
+
+	h.delSwitch(id)
+
+	fmt.Fprintf(w, "success")
 }
 
 func main() {
+	var App = &HttpServer{}
+
 	c := config.NewOpenLan()
 	App.Initialize(c)
 
