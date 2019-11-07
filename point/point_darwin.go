@@ -3,6 +3,7 @@ package point
 import (
 	"crypto/tls"
 	"github.com/lightstar-dev/openlan-go/config"
+	"context"
 	"net"
 
 	"github.com/lightstar-dev/openlan-go/libol"
@@ -38,7 +39,7 @@ func NewPoint(config *config.Point) (p *Point) {
 
 func (p *Point) newDevice() {
 	conf := &water.Config{DeviceType: water.TUN}
-	p.tapWorker = NewTapWorker(conf, p.config)
+	p.tapWorker = NewTapWorker(conf, p.config, p)
 }
 
 func (p *Point) OnTap(tap *TapWorker) error {
@@ -76,7 +77,7 @@ func (p *Point) GetClient() *libol.TcpClient {
 
 func (p *Point) GetDevice() *water.Interface {
 	if p.tapWorker != nil {
-		return p.tapWorker.Dev
+		return p.tapWorker.Device
 	}
 	return nil
 }
