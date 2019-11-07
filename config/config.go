@@ -7,6 +7,13 @@ import (
 	"strings"
 )
 
+type RedisConfig struct {
+	Enable bool   `json:"enable"`
+	Addr   string `json:"addr"`
+	Auth   string `json:"auth"`
+	Db     int    `json:"database"`
+}
+
 func RightAddr(listen *string, port int) {
 	values := strings.Split(*listen, ":")
 	if len(values) == 1 {

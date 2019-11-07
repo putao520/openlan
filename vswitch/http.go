@@ -124,7 +124,7 @@ func (h *Http) IsAuth(w http.ResponseWriter, r *http.Request) bool {
 
 	if !ok || token != h.adminToken {
 		w.Header().Set("WWW-Authenticate", "Basic")
-		http.Error(w, "Authorization Required.", 401)
+		http.Error(w, "Authorization Required.", http.StatusUnauthorized)
 		return false
 	}
 
