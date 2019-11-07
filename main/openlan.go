@@ -73,15 +73,21 @@ func (h *HttpServer) LoadRouter() {
 	h.GetRouter().HandleFunc("/app", h.GetApp).Methods("GET")
 	h.GetRouter().HandleFunc("/point", h.GetPoint).Methods("GET")
 	h.GetRouter().HandleFunc("/point/{id}", h.GetPoint).Methods("GET")
-	h.GetRouter().HandleFunc("/point/{id}", h.PostPoint).Methods("POST")
-	h.GetRouter().HandleFunc("/point/{id}", h.DeletePoint).Methods("DELETE")
+	h.GetRouter().HandleFunc("/point/{id}", h.PostPoint).Methods("POST").
+		HeadersRegexp("Content-Type", "application/json")
+	h.GetRouter().HandleFunc("/point/{id}", h.DeletePoint).Methods("DELETE").
+		HeadersRegexp("Content-Type", "application/json")
 	h.GetRouter().HandleFunc("/switch", h.GetSwitch).Methods("GET")
 	h.GetRouter().HandleFunc("/switch/{id}", h.GetSwitch).Methods("GET")
-	h.GetRouter().HandleFunc("/switch/{id}", h.PostSwitch).Methods("POST")
-	h.GetRouter().HandleFunc("/switch/{id}", h.DeleteSwitch).Methods("DELETE")
+	h.GetRouter().HandleFunc("/switch/{id}", h.PostSwitch).Methods("POST").
+		HeadersRegexp("Content-Type", "application/json")
+	h.GetRouter().HandleFunc("/switch/{id}", h.DeleteSwitch).Methods("DELETE").
+		HeadersRegexp("Content-Type", "application/json")
 	h.GetRouter().HandleFunc("/switch/{id}/link", h.GetSwitch).Methods("GET")
-	h.GetRouter().HandleFunc("/switch/{id}/link", h.GetHi).Methods("POST")
-	h.GetRouter().HandleFunc("/switch/{id}/link", h.GetHi).Methods("DELETE")
+	h.GetRouter().HandleFunc("/switch/{id}/link", h.GetHi).Methods("POST").
+		HeadersRegexp("Content-Type", "application/json")
+	h.GetRouter().HandleFunc("/switch/{id}/link", h.GetHi).Methods("DELETE").
+		HeadersRegexp("Content-Type", "application/json")
 	h.GetRouter().HandleFunc("/switch/{id}/neighbor", h.GetSwitch).Methods("GET")
 	h.GetRouter().HandleFunc("/switch/{id}/point", h.GetHi).Methods("GET")
 	h.GetRouter().HandleFunc("/switch/{id}/online", h.GetHi).Methods("GET")
@@ -162,6 +168,7 @@ func (h *HttpServer) IsAuth(w http.ResponseWriter, r *http.Request) bool {
 func (h *HttpServer) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if h.IsAuth(w, r) {
+			w.Header().Set("Content-Type", "application/json")
 			next.ServeHTTP(w, r)
 		} else {
 			w.Header().Set("WWW-Authenticate", "Basic")
@@ -172,16 +179,6 @@ func (h *HttpServer) Middleware(next http.Handler) http.Handler {
 
 func (h *HttpServer) UpTime() int64 {
 	return time.Now().Unix() - h.newTime
-}
-
-func (h *HttpServer) Marshal(v interface{}) (string, error) {
-	str, err := json.Marshal(v)
-	if err != nil {
-		libol.Error("HttpServer.Marsha1: %s", err)
-		return "", err
-	}
-
-	return string(str), nil
 }
 
 func (h *HttpServer) GetRouter() *mux.Router {
@@ -291,8 +288,28 @@ func (h *HttpServer) delSwitch(addr string) error {
 	return nil
 }
 
+func (h *HttpServer) Response(w http.ResponseWriter, code int, message string) {
+	ret := struct {
+		Code    int
+		Message string
+	}{
+		Code:    code,
+		Message: message,
+	}
+	h.ResponseJson(w, ret)
+}
+
+func (h *HttpServer) ResponseJson(w http.ResponseWriter, v interface{}) {
+	str, err := json.Marshal(v)
+	if err == nil {
+		w.Write(str)
+	} else {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
 func (h *HttpServer) GetHi(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte(fmt.Sprintf("Welcome to OpenLan by <%s>!", r.URL.Path)))
+	h.Response(w, 0, fmt.Sprintf("Welcome to OpenLan by <%s>!", r.URL.Path))
 }
 
 func (h *HttpServer) GetApp(w http.ResponseWriter, r *http.Request) {
@@ -301,14 +318,7 @@ func (h *HttpServer) GetApp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	app := App{UpTime: h.UpTime()}
-
-	result, err := json.Marshal(app)
-	if err == nil {
-		w.Write(result)
-	} else {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-	return
+	h.ResponseJson(w, app)
 }
 
 func (h *HttpServer) GetPoint(w http.ResponseWriter, r *http.Request) {
@@ -335,13 +345,7 @@ func (h *HttpServer) GetPoint(w http.ResponseWriter, r *http.Request) {
 				Remote: p.Addr(),
 				State:  p.State(),
 			}
-
-			result, err := json.Marshal(data)
-			if err == nil {
-				w.Write(result)
-			} else {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-			}
+			h.ResponseJson(w, data)
 		}
 		return
 	}
@@ -361,14 +365,7 @@ func (h *HttpServer) GetPoint(w http.ResponseWriter, r *http.Request) {
 		}
 		points = append(points, data)
 	}
-
-	result, err := json.Marshal(points)
-	if err == nil {
-		w.Write(result)
-	} else {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-	return
+	h.ResponseJson(w, points)
 }
 
 func (h *HttpServer) PostPoint(w http.ResponseWriter, r *http.Request) {
@@ -393,8 +390,7 @@ func (h *HttpServer) PostPoint(w http.ResponseWriter, r *http.Request) {
 	c.Right()
 
 	h.addPoint(id, &c)
-
-	fmt.Fprintf(w, "success")
+	h.Response(w, 0, "success")
 }
 
 func (h *HttpServer) DeletePoint(w http.ResponseWriter, r *http.Request) {
@@ -403,8 +399,7 @@ func (h *HttpServer) DeletePoint(w http.ResponseWriter, r *http.Request) {
 	libol.Info("DeletePoint %s", id)
 
 	h.delPoint(id)
-
-	fmt.Fprintf(w, "success")
+	h.Response(w, 0, "success")
 }
 
 func (h *HttpServer) GetSwitch(w http.ResponseWriter, r *http.Request) {
@@ -437,13 +432,7 @@ func (h *HttpServer) GetSwitch(w http.ResponseWriter, r *http.Request) {
 				State:   s.GetState(),
 				Address: id,
 			}
-
-			result, err := json.Marshal(data)
-			if err == nil {
-				w.Write(result)
-			} else {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-			}
+			h.ResponseJson(w, data)
 		}
 		return
 	}
@@ -461,14 +450,7 @@ func (h *HttpServer) GetSwitch(w http.ResponseWriter, r *http.Request) {
 		}
 		switchs = append(switchs, data)
 	}
-
-	result, err := json.Marshal(switchs)
-	if err == nil {
-		w.Write(result)
-	} else {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-	return
+	h.ResponseJson(w, switchs)
 }
 
 func (h *HttpServer) PostSwitch(w http.ResponseWriter, r *http.Request) {
@@ -493,8 +475,7 @@ func (h *HttpServer) PostSwitch(w http.ResponseWriter, r *http.Request) {
 	c.Right()
 
 	h.addSwitch(id, &c)
-
-	fmt.Fprintf(w, "success")
+	h.Response(w, 0, "success")
 }
 
 func (h *HttpServer) DeleteSwitch(w http.ResponseWriter, r *http.Request) {
@@ -503,8 +484,7 @@ func (h *HttpServer) DeleteSwitch(w http.ResponseWriter, r *http.Request) {
 	libol.Info("DeleteSwitch %s", id)
 
 	h.delSwitch(id)
-
-	fmt.Fprintf(w, "success")
+	h.Response(w, 0, "success")
 }
 
 func main() {
