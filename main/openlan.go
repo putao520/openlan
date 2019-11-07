@@ -75,19 +75,16 @@ func (h *HttpServer) LoadRouter() {
 	h.GetRouter().HandleFunc("/point/{id}", h.GetPoint).Methods("GET")
 	h.GetRouter().HandleFunc("/point/{id}", h.PostPoint).Methods("POST").
 		HeadersRegexp("Content-Type", "application/json")
-	h.GetRouter().HandleFunc("/point/{id}", h.DeletePoint).Methods("DELETE").
-		HeadersRegexp("Content-Type", "application/json")
+	h.GetRouter().HandleFunc("/point/{id}", h.DeletePoint).Methods("DELETE")
 	h.GetRouter().HandleFunc("/switch", h.GetSwitch).Methods("GET")
 	h.GetRouter().HandleFunc("/switch/{id}", h.GetSwitch).Methods("GET")
 	h.GetRouter().HandleFunc("/switch/{id}", h.PostSwitch).Methods("POST").
 		HeadersRegexp("Content-Type", "application/json")
-	h.GetRouter().HandleFunc("/switch/{id}", h.DeleteSwitch).Methods("DELETE").
-		HeadersRegexp("Content-Type", "application/json")
+	h.GetRouter().HandleFunc("/switch/{id}", h.DeleteSwitch).Methods("DELETE")
 	h.GetRouter().HandleFunc("/switch/{id}/link", h.GetSwitch).Methods("GET")
 	h.GetRouter().HandleFunc("/switch/{id}/link", h.GetHi).Methods("POST").
 		HeadersRegexp("Content-Type", "application/json")
-	h.GetRouter().HandleFunc("/switch/{id}/link", h.GetHi).Methods("DELETE").
-		HeadersRegexp("Content-Type", "application/json")
+	h.GetRouter().HandleFunc("/switch/{id}/link", h.GetHi).Methods("DELETE")
 	h.GetRouter().HandleFunc("/switch/{id}/neighbor", h.GetSwitch).Methods("GET")
 	h.GetRouter().HandleFunc("/switch/{id}/point", h.GetHi).Methods("GET")
 	h.GetRouter().HandleFunc("/switch/{id}/online", h.GetHi).Methods("GET")
