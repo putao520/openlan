@@ -1,13 +1,13 @@
 #!/bin/bash
 
 if [ "$1" == "before" ]; then
-  echo "do before running"
+	echo "do something before running"
 fi
 
 if [ "$1" == "after" ]; then
-  echo "do after running"
+	echo "do something after running"
 fi
 
 if [ "$1" == "exit" ]; then
-  echo "do on exit"
+	echo "do something on exit"
 fi
