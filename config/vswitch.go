@@ -52,7 +52,7 @@ var VSwitchDefault = VSwitch{
 	KeyFile:  "",
 	HttpDir:  "public",
 	Links:    nil,
-	Script:   fmt.Sprintf("vswitch.%s.sh", runtime.GOOS),
+	Script:   fmt.Sprintf("vswitch.%s.cmd", runtime.GOOS),
 }
 
 func NewVSwitch() (c *VSwitch) {
