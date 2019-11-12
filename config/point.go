@@ -18,9 +18,11 @@ type Point struct {
 	BrName   string `json:"if.br"`
 	IfTun    bool   `json:"if.tun"`
 	IfEthSrc string `json:"if.eth.src"`
-	IfEthDst string `json:"If.eth.dst"`
+	IfEthDst string `json:"if.eth.dst"`
 	LogFile  string `json:"log.file"`
 	Verbose  int    `json:"log.level"`
+	RunBefore string `json:"script.before"`
+	RunAfter  string `json:"script.after"`
 
 	SaveFile string `json:"-"`
 	name     string
@@ -42,6 +44,8 @@ var PointDefault = Point{
 	IfEthDst: "2e:4b:f0:b7:6d:ba",
 	IfEthSrc: "",
 	LogFile:  ".point.error",
+	RunBefore: "point.before",
+	RunAfter: "point.after",
 }
 
 func NewPoint() (c *Point) {
@@ -55,13 +59,14 @@ func NewPoint() (c *Point) {
 	flag.BoolVar(&c.Tls, "vs:tls", PointDefault.Tls, "enable TLS to decrypt")
 	flag.IntVar(&c.Verbose, "log:level", PointDefault.Verbose, "logger level")
 	flag.StringVar(&c.LogFile, "log:file", PointDefault.LogFile, "logger file")
-	flag.IntVar(&c.IfMtu, "if:mtu", PointDefault.IfMtu, "the interface MTU include ethernet")
 	flag.StringVar(&c.IfAddr, "if:addr", PointDefault.IfAddr, "the interface address")
 	flag.StringVar(&c.BrName, "if:br", PointDefault.BrName, "the bridge name")
 	flag.BoolVar(&c.IfTun, "if:tun", PointDefault.IfTun, "using tun device as interface, otherwise tap")
 	flag.StringVar(&c.IfEthDst, "if:eth:dst", PointDefault.IfEthDst, "ethernet destination for tun device")
 	flag.StringVar(&c.IfEthSrc, "if:eth:src", PointDefault.IfEthSrc, "ethernet source for tun device")
 	flag.StringVar(&c.SaveFile, "conf", PointDefault.SaveFile, "The configuration file")
+	flag.StringVar(&c.RunBefore, "script:before", PointDefault.RunBefore, "Load script before running")
+	flag.StringVar(&c.RunAfter, "script:after", PointDefault.RunAfter, "Load script after running")
 
 	flag.Parse()
 	if err := c.Load(); err != nil {

@@ -13,9 +13,13 @@ import (
 
 func main() {
 	c := config.NewPoint()
+	s := config.NewScript(c.RunBefore, c.RunAfter)
+
+	s.RunBefore()
 	p := point.NewPoint(c)
 
 	p.Start()
+	s.RunAfter()
 
 	x := make(chan os.Signal)
 	signal.Notify(x, os.Interrupt, syscall.SIGTERM)

@@ -101,7 +101,10 @@ func (c *VSwitch) Right() {
 
 func (c *VSwitch) Default() {
 	c.Right()
-	// TODO reset zero value to default
+
+	if c.IfMtu == 0 {
+		c.IfMtu = VSwitchDefault.IfMtu
+	}
 }
 
 func (c *VSwitch) Save(file string) error {
