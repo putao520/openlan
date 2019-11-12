@@ -8,8 +8,12 @@ import (
 
 func main() {
 	c := config.NewPoint()
+	s := config.NewScript(c.Script)
+
+	s.CallBefore()
 	p := point.NewPoint(c)
 	p.Start()
+	s.CallAfter()
 
 	for {
 		fmt.Println("Please press enter `q` to exit...")
@@ -21,5 +25,6 @@ func main() {
 	}
 
 	p.Stop()
+	s.CallExit()
 	fmt.Println("Done!")
 }

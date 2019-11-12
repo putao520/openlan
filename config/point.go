@@ -3,6 +3,7 @@ package config
 import (
 	"flag"
 	"fmt"
+	"runtime"
 	"strings"
 
 	"github.com/lightstar-dev/openlan-go/libol"
@@ -21,8 +22,7 @@ type Point struct {
 	IfEthDst string `json:"if.eth.dst"`
 	LogFile  string `json:"log.file"`
 	Verbose  int    `json:"log.level"`
-	RunBefore string `json:"script.before"`
-	RunAfter  string `json:"script.after"`
+	Script   string `json:"script"`
 
 	SaveFile string `json:"-"`
 	name     string
@@ -44,8 +44,7 @@ var PointDefault = Point{
 	IfEthDst: "2e:4b:f0:b7:6d:ba",
 	IfEthSrc: "",
 	LogFile:  ".point.error",
-	RunBefore: "point.before",
-	RunAfter: "point.after",
+	Script: fmt.Sprintf("point.%s.cmd", runtime.GOOS),
 }
 
 func NewPoint() (c *Point) {
@@ -64,9 +63,8 @@ func NewPoint() (c *Point) {
 	flag.BoolVar(&c.IfTun, "if:tun", PointDefault.IfTun, "using tun device as interface, otherwise tap")
 	flag.StringVar(&c.IfEthDst, "if:eth:dst", PointDefault.IfEthDst, "ethernet destination for tun device")
 	flag.StringVar(&c.IfEthSrc, "if:eth:src", PointDefault.IfEthSrc, "ethernet source for tun device")
-	flag.StringVar(&c.SaveFile, "conf", PointDefault.SaveFile, "The configuration file")
-	flag.StringVar(&c.RunBefore, "script:before", PointDefault.RunBefore, "Load script before running")
-	flag.StringVar(&c.RunAfter, "script:after", PointDefault.RunAfter, "Load script after running")
+	flag.StringVar(&c.SaveFile, "conf", PointDefault.SaveFile, "the configuration file")
+	flag.StringVar(&c.Script, "script", PointDefault.Script, "call script you assigned")
 
 	flag.Parse()
 	if err := c.Load(); err != nil {
