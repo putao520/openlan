@@ -1,5 +1,6 @@
 {
   "vs.addr": "openlan.net:10002",
   "vs.auth": "hi:hi@123$",
-  "log.level": 2
+  "log.level": 2,
+  "log.file": "/var/log/point.log"
 }
