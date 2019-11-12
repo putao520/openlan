@@ -24,7 +24,7 @@ func main() {
 		}
 	}
 
-	p.Stop()
 	s.CallExit()
+	p.Stop()
 	fmt.Println("Done!")
 }

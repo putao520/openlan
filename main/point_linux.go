@@ -24,8 +24,8 @@ func main() {
 	signal.Notify(x, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-x
-		p.Stop()
 		s.CallExit()
+		p.Stop()
 		fmt.Println("Done!")
 		os.Exit(0)
 	}()
