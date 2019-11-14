@@ -84,12 +84,12 @@ func MarshalSave(v interface{}, file string, pretty bool) error {
 
 func UnmarshalLoad(v interface{}, file string) error {
 	if _, err := os.Stat(file); os.IsNotExist(err) {
-		return Errer("UnmarshalLoad: file:%s does not exist", file)
+		return Errer("UnmarshalLoad: file:<%s> does not exist", file)
 	}
 
 	contents, err := ioutil.ReadFile(file)
 	if err != nil {
-		return Errer("UnmarshalLoad: file:%s %s", file, err)
+		return Errer("UnmarshalLoad: file:<%s> %s", file, err)
 	}
 
 	if err := json.Unmarshal([]byte(contents), v); err != nil {

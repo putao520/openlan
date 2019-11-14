@@ -13,14 +13,18 @@ import (
 
 func main() {
 	c := config.NewPoint()
-	p := point.NewPoint(c)
+	s := config.NewScript(c.Script)
 
+	s.CallBefore()
+	p := point.NewPoint(c)
 	p.Start()
+	s.CallAfter()
 
 	x := make(chan os.Signal)
 	signal.Notify(x, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-x
+		s.CallExit()
 		p.Stop()
 		fmt.Println("Done!")
 		os.Exit(0)

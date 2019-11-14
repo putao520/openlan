@@ -3,79 +3,82 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/lightstar-dev/openlan-go)](https://goreportcard.com/report/lightstar-dev/openlan-go)
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-Refer to [danieldin95 openlan-py](https://github.com/danieldin95/openlan-py), and now we change cpe to point, ope to vswitch.
-    
-# Windows
-## Install tap-windows6
+Latest implement on [lightstar-dev openlan-go](https://github.com/lightstar-dev/openlan-go).
 
-Download `resource/tap-windows-9.21.2.exe`, then install it. And run Point in Windows by `point.exe -vs:addr x.x.x.x -vs:auth zzz:wwww`. 
-    
-## Build in Powershell
-### Get source code and it's dependents
+# Point
+The point is endpoint to access OpenLan vswitch, and all points behind the same vswitch can visit each other like local area network. 
 
-    go get -u -v github.com/lightstar-dev/openlan-go
+## on Windows
+### Firstly, Install tap-windows6
 
-### Execute building command.
+Download `resource/tap-windows-9.21.2.exe`, then install it. 
 
-    PS L:\Go\src\ithub.com\lightstar-dev\openlan-go> go build -o ./resource/point.exe main/point_windows.go
-
-## Configure Windows TAP Device
+### And Then Configure Windows TAP Device
 
 Goto `Control Panel\Network and Internet\Network Connections`, and find `Ethernet 2`, then you can configure IPAddress for it to access branch site. 
 
-Or Configure by Powershell.
+Or Configure by `cmd`.
 
     netsh interface ipv4 show config "Ethernet 2"
-    netsh interface ipv4 set address "Ethernet 2" static 192.168.x.b
+    netsh interface ipv4 set address "Ethernet 2" static 192.168.x.b/24
 
-# Linux
-## Start vSwitch on Linux
+### Finally, Configure Access Authentication
 
-    [root@localhost openlan-go]# cat .passowrd
-    zzz:wwww
-    xxxx:aaaaa
-    [root@localhost openlan-go]# nohup ./resource/vswitch -vs:addr x.x.x.x -if:addr 192.168.x.a/24 &
-    [root@localhost openlan-go]# cat .vswitchtoken
-    m64rxofsqkvlb4cj
+    {
+     "vs.addr": "www.openlan.xx",
+     "vs.auth": "xx:xx@xx",
+     "if.addr": "192.168.x.b/24",
+     "vs.tls": true
+    }
+   
+   Save to file `.point.json` with same directory of  `point.windows.x86_64.exe`. Click right on `point.windwos.x86_64.exe`, and Run as Administrator.
 
-### Show points and vswitch status
+## on Linux
+### Install OpenLan and Start vSwitch on Linux
 
-    [root@localhost openlan-go]# curl -um64rxofsqkvlb4cj: -XGET http://localhost:10000/
+    [root@localhost openlan-go]# ./install.sh
+    [root@localhost openlan-go]# 
+    [root@localhost openlan-go]# cat /etc/vswitch.json
+    {
+      "vs.addr": "0.0.0.0:10002",
+      "http.addr": "0.0.0.0:10000",
+      "if.addr": "192.168.x.a/24",
+      "links": [
+        {
+          "vs.addr": "aa.openlan.xx",
+          "vs.auth": "xx:xx@xx",
+          "vs.tls": true
+        }
+      ],
+      "tls.crt": "/var/openlan/ca/crt.pem",
+      "tls.key": "/var/openlan/ca/private.key",
+      "log.file": "/var/log/vswitch.log"
+    }
+    [root@localhost openlan-go]# systemctl enable vswitch
+    [root@localhost openlan-go]# systemctl start vswitch
 
-### Show neighbors
+### Start Point on Linux
 
-    [root@localhost openlan-go]# curl -um64rxofsqkvlb4cj: -XGET http://localhost:10000/neighbor
-
-
-## Start Point on Linux
-
-    [root@localhost openlan-go]# nohup ./resource/point -vs:addr x.x.x.x -vs:auth zzz:wwww -if:addr 192.168.x.b/24 &
+    [root@localhost openlan-go]# cat /etc/point.json
+    {
+      "vs.addr": "ww.openlan.xx",
+      "vs.auth": "xx:xx@xx",
+      "if.addr": "192.168.x.c/24",
+      "log.file": "/var/log/point.log"
+    }
+    [root@localhost openlan-go]# systemctl enable point
+    [root@localhost openlan-go]# systemctl start point
     [root@localhost openlan-go]# ping 192.168.x.a
+    
 
-# Start Point on macOS
+# Building from Source
 
-    AppledeMBP:openlan-go apple$ make darwin
-    AppledeMBP:openlan-go apple$ sudo ./resource/point.dw -if:ethdst b2:bb:ba:c0:8a:4d -if:addr 192.168.10.14
+    go get -u -v github.com/lightstar-dev/openlan-go  
 
-### Configure IP address on `utun2`
+## on Linux
 
-    AppledeMBP:~ apple$ sudo ifconfig utun2 192.168.10.14 192.168.10.11
-    AppledeMBP:~ apple$ ping 192.168.10.11
- 
-### How to get gateway ethernet address for `utun2`
+    [root@localhost openlan-go]# make
 
-    AppledeMBP:openlan-go apple$ ./resource/pointctl.dw 
-    [point]# 
-    [point]# open openlan.net hi:hi
-    2019/09/30 16:53:00 INFO PointCmd.Connect
-    2019/09/30 16:53:00 INFO TcpClient.Connect openlan.net:10002
-    2019/09/30 16:53:01 INFO TcpWroker.TryLogin: {"name":"hi","password":"hi"}
-    [point]# 2019/09/30 16:53:01 INFO TcpWroker.onHook.login: okay.
-    [point]# arp
-    arp <source> <destination>
-    [point]# 
-    [point]# arp 192.168.10.24 192.168.10.11
-    42
-    [point]# 2019/09/30 16:53:58 INFO PointCmd.onArp: b2:bb:ba:c0:8a:4d on 192.168.10.11
-    [point]# exit
-    AppledeMBP:openlan-go apple$ ./resource/point.dw -if:ethdst b2:bb:ba:c0:8a:4d
+## on Windows
+    
+    L:\openlan-go> go build -o ./resource/point.windows.x86_64.exe main/point_windows.go

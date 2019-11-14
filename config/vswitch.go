@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/lightstar-dev/openlan-go/libol"
+	"runtime"
 )
 
 type VSwitch struct {
@@ -23,14 +24,9 @@ type VSwitch struct {
 	CrtFile    string      `json:"tls.crt"`
 	KeyFile    string      `json:"tls.key"`
 	Links      []*Point    `json:"links"`
-	SaveFile   string      `json:"-"`
-}
+	Script     string      `json:"script"`
 
-type RedisConfig struct {
-	Enable bool   `json:"enable"`
-	Addr   string `json:"addr"`
-	Auth   string `json:"auth"`
-	Db     int    `json:"database"`
+	SaveFile   string      `json:"-"`
 }
 
 var VSwitchDefault = VSwitch{
@@ -56,6 +52,7 @@ var VSwitchDefault = VSwitch{
 	KeyFile:  "",
 	HttpDir:  "public",
 	Links:    nil,
+	Script:   fmt.Sprintf("vswitch.%s.cmd", runtime.GOOS),
 }
 
 func NewVSwitch() (c *VSwitch) {
@@ -79,6 +76,7 @@ func NewVSwitch() (c *VSwitch) {
 	flag.StringVar(&c.SaveFile, "conf", VSwitchDefault.SaveFile, "The configuration file")
 	flag.StringVar(&c.CrtFile, "tls:crt", VSwitchDefault.CrtFile, "The X509 certificate file for TLS")
 	flag.StringVar(&c.KeyFile, "tls:key", VSwitchDefault.KeyFile, "The X509 certificate key for TLS")
+	flag.StringVar(&c.Script, "script", VSwitchDefault.Script, "call script you assigned")
 
 	flag.Parse()
 	c.Default()
@@ -108,7 +106,10 @@ func (c *VSwitch) Right() {
 
 func (c *VSwitch) Default() {
 	c.Right()
-	// TODO reset zero value to default
+
+	if c.IfMtu == 0 {
+		c.IfMtu = VSwitchDefault.IfMtu
+	}
 }
 
 func (c *VSwitch) Save(file string) error {
