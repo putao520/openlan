@@ -5,6 +5,21 @@
 
 Latest implement on [lightstar-dev openlan-go](https://github.com/lightstar-dev/openlan-go).
 
+
+                  <192.168.1.a/24>        <192.168.1.b/24>                <192.168.1.c/24>
+               (Branch)Point ----------> vSwitch(NanJing) <-------------- Point(Branch)
+                                                |
+                                         vSwitch(ShangHai) <192.168.1.d/24>
+                                                |
+                       ------------------------------------------------------
+                       ^                        ^                           ^
+                       |                        |                           |
+                   Office Wifi               Home Wifi                 Hotel Wifi     
+                       |                        |                           |
+                     Point                    Point                       Point
+                 <192.168.1.e/24>          <192.168.1.f/24>            <192.168.1.g/24>
+                  
+
 # Point
 The point is endpoint to access OpenLan vswitch, and all points behind the same vswitch can visit each other like local area network. 
 
