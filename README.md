@@ -3,7 +3,8 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/lightstar-dev/openlan-go)](https://goreportcard.com/report/lightstar-dev/openlan-go)
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-Refer to [danieldin95 openlan-py](https://github.com/danieldin95/openlan-py), and now we change cpe to point, ope to vswitch.
+Latest implement on [lightstar-dev openlan-go](https://github.com/lightstar-dev/openlan-go).
+And this original project on [danieldin95 openlan-py](https://github.com/danieldin95/openlan-py), and now we change cpe to point, ope to vswitch.
 
 # Point
 The point is endpoint to access OpenLan vswitch, and all points behind the same vswitch can visit each other like local area network. 
