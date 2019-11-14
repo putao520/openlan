@@ -6,9 +6,11 @@
 Latest implement on [lightstar-dev openlan-go](https://github.com/lightstar-dev/openlan-go).
 
 
-             <192.168.1.a/24>             <192.168.1.b/24>                <192.168.1.c/24>
-                   |                            |                                |
-                  Point ------Wifi-------> vSwitch(NanJing) <-------Wifi------- Point
+                   <192.168.1.a/24>       <192.168.1.b/24>           <192.168.1.c/24>
+                         |                      |                           |
+                       Point ----Wifi----> vSwitch(NanJing) <----Wifi---- Point
+                                                |
+                                             Internet 
                                                 |
                                            vSwitch(ShangHai) - <192.168.1.d/24>
                                                 |
