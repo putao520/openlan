@@ -10,7 +10,7 @@ Latest implement on [lightstar-dev openlan-go](https://github.com/lightstar-dev/
                    |                            |                                |
                   Point ------Wifi-------> vSwitch(NanJing) <-------Wifi------- Point
                                                 |
-                                           vSwitch(ShangHai) <192.168.1.d/24>
+                                           vSwitch(ShangHai) - <192.168.1.d/24>
                                                 |
                        ------------------------------------------------------
                        ^                        ^                           ^
