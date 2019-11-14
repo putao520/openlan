@@ -1,15 +1,23 @@
+:: %1%: action
+:: %2%: name of device
+:: %3%: ipv4 address of device
 @ECHO off
 
-IF "%1%"=="before" (
-	ECHO "do something before running"
+SET "OPR=%1%"
+SET "DEV=%2%"
+SET "ADDR=%3%"
+
+IF "%OPR%"=="before" (
+	ECHO do something before running
 )
 
-IF "%1%"=="after" (
-	ECHO "update route after running"
-	route ADD 192.168.10.0/24 192.168.4.151
+:: route ADD 192.168.10.0/24 192.168.4.151
+IF "%OPR%"=="after" (
+	ECHO update route after running
+	netsh interface ipv4 set address %DEV% static %ADDR%
 )
 
-IF "%1%"=="exit" (
-	ECHO "clear route on exited"
-	route DELETE 192.168.10.0/24
+:: route DELETE 192.168.10.0/24
+IF "%OPR%"=="exit" (
+	ECHO clear route on exited
 )

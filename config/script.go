@@ -29,13 +29,13 @@ func (s *Script) Run(name string, args ...string) ([]byte, error) {
 	return exec.Command(name, args...).Output()
 }
 
-func (s *Script) CallBefore() {
+func (s *Script) CallBefore(args ...string) {
 	if _, err := os.Stat(s.Cmd); os.IsNotExist(err) {
 		libol.Warn("Script.RunBefore:<%s> does not exist", s.Cmd)
 		return
 	}
 
-	out, err := s.Run(s.Cmd, "before")
+	out, err := s.Run(s.Cmd, append([]string{"before"}, args...)...)
 	if err == nil {
 		libol.Info("%s before: %s", s.Cmd, string(out))
 	} else {
@@ -43,13 +43,13 @@ func (s *Script) CallBefore() {
 	}
 }
 
-func (s *Script) CallAfter() {
+func (s *Script) CallAfter(args ...string) {
 	if _, err := os.Stat(s.Cmd); os.IsNotExist(err) {
 		libol.Warn("Script.RunAfter:<%s> does not exist", s.Cmd)
 		return
 	}
 
-	out, err := s.Run(s.Cmd, "after")
+	out, err := s.Run(s.Cmd, append([]string{"after"}, args...)...)
 	if err == nil {
 		libol.Info("%s after: %s", s.Cmd, string(out))
 	} else {
@@ -57,13 +57,13 @@ func (s *Script) CallAfter() {
 	}
 }
 
-func (s *Script) CallExit() {
+func (s *Script) CallExit(args ...string) {
 	if _, err := os.Stat(s.Cmd); os.IsNotExist(err) {
 		libol.Warn("Script.RunAfter:<%s> does not exist", s.Cmd)
 		return
 	}
 
-	out, err := s.Run(s.Cmd, "exit")
+	out, err := s.Run(s.Cmd, append([]string{"exit"}, args...)...)
 	if err == nil {
 		libol.Info("%s exit: %s", s.Cmd, string(out))
 	} else {
