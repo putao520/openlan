@@ -5,8 +5,6 @@
 
 Latest implement on [lightstar-dev openlan-go](https://github.com/lightstar-dev/openlan-go).
 
-And this original project on [danieldin95 openlan-py](https://github.com/danieldin95/openlan-py), and now we change cpe to point, ope to vswitch.
-
 # Point
 The point is endpoint to access OpenLan vswitch, and all points behind the same vswitch can visit each other like local area network. 
 
