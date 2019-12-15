@@ -6,44 +6,46 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/lightstar-dev/openlan-go)](https://goreportcard.com/report/lightstar-dev/openlan-go)
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-Latest implement on [lightstar-dev openlan-go](https://github.com/lightstar-dev/openlan-go).
+最近的项目实现在[lightstar-dev openlan-go](https://github.com/lightstar-dev/openlan-go)。
 
 
                    192.168.1.a/24         192.168.1.b/24              192.168.1.c/24
                          |                      |                           |
-                       Point ----Wifi----> vSwitch(NanJing) <----Wifi---- Point
+                       Point --酒店 Wifi--> vSwitch(南京) <---其他 Wifi--- Point
                                                 |
-                                             Internet 
+                                             互联网
                                                 |
-                                           vSwitch(ShangHai) - 192.168.1.d/24
+                                           vSwitch(上海) - 192.168.1.d/24
                                                 |
                        ------------------------------------------------------
                        ^                        ^                           ^
                        |                        |                           |
-                   Office Wifi               Home Wifi                 Hotel Wifi     
+                   办公 Wifi               家庭 Wifi                 酒店 Wifi     
                        |                        |                           |
                      Point                    Point                       Point
                  192.168.1.e/24           192.168.1.f/24              192.168.1.g/24
-                  
+                
 
-# Point
-The point is endpoint to access OpenLan vswitch, and all points behind the same vswitch can visit each other like local area network. 
+# 接入点（Point）
+接入点工作在用户侧，每个接入点通过接入vSwitch可以实现节点间的互联互通。目前接入点已经稳定工作在Windows及Linux系统下，MacOS还存在问题。 
 
-## on Windows
-### Firstly, Install tap-windows6
+# 虚拟交换（vSwitch）
+每个接入虚拟交换的Point就像工作在一个物理的交换机下的主机，多个虚拟交换之间通过Link可以实现Point的跨区域互通。虚拟交换需要安装在Linux的发布系统中，例如：CentOS或者Ubuntu。
 
-Download `resource/tap-windows-9.21.2.exe`, then install it. 
+## 在Windows系统中
+### 首先安装虚拟网卡驱动 tap-windows6
 
-### And Then Configure Windows TAP Device
+下载资源 `resource/tap-windows-9.21.2.exe`, 然后点击安装它。
 
-Goto `Control Panel\Network and Internet\Network Connections`, and find `Ethernet 2`, then you can configure IPAddress for it to access branch site. 
+### 然后你需要在虚拟网卡上配置地址
 
-Or Configure by `cmd`.
+打开控制面板`Control Panel\Network and Internet\Network Connections`, 然后找到`Ethernet 2`, 给他配置一个的局域网地址。
+或者配置它通过`cmd`.
 
     netsh interface ipv4 show config "Ethernet 2"
     netsh interface ipv4 set address "Ethernet 2" static 192.168.x.b/24
 
-### Finally, Configure Access Authentication
+### 最后配置接入认证
 
     {
      "vs.addr": "www.openlan.xx",
@@ -52,10 +54,10 @@ Or Configure by `cmd`.
      "vs.tls": true
     }
    
-   Save to file `.point.json` with same directory of  `point.windows.x86_64.exe`. Click right on `point.windwos.x86_64.exe`, and Run as Administrator.
+ 把它保存在文件`.point.json`中，并与程序`point.windows.x86_64.exe`在同一个目录下。 点击执行`point.windwos.x86_64.exe`。
 
-## on Linux
-### Install OpenLan and Start vSwitch on Linux
+## 在Linux体统中
+### 安装OpenLan并运行vSwitch
 
     [root@localhost openlan-go]# ./install.sh
     [root@localhost openlan-go]# 
@@ -78,7 +80,7 @@ Or Configure by `cmd`.
     [root@localhost openlan-go]# systemctl enable vswitch
     [root@localhost openlan-go]# systemctl start vswitch
 
-### Start Point on Linux
+### 运行Point
 
     [root@localhost openlan-go]# cat /etc/point.json
     {
@@ -92,14 +94,14 @@ Or Configure by `cmd`.
     [root@localhost openlan-go]# ping 192.168.x.a
     
 
-# Building from Source
+# 从源码编译它
 
     go get -u -v github.com/lightstar-dev/openlan-go  
 
-## on Linux
+## 在Linux系统中
 
     [root@localhost openlan-go]# make
 
-## on Windows
+## 在Windwos中
     
     L:\openlan-go> go build -o ./resource/point.windows.x86_64.exe main/point_windows.go
