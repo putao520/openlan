@@ -1,5 +1,5 @@
-* [English](./README_EN.md)
 * [中文版](./README.md)
+* [English](./README_EN.md)
 
 # Overview 
 [![Build Status](https://travis-ci.org/lightstar-dev/openlan-go.svg?branch=master)](https://travis-ci.org/lightstar-dev/openlan-go)
@@ -56,7 +56,7 @@
    
  把它保存在文件`.point.json`中，并与程序`point.windows.x86_64.exe`在同一个目录下。 点击执行`point.windwos.x86_64.exe`。
 
-## 在Linux体统中
+## 在Linux系统中
 ### 安装OpenLan并运行vSwitch
 
     [root@localhost openlan-go]# ./install.sh
@@ -102,6 +102,6 @@
 
     [root@localhost openlan-go]# make
 
-## 在Windwos中
+## 在Windwos系统中
     
     L:\openlan-go> go build -o ./resource/point.windows.x86_64.exe main/point_windows.go
