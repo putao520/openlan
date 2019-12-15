@@ -6,7 +6,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/lightstar-dev/openlan-go)](https://goreportcard.com/report/lightstar-dev/openlan-go)
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-最近的项目实现在[lightstar-dev openlan-go](https://github.com/lightstar-dev/openlan-go)。
+最近的项目实现在 [lightstar-dev/openlan-go](https://github.com/lightstar-dev/openlan-go)。
 
 
                    192.168.1.a/24         192.168.1.b/24              192.168.1.c/24
