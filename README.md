@@ -1,7 +1,8 @@
+# 语言
 * [中文版](./README.md)
 * [English](./README_EN.md)
 
-# Overview 
+# 概述 
 [![Build Status](https://travis-ci.org/lightstar-dev/openlan-go.svg?branch=master)](https://travis-ci.org/lightstar-dev/openlan-go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/lightstar-dev/openlan-go)](https://goreportcard.com/report/lightstar-dev/openlan-go)
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
