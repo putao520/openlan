@@ -57,6 +57,14 @@ OpenLan旨在解决局域网数据报文在广域网的传输问题，并建立�
    
  把它保存在文件`.point.json`中，并与程序`point.windows.x86_64.exe`在同一个目录下。 点击执行`point.windwos.x86_64.exe`。
 
+ *说明*
+ 
+      vs.addr    虚拟交换的地址或者域名
+      vs.auth    接入虚拟交换的认证信息，如：password:user@domain
+      if.addr    配置本地虚拟网卡地址
+      vs.tls     是否启用TLS加密信道
+
+
 ## 在Linux系统中
 ### 安装OpenLan并运行vSwitch
 
@@ -80,6 +88,16 @@ OpenLan旨在解决局域网数据报文在广域网的传输问题，并建立�
     }
     [root@localhost openlan-go]# systemctl enable vswitch
     [root@localhost openlan-go]# systemctl start vswitch
+
+ *说明*
+ 
+      vs.addr    虚拟交换的监听的地址
+      http.addr  虚拟交换的HTTP监听地址
+      if.addr    配置本地网桥的地址
+      links      配置虚拟交换与其他虚拟交换之间链路
+      tls.crt    用于信道加密的证书
+      tls.key    用于信道加密的证书私约
+      log.file   配置日志输出文件
 
 ### 运行Point
 
