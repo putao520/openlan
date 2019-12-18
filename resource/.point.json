@@ -1,7 +1,0 @@
-{
-  "vs.addr": "openlan.3cm.us",
-  "vs.auth": "yunex:yunex@123",
-  "if.addr": "192.168.4.31/24",
-  "vs.tls": true,
-  "script.after": "point.after.bat"
-}
