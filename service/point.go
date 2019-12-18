@@ -19,7 +19,7 @@ func (p *pointService) AddPoint(m *models.Point) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	StorageService.SavePoint("", m, true)
+	StorageService.SavePoint(m.Server, m, true)
 	p.clients[m.Client.Addr] = m
 }
 
@@ -39,7 +39,7 @@ func (p *pointService) DelPoint(c *libol.TcpClient) {
 
 	if m, ok := p.clients[c.Addr]; ok {
 		m.Device.Close()
-		StorageService.SavePoint("", m, false)
+		StorageService.SavePoint(m.Server, m, false)
 		delete(p.clients, c.Addr)
 	}
 }

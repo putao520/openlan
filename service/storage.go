@@ -31,7 +31,12 @@ func (s *storageService) Redis() *libol.RedisCli {
 }
 
 func (s *storageService) RedisId(prefix string, table string, key string) string {
-	wid := strings.Replace(prefix, ":", "-", -1)
+	if prefix == "" {
+		prefix = "default"
+	}
+
+	index := strings.Split(prefix, ":")
+	wid := index[len(index)-1]
 	kid := strings.Replace(key, ":", "-", -1)
 	return fmt.Sprintf("%s:%s:%s", wid, table, kid)
 }

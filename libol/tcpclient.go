@@ -75,6 +75,10 @@ func NewTcpClientFromConn(conn net.Conn) (t *TcpClient) {
 	return
 }
 
+func (t *TcpClient) LocalAddr() string {
+	return t.conn.LocalAddr().String()
+}
+
 func (t *TcpClient) Connect() (err error) {
 	if t.conn != nil || t.GetStatus() == CLTERMINAL || t.GetStatus() == CLUNAUTH {
 		return nil
