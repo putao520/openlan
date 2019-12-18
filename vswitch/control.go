@@ -3,21 +3,20 @@ package vswitch
 import (
 	"bufio"
 	"fmt"
-	"github.com/songgao/water"
+	"github.com/lightstar-dev/openlan-go/config"
+	"github.com/lightstar-dev/openlan-go/models"
+	"github.com/lightstar-dev/openlan-go/vswitch/api"
+	"github.com/lightstar-dev/openlan-go/vswitch/app"
 	"os"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/lightstar-dev/openlan-go/config"
 	"github.com/lightstar-dev/openlan-go/libol"
-	"github.com/lightstar-dev/openlan-go/models"
 	"github.com/lightstar-dev/openlan-go/point"
-	"github.com/lightstar-dev/openlan-go/vswitch/api"
-	"github.com/lightstar-dev/openlan-go/vswitch/app"
 )
 
-type WorkerBase struct {
+type Control struct {
 	Alias       string
 	Server      *libol.TcpServer
 	Redis       *libol.RedisCli
@@ -38,8 +37,8 @@ type WorkerBase struct {
 	brName    string
 }
 
-func NewWorkerBase(server *libol.TcpServer, c *config.VSwitch) *WorkerBase {
-	w := WorkerBase{
+func NewControl(server *libol.TcpServer, c *config.VSwitch) *Control {
+	w := Control{
 		Alias:     c.Alias,
 		Server:    server,
 		Neighbor:  nil,
@@ -60,15 +59,15 @@ func NewWorkerBase(server *libol.TcpServer, c *config.VSwitch) *WorkerBase {
 	return &w
 }
 
-func (w *WorkerBase) GetId() string {
+func (w *Control) GetId() string {
 	return w.Server.Addr
 }
 
-func (w *WorkerBase) String() string {
+func (w *Control) String() string {
 	return w.GetId()
 }
 
-func (w *WorkerBase) Init(a api.Worker) {
+func (w *Control) Init(a api.Worker) {
 	w.Auth = app.NewPointAuth(a, w.Conf)
 	w.Request = app.NewWithRequest(a, w.Conf)
 	w.Neighbor = app.NewNeighbors(a, w.Conf)
@@ -83,7 +82,7 @@ func (w *WorkerBase) Init(a api.Worker) {
 	w.LoadUsers()
 }
 
-func (w *WorkerBase) LoadUsers() error {
+func (w *Control) LoadUsers() error {
 	file, err := os.Open(w.Conf.Password)
 	if err != nil {
 		return err
@@ -107,17 +106,17 @@ func (w *WorkerBase) LoadUsers() error {
 	return nil
 }
 
-func (w *WorkerBase) LoadLinks() {
+func (w *Control) LoadLinks() {
 	if w.Conf.Links != nil {
 		for _, lc := range w.Conf.Links {
 			lc.Default()
-			libol.Info("WorkerBase.LoadLinks %s", lc)
+			libol.Info("Control.LoadLinks %s", lc)
 			w.AddLink(lc)
 		}
 	}
 }
 
-func (w *WorkerBase) BrName() string {
+func (w *Control) BrName() string {
 	if w.brName == "" {
 		adds := strings.Split(w.Server.Addr, ":")
 		if len(adds) != 2 {
@@ -130,21 +129,21 @@ func (w *WorkerBase) BrName() string {
 	return w.brName
 }
 
-func (w *WorkerBase) showHook() {
+func (w *Control) showHook() {
 	for i, h := range w.hooks {
-		libol.Info("WorkerBase.showHook k:%d func: %p, %s", i, h, libol.FunName(h))
+		libol.Info("Control.showHook k:%d func: %p, %s", i, h, libol.FunName(h))
 	}
 }
 
-func (w *WorkerBase) setHook(hook func(*libol.TcpClient, *libol.Frame) error) {
+func (w *Control) setHook(hook func(*libol.TcpClient, *libol.Frame) error) {
 	w.hooks = append(w.hooks, hook)
 }
 
-func (w *WorkerBase) onHook(client *libol.TcpClient, data []byte) error {
+func (w *Control) onHook(client *libol.TcpClient, data []byte) error {
 	frame := libol.NewFrame(data)
 
 	for _, h := range w.hooks {
-		libol.Debug("WorkerBase.onHook h:%p", h)
+		libol.Debug("Control.onHook h:%p", h)
 		if h != nil {
 			if err := h(client, frame); err != nil {
 				return err
@@ -155,19 +154,19 @@ func (w *WorkerBase) onHook(client *libol.TcpClient, data []byte) error {
 	return nil
 }
 
-func (w *WorkerBase) OnClient(client *libol.TcpClient) error {
+func (w *Control) OnClient(client *libol.TcpClient) error {
 	client.SetStatus(libol.CLCONNECTED)
 
-	libol.Info("WorkerBase.onClient: %s", client.Addr)
+	libol.Info("Control.onClient: %s", client.Addr)
 
 	return nil
 }
 
-func (w *WorkerBase) OnRecv(client *libol.TcpClient, data []byte) error {
-	libol.Debug("WorkerBase.onRecv: %s % x", client.Addr, data)
+func (w *Control) OnRecv(client *libol.TcpClient, data []byte) error {
+	libol.Debug("Control.onRecv: %s % x", client.Addr, data)
 
 	if err := w.onHook(client, data); err != nil {
-		libol.Debug("WorkerBase.onRecv: %s dropping by %s", client.Addr, err)
+		libol.Debug("Control.onRecv: %s dropping by %s", client.Addr, err)
 		if client.GetStatus() != libol.CLAUEHED {
 			w.Server.DrpCount++
 		}
@@ -185,26 +184,26 @@ func (w *WorkerBase) OnRecv(client *libol.TcpClient, data []byte) error {
 	}
 
 	if _, err := dev.Write(data); err != nil {
-		libol.Error("WorkerBase.onRecv: %s", err)
+		libol.Error("Control.onRecv: %s", err)
 		return err
 	}
 
 	return nil
 }
 
-func (w *WorkerBase) OnClose(client *libol.TcpClient) error {
-	libol.Info("WorkerBase.onClose: %s", client.Addr)
+func (w *Control) OnClose(client *libol.TcpClient) error {
+	libol.Info("Control.onClose: %s", client.Addr)
 
 	w.Auth.DelPoint(client)
 
 	return nil
 }
 
-func (w *WorkerBase) Start() {
+func (w *Control) Start() {
 	w.startTime = time.Now().Unix()
 	if w.Redis != nil {
 		if err := w.Redis.Open(); err != nil {
-			libol.Error("WorkerBase.Start: redis.Open %s", err)
+			libol.Error("Control.Start: redis.Open %s", err)
 		}
 	}
 
@@ -214,8 +213,8 @@ func (w *WorkerBase) Start() {
 	go w.Server.GoLoop(w)
 }
 
-func (w *WorkerBase) Stop() {
-	libol.Info("WorkerBase.Close")
+func (w *Control) Stop() {
+	libol.Info("Control.Close")
 
 	w.Server.Close()
 	for _, p := range w.links {
@@ -225,7 +224,7 @@ func (w *WorkerBase) Stop() {
 	w.startTime = 0
 }
 
-func (w *WorkerBase) AddUser(user *models.User) {
+func (w *Control) AddUser(user *models.User) {
 	w.usersLock.Lock()
 	defer w.usersLock.Unlock()
 
@@ -236,7 +235,7 @@ func (w *WorkerBase) AddUser(user *models.User) {
 	w.users[name] = user
 }
 
-func (w *WorkerBase) DelUser(name string) {
+func (w *Control) DelUser(name string) {
 	w.usersLock.Lock()
 	defer w.usersLock.Unlock()
 
@@ -245,7 +244,7 @@ func (w *WorkerBase) DelUser(name string) {
 	}
 }
 
-func (w *WorkerBase) GetUser(name string) *models.User {
+func (w *Control) GetUser(name string) *models.User {
 	w.usersLock.RLock()
 	defer w.usersLock.RUnlock()
 
@@ -256,7 +255,7 @@ func (w *WorkerBase) GetUser(name string) *models.User {
 	return nil
 }
 
-func (w *WorkerBase) ListUser() <-chan *models.User {
+func (w *Control) ListUser() <-chan *models.User {
 	c := make(chan *models.User, 128)
 
 	go func() {
@@ -272,14 +271,14 @@ func (w *WorkerBase) ListUser() <-chan *models.User {
 	return c
 }
 
-func (w *WorkerBase) UpTime() int64 {
+func (w *Control) UpTime() int64 {
 	if w.startTime != 0 {
 		return time.Now().Unix() - w.startTime
 	}
 	return 0
 }
 
-func (w *WorkerBase) AddLink(c *config.Point) {
+func (w *Control) AddLink(c *config.Point) {
 	c.Alias = w.Alias
 	c.BrName = w.BrName() //Reset bridge name.
 
@@ -296,7 +295,7 @@ func (w *WorkerBase) AddLink(c *config.Point) {
 	}()
 }
 
-func (w *WorkerBase) DelLink(addr string) {
+func (w *Control) DelLink(addr string) {
 	w.linksLock.Lock()
 	defer w.linksLock.Unlock()
 	if p, ok := w.links[addr]; ok {
@@ -305,7 +304,7 @@ func (w *WorkerBase) DelLink(addr string) {
 	}
 }
 
-func (w *WorkerBase) GetLink(addr string) *point.Point {
+func (w *Control) GetLink(addr string) *point.Point {
 	w.linksLock.RLock()
 	defer w.linksLock.RUnlock()
 
@@ -316,7 +315,7 @@ func (w *WorkerBase) GetLink(addr string) *point.Point {
 	return nil
 }
 
-func (w *WorkerBase) ListLink() <-chan *point.Point {
+func (w *Control) ListLink() <-chan *point.Point {
 	c := make(chan *point.Point, 128)
 
 	go func() {
@@ -332,23 +331,23 @@ func (w *WorkerBase) ListLink() <-chan *point.Point {
 	return c
 }
 
-func (w *WorkerBase) GetRedis() *libol.RedisCli {
+func (w *Control) GetRedis() *libol.RedisCli {
 	return w.Redis
 }
-func (w *WorkerBase) GetServer() *libol.TcpServer {
+func (w *Control) GetServer() *libol.TcpServer {
 	return w.Server
 }
 
-func (w *WorkerBase) NewTap() (*models.TapDevice, error) {
+func (w *Control) NewTap() (*models.TapDevice, error) {
 	//TODO
 	return nil, nil
 }
 
-func (w *WorkerBase) Send(dev *models.TapDevice, frame []byte) {
+func (w *Control) Send(dev *models.TapDevice, frame []byte) {
 	w.Server.TxCount++
 }
 
-func (w *WorkerBase) PubLink(link *point.Point, isAdd bool) {
+func (w *Control) PubLink(link *point.Point, isAdd bool) {
 	lid := strings.Replace(link.Addr(), ":", "/", -1)
 	wid := strings.Replace(w.GetId(), ":", "/", -1)
 
@@ -363,58 +362,7 @@ func (w *WorkerBase) PubLink(link *point.Point, isAdd bool) {
 
 	if r := w.GetRedis(); r != nil {
 		if err := r.HMSet(key, value); err != nil {
-			libol.Error("WorkerBase.PubLink HMSet %s", err)
+			libol.Error("Control.PubLink HMSet %s", err)
 		}
 	}
-}
-
-type Worker struct {
-	*WorkerBase
-	Br *Bridger
-}
-
-func NewWorker(server *libol.TcpServer, c *config.VSwitch) *Worker {
-	w := &Worker{
-		WorkerBase: NewWorkerBase(server, c),
-		Br:         NewBridger(c.BrName, c.IfMtu),
-	}
-	if w.Br.Name == "" {
-		w.Br.Name = w.BrName()
-	}
-
-	w.Init(w)
-	return w
-}
-
-func (w *Worker) NewBr() {
-	w.Br.Open(w.Conf.IfAddr)
-}
-
-func (w *Worker) FreeBr() {
-	w.Br.Close()
-}
-
-func (w *Worker) NewTap() (*models.TapDevice, error) {
-	libol.Debug("Worker.newTap")
-	dev, err := water.New(water.Config{DeviceType: water.TAP})
-	if err != nil {
-		libol.Error("Worker.newTap: %s", err)
-		return nil, err
-	}
-
-	w.Br.AddSlave(dev.Name())
-
-	libol.Info("Worker.newTap %s", dev.Name())
-
-	return models.NewTapDevice(dev), nil
-}
-
-func (w *Worker) Start() {
-	w.NewBr()
-	w.WorkerBase.Start()
-}
-
-func (w *Worker) Stop() {
-	w.WorkerBase.Stop()
-	w.FreeBr()
 }

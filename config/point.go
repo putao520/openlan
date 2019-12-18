@@ -38,12 +38,12 @@ var PointDefault = Point{
 	IfAddr:   "",
 	IfTun:    false,
 	BrName:   "",
-	SaveFile: ".point.json",
+	SaveFile: "point.json",
 	name:     "",
 	password: "",
 	IfEthDst: "2e:4b:f0:b7:6d:ba",
 	IfEthSrc: "",
-	LogFile:  ".point.error",
+	LogFile:  "point.error",
 	Script: fmt.Sprintf("point.%s.cmd", runtime.GOOS),
 }
 
