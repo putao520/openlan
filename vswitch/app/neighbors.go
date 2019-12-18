@@ -1,12 +1,11 @@
 package app
 
 import (
-	"fmt"
 	"github.com/lightstar-dev/openlan-go/config"
 	"github.com/lightstar-dev/openlan-go/models"
+	"github.com/lightstar-dev/openlan-go/service"
 	"github.com/lightstar-dev/openlan-go/vswitch/api"
 	"net"
-	"strings"
 	"sync"
 	"time"
 
@@ -101,11 +100,10 @@ func (e *Neighbors) AddNeighbor(neb *models.Neighbor) {
 		n.HitTime = time.Now().Unix()
 	} else {
 		libol.Info("Neighbors.AddNeighbor: new %s.", neb)
-		n = neb
-		e.neighbors[neb.HwAddr.String()] = n
+		e.neighbors[neb.HwAddr.String()] = neb
 	}
 
-	e.PubNeighbor(neb, true)
+	service.StorageService.SaveNeighbor(e.worker.GetId(), neb, true)
 }
 
 func (e *Neighbors) DelNeighbor(hwAddr net.HardwareAddr) {
@@ -114,7 +112,7 @@ func (e *Neighbors) DelNeighbor(hwAddr net.HardwareAddr) {
 
 	libol.Info("Neighbors.DelNeighbor %s.", hwAddr)
 	if n := e.neighbors[hwAddr.String()]; n != nil {
-		e.PubNeighbor(n, false)
+		service.StorageService.SaveNeighbor(e.worker.GetId(), n, false)
 		delete(e.neighbors, hwAddr.String())
 	}
 }
@@ -122,28 +120,4 @@ func (e *Neighbors) DelNeighbor(hwAddr net.HardwareAddr) {
 func (e *Neighbors) OnClientClose(client *libol.TcpClient) {
 	//TODO
 	libol.Info("Neighbors.OnClientClose %s.", client)
-}
-
-func (e *Neighbors) RedisId() string {
-	wid := strings.Replace(e.worker.GetId(), ":", "/", -1)
-	return fmt.Sprintf("%s:neighbor", wid)
-}
-
-func (e *Neighbors) PubNeighbor(neb *models.Neighbor, isAdd bool) {
-	nid := strings.Replace(neb.HwAddr.String(), ":", "/", -1)
-	key := fmt.Sprintf("%s:%s", e.RedisId(), nid)
-	value := map[string]interface{}{
-		"hwAddr":  neb.HwAddr.String(),
-		"ipAddr":  neb.IpAddr.String(),
-		"remote":  neb.Client.String(),
-		"newTime": neb.NewTime,
-		"hitTime": neb.HitTime,
-		"active":  isAdd,
-	}
-
-	if r := e.worker.GetRedis(); r != nil {
-		if err := r.HMSet(key, value); err != nil {
-			libol.Error("Neighbors.PubNeighbor HMSet %s", err)
-		}
-	}
 }

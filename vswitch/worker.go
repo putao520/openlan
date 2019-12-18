@@ -1,10 +1,9 @@
 package vswitch
 
 import (
-	"bufio"
 	"fmt"
+	"github.com/lightstar-dev/openlan-go/service"
 	"github.com/songgao/water"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -20,17 +19,13 @@ import (
 type WorkerBase struct {
 	Alias       string
 	Server      *libol.TcpServer
-	Redis       *libol.RedisCli
 	Auth        *app.PointAuth
 	Request     *app.WithRequest
 	Neighbor    *app.Neighbors
 	OnLines     *app.Online
-	EnableRedis bool
 	Conf        *config.VSwitch
 
 	hooks     []func(*libol.TcpClient, *libol.Frame) error
-	usersLock sync.RWMutex
-	users     map[string]*models.User
 	newTime   int64
 	startTime int64
 	linksLock sync.RWMutex
@@ -43,19 +38,16 @@ func NewWorkerBase(server *libol.TcpServer, c *config.VSwitch) *WorkerBase {
 		Alias:     c.Alias,
 		Server:    server,
 		Neighbor:  nil,
-		Redis:     nil,
 		Conf:      c,
 		hooks:     make([]func(*libol.TcpClient, *libol.Frame) error, 0, 64),
-		users:     make(map[string]*models.User, 1024),
 		newTime:   time.Now().Unix(),
 		startTime: 0,
 		brName:    c.BrName,
 		links:     make(map[string]*point.Point),
 	}
 
-	if c.Redis.Enable {
-		w.Redis = libol.NewRedisCli(c.Redis.Addr, c.Redis.Auth, c.Redis.Db)
-	}
+	service.UserService.LoadUsers(w.Conf.Password)
+	service.StorageService.Open(c.Redis.Addr, c.Redis.Auth, c.Redis.Db)
 
 	return &w
 }
@@ -79,32 +71,6 @@ func (w *WorkerBase) Init(a api.Worker) {
 	w.setHook(w.Request.OnFrame)
 	w.setHook(w.OnLines.OnFrame)
 	w.showHook()
-
-	w.LoadUsers()
-}
-
-func (w *WorkerBase) LoadUsers() error {
-	file, err := os.Open(w.Conf.Password)
-	if err != nil {
-		return err
-	}
-
-	defer file.Close()
-	reader := bufio.NewReader(file)
-	for {
-		line, err := reader.ReadString('\n')
-		if err != nil {
-			break
-		}
-
-		values := strings.Split(line, ":")
-		if len(values) == 2 {
-			user := models.NewUser(values[0], strings.TrimSpace(values[1]))
-			w.AddUser(user)
-		}
-	}
-
-	return nil
 }
 
 func (w *WorkerBase) LoadLinks() {
@@ -174,7 +140,7 @@ func (w *WorkerBase) OnRecv(client *libol.TcpClient, data []byte) error {
 		return err
 	}
 
-	point := w.Auth.GetPoint(client)
+	point := service.PointService.GetPoint(client)
 	if point == nil {
 		return libol.Errer("Point not found.")
 	}
@@ -195,18 +161,13 @@ func (w *WorkerBase) OnRecv(client *libol.TcpClient, data []byte) error {
 func (w *WorkerBase) OnClose(client *libol.TcpClient) error {
 	libol.Info("WorkerBase.onClose: %s", client.Addr)
 
-	w.Auth.DelPoint(client)
+	service.PointService.DelPoint(client)
 
 	return nil
 }
 
 func (w *WorkerBase) Start() {
 	w.startTime = time.Now().Unix()
-	if w.Redis != nil {
-		if err := w.Redis.Open(); err != nil {
-			libol.Error("WorkerBase.Start: redis.Open %s", err)
-		}
-	}
 
 	w.LoadLinks()
 
@@ -223,53 +184,6 @@ func (w *WorkerBase) Stop() {
 	}
 
 	w.startTime = 0
-}
-
-func (w *WorkerBase) AddUser(user *models.User) {
-	w.usersLock.Lock()
-	defer w.usersLock.Unlock()
-
-	name := user.Name
-	if name == "" {
-		name = user.Token
-	}
-	w.users[name] = user
-}
-
-func (w *WorkerBase) DelUser(name string) {
-	w.usersLock.Lock()
-	defer w.usersLock.Unlock()
-
-	if _, ok := w.users[name]; ok {
-		delete(w.users, name)
-	}
-}
-
-func (w *WorkerBase) GetUser(name string) *models.User {
-	w.usersLock.RLock()
-	defer w.usersLock.RUnlock()
-
-	if u, ok := w.users[name]; ok {
-		return u
-	}
-
-	return nil
-}
-
-func (w *WorkerBase) ListUser() <-chan *models.User {
-	c := make(chan *models.User, 128)
-
-	go func() {
-		w.usersLock.RLock()
-		defer w.usersLock.RUnlock()
-
-		for _, u := range w.users {
-			c <- u
-		}
-		c <- nil //Finish channel by nil.
-	}()
-
-	return c
 }
 
 func (w *WorkerBase) UpTime() int64 {
@@ -290,8 +204,7 @@ func (w *WorkerBase) AddLink(c *config.Point) {
 		w.links[c.Addr] = p
 		w.linksLock.Unlock()
 
-		w.PubLink(p, true)
-
+		service.StorageService.SaveLink(w.GetId(), p, true)
 		p.Start()
 	}()
 }
@@ -301,6 +214,7 @@ func (w *WorkerBase) DelLink(addr string) {
 	defer w.linksLock.Unlock()
 	if p, ok := w.links[addr]; ok {
 		p.Stop()
+		service.StorageService.SaveLink(w.GetId(), p, false)
 		delete(w.links, addr)
 	}
 }
@@ -332,9 +246,6 @@ func (w *WorkerBase) ListLink() <-chan *point.Point {
 	return c
 }
 
-func (w *WorkerBase) GetRedis() *libol.RedisCli {
-	return w.Redis
-}
 func (w *WorkerBase) GetServer() *libol.TcpServer {
 	return w.Server
 }
@@ -346,26 +257,6 @@ func (w *WorkerBase) NewTap() (*models.TapDevice, error) {
 
 func (w *WorkerBase) Send(dev *models.TapDevice, frame []byte) {
 	w.Server.TxCount++
-}
-
-func (w *WorkerBase) PubLink(link *point.Point, isAdd bool) {
-	lid := strings.Replace(link.Addr(), ":", "/", -1)
-	wid := strings.Replace(w.GetId(), ":", "/", -1)
-
-	key := fmt.Sprintf("%s:link:%s", wid, lid)
-	value := map[string]interface{}{
-		"remote": link.Addr(),
-		"upTime": link.UpTime(),
-		"device": link.IfName(),
-		"state":  link.State(),
-		"isAddr": isAdd,
-	}
-
-	if r := w.GetRedis(); r != nil {
-		if err := r.HMSet(key, value); err != nil {
-			libol.Error("WorkerBase.PubLink HMSet %s", err)
-		}
-	}
 }
 
 type Worker struct {

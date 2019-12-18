@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/lightstar-dev/openlan-go/config"
 	"github.com/lightstar-dev/openlan-go/models"
-	"html"
+	"github.com/lightstar-dev/openlan-go/service"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -49,7 +49,6 @@ func NewHttp(worker *Worker, c *config.VSwitch) (h *Http) {
 
 	h.SaveToken()
 	http.HandleFunc("/", h.Index)
-	http.HandleFunc("/hello", h.Hello)
 	http.HandleFunc("/api/user", h.User)
 	http.HandleFunc("/api/neighbor", h.Neighbor)
 	http.HandleFunc("/api/link", h.Link)
@@ -131,16 +130,6 @@ func (h *Http) IsAuth(w http.ResponseWriter, r *http.Request) bool {
 	return true
 }
 
-func (h *Http) Hello(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello %s %q", r.Method, html.EscapeString(r.URL.Path))
-
-	for name, headers := range r.Header {
-		for _, h := range headers {
-			libol.Info("Http.Hello %v: %v", name, h)
-		}
-	}
-}
-
 func (h *Http) getPublicFile(name string) string {
 	return fmt.Sprintf("%s%s", h.pubDir, name)
 }
@@ -162,7 +151,7 @@ func (h *Http) indexBody() string {
 	body += "\n"
 	body += "# point accessed to this vswith.\n"
 	body += "uptime, alias, remote, device, receipt, transmis, error, state\n"
-	for p := range h.worker.Auth.ListPoint() {
+	for p := range service.PointService.ListPoint() {
 		if p == nil {
 			break
 		}
@@ -251,7 +240,7 @@ func (h *Http) User(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		users := make([]*models.User, 0, 1024)
-		for u := range h.worker.ListUser() {
+		for u := range service.UserService.ListUser() {
 			if u == nil {
 				break
 			}
@@ -274,7 +263,7 @@ func (h *Http) User(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		h.worker.AddUser(user)
+		service.UserService.AddUser(user)
 
 		fmt.Fprintf(w, ApiReplier(0, "success"))
 	default:

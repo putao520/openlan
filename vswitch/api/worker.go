@@ -7,9 +7,7 @@ import (
 
 type Worker interface {
 	GetId() string
-	GetRedis() *libol.RedisCli
 	GetServer() *libol.TcpServer
-	GetUser(name string) *models.User
 	NewTap() (*models.TapDevice, error)
 	Send(*models.TapDevice, []byte)
 }
