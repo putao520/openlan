@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-EnvironmentFile=/etc/vswitch.cfg
+EnvironmentFile=/etc/sysconfig/vswitch.cfg
 ExecStart=/bin/bash -c '/usr/bin/vswitch $OPTIONS &'
 ExecStop=/usr/bin/kill `/usr/sbin/pidof vswitch`
 

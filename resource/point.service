@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-EnvironmentFile=/etc/point.cfg
+EnvironmentFile=/etc/sysconfig/point.cfg
 ExecStart=/bin/bash -c '/usr/bin/point $OPTIONS &'
 ExecStop=/usr/bin/kill `/usr/sbin/pidof point`
 

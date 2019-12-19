@@ -11,12 +11,14 @@ import (
 type _network struct {
 	lock sync.RWMutex
 	networks  map[string]*models.Network
-	usedaddr  map[string]bool
+	usedAddr  map[string]string
+	clientUsed  map[string]string
 }
 
 var Network = _network {
 	networks: make(map[string]*models.Network, 1024),
-	usedaddr: make(map[string]bool, 1024),
+	usedAddr: make(map[string]string, 1024),
+	clientUsed: make(map[string]string, 1024),
 }
 
 func (w *_network) Load(path string) error {
@@ -81,7 +83,7 @@ func (w *_network) ListNet() <-chan *models.Network {
 	return c
 }
 
-func (w *_network) GetFreeAddr(n *models.Network) (string, string) {
+func (w *_network) GetFreeAddr(client *libol.TcpClient, n *models.Network) (string, string) {
 	w.lock.Lock()
 	defer w.lock.Unlock()
 
@@ -93,9 +95,9 @@ func (w *_network) GetFreeAddr(n *models.Network) (string, string) {
 	for i := 0; i < n.IpRange; i++ {
 		tmp := make([]byte, 4)
 		binary.BigEndian.PutUint32(tmp[:4], start)
-		
+
 		tmpStr := net.IP(tmp).String()
-		if ok, _ := w.usedaddr[tmpStr]; !ok {
+		if _, ok := w.usedAddr[tmpStr]; !ok {
 			ipStr = tmpStr
 			break
 		}
@@ -104,9 +106,19 @@ func (w *_network) GetFreeAddr(n *models.Network) (string, string) {
 	}
 
 	if ipStr != "" {
-		w.usedaddr[ipStr] = true
+		w.usedAddr[ipStr] = client.Addr
+		w.clientUsed[client.Addr] = ipStr
 	}
 
 	return ipStr, netmask
 }
 
+func (w *_network) FreeAddr(client *libol.TcpClient)  {
+	w.lock.Lock()
+	defer w.lock.Unlock()
+
+	if ipStr, ok := w.clientUsed[client.Addr]; ok {
+		delete(w.clientUsed, client.Addr)
+		delete(w.usedAddr, ipStr)
+	}
+}

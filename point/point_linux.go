@@ -226,10 +226,10 @@ func (p *Point) OnIpAddr(worker *TcpWorker, n *models.Network) error {
 
 	if n.Routes != nil {
 		for _, route := range n.Routes {
-			_, err := exec.Command("/usr/sbin/ip", "route",
+			out, err := exec.Command("/usr/sbin/ip", "route",
 				"add", route.Prefix, "dev", p.IfName(), "via", route.Nexthop).Output()
 			if err != nil {
-				libol.Error("Point.OnIpAddr.route: %s", err)
+				libol.Error("Point.OnIpAddr.route: %s, %s", err, out)
 			}
 			libol.Info("Point.OnIpAddr.route: %s via %s", route.Prefix, route.Nexthop)
 		}

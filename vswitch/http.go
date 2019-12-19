@@ -187,12 +187,12 @@ func (h *Http) indexBody() string {
 
 	body += "\n"
 	body += "# online that traces the destination from point.\n"
-	body += "ethernet, source->dest address, protocol, source->dest port\n"
+	body += "ethernet, source, dest address, protocol, source, dest port\n"
 	for l := range h.worker.OnLines.ListLine() {
 		if l == nil {
 			break
 		}
-		body += fmt.Sprintf("%-15s->%s, %s, %d->%d\n",
+		body += fmt.Sprintf("%s, %s, %s, %d, %d\n",
 			l.IpSource, l.IPDest, libol.IpProto2Str(l.IpProtocol), l.PortSource, l.PortDest)
 	}
 	return body

@@ -163,6 +163,7 @@ func (w *WorkerBase) OnClose(client *libol.TcpClient) error {
 	libol.Info("WorkerBase.onClose: %s", client.Addr)
 
 	service.Point.DelPoint(client)
+	service.Network.FreeAddr(client)
 
 	return nil
 }

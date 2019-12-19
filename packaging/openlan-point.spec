@@ -23,9 +23,10 @@ go build -o ./resource/point.linux.x86_64 main/point_linux.go
 mkdir -p %{buildroot}/usr/bin
 cp %_source_dir/resource/point.linux.x86_64 %{buildroot}/usr/bin/point
 
-mkdir -p %{buildroot}/etc
-cp %_source_dir/resource/point.cfg %{buildroot}/etc
-cp %_source_dir/resource/point.json %{buildroot}/etc
+mkdir -p %{buildroot}/etc/sysconfig
+cp %_source_dir/resource/point.cfg %{buildroot}/etc/sysconfig
+mkdir -p %{buildroot}/etc/point
+cp %_source_dir/resource/point.json %{buildroot}/etc/point
 
 mkdir -p %{buildroot}/usr/lib/systemd/system
 cp %_source_dir/resource/point.service %{buildroot}/usr/lib/systemd/system

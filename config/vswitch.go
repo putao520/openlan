@@ -75,10 +75,13 @@ func NewVSwitch() (c *VSwitch) {
 	flag.StringVar(&c.Script, "script", VSwitchDefault.Script, "call script you assigned")
 
 	flag.Parse()
-	c.Default()
+	c.SaveFile = fmt.Sprintf("%s/vswitch.json", c.ConfDir)
 	if err := c.Load(); err != nil {
 		libol.Error("NewVSwitch.load %s", err)
 	}
+	c.Default()
+
+	libol.Debug(" %s", c)
 
 	libol.Init(c.LogFile, c.Verbose)
 	c.Save(fmt.Sprintf("%s.cur", c.SaveFile))

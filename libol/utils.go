@@ -115,6 +115,6 @@ func IsErrorResponse(s string) bool {
 	if len(s) > 0 {
 		return s[0] != '[' && s[0] != '{'
 	}
-	
+
 	return true
 }

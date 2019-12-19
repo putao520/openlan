@@ -2,10 +2,7 @@
   "vs.addr": "0.0.0.0:10002",
   "http.dir": "/var/openlan/public",
   "http.addr": ":10000",
-  "admin.file": "/etc/vswitch.token",
-  "auth.file": "/etc/vswitch.password",
   "log.file": "/var/log/vswitch.log",
-  "tls.crt": "/var/openlan/ca/crt.pem",
-  "tls.key": "/var/openlan/ca/private.key",
+  "crt.dir": "/var/openlan/ca",
   "links": []
 }

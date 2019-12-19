@@ -27,13 +27,12 @@ install:
 	./install.sh
 
 rpm:
-	export version=$(cat VERSION)
-	# Update Version
-	sed -i  -e 's/Version:.*/Version:\ ${version}/' ./packaging/openlan-point.spec
-	sed -i  -e 's/Version:.*/Version:\ ${version}/' ./packaging/openlan-point.spec
+	# prepare 
+	./packaging/auto.sh
 
-	rm -rf ~/rpmbuild/SOURCES/openlan-${version}
-	ln -s ${PWD} ~/rpmbuild/SOURCES/openlan-${version}        
-	# Building
+	# building
 	rpmbuild -ba ./packaging/openlan-point.spec
 	rpmbuild -ba ./packaging/openlan-vswitch.spec
+
+	# copy 
+	cp -rvf ~/rpmbuild/RPMS/x86_64/openlan-* ./resource
