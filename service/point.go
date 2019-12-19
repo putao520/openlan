@@ -6,24 +6,24 @@ import (
 	"sync"
 )
 
-type pointService struct {
+type _point struct {
 	lock    sync.RWMutex
 	clients map[string]*models.Point
 }
 
-var PointService = pointService {
+var Point = _point {
 	clients: make(map[string]*models.Point, 1024),
 }
 
-func (p *pointService) AddPoint(m *models.Point) {
+func (p *_point) AddPoint(m *models.Point) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	StorageService.SavePoint(m.Server, m, true)
+	Storage.SavePoint(m.Server, m, true)
 	p.clients[m.Client.Addr] = m
 }
 
-func (p *pointService) GetPoint(c *libol.TcpClient) *models.Point {
+func (p *_point) GetPoint(c *libol.TcpClient) *models.Point {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
@@ -33,18 +33,18 @@ func (p *pointService) GetPoint(c *libol.TcpClient) *models.Point {
 	return nil
 }
 
-func (p *pointService) DelPoint(c *libol.TcpClient) {
+func (p *_point) DelPoint(c *libol.TcpClient) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
 	if m, ok := p.clients[c.Addr]; ok {
 		m.Device.Close()
-		StorageService.SavePoint(m.Server, m, false)
+		Storage.SavePoint(m.Server, m, false)
 		delete(p.clients, c.Addr)
 	}
 }
 
-func (p *pointService) ListPoint() <-chan *models.Point {
+func (p *_point) ListPoint() <-chan *models.Point {
 	c := make(chan *models.Point, 128)
 
 	go func() {

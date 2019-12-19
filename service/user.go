@@ -8,16 +8,16 @@ import (
 	"sync"
 )
 
-type userService struct {
+type _user struct {
 	lock sync.RWMutex
-	users     map[string]*models.User
+	_users     map[string]*models.User
 }
 
-var UserService = userService {
-	users: make(map[string]*models.User, 1024),
+var User = _user {
+	_users: make(map[string]*models.User, 1024),
 }
 
-func (w *userService) LoadUsers(path string) error {
+func (w *_user) LoadUsers(path string) error {
 	file, err := os.Open(path)
 	if err != nil {
 		return err
@@ -33,53 +33,53 @@ func (w *userService) LoadUsers(path string) error {
 
 		values := strings.Split(line, ":")
 		if len(values) == 2 {
-			user := models.NewUser(values[0], strings.TrimSpace(values[1]))
-			w.AddUser(user)
+			_user := models.NewUser(values[0], strings.TrimSpace(values[1]))
+			w.AddUser(_user)
 		}
 	}
 
 	return nil
 }
 
-func (w *userService) AddUser(user *models.User) {
+func (w *_user) AddUser(_user *models.User) {
 	w.lock.Lock()
 	defer w.lock.Unlock()
 
-	name := user.Name
+	name := _user.Name
 	if name == "" {
-		name = user.Token
+		name = _user.Token
 	}
-	w.users[name] = user
+	w._users[name] = _user
 }
 
-func (w *userService) DelUser(name string) {
+func (w *_user) DelUser(name string) {
 	w.lock.Lock()
 	defer w.lock.Unlock()
 
-	if _, ok := w.users[name]; ok {
-		delete(w.users, name)
+	if _, ok := w._users[name]; ok {
+		delete(w._users, name)
 	}
 }
 
-func (w *userService) GetUser(name string) *models.User {
+func (w *_user) GetUser(name string) *models.User {
 	w.lock.RLock()
 	defer w.lock.RUnlock()
 
-	if u, ok := w.users[name]; ok {
+	if u, ok := w._users[name]; ok {
 		return u
 	}
 
 	return nil
 }
 
-func (w *userService) ListUser() <-chan *models.User {
+func (w *_user) ListUser() <-chan *models.User {
 	c := make(chan *models.User, 128)
 
 	go func() {
 		w.lock.RLock()
 		defer w.lock.RUnlock()
 
-		for _, u := range w.users {
+		for _, u := range w._users {
 			c <- u
 		}
 		c <- nil //Finish channel by nil.

@@ -103,7 +103,7 @@ func (e *Neighbors) AddNeighbor(neb *models.Neighbor) {
 		e.neighbors[neb.HwAddr.String()] = neb
 	}
 
-	service.StorageService.SaveNeighbor(e.worker.GetId(), neb, true)
+	service.Storage.SaveNeighbor(e.worker.GetId(), neb, true)
 }
 
 func (e *Neighbors) DelNeighbor(hwAddr net.HardwareAddr) {
@@ -112,7 +112,7 @@ func (e *Neighbors) DelNeighbor(hwAddr net.HardwareAddr) {
 
 	libol.Info("Neighbors.DelNeighbor %s.", hwAddr)
 	if n := e.neighbors[hwAddr.String()]; n != nil {
-		service.StorageService.SaveNeighbor(e.worker.GetId(), n, false)
+		service.Storage.SaveNeighbor(e.worker.GetId(), n, false)
 		delete(e.neighbors, hwAddr.String())
 	}
 }

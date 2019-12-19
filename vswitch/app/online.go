@@ -113,7 +113,7 @@ func (o *Online) AddLine(line *models.Line) {
 	if _, ok := o.lines[line.String()]; !ok {
 		libol.Info("Online.AddLine %s", line)
 		o.lines[line.String()] = line
-		service.StorageService.SaveLine(o.worker.GetId(), line, true)
+		service.Storage.SaveLine(o.worker.GetId(), line, true)
 	}
 }
 

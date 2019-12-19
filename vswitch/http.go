@@ -151,7 +151,7 @@ func (h *Http) indexBody() string {
 	body += "\n"
 	body += "# point accessed to this vswith.\n"
 	body += "uptime, alias, remote, device, receipt, transmis, error, state\n"
-	for p := range service.PointService.ListPoint() {
+	for p := range service.Point.ListPoint() {
 		if p == nil {
 			break
 		}
@@ -240,7 +240,7 @@ func (h *Http) User(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		users := make([]*models.User, 0, 1024)
-		for u := range service.UserService.ListUser() {
+		for u := range service.User.ListUser() {
 			if u == nil {
 				break
 			}
@@ -263,7 +263,7 @@ func (h *Http) User(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		service.UserService.AddUser(user)
+		service.User.AddUser(user)
 
 		fmt.Fprintf(w, ApiReplier(0, "success"))
 	default:

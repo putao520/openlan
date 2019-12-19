@@ -8,29 +8,29 @@ import (
 	"strings"
 )
 
-type storageService struct {
+type _storage struct {
 	redis       *libol.RedisCli
 }
 
-var StorageService = &storageService{
+var Storage = &_storage{
 }
 
-func (s *storageService) Open(addr string, auth string, db int) *libol.RedisCli {
+func (s *_storage) Open(addr string, auth string, db int) *libol.RedisCli {
 	if s.redis == nil {
 		s.redis = libol.NewRedisCli(addr, auth, db)
 		if err := s.redis.Open(); err != nil {
-			libol.Error("storageService.Open: %s", err)
+			libol.Error("_storage.Open: %s", err)
 		}
 	}
 
 	return s.redis
 }
 
-func (s *storageService) Redis() *libol.RedisCli {
+func (s *_storage) Redis() *libol.RedisCli {
 	return s.redis
 }
 
-func (s *storageService) RedisId(prefix string, table string, key string) string {
+func (s *_storage) RedisId(prefix string, table string, key string) string {
 	if prefix == "" {
 		prefix = "default"
 	}
@@ -41,7 +41,7 @@ func (s *storageService) RedisId(prefix string, table string, key string) string
 	return fmt.Sprintf("%s:%s:%s", wid, table, kid)
 }
 
-func (s *storageService) SavePoint(prefix string, m *models.Point, isAdd bool) {
+func (s *_storage) SavePoint(prefix string, m *models.Point, isAdd bool) {
 	key := s.RedisId(prefix, "point", m.Client.Addr)
 	value := map[string]interface{}{
 		"remote":  m.Client.String(),
@@ -52,12 +52,12 @@ func (s *storageService) SavePoint(prefix string, m *models.Point, isAdd bool) {
 
 	if r := s.Redis(); r != nil {
 		if err := r.HMSet(key, value); err != nil {
-			libol.Error("storageService.SavePoint %s", err)
+			libol.Error("_storage.SavePoint %s", err)
 		}
 	}
 }
 
-func (s *storageService) SaveLink(prefix string, link *point.Point, isAdd bool) {
+func (s *_storage) SaveLink(prefix string, link *point.Point, isAdd bool) {
 	key := s.RedisId(prefix, "link", link.Addr())
 	value := map[string]interface{}{
 		"remote": link.Addr(),
@@ -69,12 +69,12 @@ func (s *storageService) SaveLink(prefix string, link *point.Point, isAdd bool) 
 
 	if r := s.Redis(); r != nil {
 		if err := r.HMSet(key, value); err != nil {
-			libol.Error("storageService.SaveLink %s", err)
+			libol.Error("_storage.SaveLink %s", err)
 		}
 	}
 }
 
-func (s *storageService) SaveNeighbor(prefix string, n *models.Neighbor, isAdd bool) {
+func (s *_storage) SaveNeighbor(prefix string, n *models.Neighbor, isAdd bool) {
 	key := s.RedisId(prefix, "neighbor", n.HwAddr.String())
 	value := map[string]interface{}{
 		"hwAddr":  n.HwAddr.String(),
@@ -87,12 +87,12 @@ func (s *storageService) SaveNeighbor(prefix string, n *models.Neighbor, isAdd b
 
 	if r := s.Redis(); r != nil {
 		if err := r.HMSet(key, value); err != nil {
-			libol.Error("storageService.SaveNeighbor %s", err)
+			libol.Error("_storage.SaveNeighbor %s", err)
 		}
 	}
 }
 
-func (s *storageService) SaveLine(prefix string, l *models.Line, isAdd bool) {
+func (s *_storage) SaveLine(prefix string, l *models.Line, isAdd bool) {
 	key := s.RedisId(prefix, "line", l.String())
 	value := map[string]interface{}{
 		"ethernet":    fmt.Sprintf("0x%04x", l.EthType),
@@ -104,7 +104,7 @@ func (s *storageService) SaveLine(prefix string, l *models.Line, isAdd bool) {
 
 	if r := s.Redis(); r != nil {
 		if err := r.HMSet(key, value); err != nil {
-			libol.Error("storageService.SaveLine %s", err)
+			libol.Error("_storage.SaveLine %s", err)
 		}
 	}
 }
