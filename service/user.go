@@ -17,7 +17,7 @@ var User = _user {
 	_users: make(map[string]*models.User, 1024),
 }
 
-func (w *_user) LoadUsers(path string) error {
+func (w *_user) Load(path string) error {
 	file, err := os.Open(path)
 	if err != nil {
 		return err
