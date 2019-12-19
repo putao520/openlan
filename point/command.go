@@ -5,12 +5,13 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/danieldin95/openlan-go/config"
 	"net"
 	"os"
 	"strings"
 
+	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/models"
 )
 
 type Command struct {
@@ -27,9 +28,8 @@ func NewCommand(config *config.Point) (cmd *Command) {
 		tlsConf = &tls.Config{InsecureSkipVerify: true}
 	}
 	client := libol.NewTcpClient(config.Addr, tlsConf)
-	cmd = &Command{
-		tcpWorker: NewTcpWorker(client, config),
-	}
+	cmd = &Command{}
+	cmd.tcpWorker = NewTcpWorker(client, config, cmd)
 	cmd.ctx, cmd.cancel = context.WithCancel(context.Background())
 	return
 }
@@ -204,4 +204,8 @@ func (cmd *Command) Loop() {
 			fmt.Println(out)
 		}
 	}
+}
+
+func (cmd *Command) OnIpAddr(worker *TcpWorker, n *models.Network) error {
+	return nil
 }

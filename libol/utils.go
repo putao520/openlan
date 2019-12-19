@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"math/rand"
+	"net"
 	"os"
 	"reflect"
 	"runtime"
@@ -101,4 +102,19 @@ func UnmarshalLoad(v interface{}, file string) error {
 
 func FunName(i interface{}) string {
 	return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
+}
+
+func Netmask2Len(s string) int {
+	mask := net.IPMask(net.ParseIP(s).To4())
+	prefixSize, _ := mask.Size()
+
+	return prefixSize
+}
+
+func IsErrorResponse(s string) bool {
+	if len(s) > 0 {
+		return s[0] != '[' && s[0] != '{'
+	}
+	
+	return true
 }

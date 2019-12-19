@@ -2,11 +2,12 @@ package point
 
 import (
 	"crypto/tls"
-	"github.com/danieldin95/openlan-go/config"
 	"context"
 	"net"
 
+	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/models"
 	"github.com/songgao/water"
 )
 
@@ -112,4 +113,8 @@ func (p *Point) IfName() string {
 		return dev.Name()
 	}
 	return ""
+}
+
+func (p *Point) OnIpAddr(worker *TcpWorker, n *models.Network) error {
+	return nil
 }

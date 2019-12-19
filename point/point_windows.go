@@ -3,10 +3,13 @@ package point
 import (
 	"context"
 	"crypto/tls"
-	"github.com/danieldin95/openlan-go/config"
+	"fmt"
 	"net"
+	"os/exec"
 
+	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/models"
 	"github.com/songgao/water"
 )
 
@@ -30,9 +33,9 @@ func NewPoint(config *config.Point) (p *Point) {
 	p = &Point{
 		BrName:    config.BrName,
 		IfAddr:    config.IfAddr,
-		tcpWorker: NewTcpWorker(client, config),
 		config:    config,
 	}
+	p.tcpWorker = NewTcpWorker(client, config, p)
 	p.newDevice()
 	return
 }
@@ -112,4 +115,40 @@ func (p *Point) IfName() string {
 		return dev.Name()
 	}
 	return ""
+}
+
+func (p *Point) OnIpAddr(worker *TcpWorker, n *models.Network) error {
+	libol.Debug("Point.OnIpAddr: %s, %s, %s", n.IfAddr, n.Netmask, n.Routes)
+
+	if n.IfAddr == "" {
+		return nil
+	}
+
+	prefix := libol.Netmask2Len(n.Netmask)
+	ipStr := fmt.Sprintf("%s/%d", n.IfAddr, prefix)
+	out, err := exec.Command("netsh", "interface",
+							"ipv4", "set", "address", p.IfName(),
+							"static", ipStr,
+							"store=active").Output()
+	if err != nil {
+		libol.Error("Point.OnIpAddr: %s, %s", err, out)
+		return err
+	}
+	libol.Info("Point.OnIpAddr: %s", ipStr)
+
+	if n.Routes != nil {
+		for _, route := range n.Routes {
+			out, err := exec.Command("netsh", "interface",
+									"ipv4", "add", "route",
+									route.Prefix, p.IfName(), route.Nexthop,
+									"store=active").Output()
+			if err != nil {
+				libol.Error("Point.OnIpAddr: %s, %s", err, out)
+				continue
+			}
+			libol.Info("Point.OnIpAddr.route: %s via %s", route.Prefix, route.Nexthop)
+		}
+	}
+
+	return nil
 }

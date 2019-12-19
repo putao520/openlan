@@ -3,10 +3,12 @@ package point
 import (
 	"context"
 	"crypto/tls"
-	"github.com/danieldin95/openlan-go/config"
+	"fmt"
 	"net"
-
+	"os/exec"
+	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/models"
 	"github.com/milosgajdos83/tenus"
 	"github.com/songgao/water"
 )
@@ -17,9 +19,9 @@ type Point struct {
 
 	tcpWorker *TcpWorker
 	tapWorker *TapWorker
-	br        tenus.Bridger
-	brIp      net.IP
-	brNet     *net.IPNet
+	ipAddr    net.IP
+	ipNet     *net.IPNet
+	link      tenus.Linker
 	config    *config.Point
 }
 
@@ -28,14 +30,17 @@ func NewPoint(config *config.Point) (p *Point) {
 	if config.Tls {
 		tlsConf = &tls.Config{InsecureSkipVerify: true}
 	}
-	client := libol.NewTcpClient(config.Addr, tlsConf)
+
 	p = &Point{
 		BrName:    config.BrName,
 		IfAddr:    config.IfAddr,
-		tcpWorker: NewTcpWorker(client, config),
 		config:    config,
 	}
+
+	client := libol.NewTcpClient(config.Addr, tlsConf)
+	p.tcpWorker =  NewTcpWorker(client, config, p)
 	p.newDevice()
+
 	return
 }
 
@@ -71,9 +76,9 @@ func (p *Point) Stop() {
 
 	p.tcpWorker.Stop()
 
-	if p.br != nil && p.brIp != nil {
-		if err := p.br.UnsetLinkIp(p.brIp, p.brNet); err != nil {
-			libol.Error("Point.Close.UnsetLinkIp %s: %s", p.br.NetInterface().Name, err)
+	if p.link != nil && p.ipAddr != nil {
+		if err := p.link.UnsetLinkIp(p.ipAddr, p.ipNet); err != nil {
+			libol.Error("Point.Close.UnsetLinkIp: %s", err)
 		}
 	}
 	p.tapWorker.Stop()
@@ -120,8 +125,6 @@ func (p *Point) OnTap(tap *TapWorker) error {
 		if err != nil {
 			libol.Error("Point.UpLink: Get dev %s: %s", p.BrName, err)
 		}
-
-		p.br = br
 	}
 
 	if p.IfAddr != "" {
@@ -135,9 +138,11 @@ func (p *Point) OnTap(tap *TapWorker) error {
 			return err
 		}
 
-		p.brIp = ip
-		p.brNet = ipNet
+		p.ipAddr = ip
+		p.ipNet = ipNet
 	}
+
+	p.link = link
 
 	return nil
 }
@@ -192,5 +197,43 @@ func (p *Point) GetWorker() *TcpWorker {
 	if p.tcpWorker != nil {
 		return p.tcpWorker
 	}
+	return nil
+}
+
+func (p *Point) OnIpAddr(worker *TcpWorker, n *models.Network) error {
+	libol.Info("Point.OnIpAddr: %s, %s, %s", n.IfAddr, n.Netmask, n.Routes)
+
+	if n.IfAddr == "" || p.link == nil {
+		return nil
+	}
+
+	prefix := libol.Netmask2Len(n.Netmask)
+	ipStr := fmt.Sprintf("%s/%d", n.IfAddr, prefix)
+	ip, ipNet, err := net.ParseCIDR(ipStr)
+	if err != nil {
+		libol.Error("Point.OnIpAddr.ParseCIDR %s: %s", ipStr, err)
+		return err
+	}
+
+	if err := p.link.SetLinkIp(ip, ipNet); err != nil {
+		libol.Error("Point.OnIpAddr.SetLinkIp: %s", err)
+		return err
+	}
+	libol.Info("Point.OnIpAddr: %s", ipStr)
+
+	p.ipAddr = ip
+	p.ipNet = ipNet
+
+	if n.Routes != nil {
+		for _, route := range n.Routes {
+			_, err := exec.Command("/usr/sbin/ip", "route",
+				"add", route.Prefix, "dev", p.IfName(), "via", route.Nexthop).Output()
+			if err != nil {
+				libol.Error("Point.OnIpAddr.route: %s", err)
+			}
+			libol.Info("Point.OnIpAddr.route: %s via %s", route.Prefix, route.Nexthop)
+		}
+	}
+
 	return nil
 }

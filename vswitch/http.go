@@ -44,7 +44,7 @@ func NewHttp(worker *Worker, c *config.VSwitch) (h *Http) {
 	}
 
 	if h.adminToken == "" {
-		h.adminToken = libol.GenToken(13)
+		h.adminToken = libol.GenToken(64)
 	}
 
 	h.SaveToken()

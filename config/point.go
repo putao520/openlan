@@ -27,6 +27,7 @@ type Point struct {
 	SaveFile string `json:"-"`
 	name     string
 	password string
+	tenant   string
 }
 
 var PointDefault = Point{
@@ -40,6 +41,7 @@ var PointDefault = Point{
 	BrName:   "",
 	SaveFile: "point.json",
 	name:     "",
+	tenant:   "default",
 	password: "",
 	IfEthDst: "2e:4b:f0:b7:6d:ba",
 	IfEthSrc: "",
@@ -94,6 +96,11 @@ func (c *Point) Right() {
 		if len(values) > 1 {
 			c.password = values[1]
 		}
+
+		values = strings.Split(c.name, "@")
+		if len(values) > 1 {
+			c.tenant = values[1]
+		}
 	}
 	RightAddr(&c.Addr, 10002)
 }
@@ -114,6 +121,13 @@ func (c *Point) Default() {
 	if c.IfAddr == "" {
 		c.IfAddr = PointDefault.IfAddr
 	}
+	if c.tenant == "" {
+		c.tenant = PointDefault.tenant
+	}
+}
+
+func (c *Point) Tenant() string {
+	return c.tenant
 }
 
 func (c *Point) Name() string {

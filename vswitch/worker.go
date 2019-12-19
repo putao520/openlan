@@ -47,6 +47,7 @@ func NewWorkerBase(server *libol.TcpServer, c *config.VSwitch) *WorkerBase {
 	}
 
 	service.User.Load(w.Conf.Password)
+	service.Network.Load(w.Conf.Network)
 	service.Storage.Open(c.Redis.Addr, c.Redis.Auth, c.Redis.Db)
 
 	return &w
