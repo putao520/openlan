@@ -75,6 +75,10 @@ func NewTcpClientFromConn(conn net.Conn) (t *TcpClient) {
 	return
 }
 
+func (t *TcpClient) LocalAddr() string {
+	return t.conn.LocalAddr().String()
+}
+
 func (t *TcpClient) Connect() (err error) {
 	if t.conn != nil || t.GetStatus() == CLTERMINAL || t.GetStatus() == CLUNAUTH {
 		return nil
@@ -162,12 +166,12 @@ func (t *TcpClient) SendMsg(data []byte) error {
 		return err
 	}
 
-	buffer := make([]byte, HSIZE+len(data))
-	copy(buffer[0:2], MAGIC)
-	binary.BigEndian.PutUint16(buffer[2:4], uint16(len(data)))
-	copy(buffer[HSIZE:], data)
+	buf := make([]byte, HSIZE+len(data))
+	copy(buf[0:2], MAGIC)
+	binary.BigEndian.PutUint16(buf[2:4], uint16(len(data)))
+	copy(buf[HSIZE:], data)
 
-	if err := t.sendX(buffer); err != nil {
+	if err := t.sendX(buf); err != nil {
 		t.TxError++
 		return err
 	}
@@ -206,7 +210,7 @@ func (t *TcpClient) RecvMsg(data []byte) (int, error) {
 	copy(data, d)
 	t.RxOkay++
 
-	return int(size), nil
+	return len(d), nil
 }
 
 func (t *TcpClient) GetMaxSize() int {
