@@ -1,9 +1,9 @@
 # Overview 
 [![Build Status](https://travis-ci.org/lightstar-dev/openlan-go.svg?branch=master)](https://travis-ci.org/lightstar-dev/openlan-go)
-[![Go Report Card](https://goreportcard.com/badge/github.com/lightstar-dev/openlan-go)](https://goreportcard.com/report/lightstar-dev/openlan-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/danieldin95/openlan-go)](https://goreportcard.com/report/lightstar-dev/openlan-go)
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-Latest implement on [lightstar-dev openlan-go](https://github.com/lightstar-dev/openlan-go).
+Latest implement on [lightstar-dev openlan-go](https://github.com/danieldin95/openlan-go).
 
 
                    192.168.1.a/24         192.168.1.b/24              192.168.1.c/24
@@ -91,7 +91,7 @@ Or Configure by `cmd`.
 
 # Building from Source
 
-    go get -u -v github.com/lightstar-dev/openlan-go  
+    go get -u -v github.com/danieldin95/openlan-go  
 
 ## on Linux
 

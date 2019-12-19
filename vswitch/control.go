@@ -1,8 +1,8 @@
 package vswitch
 
 import (
-	"github.com/lightstar-dev/openlan-go/config"
-	"github.com/lightstar-dev/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/config"
+	"github.com/danieldin95/openlan-go/libol"
 )
 
 type Control struct {

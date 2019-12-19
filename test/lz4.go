@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/lightstar-dev/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/libol"
 	"strings"
 	"github.com/pierrec/lz4"
 )

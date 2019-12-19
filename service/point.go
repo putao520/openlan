@@ -1,8 +1,8 @@
 package service
 
 import (
-	"github.com/lightstar-dev/openlan-go/libol"
-	"github.com/lightstar-dev/openlan-go/models"
+	"github.com/danieldin95/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/models"
 	"sync"
 )
 

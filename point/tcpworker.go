@@ -3,9 +3,9 @@ package point
 import (
 	"context"
 	"encoding/json"
-	"github.com/lightstar-dev/openlan-go/config"
-	"github.com/lightstar-dev/openlan-go/libol"
-	"github.com/lightstar-dev/openlan-go/models"
+	"github.com/danieldin95/openlan-go/config"
+	"github.com/danieldin95/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/models"
 	"strings"
 	"time"
 )

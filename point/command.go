@@ -5,12 +5,12 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/lightstar-dev/openlan-go/config"
+	"github.com/danieldin95/openlan-go/config"
 	"net"
 	"os"
 	"strings"
 
-	"github.com/lightstar-dev/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/libol"
 )
 
 type Command struct {

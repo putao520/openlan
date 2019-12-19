@@ -4,7 +4,7 @@
 
 # 概述 
 [![Build Status](https://travis-ci.org/lightstar-dev/openlan-go.svg?branch=master)](https://travis-ci.org/lightstar-dev/openlan-go)
-[![Go Report Card](https://goreportcard.com/badge/github.com/lightstar-dev/openlan-go)](https://goreportcard.com/report/lightstar-dev/openlan-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/danieldin95/openlan-go)](https://goreportcard.com/report/lightstar-dev/openlan-go)
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 OpenLan旨在解决局域网数据报文在广域网的传输问题，并建立基于租户的虚拟以太网络。
@@ -116,7 +116,7 @@ OpenLan旨在解决局域网数据报文在广域网的传输问题，并建立�
 
 # 从源码编译它
 
-    go get -u -v github.com/lightstar-dev/openlan-go  
+    go get -u -v github.com/danieldin95/openlan-go  
 
 ## 在Linux系统中
 

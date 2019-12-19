@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/lightstar-dev/openlan-go/config"
-	"github.com/lightstar-dev/openlan-go/point"
+	"github.com/danieldin95/openlan-go/config"
+	"github.com/danieldin95/openlan-go/point"
 )
 
 func main() {

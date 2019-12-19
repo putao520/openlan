@@ -4,16 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/lightstar-dev/openlan-go/config"
-	"github.com/lightstar-dev/openlan-go/models"
-	"github.com/lightstar-dev/openlan-go/service"
+	"github.com/danieldin95/openlan-go/config"
+	"github.com/danieldin95/openlan-go/models"
+	"github.com/danieldin95/openlan-go/service"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"text/template"
 
-	"github.com/lightstar-dev/openlan-go/libol"
-	"github.com/lightstar-dev/openlan-go/point"
+	"github.com/danieldin95/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/point"
 )
 
 type Http struct {

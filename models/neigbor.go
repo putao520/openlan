@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/lightstar-dev/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/libol"
 )
 
 type Neighbor struct {

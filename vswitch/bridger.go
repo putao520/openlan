@@ -1,7 +1,7 @@
 package vswitch
 
 import (
-	"github.com/lightstar-dev/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/libol"
 	"github.com/milosgajdos83/tenus"
 	"net"
 )

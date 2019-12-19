@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/lightstar-dev/openlan-go/config"
+	"github.com/danieldin95/openlan-go/config"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/lightstar-dev/openlan-go/vswitch"
+	"github.com/danieldin95/openlan-go/vswitch"
 )
 
 func main() {

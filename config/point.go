@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/lightstar-dev/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/libol"
 )
 
 type Point struct {

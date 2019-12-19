@@ -13,11 +13,11 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/lightstar-dev/openlan-go/config"
-	"github.com/lightstar-dev/openlan-go/libol"
-	_ "github.com/lightstar-dev/openlan-go/models"
-	"github.com/lightstar-dev/openlan-go/point"
-	"github.com/lightstar-dev/openlan-go/vswitch"
+	"github.com/danieldin95/openlan-go/config"
+	"github.com/danieldin95/openlan-go/libol"
+	_ "github.com/danieldin95/openlan-go/models"
+	"github.com/danieldin95/openlan-go/point"
+	"github.com/danieldin95/openlan-go/vswitch"
 )
 
 type HttpServer struct {

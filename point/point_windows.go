@@ -3,10 +3,10 @@ package point
 import (
 	"context"
 	"crypto/tls"
-	"github.com/lightstar-dev/openlan-go/config"
+	"github.com/danieldin95/openlan-go/config"
 	"net"
 
-	"github.com/lightstar-dev/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/libol"
 	"github.com/songgao/water"
 )
 

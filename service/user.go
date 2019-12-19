@@ -2,7 +2,7 @@ package service
 
 import (
 	"bufio"
-	"github.com/lightstar-dev/openlan-go/models"
+	"github.com/danieldin95/openlan-go/models"
 	"os"
 	"strings"
 	"sync"

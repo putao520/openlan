@@ -1,15 +1,15 @@
 package app
 
 import (
-	"github.com/lightstar-dev/openlan-go/config"
-	"github.com/lightstar-dev/openlan-go/models"
-	"github.com/lightstar-dev/openlan-go/service"
-	"github.com/lightstar-dev/openlan-go/vswitch/api"
+	"github.com/danieldin95/openlan-go/config"
+	"github.com/danieldin95/openlan-go/models"
+	"github.com/danieldin95/openlan-go/service"
+	"github.com/danieldin95/openlan-go/vswitch/api"
 	"net"
 	"sync"
 	"time"
 
-	"github.com/lightstar-dev/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/libol"
 )
 
 type Neighbors struct {

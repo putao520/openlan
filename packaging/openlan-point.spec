@@ -4,7 +4,7 @@ Release: 1%{?dist}
 Summary: OpenLan's Project Software
 Group: Applications/Communications
 License: Apache 2.0
-URL: https://github.com/lightstar-dev/openlan-go
+URL: https://github.com/danieldin95/openlan-go
 
 BuildRequires: go
 Requires: iproute
