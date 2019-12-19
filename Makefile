@@ -25,3 +25,15 @@ darwin:
 
 install:
 	./install.sh
+
+rpm:
+	export version=$(cat VERSION)
+	# Update Version
+	sed -i  -e 's/Version:.*/Version:\ ${version}/' ./packaging/openlan-point.spec
+	sed -i  -e 's/Version:.*/Version:\ ${version}/' ./packaging/openlan-point.spec
+
+	rm -rf ~/rpmbuild/SOURCES/openlan-${version}
+	ln -s ${PWD} ~/rpmbuild/SOURCES/openlan-${version}        
+	# Building
+	rpmbuild -ba ./packaging/openlan-point.spec
+	rpmbuild -ba ./packaging/openlan-vswitch.spec

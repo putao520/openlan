@@ -1,4 +1,7 @@
 #!/bin/bash
 
 mkdir -p ~/rpmbuild/SOURCES
-ln -s $(pwd) ~/rpmbuild/SOURCES/openlan-0.0.1
+
+
+rm -rf ~/rpmbuild/SOURCES/openlan-${version}
+ln -s $(pwd) ~/rpmbuild/SOURCES/openlan-${version}

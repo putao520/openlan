@@ -46,7 +46,7 @@ func NewWorkerBase(server *libol.TcpServer, c *config.VSwitch) *WorkerBase {
 		links:     make(map[string]*point.Point),
 	}
 
-	service.User.LoadUsers(w.Conf.Password)
+	service.User.Load(w.Conf.Password)
 	service.Storage.Open(c.Redis.Addr, c.Redis.Auth, c.Redis.Db)
 
 	return &w
