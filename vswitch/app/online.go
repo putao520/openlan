@@ -120,5 +120,3 @@ func (o *Online) AddLine(line *models.Line) {
 func (o *Online) OnClientClose(client *libol.TcpClient) {
 	//TODO
 }
-
-

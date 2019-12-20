@@ -3,13 +3,13 @@ package models
 import "fmt"
 
 type Route struct {
-	Prefix   string `json:"prefix"`
-	Nexthop   string `json:"nexthop"`
+	Prefix  string `json:"prefix"`
+	Nexthop string `json:"nexthop"`
 }
 
 func NewRoute(prefix string, nexthop string) (this *Route) {
 	this = &Route{
-		Prefix: prefix,
+		Prefix:  prefix,
 		Nexthop: nexthop,
 	}
 	return
@@ -20,12 +20,12 @@ func (u *Route) String() string {
 }
 
 type Network struct {
-	Tenant   string `json:"tenant"`
-	IfAddr   string `json:"ifAddr"`
-	IpAddr   string `json:"ipAddr"`
-	IpRange  int `json:"ipRange"`
-	Netmask  string `json:"netmask"`
-	Routes   []*Route
+	Tenant  string `json:"tenant"`
+	IfAddr  string `json:"ifAddr"`
+	IpAddr  string `json:"ipAddr"`
+	IpRange int    `json:"ipRange"`
+	Netmask string `json:"netmask"`
+	Routes  []*Route
 }
 
 func NewNetwork(name string, ifAddr string) (this *Network) {
@@ -38,7 +38,7 @@ func NewNetwork(name string, ifAddr string) (this *Network) {
 
 func (u *Network) String() string {
 	return fmt.Sprintf("%s, %s, %s, %d, %s, %s",
-			u.Tenant, u.IfAddr, u.IpAddr, u.IpRange,u.Netmask, u.Routes)
+		u.Tenant, u.IfAddr, u.IpAddr, u.IpRange, u.Netmask, u.Routes)
 }
 
 func (u *Network) ParseIP(s string) {

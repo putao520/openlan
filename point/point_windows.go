@@ -4,8 +4,8 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"net"
 	"os/exec"
+	"strings"
 
 	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
@@ -19,8 +19,8 @@ type Point struct {
 
 	tcpWorker *TcpWorker
 	tapWorker *TapWorker
-	brIp      net.IP
-	brNet     *net.IPNet
+	addr      string
+	routes    []*models.Route
 	config    *config.Point
 }
 
@@ -31,9 +31,9 @@ func NewPoint(config *config.Point) (p *Point) {
 	}
 	client := libol.NewTcpClient(config.Addr, tlsConf)
 	p = &Point{
-		BrName:    config.BrName,
-		IfAddr:    config.IfAddr,
-		config:    config,
+		BrName: config.BrName,
+		IfAddr: config.IfAddr,
+		config: config,
 	}
 	p.tcpWorker = NewTcpWorker(client, config, p)
 	p.newDevice()
@@ -46,6 +46,7 @@ func (p *Point) newDevice() {
 }
 
 func (p *Point) OnTap(tap *TapWorker) error {
+	libol.Info("Point.OnTap")
 	return nil
 }
 
@@ -67,6 +68,7 @@ func (p *Point) Start() {
 func (p *Point) Stop() {
 	defer libol.Catch("Point.Stop")
 
+	p.DelAddr(p.addr)
 	p.tapWorker.Stop()
 	p.tcpWorker.Stop()
 }
@@ -117,8 +119,87 @@ func (p *Point) IfName() string {
 	return ""
 }
 
+func (p *Point) AddAddr(ipStr string) error {
+	if ipStr == "" {
+		return nil
+	}
+
+	out, err := exec.Command("netsh", "interface",
+		"ipv4", "add", "address", p.IfName(),
+		ipStr, "store=active").Output()
+	if err != nil {
+		libol.Error("Point.AddAddr: %s, %s", err, out)
+		return err
+	}
+
+	libol.Info("Point.AddAddr: %s", ipStr)
+	p.addr = ipStr
+
+	return nil
+}
+
+func (p *Point) DelAddr(ipStr string) error {
+	if ipStr == "" {
+		return nil
+	}
+
+	ipAddr := strings.Split(ipStr, "/")[0]
+	out, err := exec.Command("netsh", "interface",
+		"ipv4", "delete", "address", p.IfName(),
+		ipAddr, "store=active").Output()
+	if err != nil {
+		libol.Error("Point.DelAddr: %s, %s", err, out)
+		return err
+	}
+	libol.Info("Point.DelAddr: %s", ipStr)
+	p.addr = ""
+
+	return nil
+}
+
+func (p *Point) AddRoutes(routes []*models.Route) error {
+	if routes == nil {
+		return nil
+	}
+
+	for _, route := range routes {
+		out, err := exec.Command("netsh", "interface",
+			"ipv4", "add", "route", route.Prefix,
+			p.IfName(), route.Nexthop, "store=active").Output()
+		if err != nil {
+			libol.Error("Point.AddRoutes: %s, %s", err, out)
+			continue
+		}
+		libol.Info("Point.AddRoutes: %s via %s", route.Prefix, route.Nexthop)
+	}
+
+	p.routes = routes
+	return nil
+}
+
+func (p *Point) DelRoutes(routes []*models.Route) error {
+	if routes == nil {
+		return nil
+	}
+
+	for _, route := range routes {
+		out, err := exec.Command("netsh", "interface",
+			"ipv4", "del", "route", route.Prefix,
+			p.IfName(), route.Nexthop, "store=active").Output()
+		if err != nil {
+			libol.Error("Point.DelRoutes: %s, %s", err, out)
+			continue
+		}
+		libol.Info("Point.DelRoutes: %s via %s", route.Prefix, route.Nexthop)
+	}
+
+	p.routes = nil
+
+	return nil
+}
+
 func (p *Point) OnIpAddr(worker *TcpWorker, n *models.Network) error {
-	libol.Debug("Point.OnIpAddr: %s, %s, %s", n.IfAddr, n.Netmask, n.Routes)
+	libol.Info("Point.OnIpAddr: %s, %s, %s", n.IfAddr, n.Netmask, n.Routes)
 
 	if n.IfAddr == "" {
 		return nil
@@ -126,29 +207,25 @@ func (p *Point) OnIpAddr(worker *TcpWorker, n *models.Network) error {
 
 	prefix := libol.Netmask2Len(n.Netmask)
 	ipStr := fmt.Sprintf("%s/%d", n.IfAddr, prefix)
-	out, err := exec.Command("netsh", "interface",
-							"ipv4", "set", "address", p.IfName(),
-							"static", ipStr,
-							"store=active").Output()
-	if err != nil {
-		libol.Error("Point.OnIpAddr: %s, %s", err, out)
-		return err
-	}
-	libol.Info("Point.OnIpAddr: %s", ipStr)
+	p.AddAddr(ipStr)
+	p.AddRoutes(n.Routes)
 
-	if n.Routes != nil {
-		for _, route := range n.Routes {
-			out, err := exec.Command("netsh", "interface",
-									"ipv4", "add", "route",
-									route.Prefix, p.IfName(), route.Nexthop,
-									"store=active").Output()
-			if err != nil {
-				libol.Error("Point.OnIpAddr: %s, %s", err, out)
-				continue
-			}
-			libol.Info("Point.OnIpAddr.route: %s via %s", route.Prefix, route.Nexthop)
-		}
-	}
+	return nil
+}
+
+func (p *Point) OnClose(worker *TcpWorker) error {
+	libol.Info("Point.OnClose")
+
+	p.DelAddr(p.addr)
+	p.DelRoutes(p.routes)
+
+	return nil
+}
+
+func (p *Point) OnSuccess(worker *TcpWorker) error {
+	libol.Info("Point.OnSuccess")
+
+	p.AddAddr(p.IfAddr)
 
 	return nil
 }

@@ -46,7 +46,7 @@ var PointDefault = Point{
 	IfEthDst: "2e:4b:f0:b7:6d:ba",
 	IfEthSrc: "",
 	LogFile:  "point.error",
-	Script: fmt.Sprintf("point.%s.cmd", runtime.GOOS),
+	Script:   fmt.Sprintf("point.%s.cmd", runtime.GOOS),
 }
 
 func NewPoint() (c *Point) {

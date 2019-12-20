@@ -209,3 +209,11 @@ func (cmd *Command) Loop() {
 func (cmd *Command) OnIpAddr(worker *TcpWorker, n *models.Network) error {
 	return nil
 }
+
+func (cmd *Command) OnClose(worker *TcpWorker) error {
+	return nil
+}
+
+func (cmd *Command) OnSuccess(worker *TcpWorker) error {
+	return nil
+}

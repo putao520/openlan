@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/danieldin95/openlan-go/libol"
-	"strings"
 	"github.com/pierrec/lz4"
+	"strings"
 )
 
 func ExampleCompressBlock() {

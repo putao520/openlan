@@ -17,13 +17,13 @@ import (
 )
 
 type WorkerBase struct {
-	Alias       string
-	Server      *libol.TcpServer
-	Auth        *app.PointAuth
-	Request     *app.WithRequest
-	Neighbor    *app.Neighbors
-	OnLines     *app.Online
-	Conf        *config.VSwitch
+	Alias    string
+	Server   *libol.TcpServer
+	Auth     *app.PointAuth
+	Request  *app.WithRequest
+	Neighbor *app.Neighbors
+	OnLines  *app.Online
+	Conf     *config.VSwitch
 
 	hooks     []func(*libol.TcpClient, *libol.Frame) error
 	newTime   int64

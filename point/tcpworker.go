@@ -11,6 +11,8 @@ import (
 )
 
 type OnTcpWorker interface {
+	OnClose(*TcpWorker) error
+	OnSuccess(*TcpWorker) error
 	OnIpAddr(*TcpWorker, *models.Network) error
 }
 
@@ -49,6 +51,7 @@ func (t *TcpWorker) Stop() {
 }
 
 func (t *TcpWorker) Close() {
+	t.On.OnClose(t)
 	t.Client.Close()
 }
 
@@ -80,14 +83,14 @@ func (t *TcpWorker) TryLogin(client *libol.TcpClient) error {
 	return nil
 }
 
-func (t *TcpWorker) ReqNet(client *libol.TcpClient) error {
+func (t *TcpWorker) TryNetwork(client *libol.TcpClient) error {
 	body, err := json.Marshal(t.network)
 	if err != nil {
-		libol.Error("TcpWorker.ReqNet: %s", err)
+		libol.Error("TcpWorker.TryNetwork: %s", err)
 		return err
 	}
 
-	libol.Info("TcpWorker.ReqNet: %s", body)
+	libol.Info("TcpWorker.TryNetwork: %s", body)
 	if err := client.SendReq("ipaddr", string(body)); err != nil {
 		return err
 	}
@@ -101,12 +104,15 @@ func (t *TcpWorker) onInstruct(data []byte) error {
 		libol.Debug("TcpWorker.onInstruct.login: %s", resp)
 		if resp[:4] == "okay" {
 			t.Client.SetStatus(libol.CLAUEHED)
-			t.ReqNet(t.Client)
+			t.On.OnSuccess(t)
+			t.TryNetwork(t.Client)
 			libol.Info("TcpWorker.onInstruct.login: success")
 		} else {
 			t.Client.SetStatus(libol.CLUNAUTH)
 			libol.Error("TcpWorker.onInstruct.login: %s", resp)
 		}
+
+		return nil
 	}
 
 	if libol.IsErrorResponse(resp) {
@@ -149,7 +155,7 @@ func (t *TcpWorker) GoRecv(ctx context.Context, doRecv func([]byte) error) {
 		n, err := t.Client.RecvMsg(data)
 		if err != nil {
 			libol.Error("TcpWorker.GoRev: %s", err)
-			t.Client.Close()
+			t.Close()
 			continue
 		}
 
@@ -175,7 +181,7 @@ func (t *TcpWorker) DoSend(data []byte) error {
 
 func (t *TcpWorker) GoLoop(ctx context.Context) {
 	defer libol.Catch("TcpWorker.GoLoop")
-	defer t.Client.Close()
+	defer t.Close()
 
 	for {
 		select {

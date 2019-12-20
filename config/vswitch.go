@@ -47,11 +47,11 @@ var VSwitchDefault = VSwitch{
 		Db:     0,
 		Enable: false,
 	},
-	LogFile:  "vswitch.error",
-	CrtDir:   "",
-	HttpDir:  "public",
-	Links:    nil,
-	Script:   fmt.Sprintf("vswitch.%s.cmd", runtime.GOOS),
+	LogFile: "vswitch.error",
+	CrtDir:  "",
+	HttpDir: "public",
+	Links:   nil,
+	Script:  fmt.Sprintf("vswitch.%s.cmd", runtime.GOOS),
 }
 
 func NewVSwitch() (c *VSwitch) {

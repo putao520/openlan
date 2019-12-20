@@ -1,8 +1,8 @@
 package point
 
 import (
-	"crypto/tls"
 	"context"
+	"crypto/tls"
 	"net"
 
 	"github.com/danieldin95/openlan-go/config"
@@ -116,5 +116,13 @@ func (p *Point) IfName() string {
 }
 
 func (p *Point) OnIpAddr(worker *TcpWorker, n *models.Network) error {
+	return nil
+}
+
+func (p *Point) OnClose(worker *TcpWorker) error {
+	return nil
+}
+
+func (p *Point) OnSuccess(worker *TcpWorker) error {
 	return nil
 }

@@ -6,7 +6,7 @@ import (
 
 type Point struct {
 	Alias  string
-	Server  string
+	Server string
 	Client *libol.TcpClient
 	Device *TapDevice
 }

@@ -70,4 +70,3 @@ func (s *Script) CallExit(args ...string) {
 		libol.Warn("%s exit: %s", s.Cmd, err)
 	}
 }
-

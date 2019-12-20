@@ -6,14 +6,14 @@ import (
 )
 
 type Control struct {
-	Server      *libol.TcpServer
-	Conf        *config.VSwitch
+	Server *libol.TcpServer
+	Conf   *config.VSwitch
 }
 
 func NewControl(server *libol.TcpServer, c *config.VSwitch) *Control {
 	w := Control{
-		Server:    server,
-		Conf: c,
+		Server: server,
+		Conf:   c,
 	}
 
 	return &w

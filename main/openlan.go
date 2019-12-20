@@ -12,12 +12,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gorilla/mux"
 	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
 	_ "github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/point"
 	"github.com/danieldin95/openlan-go/vswitch"
+	"github.com/gorilla/mux"
 )
 
 type HttpServer struct {

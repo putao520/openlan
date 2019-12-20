@@ -9,11 +9,11 @@ import (
 )
 
 type _user struct {
-	lock sync.RWMutex
-	_users     map[string]*models.User
+	lock   sync.RWMutex
+	_users map[string]*models.User
 }
 
-var User = _user {
+var User = _user{
 	_users: make(map[string]*models.User, 1024),
 }
 

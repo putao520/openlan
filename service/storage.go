@@ -9,11 +9,10 @@ import (
 )
 
 type _storage struct {
-	redis       *libol.RedisCli
+	redis *libol.RedisCli
 }
 
-var Storage = &_storage{
-}
+var Storage = &_storage{}
 
 func (s *_storage) Open(addr string, auth string, db int) *libol.RedisCli {
 	if s.redis == nil {

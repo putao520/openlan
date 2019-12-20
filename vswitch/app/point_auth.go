@@ -13,14 +13,14 @@ type PointAuth struct {
 	Success int
 	Failed  int
 
-	ifMtu   int
-	worker  api.Worker
+	ifMtu  int
+	worker api.Worker
 }
 
 func NewPointAuth(w api.Worker, c *config.VSwitch) (p *PointAuth) {
 	p = &PointAuth{
-		ifMtu:   c.IfMtu,
-		worker:  w,
+		ifMtu:  c.IfMtu,
+		worker: w,
 	}
 	return
 }

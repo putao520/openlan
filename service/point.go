@@ -11,7 +11,7 @@ type _point struct {
 	clients map[string]*models.Point
 }
 
-var Point = _point {
+var Point = _point{
 	clients: make(map[string]*models.Point, 1024),
 }
 
@@ -59,6 +59,3 @@ func (p *_point) ListPoint() <-chan *models.Point {
 
 	return c
 }
-
-
-

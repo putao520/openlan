@@ -4,13 +4,14 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"net"
 	"os/exec"
+
 	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/milosgajdos83/tenus"
 	"github.com/songgao/water"
+	"net"
 )
 
 type Point struct {
@@ -19,8 +20,8 @@ type Point struct {
 
 	tcpWorker *TcpWorker
 	tapWorker *TapWorker
-	ipAddr    net.IP
-	ipNet     *net.IPNet
+	addr      string
+	routes    []*models.Route
 	link      tenus.Linker
 	config    *config.Point
 }
@@ -32,13 +33,13 @@ func NewPoint(config *config.Point) (p *Point) {
 	}
 
 	p = &Point{
-		BrName:    config.BrName,
-		IfAddr:    config.IfAddr,
-		config:    config,
+		BrName: config.BrName,
+		IfAddr: config.IfAddr,
+		config: config,
 	}
 
 	client := libol.NewTcpClient(config.Addr, tlsConf)
-	p.tcpWorker =  NewTcpWorker(client, config, p)
+	p.tcpWorker = NewTcpWorker(client, config, p)
 	p.newDevice()
 
 	return
@@ -74,75 +75,109 @@ func (p *Point) Start() {
 func (p *Point) Stop() {
 	defer libol.Catch("Point.Stop")
 
+	p.DelAddr(p.addr)
 	p.tcpWorker.Stop()
-
-	if p.link != nil && p.ipAddr != nil {
-		if err := p.link.UnsetLinkIp(p.ipAddr, p.ipNet); err != nil {
-			libol.Error("Point.Close.UnsetLinkIp: %s", err)
-		}
-	}
 	p.tapWorker.Stop()
 }
 
+func (p *Point) DelAddr(ipStr string) error {
+	if p.link == nil || ipStr == "" {
+		return nil
+	}
+
+	ip, ipNet, err := net.ParseCIDR(ipStr)
+	if err != nil {
+		libol.Error("Point.AddAddr.ParseCIDR %s: %s", ipStr, err)
+		return err
+	}
+
+	if err := p.link.UnsetLinkIp(ip, ipNet); err != nil {
+		libol.Error("Point.DelAddr.UnsetLinkIp: %s", err)
+	}
+
+	libol.Info("Point.DelAddr: %s", ipStr)
+	p.addr = ""
+
+	return nil
+}
+
+func (p *Point) AddAddr(ipStr string) error {
+	if ipStr == "" || p.link == nil {
+		return nil
+	}
+
+	ip, ipNet, err := net.ParseCIDR(ipStr)
+	if err != nil {
+		libol.Error("Point.AddAddr.ParseCIDR %s: %s", ipStr, err)
+		return err
+	}
+	if err := p.link.SetLinkIp(ip, ipNet); err != nil {
+		libol.Error("Point.AddAddr.SetLinkIp: %s", err)
+		return err
+	}
+
+	libol.Info("Point.AddAddr: %s", ipStr)
+
+	p.addr = ipStr
+
+	return nil
+}
+
+func (p *Point) UpBr(name string) tenus.Bridger {
+	if name == "" {
+		return nil
+	}
+
+	br, err := tenus.BridgeFromName(name)
+	if err != nil {
+		libol.Error("Point.UpBr.newBr: %s", err)
+		br, err = tenus.NewBridgeWithName(name)
+		if err != nil {
+			libol.Error("Point.UpBr.newBr: %s", err)
+			return nil
+		}
+	}
+
+	brCtl := libol.NewBrCtl(name)
+	if err := brCtl.Stp(true); err != nil {
+		libol.Error("Point.UpBr.Stp: %s", err)
+	}
+
+	if err := br.SetLinkUp(); err != nil {
+		libol.Error("Point.UpBr.newBr.Up: %s", err)
+	}
+
+	return br
+}
+
 func (p *Point) OnTap(tap *TapWorker) error {
+	libol.Info("Point.OnTap")
+
 	name := tap.Device.Name()
-	libol.Debug("Point.UpLink: %s", name)
 	link, err := tenus.NewLinkFrom(name)
 	if err != nil {
-		libol.Error("Point.UpLink: Get dev %s: %s", name, err)
+		libol.Error("Point.OnTap: Get dev %s: %s", name, err)
 		return err
 	}
 
 	if err := link.SetLinkUp(); err != nil {
-		libol.Error("Point.UpLink.SetLinkUp: %s: %s", name, err)
+		libol.Error("Point.OnTap.SetLinkUp: %s: %s", name, err)
 		return err
 	}
 
-	if p.BrName != "" {
-		br, err := tenus.BridgeFromName(p.BrName)
-		if err != nil {
-			libol.Error("Point.UpLink.newBr: %s", err)
-			br, err = tenus.NewBridgeWithName(p.BrName)
-			if err != nil {
-				libol.Error("Point.UpLink.newBr: %s", err)
-			}
-		}
-
-		brCtl := libol.NewBrCtl(p.BrName)
-		if err := brCtl.Stp(true); err != nil {
-			libol.Error("Point.UpLink.Stp: %s", err)
-		}
-
-		if err := br.SetLinkUp(); err != nil {
-			libol.Error("Point.UpLink.newBr.Up: %s", err)
-		}
-
+	if br := p.UpBr(p.BrName); br != nil {
 		if err := br.AddSlaveIfc(link.NetInterface()); err != nil {
-			libol.Error("Point.UpLink.AddSlave: Switch dev %s: %s", name, err)
+			libol.Error("Point.OnTap.AddSlave: Switch dev %s: %s", name, err)
 		}
 
 		link, err = tenus.NewLinkFrom(p.BrName)
 		if err != nil {
-			libol.Error("Point.UpLink: Get dev %s: %s", p.BrName, err)
+			libol.Error("Point.OnTap: Get dev %s: %s", p.BrName, err)
 		}
-	}
-
-	if p.IfAddr != "" {
-		ip, ipNet, err := net.ParseCIDR(p.IfAddr)
-		if err != nil {
-			libol.Error("Point.UpLink.ParseCIDR %s: %s", p.IfAddr, err)
-			return err
-		}
-		if err := link.SetLinkIp(ip, ipNet); err != nil {
-			libol.Error("Point.UpLink.SetLinkIp: %s", err)
-			return err
-		}
-
-		p.ipAddr = ip
-		p.ipNet = ipNet
 	}
 
 	p.link = link
+	p.AddAddr(p.IfAddr)
 
 	return nil
 }
@@ -209,31 +244,61 @@ func (p *Point) OnIpAddr(worker *TcpWorker, n *models.Network) error {
 
 	prefix := libol.Netmask2Len(n.Netmask)
 	ipStr := fmt.Sprintf("%s/%d", n.IfAddr, prefix)
-	ip, ipNet, err := net.ParseCIDR(ipStr)
-	if err != nil {
-		libol.Error("Point.OnIpAddr.ParseCIDR %s: %s", ipStr, err)
-		return err
+
+	p.AddAddr(ipStr)
+	p.AddRoutes(n.Routes)
+
+	return nil
+}
+
+func (p *Point) AddRoutes(routes []*models.Route) error {
+	if routes == nil {
+		return nil
 	}
 
-	if err := p.link.SetLinkIp(ip, ipNet); err != nil {
-		libol.Error("Point.OnIpAddr.SetLinkIp: %s", err)
-		return err
-	}
-	libol.Info("Point.OnIpAddr: %s", ipStr)
-
-	p.ipAddr = ip
-	p.ipNet = ipNet
-
-	if n.Routes != nil {
-		for _, route := range n.Routes {
-			out, err := exec.Command("/usr/sbin/ip", "route",
-				"add", route.Prefix, "dev", p.IfName(), "via", route.Nexthop).Output()
-			if err != nil {
-				libol.Error("Point.OnIpAddr.route: %s, %s", err, out)
-			}
-			libol.Info("Point.OnIpAddr.route: %s via %s", route.Prefix, route.Nexthop)
+	for _, route := range routes {
+		out, err := exec.Command("/usr/sbin/ip", "route",
+			"add", route.Prefix, "dev", p.IfName(), "via", route.Nexthop).Output()
+		if err != nil {
+			libol.Error("Point.OnIpAddr.route: %s, %s", err, out)
 		}
+		libol.Info("Point.OnIpAddr.route: %s via %s", route.Prefix, route.Nexthop)
 	}
 
+	p.routes = routes
+
+	return nil
+}
+
+func (p *Point) DelRoutes(routes []*models.Route) error {
+	if routes == nil {
+		return nil
+	}
+
+	for _, route := range routes {
+		out, err := exec.Command("/usr/sbin/ip", "route",
+			"del", route.Prefix, "dev", p.IfName(), "via", route.Nexthop).Output()
+		if err != nil {
+			libol.Error("Point.DelRoutes.route: %s, %s", err, out)
+		}
+		libol.Info("Point.DelRoutes.route: %s via %s", route.Prefix, route.Nexthop)
+	}
+
+	p.routes = nil
+
+	return nil
+}
+
+func (p *Point) OnClose(worker *TcpWorker) error {
+	libol.Info("Point.OnClose")
+
+	p.DelAddr(p.addr)
+	p.DelRoutes(p.routes)
+
+	return nil
+}
+
+func (p *Point) OnSuccess(worker *TcpWorker) error {
+	libol.Info("Point.OnSuccess")
 	return nil
 }

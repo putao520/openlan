@@ -9,15 +9,15 @@ import (
 )
 
 type _network struct {
-	lock sync.RWMutex
-	networks  map[string]*models.Network
-	usedAddr  map[string]string
-	clientUsed  map[string]string
+	lock       sync.RWMutex
+	networks   map[string]*models.Network
+	usedAddr   map[string]string
+	clientUsed map[string]string
 }
 
-var Network = _network {
-	networks: make(map[string]*models.Network, 1024),
-	usedAddr: make(map[string]string, 1024),
+var Network = _network{
+	networks:   make(map[string]*models.Network, 1024),
+	usedAddr:   make(map[string]string, 1024),
 	clientUsed: make(map[string]string, 1024),
 }
 
@@ -87,7 +87,7 @@ func (w *_network) GetFreeAddr(client *libol.TcpClient, n *models.Network) (stri
 	w.lock.Lock()
 	defer w.lock.Unlock()
 
-	ipStr  := ""
+	ipStr := ""
 	netmask := n.Netmask
 	ip := net.ParseIP(n.IpAddr).To4()
 	start := binary.BigEndian.Uint32(ip[:4])
@@ -113,7 +113,7 @@ func (w *_network) GetFreeAddr(client *libol.TcpClient, n *models.Network) (stri
 	return ipStr, netmask
 }
 
-func (w *_network) FreeAddr(client *libol.TcpClient)  {
+func (w *_network) FreeAddr(client *libol.TcpClient) {
 	w.lock.Lock()
 	defer w.lock.Unlock()
 
