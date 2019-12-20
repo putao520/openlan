@@ -15,15 +15,14 @@ var Point = _point{
 	clients: make(map[string]*models.Point, 1024),
 }
 
-func (p *_point) AddPoint(m *models.Point) {
+func (p *_point) Add(m *models.Point) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	Storage.SavePoint(m.Server, m, true)
 	p.clients[m.Client.Addr] = m
 }
 
-func (p *_point) GetPoint(c *libol.TcpClient) *models.Point {
+func (p *_point) Get(c *libol.TcpClient) *models.Point {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
@@ -33,18 +32,17 @@ func (p *_point) GetPoint(c *libol.TcpClient) *models.Point {
 	return nil
 }
 
-func (p *_point) DelPoint(c *libol.TcpClient) {
+func (p *_point) Del(c *libol.TcpClient) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
 	if m, ok := p.clients[c.Addr]; ok {
 		m.Device.Close()
-		Storage.SavePoint(m.Server, m, false)
 		delete(p.clients, c.Addr)
 	}
 }
 
-func (p *_point) ListPoint() <-chan *models.Point {
+func (p *_point) List() <-chan *models.Point {
 	c := make(chan *models.Point, 128)
 
 	go func() {

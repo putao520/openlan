@@ -74,7 +74,7 @@ func (p *PointAuth) handleLogin(client *libol.TcpClient, data string) error {
 	if user.Token != "" {
 		name = user.Token
 	}
-	nowUser := service.User.GetUser(name)
+	nowUser := service.User.Get(name)
 	if nowUser != nil {
 		if nowUser.Password == user.Password {
 			p.Success++
@@ -104,7 +104,7 @@ func (p *PointAuth) onAuth(client *libol.TcpClient, user *models.User) error {
 	m := models.NewPoint(client, dev)
 	m.Alias = user.Alias
 
-	service.Point.AddPoint(m)
+	service.Point.Add(m)
 	go p.GoRecvOnTap(dev, client.SendMsg)
 
 	return nil

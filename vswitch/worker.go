@@ -48,7 +48,6 @@ func NewWorkerBase(server *libol.TcpServer, c *config.VSwitch) *WorkerBase {
 
 	service.User.Load(w.Conf.Password)
 	service.Network.Load(w.Conf.Network)
-	service.Storage.Open(c.Redis.Addr, c.Redis.Auth, c.Redis.Db)
 
 	return &w
 }
@@ -141,7 +140,7 @@ func (w *WorkerBase) OnRecv(client *libol.TcpClient, data []byte) error {
 		return err
 	}
 
-	point := service.Point.GetPoint(client)
+	point := service.Point.Get(client)
 	if point == nil {
 		return libol.Errer("Point not found.")
 	}
@@ -162,7 +161,7 @@ func (w *WorkerBase) OnRecv(client *libol.TcpClient, data []byte) error {
 func (w *WorkerBase) OnClose(client *libol.TcpClient) error {
 	libol.Info("WorkerBase.onClose: %s", client.Addr)
 
-	service.Point.DelPoint(client)
+	service.Point.Del(client)
 	service.Network.FreeAddr(client)
 
 	return nil
@@ -206,7 +205,7 @@ func (w *WorkerBase) AddLink(c *config.Point) {
 		w.links[c.Addr] = p
 		w.linksLock.Unlock()
 
-		service.Storage.SaveLink(w.GetId(), p, true)
+		service.Link.Add(p)
 		p.Start()
 	}()
 }
@@ -216,36 +215,9 @@ func (w *WorkerBase) DelLink(addr string) {
 	defer w.linksLock.Unlock()
 	if p, ok := w.links[addr]; ok {
 		p.Stop()
-		service.Storage.SaveLink(w.GetId(), p, false)
+		service.Link.Del(p.Addr())
 		delete(w.links, addr)
 	}
-}
-
-func (w *WorkerBase) GetLink(addr string) *point.Point {
-	w.linksLock.RLock()
-	defer w.linksLock.RUnlock()
-
-	if p, ok := w.links[addr]; ok {
-		return p
-	}
-
-	return nil
-}
-
-func (w *WorkerBase) ListLink() <-chan *point.Point {
-	c := make(chan *point.Point, 128)
-
-	go func() {
-		w.linksLock.RLock()
-		defer w.linksLock.RUnlock()
-
-		for _, p := range w.links {
-			c <- p
-		}
-		c <- nil //Finish channel by nil.
-	}()
-
-	return c
 }
 
 func (w *WorkerBase) GetServer() *libol.TcpServer {

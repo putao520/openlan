@@ -6,7 +6,7 @@ Group: Applications/Communications
 License: Apache 2.0
 URL: https://github.com/danieldin95/openlan-go
 BuildRequires: go
-Requires: net-tools, redis
+Requires: net-tools
 
 %define _source_dir ${RPM_SOURCE_DIR}/openlan-%{version}
 

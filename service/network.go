@@ -37,7 +37,7 @@ func (w *_network) Load(path string) error {
 	return nil
 }
 
-func (w *_network) AddNet(n *models.Network) {
+func (w *_network) Add(n *models.Network) {
 	w.lock.Lock()
 	defer w.lock.Unlock()
 
@@ -45,7 +45,7 @@ func (w *_network) AddNet(n *models.Network) {
 	//TODO save to db.
 }
 
-func (w *_network) DelNet(name string) {
+func (w *_network) Del(name string) {
 	w.lock.Lock()
 	defer w.lock.Unlock()
 
@@ -54,7 +54,7 @@ func (w *_network) DelNet(name string) {
 	}
 }
 
-func (w *_network) GetNet(name string) *models.Network {
+func (w *_network) Get(name string) *models.Network {
 	w.lock.RLock()
 	defer w.lock.RUnlock()
 
@@ -67,7 +67,7 @@ func (w *_network) GetNet(name string) *models.Network {
 
 //TODO add/del route
 
-func (w *_network) ListNet() <-chan *models.Network {
+func (w *_network) List() <-chan *models.Network {
 	c := make(chan *models.Network, 128)
 
 	go func() {

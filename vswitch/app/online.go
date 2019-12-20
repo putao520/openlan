@@ -23,33 +23,6 @@ func NewOnline(w api.Worker, c *config.VSwitch) (o *Online) {
 	return
 }
 
-func (o *Online) GetOnline(name string) *models.Line {
-	o.lock.RLock()
-	defer o.lock.RUnlock()
-
-	if n, ok := o.lines[name]; ok {
-		return n
-	}
-
-	return nil
-}
-
-func (o *Online) ListLine() <-chan *models.Line {
-	c := make(chan *models.Line, 1024)
-
-	go func() {
-		o.lock.RLock()
-		defer o.lock.RUnlock()
-
-		for _, u := range o.lines {
-			c <- u
-		}
-		c <- nil //Finish channel by nil.
-	}()
-
-	return c
-}
-
 func (o *Online) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 	data := frame.Data
 	libol.Debug("Online.OnFrame % x.", data)
@@ -113,7 +86,7 @@ func (o *Online) AddLine(line *models.Line) {
 	if _, ok := o.lines[line.String()]; !ok {
 		libol.Info("Online.AddLine %s", line)
 		o.lines[line.String()] = line
-		service.Storage.SaveLine(o.worker.GetId(), line, true)
+		service.Online.Add(line)
 	}
 }
 

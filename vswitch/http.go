@@ -5,15 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/danieldin95/openlan-go/config"
+	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
+	"github.com/danieldin95/openlan-go/point"
 	"github.com/danieldin95/openlan-go/service"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"text/template"
-
-	"github.com/danieldin95/openlan-go/libol"
-	"github.com/danieldin95/openlan-go/point"
 )
 
 type Http struct {
@@ -151,7 +150,7 @@ func (h *Http) indexBody() string {
 	body += "\n"
 	body += "# point accessed to this vswith.\n"
 	body += "uptime, alias, remote, device, receipt, transmis, error, state\n"
-	for p := range service.Point.ListPoint() {
+	for p := range service.Point.List() {
 		if p == nil {
 			break
 		}
@@ -165,7 +164,7 @@ func (h *Http) indexBody() string {
 	body += "\n"
 	body += "# neighbor we discovered on this vswitch.\n"
 	body += "uptime, ethernet, address, remote\n"
-	for n := range h.worker.Neighbor.ListNeighbor() {
+	for n := range service.Neighbor.List() {
 		if n == nil {
 			break
 		}
@@ -177,7 +176,7 @@ func (h *Http) indexBody() string {
 	body += "\n"
 	body += "# link which connect to other vswitch.\n"
 	body += "uptime, bridge, device, remote, state\n"
-	for p := range h.worker.ListLink() {
+	for p := range service.Link.List() {
 		if p == nil {
 			break
 		}
@@ -188,7 +187,7 @@ func (h *Http) indexBody() string {
 	body += "\n"
 	body += "# online that traces the destination from point.\n"
 	body += "ethernet, source, dest address, protocol, source, dest port\n"
-	for l := range h.worker.OnLines.ListLine() {
+	for l := range service.Online.List() {
 		if l == nil {
 			break
 		}
@@ -240,7 +239,7 @@ func (h *Http) User(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		users := make([]*models.User, 0, 1024)
-		for u := range service.User.ListUser() {
+		for u := range service.User.List() {
 			if u == nil {
 				break
 			}
@@ -263,7 +262,7 @@ func (h *Http) User(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		service.User.AddUser(user)
+		service.User.Add(user)
 
 		fmt.Fprintf(w, ApiReplier(0, "success"))
 	default:
@@ -279,7 +278,7 @@ func (h *Http) Neighbor(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		neighbors := make([]*models.Neighbor, 0, 1024)
-		for n := range h.worker.Neighbor.ListNeighbor() {
+		for n := range service.Neighbor.List() {
 			if n == nil {
 				break
 			}
@@ -303,7 +302,7 @@ func (h *Http) Link(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		links := make([]*point.Point, 0, 1024)
-		for l := range h.worker.ListLink() {
+		for l := range service.Link.List() {
 			if l == nil {
 				break
 			}

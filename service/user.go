@@ -34,14 +34,14 @@ func (w *_user) Load(path string) error {
 		values := strings.Split(line, ":")
 		if len(values) == 2 {
 			_user := models.NewUser(values[0], strings.TrimSpace(values[1]))
-			w.AddUser(_user)
+			w.Add(_user)
 		}
 	}
 
 	return nil
 }
 
-func (w *_user) AddUser(_user *models.User) {
+func (w *_user) Add(_user *models.User) {
 	w.lock.Lock()
 	defer w.lock.Unlock()
 
@@ -52,7 +52,7 @@ func (w *_user) AddUser(_user *models.User) {
 	w._users[name] = _user
 }
 
-func (w *_user) DelUser(name string) {
+func (w *_user) Del(name string) {
 	w.lock.Lock()
 	defer w.lock.Unlock()
 
@@ -61,7 +61,7 @@ func (w *_user) DelUser(name string) {
 	}
 }
 
-func (w *_user) GetUser(name string) *models.User {
+func (w *_user) Get(name string) *models.User {
 	w.lock.RLock()
 	defer w.lock.RUnlock()
 
@@ -72,7 +72,7 @@ func (w *_user) GetUser(name string) *models.User {
 	return nil
 }
 
-func (w *_user) ListUser() <-chan *models.User {
+func (w *_user) List() <-chan *models.User {
 	c := make(chan *models.User, 128)
 
 	go func() {

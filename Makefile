@@ -36,3 +36,9 @@ rpm:
 
 	# copy 
 	cp -rvf ~/rpmbuild/RPMS/x86_64/openlan-* ./resource
+
+winzip:
+	mkdir -p ./openlan-wins
+	cp -rvf ./resource/point.windows.x86_64 ./openlan-wins/point.windows.x86_64.exe
+	cp -rvf ./resource/point.json ./openlan-wins/point.json
+	zip -r ./resource/openlan-wins.zip ./openlan-wins

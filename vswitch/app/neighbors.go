@@ -26,33 +26,6 @@ func NewNeighbors(w api.Worker, c *config.VSwitch) (e *Neighbors) {
 	return
 }
 
-func (e *Neighbors) GetNeighbor(name string) *models.Neighbor {
-	e.lock.RLock()
-	defer e.lock.RUnlock()
-
-	if n, ok := e.neighbors[name]; ok {
-		return n
-	}
-
-	return nil
-}
-
-func (e *Neighbors) ListNeighbor() <-chan *models.Neighbor {
-	c := make(chan *models.Neighbor, 128)
-
-	go func() {
-		e.lock.RLock()
-		defer e.lock.RUnlock()
-
-		for _, u := range e.neighbors {
-			c <- u
-		}
-		c <- nil //Finish channel by nil.
-	}()
-
-	return c
-}
-
 func (e *Neighbors) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 	libol.Debug("Neighbors.OnFrame % x.", frame.Data)
 
@@ -103,7 +76,7 @@ func (e *Neighbors) AddNeighbor(neb *models.Neighbor) {
 		e.neighbors[neb.HwAddr.String()] = neb
 	}
 
-	service.Storage.SaveNeighbor(e.worker.GetId(), neb, true)
+	service.Neighbor.Add(neb)
 }
 
 func (e *Neighbors) DelNeighbor(hwAddr net.HardwareAddr) {
@@ -112,7 +85,7 @@ func (e *Neighbors) DelNeighbor(hwAddr net.HardwareAddr) {
 
 	libol.Info("Neighbors.DelNeighbor %s.", hwAddr)
 	if n := e.neighbors[hwAddr.String()]; n != nil {
-		service.Storage.SaveNeighbor(e.worker.GetId(), n, false)
+		service.Neighbor.Del(n.IpAddr.String())
 		delete(e.neighbors, hwAddr.String())
 	}
 }
