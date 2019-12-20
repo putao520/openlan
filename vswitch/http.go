@@ -48,10 +48,10 @@ func NewHttp(worker *Worker, c *config.VSwitch) (h *Http) {
 
 	h.SaveToken()
 	http.HandleFunc("/", h.Index)
+	http.HandleFunc("/favicon.ico", h.Public)
 	http.HandleFunc("/api/user", h.User)
 	http.HandleFunc("/api/neighbor", h.Neighbor)
 	http.HandleFunc("/api/link", h.Link)
-	http.HandleFunc("/favicon.ico", h.Public)
 
 	return
 }
