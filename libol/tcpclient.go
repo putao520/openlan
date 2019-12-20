@@ -166,9 +166,10 @@ func (t *TcpClient) SendMsg(data []byte) error {
 		return err
 	}
 
-	buf := make([]byte, HSIZE+len(data))
+	size := len(data)
+	buf := make([]byte, HSIZE+size)
 	copy(buf[0:2], MAGIC)
-	binary.BigEndian.PutUint16(buf[2:4], uint16(len(data)))
+	binary.BigEndian.PutUint16(buf[2:4], uint16(size))
 	copy(buf[HSIZE:], data)
 
 	if err := t.sendX(buf); err != nil {
@@ -176,7 +177,7 @@ func (t *TcpClient) SendMsg(data []byte) error {
 		return err
 	}
 
-	t.TxOkay++
+	t.TxOkay += uint64(size)
 
 	return nil
 }
@@ -208,7 +209,7 @@ func (t *TcpClient) RecvMsg(data []byte) (int, error) {
 	}
 
 	copy(data, d)
-	t.RxOkay++
+	t.RxOkay += uint64(size)
 
 	return len(d), nil
 }
