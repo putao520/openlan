@@ -14,6 +14,7 @@ type Point struct {
 	Addr     string `json:"vs.addr"`
 	Auth     string `json:"vs.auth"`
 	Tls      bool   `json:"vs.tls"`
+	Allowed  bool   `json:"vs.allowed"`
 	IfMtu    int    `json:"if.mtu"`
 	IfAddr   string `json:"if.addr"`
 	BrName   string `json:"if.br"`
@@ -47,6 +48,7 @@ var PointDefault = Point{
 	IfEthSrc: "",
 	LogFile:  "point.error",
 	Script:   fmt.Sprintf("point.%s.cmd", runtime.GOOS),
+	Allowed:  true,
 }
 
 func NewPoint() (c *Point) {
@@ -67,6 +69,7 @@ func NewPoint() (c *Point) {
 	flag.StringVar(&c.IfEthSrc, "if:eth:src", PointDefault.IfEthSrc, "ethernet source for tun device")
 	flag.StringVar(&c.SaveFile, "conf", PointDefault.SaveFile, "the configuration file")
 	flag.StringVar(&c.Script, "script", PointDefault.Script, "call script you assigned")
+	flag.BoolVar(&c.Allowed, "vs:allowed", PointDefault.Allowed, "allowed network configuration from vs")
 
 	flag.Parse()
 	if err := c.Load(); err != nil {

@@ -27,6 +27,7 @@ type TcpWorker struct {
 	user      *models.User
 	network   *models.Network
 	routes    map[string]*models.Route
+	allowed   bool
 }
 
 func NewTcpWorker(client *libol.TcpClient, c *config.Point, on OnTcpWorker) (t *TcpWorker) {
@@ -38,6 +39,7 @@ func NewTcpWorker(client *libol.TcpClient, c *config.Point, on OnTcpWorker) (t *
 		user:      models.NewUser(c.Name(), c.Password()),
 		network:   models.NewNetwork(c.Tenant(), c.IfAddr),
 		routes:    make(map[string]*models.Route, 64),
+		allowed:   c.Allowed,
 	}
 	t.user.Alias = c.Alias
 	t.Client.SetMaxSize(t.maxSize)
@@ -105,7 +107,9 @@ func (t *TcpWorker) onInstruct(data []byte) error {
 		if resp[:4] == "okay" {
 			t.Client.SetStatus(libol.CLAUEHED)
 			t.On.OnSuccess(t)
-			t.TryNetwork(t.Client)
+			if t.allowed {
+				t.TryNetwork(t.Client)
+			}
 			libol.Info("TcpWorker.onInstruct.login: success")
 		} else {
 			t.Client.SetStatus(libol.CLUNAUTH)
