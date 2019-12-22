@@ -31,9 +31,9 @@ func NewPoint(config *config.Point) (p *Point) {
 	p = &Point{
 		BrName:    config.BrName,
 		IfAddr:    config.IfAddr,
-		tcpWorker: NewTcpWorker(client, config),
 		config:    config,
 	}
+	p.tcpWorker = NewTcpWorker(client, config, p)
 	p.newDevice()
 	return
 }
