@@ -1,3 +1,0 @@
-[console_scripts]
-openlan-utils = openlan_utils.__main__:main
-
