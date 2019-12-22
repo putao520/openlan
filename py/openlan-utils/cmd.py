@@ -2,13 +2,8 @@ import os
 import sys
 import json
 import argparse
-import ruamel.yaml as ryaml
-import ruamel.yaml.comments as rcomments
+import ruamel.yaml
 from .client import Client
-
-
-yaml = ryaml.YAML()
-yaml.indent(sequence=2)
 
 
 class Cli(object):
@@ -43,8 +38,9 @@ class Cli(object):
             if opt.format == 'json':
                 json.dump(resp.json(), sys.stdout, indent=2)
             elif opt.format == 'yaml':
-                data = json.loads(resp.text, object_pairs_hook=rcomments.CommentedMap)
-                yaml.dump(data, sys.stdout)
+                yaml = ruamel.yaml.YAML()
+                yaml.indent(sequence=2)
+                yaml.dump(resp.json(), sys.stdout)
             else:
                 sys.stdout.write(resp.text)
             return resp
