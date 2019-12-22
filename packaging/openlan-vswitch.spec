@@ -8,6 +8,7 @@ URL: https://github.com/danieldin95/openlan-go
 BuildRequires: go
 Requires: net-tools
 
+%define _venv /opt/openlan-utils/env
 %define _source_dir ${RPM_SOURCE_DIR}/openlan-%{version}
 
 %description
@@ -16,6 +17,9 @@ OpenLan's Project Software
 %build
 cd %_source_dir
 go build -o ./resource/vswitch.linux.x86_64 main/vswitch_linux.go
+
+virtualenv %_venv
+%_venv/bin/pip install --upgrade "%_source_dir/py"
 
 %install
 mkdir -p %{buildroot}/usr/bin
@@ -38,6 +42,9 @@ cat > %{buildroot}/etc/vswitch/vswitch.password << EOF
 hi:hi@123$
 EOF
 
+mkdir -p %{buildroot}/opt/openlan-utils
+cp -R /opt/openlan-utils/env %{buildroot}/opt/openlan-utils
+
 %pre
 firewall-cmd --permanent --zone=public --add-port=10000/tcp --permanent || {
   echo "You need allowed TCP port 10000 manually."
@@ -53,5 +60,7 @@ firewall-cmd --reload || :
 /usr/bin/*
 /usr/lib/systemd/system/*
 /var/openlan
+/opt/openlan-utils/*
 
 %clean
+rm -rf %_env
