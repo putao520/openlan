@@ -88,7 +88,12 @@ func (w *_network) GetFreeAddr(client *libol.TcpClient, n *models.Network) (stri
 
 	ipStr := ""
 	netmask := n.Netmask
-	ip := net.ParseIP(n.IpAddr).To4()
+	netIp := net.ParseIP(n.IpAddr)
+	if netIp == nil {
+		return ipStr, netmask
+	}
+
+	ip := netIp.To4()
 	start := binary.BigEndian.Uint32(ip[:4])
 
 	for i := 0; i < n.IpRange; i++ {

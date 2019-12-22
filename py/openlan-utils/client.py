@@ -11,7 +11,12 @@ class Client(object):
         self.addr = addr
         self.token = token
         self.debug = kws.get('debug', False)
+        self.default()
 
+    def default(self):
+        if self.addr.find(':') < 0:
+            self.addr = '{}:{}'.format(self.addr, 10000) 
+  
     def request(self, url, method, data=""):
         url = "https://{}/api/{}".format(self.addr, url)
         if self.debug:
@@ -30,7 +35,7 @@ class Client(object):
 
 
 if __name__ == '__main__':
-    addr = os.environ.get("OL_ADDRESS", "localhost:10000")
+    addr = os.environ.get("OL_ADDRESS", "localhost")
     token = os.environ.get("OL_TOKEN", "")
 
     c = Client(addr, token)

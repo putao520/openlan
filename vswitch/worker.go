@@ -212,6 +212,7 @@ func (w *WorkerBase) AddLink(c *config.Point) {
 func (w *WorkerBase) DelLink(addr string) {
 	w.linksLock.Lock()
 	defer w.linksLock.Unlock()
+
 	if p, ok := w.links[addr]; ok {
 		p.Stop()
 		service.Link.Del(p.Addr())

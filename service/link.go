@@ -1,27 +1,37 @@
 package service
 
 import (
+	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/point"
 	"sync"
 )
 
 type _link struct {
 	lock  sync.RWMutex
-	links map[string]*point.Point
+	links map[string]*models.Point
 }
 
 var Link = _link{
-	links: make(map[string]*point.Point, 1024),
+	links: make(map[string]*models.Point, 1024),
 }
 
 func (p *_link) Add(m *point.Point) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	p.links[m.Addr()] = m
+	link := &models.Point{
+		Alias:  "",
+		Server: m.Addr(),
+		Uptime: m.UpTime(),
+		Status: m.State(),
+		Client: m.GetClient(),
+		Device: models.NewTapDevice(m.GetDevice()),
+		IfName: m.IfName(),
+	}
+	p.links[m.Addr()] = link
 }
 
-func (p *_link) Get(key string) *point.Point {
+func (p *_link) Get(key string) *models.Point {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
@@ -40,8 +50,8 @@ func (p *_link) Del(key string) {
 	}
 }
 
-func (p *_link) List() <-chan *point.Point {
-	c := make(chan *point.Point, 128)
+func (p *_link) List() <-chan *models.Point {
+	c := make(chan *models.Point, 128)
 
 	go func() {
 		p.lock.RLock()

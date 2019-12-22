@@ -7,7 +7,6 @@ import (
 	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
-	"github.com/danieldin95/openlan-go/point"
 	"github.com/danieldin95/openlan-go/service"
 	"github.com/gorilla/mux"
 	"io/ioutil"
@@ -245,13 +244,15 @@ func (h *Http) getIndex() string {
 
 	body += "\n"
 	body += "# link which connect to other vswitch.\n"
-	body += "uptime, bridge, device, remote, state\n"
+	body += "uptime, device, remote, state\n"
 	for p := range service.Link.List() {
 		if p == nil {
 			break
 		}
-		body += fmt.Sprintf("%d, %s, %s, %s, %s\n",
-			p.UpTime(), p.BrName, p.IfName(), p.Addr(), p.State())
+
+		client, dev := p.Client, p.Device
+		body += fmt.Sprintf("%d, %s, %s, %s\n",
+			client.UpTime(), dev.Name(), client.Addr, client.GetState())
 	}
 
 	body += "\n"
@@ -345,11 +346,12 @@ func (h *Http) ListNeighbor(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Http) ListLink(w http.ResponseWriter, r *http.Request) {
-	links := make([]*point.Point, 0, 1024)
+	links := make([]*models.Point, 0, 1024)
 	for l := range service.Link.List() {
 		if l == nil {
 			break
 		}
+		l.Update()
 		links = append(links, l)
 	}
 
@@ -362,6 +364,7 @@ func (h *Http) GetLink(w http.ResponseWriter, r *http.Request) {
 
 	link := service.Link.Get(vars["id"])
 	if link != nil {
+		link.Update()
 		h.ResponseJson(w, link)
 	} else {
 		http.Error(w, vars["id"], http.StatusNotFound)
@@ -402,6 +405,7 @@ func (h *Http) ListPoint(w http.ResponseWriter, r *http.Request) {
 		if u == nil {
 			break
 		}
+		u.Update()
 		points = append(points, u)
 	}
 	h.ResponseJson(w, points)
@@ -411,6 +415,7 @@ func (h *Http) GetPoint(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	point := service.Point.Get(vars["id"])
 	if point != nil {
+		point.Update()
 		h.ResponseJson(w, point)
 	} else {
 		http.Error(w, vars["id"], http.StatusNotFound)
