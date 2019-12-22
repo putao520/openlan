@@ -10,11 +10,14 @@ parse.add_argument('--ol-token',
 parse.add_argument('--ol-server',
                    help='Server address',
                    default=os.environ.get("OL_SERVER", "localhost:10000"))
+parse.add_argument('--debug',
+                   help='Enable verbose',
+                   default=False)
 
 
 def with_client(func):
     def decorate(opt, *args, **kws):
-        c = Client(opt.ol_server, opt.ol_token)
+        c = Client(opt.ol_server, opt.ol_token, debug=opt.debug)
         return func(c, opt, *args, **kws)
 
     return decorate
@@ -31,6 +34,15 @@ def cmd(sub_parser):
     return decorate
 
 
+def Output(resp, format='json'):
+    if format == 'json':
+        print json.dumps(resp.json(), indent=2)
+    elif format == 'yaml':
+        print 'TODO'
+    else:
+        print resp.text
+
+
 subpar = subparsers.add_parser('list-user', help="List all users")
 
 
@@ -38,7 +50,7 @@ subpar = subparsers.add_parser('list-user', help="List all users")
 @with_client
 def cmd_list_user(client, opt):
     resp = client.request("user", "GET")
-    print json.dumps(resp.json(), indent=4)
+    Output(resp)
 
 
 subpar = subparsers.add_parser('add-user', help="Add new user")
@@ -56,8 +68,8 @@ def cmd_add_user(client, opt):
         'name': opt.username,
         'password': opt.password
     }
-    resp = client.request("user", "POST", data)
-    print json.dumps(resp.json(), indent=4)
+    resp = client.request("user/{}".format(opt.username), "POST", data)
+    Output(resp)
 
 
 subpar = subparsers.add_parser('del-user', help="Delete a user")
@@ -70,12 +82,22 @@ def cmd_del_user(client, opt):
     if opt.username is None:
         return
 
-    data = {
-        'name': opt.username
-    }
-    resp = client.request("user", "DELETE", data)
+    resp = client.request("user/{}".format(opt.username), "DELETE")
+    Output(resp)
 
-    print resp.text
+
+subpar = subparsers.add_parser('get-user', help="Get a user")
+subpar.add_argument("--username", help="Username")
+
+
+@cmd(subpar)
+@with_client
+def cmd_get_user(client, opt):
+    if opt.username is None:
+        return
+
+    resp = client.request("user/{}".format(opt.username), "GET")
+    Output(resp)
 
 
 def parse_args():

@@ -1,7 +1,6 @@
 package service
 
 import (
-	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
 	"sync"
 )
@@ -22,23 +21,23 @@ func (p *_point) Add(m *models.Point) {
 	p.clients[m.Client.Addr] = m
 }
 
-func (p *_point) Get(c *libol.TcpClient) *models.Point {
+func (p *_point) Get(addr string) *models.Point {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
-	if m, ok := p.clients[c.Addr]; ok {
+	if m, ok := p.clients[addr]; ok {
 		return m
 	}
 	return nil
 }
 
-func (p *_point) Del(c *libol.TcpClient) {
+func (p *_point) Del(addr string) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	if m, ok := p.clients[c.Addr]; ok {
+	if m, ok := p.clients[addr]; ok {
 		m.Device.Close()
-		delete(p.clients, c.Addr)
+		delete(p.clients, addr)
 	}
 }
 

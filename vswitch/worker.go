@@ -140,7 +140,7 @@ func (w *WorkerBase) OnRecv(client *libol.TcpClient, data []byte) error {
 		return err
 	}
 
-	point := service.Point.Get(client)
+	point := service.Point.Get(client.Addr)
 	if point == nil {
 		return libol.Errer("Point not found.")
 	}
@@ -161,7 +161,7 @@ func (w *WorkerBase) OnRecv(client *libol.TcpClient, data []byte) error {
 func (w *WorkerBase) OnClose(client *libol.TcpClient) error {
 	libol.Info("WorkerBase.onClose: %s", client.Addr)
 
-	service.Point.Del(client)
+	service.Point.Del(client.Addr)
 	service.Network.FreeAddr(client)
 
 	return nil

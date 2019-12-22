@@ -7,15 +7,26 @@ requests.packages.urllib3.disable_warnings()
 
 class Client(object):
 
-    def __init__(self, addr, token):
+    def __init__(self, addr, token, **kws):
         self.addr = addr
         self.token = token
+        self.debug = kws.get('debug', False)
 
     def request(self, url, method, data=""):
         url = "https://{}/api/{}".format(self.addr, url)
-        return requests.request(method, url,
+        if self.debug:
+            print "{}: {} {}".format(method, url, data)
+
+        resp = requests.request(method, url,
                                 json=data, verify=False,
                                 auth=(self.token, ''))
+        if self.debug:
+            print "RESPONSE: {}".format(resp.text)
+
+        if not resp.ok:
+            resp.raise_for_status()
+
+        return resp
 
 
 if __name__ == '__main__':
