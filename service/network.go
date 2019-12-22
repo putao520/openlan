@@ -30,7 +30,6 @@ func (w *_network) Load(path string) error {
 	}
 
 	for _, net := range nets {
-		libol.Info("%s", net)
 		w.networks[net.Tenant] = net
 	}
 

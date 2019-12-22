@@ -77,7 +77,6 @@ func (w *WorkerBase) LoadLinks() {
 	if w.Conf.Links != nil {
 		for _, lc := range w.Conf.Links {
 			lc.Default()
-			libol.Info("WorkerBase.LoadLinks %s", lc)
 			w.AddLink(lc)
 		}
 	}

@@ -191,8 +191,8 @@ func (h *Http) ResponseJson(w http.ResponseWriter, v interface{}) {
 
 func (h *Http) ResponseMsg(w http.ResponseWriter, code int, message string) {
 	ret := struct {
-		Code    int
-		Message string
+		Code    int    `json:"code"`
+		Message string `json:"message"`
 	}{
 		Code:    code,
 		Message: message,

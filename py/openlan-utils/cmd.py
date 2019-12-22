@@ -3,16 +3,44 @@ import argparse
 import os
 from .client import Client
 
-parse = argparse.ArgumentParser()
-parse.add_argument('--ol-token',
-                   help='Token series',
-                   default=os.environ.get("OL_TOKEN", ""))
-parse.add_argument('--ol-server',
-                   help='Server address',
-                   default=os.environ.get("OL_SERVER", "localhost:10000"))
-parse.add_argument('--debug',
-                   help='Enable verbose',
-                   default=False)
+
+class Cli(object):
+
+    def __init__(self, parser):
+        self._parser = parser
+        self._subparsers = {}
+
+    def parser(self, name, **kws):
+        def decorate(func):
+            sub = self._subparsers.get(name)
+            if sub is None:
+                sub = self._parser.add_parser(name, **kws)
+                self._subparsers[name] = sub
+            sub.set_defaults(func=func)
+            return func
+
+        return decorate
+
+    def argument(self, name, argument, **kws):
+        def decorate(func):
+            sub = self._subparsers.get(name)
+            if sub is not None:
+                sub.add_argument(argument, **kws)
+            return func
+
+        return decorate
+
+    def output(self, func):
+        def decorate(opt, *args, **kws):
+            resp = func(opt, *args, **kws)
+            if opt.format == 'json':
+                print json.dumps(resp.json(), indent=2)
+            elif opt.format == 'yaml':
+                print 'TODO'
+            else:
+                print resp.text
+            return resp
+        return decorate
 
 
 def with_client(func):
@@ -23,42 +51,41 @@ def with_client(func):
     return decorate
 
 
-subparsers = parse.add_subparsers()
+parse = argparse.ArgumentParser()
+parse.add_argument('--ol-token',
+                   help='Token series',
+                   default=os.environ.get("OL_TOKEN", ""))
+parse.add_argument('--ol-server',
+                   help='Server address',
+                   default=os.environ.get("OL_SERVER", "localhost:10000"))
+parse.add_argument('--debug',
+                   help='Enable verbose',
+                   default=False)
+parse.add_argument('--format',
+                   help='Enable verbose',
+
+                   default='json')
 
 
-def cmd(sub_parser):
-    def decorate(func):
-        sub_parser.set_defaults(func=func)
-        return func
-
-    return decorate
+def parse_args():
+    return parse.parse_args()
 
 
-def Output(resp, format='json'):
-    if format == 'json':
-        print json.dumps(resp.json(), indent=2)
-    elif format == 'yaml':
-        print 'TODO'
-    else:
-        print resp.text
+cli = Cli(parse.add_subparsers())
 
 
-subpar = subparsers.add_parser('list-user', help="List all users")
-
-
-@cmd(subpar)
+@cli.parser('list-user', help="Display all users")
+@cli.output
 @with_client
 def cmd_list_user(client, opt):
     resp = client.request("user", "GET")
-    Output(resp)
+    return resp
 
 
-subpar = subparsers.add_parser('add-user', help="Add new user")
-subpar.add_argument("--username", help="Username")
-subpar.add_argument("--password", help="Password")
-
-
-@cmd(subpar)
+@cli.argument('add-user', "--username", help="Username")
+@cli.argument('add-user', "--password", help="Password")
+@cli.parser('add-user', help="Add new user")
+@cli.output
 @with_client
 def cmd_add_user(client, opt):
     if opt.username is None or opt.password is None:
@@ -69,38 +96,61 @@ def cmd_add_user(client, opt):
         'password': opt.password
     }
     resp = client.request("user/{}".format(opt.username), "POST", data)
-    Output(resp)
+    return resp
 
 
-subpar = subparsers.add_parser('del-user', help="Delete a user")
-subpar.add_argument("--username", help="Username")
-
-
-@cmd(subpar)
+@cli.argument('del-user', "--username", help="Username")
+@cli.parser('del-user', help="Del one user")
+@cli.output
 @with_client
 def cmd_del_user(client, opt):
     if opt.username is None:
         return
 
     resp = client.request("user/{}".format(opt.username), "DELETE")
-    Output(resp)
+    return resp
 
 
-subpar = subparsers.add_parser('get-user', help="Get a user")
-subpar.add_argument("--username", help="Username")
-
-
-@cmd(subpar)
+@cli.argument('get-user', "--username", help="Username")
+@cli.parser('get-user', help="Get one user")
+@cli.output
 @with_client
 def cmd_get_user(client, opt):
     if opt.username is None:
         return
 
     resp = client.request("user/{}".format(opt.username), "GET")
-    Output(resp)
+    return resp
 
 
-def parse_args():
-    return parse.parse_args()
+@cli.parser('list-network', help="Display all network")
+@cli.output
+@with_client
+def cmd_list_network(client, opt):
+    resp = client.request("network", "GET")
+    return resp
 
+
+@cli.parser('list-point', help="Display all point")
+@cli.output
+@with_client
+def cmd_list_point(client, opt):
+    resp = client.request("point", "GET")
+    return resp
+
+
+@cli.parser('list-link', help="Display all link")
+@cli.output
+@with_client
+def cmd_list_link(client, opt):
+    resp = client.request("link", "GET")
+    return resp
+
+
+@cli.parser('list-neighbor', help="Display all neighbors")
+@cli.output
+@with_client
+def cmd_list_neighbor(client, opt):
+    resp = client.request("neighbor", "GET")
+    return resp
 

@@ -25,7 +25,7 @@ type Network struct {
 	IpAddr  string `json:"ipAddr"`
 	IpRange int    `json:"ipRange"`
 	Netmask string `json:"netmask"`
-	Routes  []*Route
+	Routes  []*Route `json:"routes"`
 }
 
 func NewNetwork(name string, ifAddr string) (this *Network) {
