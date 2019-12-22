@@ -304,7 +304,6 @@ func (h *Http) GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-
 func (h *Http) AddUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	body, err := ioutil.ReadAll(r.Body)

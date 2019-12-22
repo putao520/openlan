@@ -6,7 +6,7 @@ import (
 )
 
 type _link struct {
-	lock    sync.RWMutex
+	lock  sync.RWMutex
 	links map[string]*point.Point
 }
 

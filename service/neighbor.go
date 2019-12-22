@@ -6,7 +6,7 @@ import (
 )
 
 type _neighbor struct {
-	lock    sync.RWMutex
+	lock      sync.RWMutex
 	neighbors map[string]*models.Neighbor
 }
 

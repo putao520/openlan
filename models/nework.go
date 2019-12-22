@@ -20,11 +20,11 @@ func (u *Route) String() string {
 }
 
 type Network struct {
-	Tenant  string `json:"tenant"`
-	IfAddr  string `json:"ifAddr"`
-	IpAddr  string `json:"ipAddr"`
-	IpRange int    `json:"ipRange"`
-	Netmask string `json:"netmask"`
+	Tenant  string   `json:"tenant"`
+	IfAddr  string   `json:"ifAddr"`
+	IpAddr  string   `json:"ipAddr"`
+	IpRange int      `json:"ipRange"`
+	Netmask string   `json:"netmask"`
 	Routes  []*Route `json:"routes"`
 }
 

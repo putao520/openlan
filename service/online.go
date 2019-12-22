@@ -6,7 +6,7 @@ import (
 )
 
 type _online struct {
-	lock    sync.RWMutex
+	lock  sync.RWMutex
 	lines map[string]*models.Line
 }
 
