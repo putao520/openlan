@@ -12,6 +12,7 @@ setup(
         ]
     },
     install_requires=[
-        'requests==2.20.0'
+        'requests==2.20.0',
+        'ruamel.yaml==0.16.5'
     ],
 )

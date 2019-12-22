@@ -1,7 +1,14 @@
+import os
+import sys
 import json
 import argparse
-import os
+import ruamel.yaml as ryaml
+import ruamel.yaml.comments as rcomments
 from .client import Client
+
+
+yaml = ryaml.YAML()
+yaml.indent(sequence=2)
 
 
 class Cli(object):
@@ -34,11 +41,12 @@ class Cli(object):
         def decorate(opt, *args, **kws):
             resp = func(opt, *args, **kws)
             if opt.format == 'json':
-                print json.dumps(resp.json(), indent=2)
+                json.dump(resp.json(), sys.stdout, indent=2)
             elif opt.format == 'yaml':
-                print 'TODO'
+                data = json.loads(resp.text, object_pairs_hook=rcomments.CommentedMap)
+                yaml.dump(data, sys.stdout)
             else:
-                print resp.text
+                sys.stdout.write(resp.text)
             return resp
         return decorate
 
