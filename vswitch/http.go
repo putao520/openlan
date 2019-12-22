@@ -67,7 +67,6 @@ func NewHttp(worker *Worker, c *config.VSwitch) (h *Http) {
 func (h *Http) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if h.IsAuth(w, r) {
-			w.Header().Set("Content-Type", "application/json")
 			next.ServeHTTP(w, r)
 		} else {
 			w.Header().Set("WWW-Authenticate", "Basic")
@@ -104,8 +103,8 @@ func (h *Http) SaveToken() error {
 }
 
 func (h *Http) LoadRouter() {
-	h.Router().HandleFunc("/", h.IndexHtml).Methods("GET")
-	h.Router().HandleFunc("/favicon.ico", h.PubFile).Methods("GET")
+	h.Router().HandleFunc("/", h.IndexHtml)
+	h.Router().HandleFunc("/favicon.ico", h.PubFile)
 	h.Router().HandleFunc("/api/link", h.ListLink).Methods("GET")
 	h.Router().HandleFunc("/api/link/{id}", h.GetLink).Methods("GET")
 	h.Router().HandleFunc("/api/link/{id}", h.AddLink).Methods("POST")
@@ -167,6 +166,10 @@ func (h *Http) IsAuth(w http.ResponseWriter, r *http.Request) bool {
 	token, pass, ok := r.BasicAuth()
 	libol.Debug("Http.IsAuth token: %s, pass: %s", token, pass)
 
+	if len(r.URL.Path) < 4 || r.URL.Path[:4] != "/api" {
+		return true
+	}
+
 	if !ok || token != h.adminToken {
 		w.Header().Set("WWW-Authenticate", "Basic")
 		http.Error(w, "Authorization Required.", http.StatusUnauthorized)
@@ -176,7 +179,17 @@ func (h *Http) IsAuth(w http.ResponseWriter, r *http.Request) bool {
 	return true
 }
 
-func (h *Http) Response(w http.ResponseWriter, code int, message string) {
+func (h *Http) ResponseJson(w http.ResponseWriter, v interface{}) {
+	str, err := json.Marshal(v)
+	if err == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(str)
+	} else {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (h *Http) ResponseMsg(w http.ResponseWriter, code int, message string) {
 	ret := struct {
 		Code    int
 		Message string
@@ -185,15 +198,6 @@ func (h *Http) Response(w http.ResponseWriter, code int, message string) {
 		Message: message,
 	}
 	h.ResponseJson(w, ret)
-}
-
-func (h *Http) ResponseJson(w http.ResponseWriter, v interface{}) {
-	str, err := json.Marshal(v)
-	if err == nil {
-		w.Write(str)
-	} else {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
 }
 
 func (h *Http) getFile(name string) string {
@@ -316,7 +320,7 @@ func (h *Http) AddUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	service.User.Add(user)
-	h.Response(w, 0, "")
+	h.ResponseMsg(w, 0, "")
 }
 
 func (h *Http) DelUser(w http.ResponseWriter, r *http.Request) {
@@ -325,7 +329,7 @@ func (h *Http) DelUser(w http.ResponseWriter, r *http.Request) {
 
 	service.User.Del(vars["id"])
 
-	h.Response(w, 0, "")
+	h.ResponseMsg(w, 0, "")
 }
 
 func (h *Http) ListNeighbor(w http.ResponseWriter, r *http.Request) {
@@ -381,7 +385,7 @@ func (h *Http) AddLink(w http.ResponseWriter, r *http.Request) {
 
 	c.Default()
 	h.worker.AddLink(c)
-	h.Response(w, 0, "")
+	h.ResponseMsg(w, 0, "")
 }
 
 func (h *Http) DelLink(w http.ResponseWriter, r *http.Request) {
@@ -390,7 +394,7 @@ func (h *Http) DelLink(w http.ResponseWriter, r *http.Request) {
 
 	h.worker.DelLink(vars["id"])
 
-	h.Response(w, 0, "")
+	h.ResponseMsg(w, 0, "")
 }
 
 func (h *Http) ListPoint(w http.ResponseWriter, r *http.Request) {
