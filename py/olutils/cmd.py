@@ -39,7 +39,6 @@ class Cli(object):
                 json.dump(resp.json(), sys.stdout, indent=2)
             elif opt.format == 'yaml':
                 yaml = ruamel.yaml.YAML()
-                yaml.indent(sequence=2)
                 yaml.dump(resp.json(), sys.stdout)
             else:
                 sys.stdout.write(resp.text)
