@@ -21,7 +21,6 @@ type VSwitch struct {
 	Password   string      `json:"-"`
 	Network    string      `json:"-"`
 	SaveFile   string      `json:"-"`
-	Redis      RedisConfig `json:"redis"`
 	LogFile    string      `json:"log.file"`
 	Verbose    int         `json:"log.level"`
 	CrtDir     string      `json:"crt.dir"`
@@ -41,12 +40,6 @@ var VSwitchDefault = VSwitch{
 	ConfDir:    ".",
 	IfMtu:      1518,
 	IfAddr:     "",
-	Redis: RedisConfig{
-		Addr:   "127.0.0.1",
-		Auth:   "",
-		Db:     0,
-		Enable: false,
-	},
 	LogFile: "vswitch.error",
 	CrtDir:  "",
 	HttpDir: "public",
@@ -56,7 +49,6 @@ var VSwitchDefault = VSwitch{
 
 func NewVSwitch() (c *VSwitch) {
 	c = &VSwitch{
-		Redis:   VSwitchDefault.Redis,
 		LogFile: VSwitchDefault.LogFile,
 	}
 

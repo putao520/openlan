@@ -1,0 +1,16 @@
+{
+  "alias": "209-141",
+  "vs.addr": "openlan.3cm.us:10002",
+  "vs.auth": "admin@yunex:yunex@123",
+  "vs.tls": true,
+  "vs.allowed": true,
+  "if.mtu": 1518,
+  "if.addr": "",
+  "if.br": "",
+  "if.tun": false,
+  "if.eth.src": "",
+  "if.eth.dst": "2e:4b:f0:b7:6d:ba",
+  "log.file": "point.error",
+  "log.level": 2,
+  "script": "point.linux.cmd"
+}

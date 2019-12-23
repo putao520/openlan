@@ -83,6 +83,10 @@ func (w *_network) List() <-chan *models.Network {
 }
 
 func (w *_network) GetFreeAddr(client *libol.TcpClient, n *models.Network) (string, string) {
+	if n == nil || client == nil {
+		return "", ""
+	}
+
 	w.lock.Lock()
 	defer w.lock.Unlock()
 

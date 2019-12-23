@@ -26,8 +26,8 @@ mkdir -p %{buildroot}/usr/bin
 cp %_source_dir/resource/vswitch.linux.x86_64 %{buildroot}/usr/bin/vswitch
 
 mkdir -p %{buildroot}/etc/vswitch
-cp %_source_dir/resource/vswitch.json %{buildroot}/etc/vswitch
-cp %_source_dir/resource/network.json %{buildroot}/etc/vswitch
+cp %_source_dir/resource/vswitch.json %{buildroot}/etc/vswitch/vswitch.json.example
+cp %_source_dir/resource/network.json %{buildroot}/etc/vswitch/network.json.example
 mkdir -p %{buildroot}/etc/sysconfig
 cp %_source_dir/resource/vswitch.cfg %{buildroot}/etc/sysconfig
 
@@ -38,7 +38,7 @@ mkdir -p %{buildroot}/var/openlan
 cp -R %_source_dir/resource/ca %{buildroot}/var/openlan
 cp -R %_source_dir/public %{buildroot}/var/openlan
 
-cat > %{buildroot}/etc/vswitch/vswitch.password << EOF
+cat > %{buildroot}/etc/vswitch/vswitch.password.example << EOF
 hi:hi@123$
 EOF
 

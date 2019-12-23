@@ -26,7 +26,7 @@ cp %_source_dir/resource/point.linux.x86_64 %{buildroot}/usr/bin/point
 mkdir -p %{buildroot}/etc/sysconfig
 cp %_source_dir/resource/point.cfg %{buildroot}/etc/sysconfig
 mkdir -p %{buildroot}/etc/point
-cp %_source_dir/resource/point.json %{buildroot}/etc/point
+cp %_source_dir/resource/point.json %{buildroot}/etc/point/point.json.example
 
 mkdir -p %{buildroot}/usr/lib/systemd/system
 cp %_source_dir/resource/point.service %{buildroot}/usr/lib/systemd/system
