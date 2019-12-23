@@ -1,14 +1,14 @@
 from setuptools import setup
 
 setup(
-    name='openlan_utils',
+    name='olutils',
     version='4.0.1',
     author='Daniel Ding',
     author_email='danieldin95@163.com',
-    packages=['openlan_utils'],
+    packages=['olutils'],
     entry_points={
         'console_scripts': [
-            'openlan-utils = openlan_utils.__main__:main',
+            'openlan-utils = olutils.__main__:main',
         ]
     },
     install_requires=[
