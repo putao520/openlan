@@ -1,11 +1,11 @@
 from setuptools import setup
 
 setup(
-    name='openlan-utils',
+    name='openlan_utils',
     version='4.0.1',
     author='Daniel Ding',
     author_email='danieldin95@163.com',
-    packages=['openlan-utils'],
+    packages=['openlan_utils'],
     entry_points={
         'console_scripts': [
             'openlan-utils = openlan_utils.__main__:main',
