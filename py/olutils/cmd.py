@@ -57,17 +57,16 @@ def with_client(func):
 
 parse = argparse.ArgumentParser()
 parse.add_argument('--ol-token',
-                   help='Token series',
+                   help='set token series',
                    default=os.environ.get("OL_TOKEN", ""))
 parse.add_argument('--ol-server',
-                   help='Server address',
+                   help='set server address',
                    default=os.environ.get("OL_SERVER", "localhost:10000"))
 parse.add_argument('--debug',
-                   help='Enable verbose',
-                   default=False)
+                   help='print verbose log',
+                   action='store_true', default=False)
 parse.add_argument('--format',
-                   help='Enable verbose',
-
+                   help='set format such as json, yaml',
                    default='json')
 
 
@@ -78,7 +77,7 @@ def parse_args():
 cli = Cli(parse.add_subparsers())
 
 
-@cli.parser('list-user', help="Display all users")
+@cli.parser('list-user', help="display all users")
 @cli.output
 @with_client
 def cmd_list_user(client, opt):
@@ -86,9 +85,9 @@ def cmd_list_user(client, opt):
     return resp
 
 
-@cli.argument('add-user', "--username", help="Username")
-@cli.argument('add-user', "--password", help="Password")
-@cli.parser('add-user', help="Add new user")
+@cli.argument('add-user', "--username", help="set username")
+@cli.argument('add-user', "--password", help="set password")
+@cli.parser('add-user', help="add new user")
 @cli.output
 @with_client
 def cmd_add_user(client, opt):
@@ -103,8 +102,8 @@ def cmd_add_user(client, opt):
     return resp
 
 
-@cli.argument('del-user', "--username", help="Username")
-@cli.parser('del-user', help="Del one user")
+@cli.argument('del-user', "--username", help="set username")
+@cli.parser('del-user', help="delete one user")
 @cli.output
 @with_client
 def cmd_del_user(client, opt):
@@ -115,8 +114,8 @@ def cmd_del_user(client, opt):
     return resp
 
 
-@cli.argument('get-user', "--username", help="Username")
-@cli.parser('get-user', help="Get one user")
+@cli.argument('get-user', "--username", help="set username")
+@cli.parser('get-user', help="get one user")
 @cli.output
 @with_client
 def cmd_get_user(client, opt):
@@ -127,7 +126,7 @@ def cmd_get_user(client, opt):
     return resp
 
 
-@cli.parser('list-network', help="Display all network")
+@cli.parser('list-network', help="display all network")
 @cli.output
 @with_client
 def cmd_list_network(client, opt):
@@ -135,7 +134,7 @@ def cmd_list_network(client, opt):
     return resp
 
 
-@cli.parser('list-point', help="Display all point")
+@cli.parser('list-point', help="display all point")
 @cli.output
 @with_client
 def cmd_list_point(client, opt):
@@ -143,7 +142,7 @@ def cmd_list_point(client, opt):
     return resp
 
 
-@cli.parser('list-link', help="Display all link")
+@cli.parser('list-link', help="display all link")
 @cli.output
 @with_client
 def cmd_list_link(client, opt):
@@ -151,7 +150,7 @@ def cmd_list_link(client, opt):
     return resp
 
 
-@cli.parser('list-neighbor', help="Display all neighbors")
+@cli.parser('list-neighbor', help="display all neighbors")
 @cli.output
 @with_client
 def cmd_list_neighbor(client, opt):

@@ -20,13 +20,13 @@ class Client(object):
     def request(self, url, method, data=""):
         url = "https://{}/api/{}".format(self.addr, url)
         if self.debug:
-            print "{}: {} {}".format(method, url, data)
+            print "{} {} {}".format(method, url, data)
 
         resp = requests.request(method, url,
                                 json=data, verify=False,
                                 auth=(self.token, ''))
         if self.debug:
-            print "RESPONSE: {}".format(resp.text)
+            print "RESPONSE {}".format(resp.text)
 
         if not resp.ok:
             resp.raise_for_status()
