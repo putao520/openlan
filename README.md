@@ -26,8 +26,7 @@ OpenLan旨在解决局域网数据报文在广域网的传输问题，并建立�
                      Point                    Point                       Point
                  192.168.1.e/24           192.168.1.f/24              192.168.1.g/24
                 
- 如上图分布在南京的接入点：192.168.1.a、192.168.1.c，通过互联网接入在南京的虚拟交换vSwitch；而分布在上海的接入点：192.168.1.e、192.168.1.f、192.168.1.g，通过互联网接入在上海的虚拟交换；在上海的虚拟交换与南京的虚拟交换之间，通过互联网或者MPLS建立直连链路。
-
+ 
 # 接入点（Point）
 接入点工作在用户侧，每个接入点通过接入vSwitch可以实现节点间的互联互通。目前接入点已经稳定工作在Windows及Linux系统下，MacOS还存在问题。 
 
@@ -56,7 +55,7 @@ OpenLan旨在解决局域网数据报文在广域网的传输问题，并建立�
      "vs.tls": true
     }
    
- 把它保存在文件`.point.json`中，并与程序`point.windows.x86_64.exe`在同一个目录下。 点击执行`point.windwos.x86_64.exe`。
+ 把它保存在文件`point.json`中，并与程序`point.windows.x86_64.exe`在同一个目录下。 点击执行`point.windwos.x86_64.exe`。
 
  *说明*
  
@@ -71,10 +70,8 @@ OpenLan旨在解决局域网数据报文在广域网的传输问题，并建立�
 
     [root@localhost openlan-go]# ./install.sh
     [root@localhost openlan-go]# 
-    [root@localhost openlan-go]# cat /etc/vswitch.json
+    [root@localhost openlan-go]# cat /etc/vswitch/vswitch.json
     {
-      "vs.addr": "0.0.0.0:10002",
-      "http.addr": "0.0.0.0:10000",
       "if.addr": "192.168.x.a/24",
       "links": [
         {
@@ -83,8 +80,7 @@ OpenLan旨在解决局域网数据报文在广域网的传输问题，并建立�
           "vs.tls": true
         }
       ],
-      "tls.crt": "/var/openlan/ca/crt.pem",
-      "tls.key": "/var/openlan/ca/private.key",
+      "crt.dir": "/var/openlan/ca",
       "log.file": "/var/log/vswitch.log"
     }
     [root@localhost openlan-go]# systemctl enable vswitch
@@ -92,8 +88,6 @@ OpenLan旨在解决局域网数据报文在广域网的传输问题，并建立�
 
  *说明*
  
-      vs.addr    虚拟交换的监听的地址
-      http.addr  虚拟交换的HTTP监听地址
       if.addr    配置本地网桥的地址
       links      配置虚拟交换与其他虚拟交换之间链路
       tls.crt    用于信道加密的证书
@@ -104,7 +98,7 @@ OpenLan旨在解决局域网数据报文在广域网的传输问题，并建立�
 
     [root@localhost openlan-go]# cat /etc/point.json
     {
-      "vs.addr": "ww.openlan.xx",
+      "vs.addr": "www.openlan.xx",
       "vs.auth": "xx:xx@xx",
       "if.addr": "192.168.x.c/24",
       "log.file": "/var/log/point.log"
