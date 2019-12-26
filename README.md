@@ -81,7 +81,8 @@ OpenLan旨在解决局域网数据报文在广域网的传输问题，并建立�
         }
       ],
       "crt.dir": "/var/openlan/ca",
-      "log.file": "/var/log/vswitch.log"
+      "log.file": "/var/log/vswitch.log",
+      "http.dir": "/var/openlan/public"
     }
     [root@localhost openlan-go]# systemctl enable vswitch
     [root@localhost openlan-go]# systemctl start vswitch
