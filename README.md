@@ -55,20 +55,12 @@ Case2：
 
 下载资源 `resource/tap-windows-9.21.2.exe`, 然后点击安装它。
 
-### 然后你需要在虚拟网卡上配置地址
-
-打开控制面板`Control Panel\Network and Internet\Network Connections`, 然后找到`Ethernet 2`, 给他配置一个的局域网地址。
-或者配置它通过`cmd`.
-
-    netsh interface ipv4 show config "Ethernet 2"
-    netsh interface ipv4 set address "Ethernet 2" static 192.168.x.b/24
-
 ### 最后配置接入认证
 
     {
      "vs.addr": "www.openlan.xx",
      "vs.auth": "xx:xx@xx",
-     "if.addr": "192.168.x.b/24",
+     "if.addr": "192.168.1.11/24",
      "vs.tls": true
     }
    
@@ -89,7 +81,7 @@ Case2：
     [root@localhost openlan-go]# 
     [root@localhost openlan-go]# cat /etc/vswitch/vswitch.json
     {
-      "if.addr": "192.168.x.a/24",
+      "if.addr": "192.168.1.10/24",
       "links": [
         {
           "vs.addr": "aa.openlan.xx",
@@ -118,12 +110,12 @@ Case2：
     {
       "vs.addr": "www.openlan.xx",
       "vs.auth": "xx:xx@xx",
-      "if.addr": "192.168.x.c/24",
+      "if.addr": "192.168.1.21/24",
       "log.file": "/var/log/point.log"
     }
     [root@localhost openlan-go]# systemctl enable point
     [root@localhost openlan-go]# systemctl start point
-    [root@localhost openlan-go]# ping 192.168.x.a
+    [root@localhost openlan-go]# ping 192.168.1.11
     
 
 # 从源码编译它
