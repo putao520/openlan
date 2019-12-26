@@ -196,6 +196,7 @@ func (w *WorkerBase) UpTime() int64 {
 func (w *WorkerBase) AddLink(c *config.Point) {
 	c.Alias = w.Alias
 	c.BrName = w.BrName() //Reset bridge name.
+	c.Allowed = false
 
 	go func() {
 		p := point.NewPoint(c)
