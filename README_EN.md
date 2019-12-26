@@ -49,17 +49,15 @@ Or Configure by `cmd`.
      "vs.tls": true
     }
    
-   Save to file `.point.json` with same directory of  `point.windows.x86_64.exe`. Click right on `point.windwos.x86_64.exe`, and Run as Administrator.
+   Save to file `point.json` with same directory of  `point.windows.x86_64.exe`. Click right on `point.windwos.x86_64.exe`, and Run as Administrator.
 
 ## on Linux
 ### Install OpenLan and Start vSwitch on Linux
 
     [root@localhost openlan-go]# ./install.sh
     [root@localhost openlan-go]# 
-    [root@localhost openlan-go]# cat /etc/vswitch.json
+    [root@localhost openlan-go]# cat /etc/vswitch/vswitch.json
     {
-      "vs.addr": "0.0.0.0:10002",
-      "http.addr": "0.0.0.0:10000",
       "if.addr": "192.168.x.a/24",
       "links": [
         {
@@ -68,9 +66,9 @@ Or Configure by `cmd`.
           "vs.tls": true
         }
       ],
-      "tls.crt": "/var/openlan/ca/crt.pem",
-      "tls.key": "/var/openlan/ca/private.key",
-      "log.file": "/var/log/vswitch.log"
+      "crt.dir": "/var/openlan/ca",
+      "log.file": "/var/log/vswitch.log",
+      "http.dir": "/var/openlan/public"
     }
     [root@localhost openlan-go]# systemctl enable vswitch
     [root@localhost openlan-go]# systemctl start vswitch
@@ -79,7 +77,7 @@ Or Configure by `cmd`.
 
     [root@localhost openlan-go]# cat /etc/point.json
     {
-      "vs.addr": "ww.openlan.xx",
+      "vs.addr": "www.openlan.xx",
       "vs.auth": "xx:xx@xx",
       "if.addr": "192.168.x.c/24",
       "log.file": "/var/log/point.log"
