@@ -3,9 +3,22 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/danieldin95/openlan-go)](https://goreportcard.com/report/lightstar-dev/openlan-go)
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-Latest implement on [lightstar-dev openlan-go](https://github.com/danieldin95/openlan-go).
+The OpenLAN project help you to build a local area network via the Internet.  
 
+Case1:
 
+                                       vSwitch(BeiJing) - 192.168.1.d/24
+                                                |
+                       ------------------------------------------------------
+                       ^                        ^                           ^
+                       |                        |                           |
+                   办公 Wifi               家庭 Wifi                 酒店 Wifi     
+                       |                        |                           |
+                     Point                    Point                       Point
+                 192.168.1.e/24           192.168.1.f/24              192.168.1.g/24
+
+Case2:
+                
                    192.168.1.a/24         192.168.1.b/24              192.168.1.c/24
                          |                      |                           |
                        Point ----Wifi----> vSwitch(NanJing) <----Wifi---- Point
