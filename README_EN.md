@@ -7,15 +7,18 @@ The OpenLAN project help you to build a local area network via the Internet.
 
 Case1:
 
-                                       vSwitch(BeiJing) - 192.168.1.d/24
+                                       vSwitch(Central) - 10.1.2.d/24
+                                                ^
+                                                |   
+                                              Wifi(DNAT)
                                                 |
                        ------------------------------------------------------
                        ^                        ^                           ^
                        |                        |                           |
-                   办公 Wifi               家庭 Wifi                 酒店 Wifi     
+                   Branch 1                 Branch 2                     Branch 3    
                        |                        |                           |
                      Point                    Point                       Point
-                 192.168.1.e/24           192.168.1.f/24              192.168.1.g/24
+                 10.1.2.e/24               10.1.2.f/24                  10.1.2.g/24
 
 Case2:
                 
