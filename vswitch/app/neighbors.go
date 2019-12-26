@@ -66,8 +66,7 @@ func (e *Neighbors) AddNeighbor(neb *models.Neighbor) {
 	defer e.lock.Unlock()
 
 	if n, ok := e.neighbors[neb.HwAddr.String()]; ok {
-		//TODO update.
-		libol.Info("Neighbors.AddNeighbor: update %s.", neb)
+		libol.Debug("Neighbors.AddNeighbor: update %s.", neb)
 		n.IpAddr = neb.IpAddr
 		n.Client = neb.Client
 		n.HitTime = time.Now().Unix()

@@ -257,7 +257,7 @@ func (h *Http) getIndex() string {
 
 	body += "\n"
 	body += "# online that traces the destination from point.\n"
-	body += "ethernet, source, dest address, protocol, source, dest port\n"
+	body += "source, dest address, protocol, source, dest port\n"
 	for l := range service.Online.List() {
 		if l == nil {
 			break
