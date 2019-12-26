@@ -7,7 +7,7 @@ The OpenLAN project help you to build a local area network via the Internet.
 
 Case1:
 
-                                       vSwitch(Central) - 10.1.2.d/24
+                                       vSwitch(Central) - 10.1.2.10/24
                                                 ^
                                                 |   
                                               Wifi(DNAT)
@@ -18,17 +18,17 @@ Case1:
                    Branch 1                 Branch 2                     Branch 3    
                        |                        |                           |
                      Point                    Point                       Point
-                 10.1.2.e/24               10.1.2.f/24                  10.1.2.g/24
+                 10.1.2.11/24              10.1.2.12/24                  10.1.2.13/24
 
 Case2:
                 
-                   192.168.1.a/24         192.168.1.b/24              192.168.1.c/24
-                         |                      |                           |
+                   192.168.1.20/24                                 192.168.1.22/24
+                         |                                                 |
                        Point ----Wifi----> vSwitch(NanJing) <----Wifi---- Point
                                                 |
                                              Internet 
                                                 |
-                                           vSwitch(ShangHai) - 192.168.1.d/24
+                                           vSwitch(ShangHai) - 192.168.1.10/24
                                                 |
                        ------------------------------------------------------
                        ^                        ^                           ^
@@ -36,7 +36,7 @@ Case2:
                    Office Wifi               Home Wifi                 Hotel Wifi     
                        |                        |                           |
                      Point                    Point                       Point
-                 192.168.1.e/24           192.168.1.f/24              192.168.1.g/24
+                 192.168.1.11/24           192.168.1.12/24              192.168.1.13/24
                   
 
 # Point
@@ -47,21 +47,12 @@ The point is endpoint to access OpenLan vswitch, and all points behind the same 
 
 Download `resource/tap-windows-9.21.2.exe`, then install it. 
 
-### And Then Configure Windows TAP Device
-
-Goto `Control Panel\Network and Internet\Network Connections`, and find `Ethernet 2`, then you can configure IPAddress for it to access branch site. 
-
-Or Configure by `cmd`.
-
-    netsh interface ipv4 show config "Ethernet 2"
-    netsh interface ipv4 set address "Ethernet 2" static 192.168.x.b/24
-
 ### Finally, Configure Access Authentication
 
     {
      "vs.addr": "www.openlan.xx",
      "vs.auth": "xx:xx@xx",
-     "if.addr": "192.168.x.b/24",
+     "if.addr": "192.168.1.11/24",
      "vs.tls": true
     }
    
@@ -74,7 +65,7 @@ Or Configure by `cmd`.
     [root@localhost openlan-go]# 
     [root@localhost openlan-go]# cat /etc/vswitch/vswitch.json
     {
-      "if.addr": "192.168.x.a/24",
+      "if.addr": "192.168.1.10/24",
       "links": [
         {
           "vs.addr": "aa.openlan.xx",
@@ -95,12 +86,12 @@ Or Configure by `cmd`.
     {
       "vs.addr": "www.openlan.xx",
       "vs.auth": "xx:xx@xx",
-      "if.addr": "192.168.x.c/24",
+      "if.addr": "192.168.1.20/24",
       "log.file": "/var/log/point.log"
     }
     [root@localhost openlan-go]# systemctl enable point
     [root@localhost openlan-go]# systemctl start point
-    [root@localhost openlan-go]# ping 192.168.x.a
+    [root@localhost openlan-go]# ping 192.168.1.11
     
 
 # Building from Source
