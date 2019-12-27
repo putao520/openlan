@@ -1,4 +1,4 @@
-.PHONY: linux rpm win-zip
+.PHONY: linux rpm win-zip test
 
 linux:
 	go build -o ./resource/point.linux.x86_64 main/point_linux.go
@@ -23,3 +23,7 @@ win-zip:
 	cp -rvf ./resource/point.windows.x86_64 ./openlan-wins/point.windows.x86_64.exe
 	cp -rvf ./resource/point.json ./openlan-wins/point.json
 	zip -r ./resource/openlan-wins.zip ./openlan-wins
+
+test:
+	go test github.com/danieldin95/openlan-go/point
+	go test -bench=. github.com/danieldin95/openlan-go/point
