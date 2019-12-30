@@ -177,7 +177,6 @@ func (p *Point) OnTap(tap *TapWorker) error {
 	}
 
 	p.link = link
-	p.AddAddr(p.IfAddr)
 
 	return nil
 }
@@ -300,5 +299,8 @@ func (p *Point) OnClose(worker *TcpWorker) error {
 
 func (p *Point) OnSuccess(worker *TcpWorker) error {
 	libol.Info("Point.OnSuccess")
+
+	p.AddAddr(p.IfAddr)
+
 	return nil
 }
