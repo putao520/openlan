@@ -236,16 +236,16 @@ func (w *WorkerBase) Send(dev *models.TapDevice, frame []byte) {
 
 type Worker struct {
 	*WorkerBase
-	Br *Bridger
+	Br Bridger
 }
 
 func NewWorker(server *libol.TcpServer, c *config.VSwitch) *Worker {
 	w := &Worker{
 		WorkerBase: NewWorkerBase(server, c),
-		Br:         NewBridger(c.BrName, c.IfMtu),
+		Br:         NewLinuxBridger(c.BrName, c.IfMtu),
 	}
-	if w.Br.Name == "" {
-		w.Br.Name = w.BrName()
+	if w.Br.Name() == "" {
+		w.Br.SetName(w.BrName())
 	}
 
 	w.Init(w)
