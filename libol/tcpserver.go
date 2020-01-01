@@ -102,16 +102,16 @@ func (t *TcpServer) GoLoop(on OnTcpServer) {
 		select {
 		case client := <-t.onClients:
 			Debug("TcpServer.addClient %s", client.Addr)
-			if on.OnClient != nil {
-				on.OnClient(client)
-			}
 			t.clients[client] = true
-			go t.GoRecv(client, on.OnRecv)
+			if on != nil {
+				on.OnClient(client)
+				go t.GoRecv(client, on.OnRecv)
+			}
 		case client := <-t.offClients:
 			if ok := t.clients[client]; ok {
 				Debug("TcpServer.delClient %s", client.Addr)
 				t.ClsCount++
-				if on.OnClose != nil {
+				if on != nil {
 					on.OnClose(client)
 				}
 				client.Close()

@@ -63,26 +63,6 @@ func (a *Arp) Decode(frame []byte) error {
 	a.ProLen = uint8(frame[5])
 	a.OpCode = binary.BigEndian.Uint16(frame[6:8])
 
-<<<<<<< HEAD
-	err = binary.Read(reader, binary.BigEndian, &a.HrdCode)
-	err = binary.Read(reader, binary.BigEndian, &a.ProCode)
-	err = binary.Read(reader, binary.BigEndian, &a.HrdLen)
-	err = binary.Read(reader, binary.BigEndian, &a.ProLen)
-	err = binary.Read(reader, binary.BigEndian, &a.OpCode)
-	if len(frame) < int(8 + 2 * (a.HrdLen + a.ProLen)) {
-		return Errer("Arp.Decode: too small frame: %d", len(frame))
-	}
-
-	a.SHwAddr = make([]byte, a.HrdLen)
-	a.SIpAddr = make([]byte, a.ProLen)
-	err = binary.Read(reader, binary.BigEndian, a.SHwAddr)
-	err = binary.Read(reader, binary.BigEndian, a.SIpAddr)
-
-	a.THwAddr = make([]byte, a.HrdLen)
-	a.TIpAddr = make([]byte, a.ProLen)
-	err = binary.Read(reader, binary.BigEndian, a.THwAddr)
-	err = binary.Read(reader, binary.BigEndian, a.TIpAddr)
-=======
 	p := uint8(8)
 	if len(frame) < int(p+2*(a.HrdLen+a.ProLen)) {
 		return Errer("Arp.Decode: too small frame: %d", len(frame))
@@ -97,7 +77,6 @@ func (a *Arp) Decode(frame []byte) error {
 	p += a.HrdLen
 	a.TIpAddr = frame[p : p+a.ProLen]
 	p += a.ProLen
->>>>>>> parent of e188bfd... arrange decode/encode on vlan.
 
 	a.Len = int(p)
 
@@ -107,17 +86,6 @@ func (a *Arp) Decode(frame []byte) error {
 func (a *Arp) Encode() []byte {
 	buffer := make([]byte, 1024)
 
-<<<<<<< HEAD
-	_ = binary.Write(writer, binary.BigEndian, &a.HrdCode)
-	_ = binary.Write(writer, binary.BigEndian, &a.ProCode)
-	_ = binary.Write(writer, binary.BigEndian, &a.HrdLen)
-	_ = binary.Write(writer, binary.BigEndian, &a.ProLen)
-	_ = binary.Write(writer, binary.BigEndian, &a.OpCode)
-	_ = binary.Write(writer, binary.BigEndian, a.SHwAddr[0:a.HrdLen])
-	_ = binary.Write(writer, binary.BigEndian, a.SIpAddr[0:a.ProCode])
-	_ = binary.Write(writer, binary.BigEndian, a.THwAddr[0:a.HrdLen])
-	_ = binary.Write(writer, binary.BigEndian, a.TIpAddr[0:a.ProCode])
-=======
 	binary.BigEndian.PutUint16(buffer[0:2], a.HrdCode)
 	binary.BigEndian.PutUint16(buffer[2:4], a.ProCode)
 	buffer[4] = byte(a.HrdLen)
@@ -129,7 +97,6 @@ func (a *Arp) Encode() []byte {
 	p += a.HrdLen
 	copy(buffer[p:p+a.ProLen], a.SIpAddr[0:a.ProLen])
 	p += a.ProLen
->>>>>>> parent of e188bfd... arrange decode/encode on vlan.
 
 	copy(buffer[p:p+a.HrdLen], a.THwAddr[0:a.HrdLen])
 	p += a.HrdLen

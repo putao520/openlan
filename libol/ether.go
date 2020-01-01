@@ -66,15 +66,9 @@ func (e *Ether) Decode(frame []byte) error {
 func (e *Ether) Encode() []byte {
 	buffer := make([]byte, 14)
 
-<<<<<<< HEAD
-	_ = binary.Write(writer, binary.BigEndian, e.Dst[:6])
-	_ = binary.Write(writer, binary.BigEndian, e.Src[:6])
-	_ = binary.Write(writer, binary.BigEndian, &e.Type)
-=======
 	copy(buffer[:6], e.Dst)
 	copy(buffer[6:12], e.Src)
 	binary.BigEndian.PutUint16(buffer[12:14], e.Type)
->>>>>>> parent of e188bfd... arrange decode/encode on vlan.
 
 	return buffer[:14]
 }

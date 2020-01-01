@@ -38,7 +38,7 @@ func (e *Neighbors) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 		libol.Warn("Neighbors.OnFrame %s", err)
 		return err
 	}
-	libol.Warn("Neighbors.OnFrame %02x", eth.Type)
+	libol.Debug("Neighbors.OnFrame 0x%04x", eth.Type)
 	if !eth.IsArp() {
 		if eth.IsVlan() {
 			//TODO
