@@ -38,6 +38,3 @@ func EncodeReplyCmd(action string, body string) []byte {
 	p := fmt.Sprintf("%s: %s", action[:4], body)
 	return append(ZEROED[:6], p...)
 }
-
-
-
