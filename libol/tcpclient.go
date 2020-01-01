@@ -182,11 +182,11 @@ func (t *TcpClient) ReadMsg(data []byte) (int, error) {
 		return -1, Errer("%s: not okay", t)
 	}
 
-	h := make([]byte, HSIZE)
+	b := make([]byte, HSIZE+t.maxSize)
+	h := b[:HSIZE]
 	if err := t.ReadFull(h); err != nil {
 		return -1, err
 	}
-
 	if !bytes.Equal(h[0:2], MAGIC) {
 		return -1, Errer("%s: wrong magic", t)
 	}
@@ -195,8 +195,7 @@ func (t *TcpClient) ReadMsg(data []byte) (int, error) {
 	if int(size) > t.maxSize || int(size) < t.minSize {
 		return -1, Errer("%s: wrong size(%d)", t, size)
 	}
-
-	d := make([]byte, size)
+	d := b[HSIZE:HSIZE+size]
 	if err := t.ReadFull(d); err != nil {
 		return -1, err
 	}

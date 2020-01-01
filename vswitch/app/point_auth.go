@@ -30,7 +30,7 @@ func (p *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 
 	if libol.IsControl(frame.Data) {
 		action := libol.DecodeCmd(frame.Data)
-		libol.Debug("PointAuth.OnFrame.action: %s", action)
+		libol.Debug("PointAuth.OnFrame: %s", action)
 
 		switch action {
 		case "logi=":

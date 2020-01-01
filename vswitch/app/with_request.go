@@ -25,7 +25,7 @@ func (r *WithRequest) OnFrame(client *libol.TcpClient, frame *libol.Frame) error
 
 	if libol.IsControl(frame.Data) {
 		action, body := libol.DecodeCmdAndParams(frame.Data)
-		libol.Debug("WithRequest.OnFrame.action: %s %s", action, body)
+		libol.Debug("WithRequest.OnFrame: %s %s", action, body)
 
 		switch action {
 		case "neig=":
@@ -33,7 +33,7 @@ func (r *WithRequest) OnFrame(client *libol.TcpClient, frame *libol.Frame) error
 		case "ipad=":
 			r.OnIpAddr(client, body)
 		default:
-			libol.Error("WithRequest.OnFrame.action: %s %s", action, body)
+			libol.Error("WithRequest.OnFrame: %s %s", action, body)
 		}
 	}
 
