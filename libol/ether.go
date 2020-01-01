@@ -73,9 +73,9 @@ func (e *Ether) Decode(frame []byte) error {
 func (e *Ether) Encode() []byte {
 	writer := new(bytes.Buffer)
 
-	binary.Write(writer, binary.BigEndian, e.Dst[:6])
-	binary.Write(writer, binary.BigEndian, e.Src[:6])
-	binary.Write(writer, binary.BigEndian, &e.Type)
+	_ = binary.Write(writer, binary.BigEndian, e.Dst[:6])
+	_ = binary.Write(writer, binary.BigEndian, e.Src[:6])
+	_ = binary.Write(writer, binary.BigEndian, &e.Type)
 
 	return writer.Bytes()[:14]
 }

@@ -52,49 +52,50 @@ func NewArpFromFrame(frame []byte) (a *Arp, err error) {
 }
 
 func (a *Arp) Decode(frame []byte) error {
+	var err error
+
 	if len(frame) < 8 {
 		return Errer("Arp.Decode: too small header: %d", len(frame))
 	}
 
 	reader := bytes.NewReader(frame)
 
-	binary.Read(reader, binary.BigEndian, &a.HrdCode)
-	binary.Read(reader, binary.BigEndian, &a.ProCode)
-	binary.Read(reader, binary.BigEndian, &a.HrdLen)
-	binary.Read(reader, binary.BigEndian, &a.ProLen)
-	binary.Read(reader, binary.BigEndian, &a.OpCode)
+	err = binary.Read(reader, binary.BigEndian, &a.HrdCode)
+	err = binary.Read(reader, binary.BigEndian, &a.ProCode)
+	err = binary.Read(reader, binary.BigEndian, &a.HrdLen)
+	err = binary.Read(reader, binary.BigEndian, &a.ProLen)
+	err = binary.Read(reader, binary.BigEndian, &a.OpCode)
 	if len(frame) < int(8 + 2 * (a.HrdLen + a.ProLen)) {
 		return Errer("Arp.Decode: too small frame: %d", len(frame))
 	}
 
 	a.SHwAddr = make([]byte, a.HrdLen)
 	a.SIpAddr = make([]byte, a.ProLen)
-	binary.Read(reader, binary.BigEndian, a.SHwAddr)
-	binary.Read(reader, binary.BigEndian, a.SIpAddr)
+	err = binary.Read(reader, binary.BigEndian, a.SHwAddr)
+	err = binary.Read(reader, binary.BigEndian, a.SIpAddr)
 
 	a.THwAddr = make([]byte, a.HrdLen)
 	a.TIpAddr = make([]byte, a.ProLen)
-	binary.Read(reader, binary.BigEndian, a.THwAddr)
-	binary.Read(reader, binary.BigEndian, a.TIpAddr)
+	err = binary.Read(reader, binary.BigEndian, a.THwAddr)
+	err = binary.Read(reader, binary.BigEndian, a.TIpAddr)
 
 	a.Len = int(reader.Size()) - reader.Len()
 
-	return nil
+	return err
 }
 
 func (a *Arp) Encode() []byte {
 	writer := new(bytes.Buffer)
 
-	binary.Write(writer, binary.BigEndian, &a.HrdCode)
-	binary.Write(writer, binary.BigEndian, &a.ProCode)
-	binary.Write(writer, binary.BigEndian, &a.HrdLen)
-	binary.Write(writer, binary.BigEndian, &a.ProLen)
-	binary.Write(writer, binary.BigEndian, &a.OpCode)
-
-	binary.Write(writer, binary.BigEndian, a.SHwAddr[0:a.HrdLen])
-	binary.Write(writer, binary.BigEndian, a.SIpAddr[0:a.ProCode])
-	binary.Write(writer, binary.BigEndian, a.THwAddr[0:a.HrdLen])
-	binary.Write(writer, binary.BigEndian, a.TIpAddr[0:a.ProCode])
+	_ = binary.Write(writer, binary.BigEndian, &a.HrdCode)
+	_ = binary.Write(writer, binary.BigEndian, &a.ProCode)
+	_ = binary.Write(writer, binary.BigEndian, &a.HrdLen)
+	_ = binary.Write(writer, binary.BigEndian, &a.ProLen)
+	_ = binary.Write(writer, binary.BigEndian, &a.OpCode)
+	_ = binary.Write(writer, binary.BigEndian, a.SHwAddr[0:a.HrdLen])
+	_ = binary.Write(writer, binary.BigEndian, a.SIpAddr[0:a.ProCode])
+	_ = binary.Write(writer, binary.BigEndian, a.THwAddr[0:a.HrdLen])
+	_ = binary.Write(writer, binary.BigEndian, a.TIpAddr[0:a.ProCode])
 
 	a.Len = writer.Len()
 

@@ -1,6 +1,7 @@
 package libol
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 )
@@ -97,49 +98,58 @@ func NewIpv4FromFrame(frame []byte) (i *Ipv4, err error) {
 }
 
 func (i *Ipv4) Decode(frame []byte) error {
+	var err error
+
 	if len(frame) < IPV4_LEN {
 		return Errer("Ipv4.Decode: too small header: %d", len(frame))
 	}
 
-	i.Version = uint8(frame[0]) >> 4
-	i.HeaderLen = uint8(frame[0]) & 0x0f
-	i.ToS = uint8(frame[1])
-	i.TotalLen = binary.BigEndian.Uint16(frame[2:4])
-	i.Identifier = binary.BigEndian.Uint16(frame[4:6])
-	i.FragOffset = binary.BigEndian.Uint16(frame[6:8])
+	reader := bytes.NewReader(frame)
+
+	h := uint8(0)
+	err = binary.Read(reader, binary.BigEndian, &h)
+	i.Version = h >> 4
+	i.HeaderLen = h & 0x0f
+
+	err = binary.Read(reader, binary.BigEndian, &i.ToS)
+	err = binary.Read(reader, binary.BigEndian, &i.TotalLen)
+	err = binary.Read(reader, binary.BigEndian, &i.Identifier)
+	err = binary.Read(reader, binary.BigEndian, &i.FragOffset)
 	i.Flag = i.FragOffset >> 13
-	i.ToL = uint8(frame[8])
-	i.Protocol = uint8(frame[9])
-	i.HeaderChecksum = binary.BigEndian.Uint16(frame[10:12])
+	err = binary.Read(reader, binary.BigEndian, &i.ToL)
+	err = binary.Read(reader, binary.BigEndian, &i.Protocol)
+	err = binary.Read(reader, binary.BigEndian, &i.HeaderChecksum)
 
 	if !i.IsIP4() {
 		return Errer("Ipv4.Decode: not right ipv4 version: 0x%x", i.Version)
 	}
 
-	i.Source = frame[12:16]
-	i.Destination = frame[16:20]
+	i.Source = make([]byte, 4)
+	err = binary.Read(reader, binary.BigEndian, i.Source)
+	i.Destination = make([]byte, 4)
+	err = binary.Read(reader, binary.BigEndian, i.Destination)
 
-	return nil
+	return err
 }
 
 func (i *Ipv4) Encode() []byte {
-	buffer := make([]byte, 32)
+	writer := new(bytes.Buffer)
 
-	buffer[0] = byte((i.Version << 4) | i.HeaderLen)
-	buffer[1] = byte(i.ToS)
-	binary.BigEndian.PutUint16(buffer[2:4], i.TotalLen)
-	binary.BigEndian.PutUint16(buffer[4:6], i.Identifier)
-	f := uint16(i.Flag<<13 | i.FragOffset)
-	binary.BigEndian.PutUint16(buffer[6:8], f)
-	buffer[8] = i.ToL
-	buffer[9] = i.Protocol
-	//TODO figure out checksum.
-	binary.BigEndian.PutUint16(buffer[10:12], i.HeaderChecksum)
+	h := (i.Version << 4) | i.HeaderLen
+	_ = binary.Write(writer, binary.BigEndian, &h)
+	_ = binary.Write(writer, binary.BigEndian, &i.ToS)
+	_ = binary.Write(writer, binary.BigEndian, &i.TotalLen)
+	_ = binary.Write(writer, binary.BigEndian, &i.Identifier)
+	f := uint16(i.Flag <<13 | i.FragOffset)
+	_ = binary.Write(writer, binary.BigEndian, &f)
+	_ = binary.Write(writer, binary.BigEndian, &i.ToL)
+	_ = binary.Write(writer, binary.BigEndian, &i.Protocol)
+	//TODO checksum.
+	_ = binary.Write(writer, binary.BigEndian, &i.HeaderChecksum)
+	_ = binary.Write(writer, binary.BigEndian, i.Source[:4])
+	_ = binary.Write(writer, binary.BigEndian, i.Destination[:4])
 
-	copy(buffer[12:16], i.Source[:4])
-	copy(buffer[16:20], i.Destination[:4])
-
-	return buffer[:i.Len]
+	return writer.Bytes()
 }
 
 func (i *Ipv4) IsIP4() bool {

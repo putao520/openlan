@@ -1,6 +1,9 @@
 package libol
 
-import "encoding/binary"
+import (
+	"bytes"
+	"encoding/binary"
+)
 
 const UDP_LEN = 8
 
@@ -30,25 +33,29 @@ func NewUdpFromFrame(frame []byte) (u *Udp, err error) {
 }
 
 func (u *Udp) Decode(frame []byte) error {
+	var err error
+
 	if len(frame) < UDP_LEN {
 		return Errer("Udp.Decode: too small header: %d", len(frame))
 	}
 
-	u.Source = binary.BigEndian.Uint16(frame[0:2])
-	u.Destination = binary.BigEndian.Uint16(frame[2:4])
-	u.Length = binary.BigEndian.Uint16(frame[4:6])
-	u.Checksum = binary.BigEndian.Uint16(frame[6:8])
+	reader := bytes.NewReader(frame)
 
-	return nil
+	err = binary.Read(reader, binary.BigEndian, &u.Source)
+	err = binary.Read(reader, binary.BigEndian, &u.Destination)
+	err = binary.Read(reader, binary.BigEndian, &u.Length)
+	err = binary.Read(reader, binary.BigEndian, &u.Checksum)
+
+	return err
 }
 
 func (u *Udp) Encode() []byte {
-	buffer := make([]byte, 32)
+	writer := new(bytes.Buffer)
 
-	binary.BigEndian.PutUint16(buffer[0:2], u.Source)
-	binary.BigEndian.PutUint16(buffer[2:4], u.Destination)
-	binary.BigEndian.PutUint16(buffer[4:6], u.Length)
-	binary.BigEndian.PutUint16(buffer[6:8], u.Checksum)
+	_ = binary.Write(writer, binary.BigEndian, &u.Source)
+	_ = binary.Write(writer, binary.BigEndian, &u.Destination)
+	_ = binary.Write(writer, binary.BigEndian, &u.Length)
+	_ = binary.Write(writer, binary.BigEndian, &u.Checksum)
 
-	return buffer[:u.Len]
+	return writer.Bytes()
 }
