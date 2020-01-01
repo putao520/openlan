@@ -1,6 +1,7 @@
 package libol
 
 import (
+	"bytes"
 	"encoding/binary"
 )
 
@@ -51,26 +52,32 @@ func NewEtherFromFrame(frame []byte) (e *Ether, err error) {
 }
 
 func (e *Ether) Decode(frame []byte) error {
+	var err error
+
 	if len(frame) < 14 {
 		return Errer("Ether.Decode too small header: %d", len(frame))
 	}
 
-	e.Dst = frame[:6]
-	e.Src = frame[6:12]
-	e.Type = binary.BigEndian.Uint16(frame[12:14])
-	e.Len = 14
+	reader := bytes.NewReader(frame)
 
-	return nil
+	e.Len = 14
+	e.Dst = make([]byte, 6)
+	e.Src = make([]byte, 6)
+	err = binary.Read(reader, binary.BigEndian, e.Dst)
+	err = binary.Read(reader, binary.BigEndian, e.Src)
+	err = binary.Read(reader, binary.BigEndian, &e.Type)
+
+	return err
 }
 
 func (e *Ether) Encode() []byte {
-	buffer := make([]byte, 14)
+	writer := new(bytes.Buffer)
 
-	copy(buffer[:6], e.Dst)
-	copy(buffer[6:12], e.Src)
-	binary.BigEndian.PutUint16(buffer[12:14], e.Type)
+	binary.Write(writer, binary.BigEndian, e.Dst[:6])
+	binary.Write(writer, binary.BigEndian, e.Src[:6])
+	binary.Write(writer, binary.BigEndian, &e.Type)
 
-	return buffer[:14]
+	return writer.Bytes()[:14]
 }
 
 func (e *Ether) IsVlan() bool {

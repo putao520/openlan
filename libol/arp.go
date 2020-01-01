@@ -1,6 +1,7 @@
 package libol
 
 import (
+	"bytes"
 	"encoding/binary"
 )
 
@@ -55,55 +56,49 @@ func (a *Arp) Decode(frame []byte) error {
 		return Errer("Arp.Decode: too small header: %d", len(frame))
 	}
 
-	a.HrdCode = binary.BigEndian.Uint16(frame[0:2])
-	a.ProCode = binary.BigEndian.Uint16(frame[2:4])
-	a.HrdLen = uint8(frame[4])
-	a.ProLen = uint8(frame[5])
-	a.OpCode = binary.BigEndian.Uint16(frame[6:8])
+	reader := bytes.NewReader(frame)
 
-	p := uint8(8)
-	if len(frame) < int(p+2*(a.HrdLen+a.ProLen)) {
+	binary.Read(reader, binary.BigEndian, &a.HrdCode)
+	binary.Read(reader, binary.BigEndian, &a.ProCode)
+	binary.Read(reader, binary.BigEndian, &a.HrdLen)
+	binary.Read(reader, binary.BigEndian, &a.ProLen)
+	binary.Read(reader, binary.BigEndian, &a.OpCode)
+	if len(frame) < int(8 + 2 * (a.HrdLen + a.ProLen)) {
 		return Errer("Arp.Decode: too small frame: %d", len(frame))
 	}
 
-	a.SHwAddr = frame[p : p+a.HrdLen]
-	p += a.HrdLen
-	a.SIpAddr = frame[p : p+a.ProLen]
-	p += a.ProLen
+	a.SHwAddr = make([]byte, a.HrdLen)
+	a.SIpAddr = make([]byte, a.ProLen)
+	binary.Read(reader, binary.BigEndian, a.SHwAddr)
+	binary.Read(reader, binary.BigEndian, a.SIpAddr)
 
-	a.THwAddr = frame[p : p+a.HrdLen]
-	p += a.HrdLen
-	a.TIpAddr = frame[p : p+a.ProLen]
-	p += a.ProLen
+	a.THwAddr = make([]byte, a.HrdLen)
+	a.TIpAddr = make([]byte, a.ProLen)
+	binary.Read(reader, binary.BigEndian, a.THwAddr)
+	binary.Read(reader, binary.BigEndian, a.TIpAddr)
 
-	a.Len = int(p)
+	a.Len = int(reader.Size()) - reader.Len()
 
 	return nil
 }
 
 func (a *Arp) Encode() []byte {
-	buffer := make([]byte, 1024)
+	writer := new(bytes.Buffer)
 
-	binary.BigEndian.PutUint16(buffer[0:2], a.HrdCode)
-	binary.BigEndian.PutUint16(buffer[2:4], a.ProCode)
-	buffer[4] = byte(a.HrdLen)
-	buffer[5] = byte(a.ProLen)
-	binary.BigEndian.PutUint16(buffer[6:8], a.OpCode)
+	binary.Write(writer, binary.BigEndian, &a.HrdCode)
+	binary.Write(writer, binary.BigEndian, &a.ProCode)
+	binary.Write(writer, binary.BigEndian, &a.HrdLen)
+	binary.Write(writer, binary.BigEndian, &a.ProLen)
+	binary.Write(writer, binary.BigEndian, &a.OpCode)
 
-	p := uint8(8)
-	copy(buffer[p:p+a.HrdLen], a.SHwAddr[0:a.HrdLen])
-	p += a.HrdLen
-	copy(buffer[p:p+a.ProLen], a.SIpAddr[0:a.ProLen])
-	p += a.ProLen
+	binary.Write(writer, binary.BigEndian, a.SHwAddr[0:a.HrdLen])
+	binary.Write(writer, binary.BigEndian, a.SIpAddr[0:a.ProCode])
+	binary.Write(writer, binary.BigEndian, a.THwAddr[0:a.HrdLen])
+	binary.Write(writer, binary.BigEndian, a.TIpAddr[0:a.ProCode])
 
-	copy(buffer[p:p+a.HrdLen], a.THwAddr[0:a.HrdLen])
-	p += a.HrdLen
-	copy(buffer[p:p+a.ProLen], a.TIpAddr[0:a.ProLen])
-	p += a.ProLen
+	a.Len = writer.Len()
 
-	a.Len = int(p)
-
-	return buffer[:p]
+	return writer.Bytes()
 }
 
 func (a *Arp) IsIP4() bool {
