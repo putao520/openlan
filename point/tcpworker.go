@@ -79,7 +79,7 @@ func (t *TcpWorker) TryLogin(client *libol.TcpClient) error {
 	}
 
 	libol.Info("TcpWorker.TryLogin: %s", body)
-	if err := client.SendReq("login", string(body)); err != nil {
+	if err := client.WriteReq("login", string(body)); err != nil {
 		return err
 	}
 	return nil
@@ -93,7 +93,7 @@ func (t *TcpWorker) TryNetwork(client *libol.TcpClient) error {
 	}
 
 	libol.Info("TcpWorker.TryNetwork: %s", body)
-	if err := client.SendReq("ipaddr", string(body)); err != nil {
+	if err := client.WriteReq("ipaddr", string(body)); err != nil {
 		return err
 	}
 	return nil
@@ -138,11 +138,11 @@ func (t *TcpWorker) onInstruct(data []byte) error {
 	return nil
 }
 
-func (t *TcpWorker) GoRecv(ctx context.Context, doRecv func([]byte) error) {
-	defer libol.Catch("TcpWorker.GoRecv")
+func (t *TcpWorker) Read(ctx context.Context, doRead func([]byte) error) {
+	defer libol.Catch("TcpWorker.Read")
 	defer t.Close()
 
-	libol.Info("TcpWorker.GoRev %t", t.Client.IsOk())
+	libol.Info("TcpWorker.Rev %t", t.Client.IsOk())
 
 	for {
 		if t.Client.IsTerminal() {
@@ -156,35 +156,35 @@ func (t *TcpWorker) GoRecv(ctx context.Context, doRecv func([]byte) error) {
 		}
 
 		data := make([]byte, t.maxSize)
-		n, err := t.Client.RecvMsg(data)
+		n, err := t.Client.ReadMsg(data)
 		if err != nil {
-			libol.Error("TcpWorker.GoRev: %s", err)
+			libol.Error("TcpWorker.Rev: %s", err)
 			t.Close()
 			continue
 		}
 
-		libol.Debug("TcpWorker.GoRev: % x", data[:n])
+		libol.Debug("TcpWorker.Rev: % x", data[:n])
 		if n > 0 {
 			data = data[:n]
 			if libol.IsControl(data) {
 				t.onInstruct(data)
 			} else {
-				doRecv(data)
+				doRead(data)
 			}
 		}
 	}
 }
 
-func (t *TcpWorker) DoSend(data []byte) error {
-	libol.Debug("TcpWorker.DoSend: % x", data)
+func (t *TcpWorker) DoWrite(data []byte) error {
+	libol.Debug("TcpWorker.DoWrite: % x", data)
 
 	t.writeChan <- data
 
 	return nil
 }
 
-func (t *TcpWorker) GoLoop(ctx context.Context) {
-	defer libol.Catch("TcpWorker.GoLoop")
+func (t *TcpWorker) Loop(ctx context.Context) {
+	defer libol.Catch("TcpWorker.Loop")
 	defer t.Close()
 
 	for {
@@ -192,12 +192,12 @@ func (t *TcpWorker) GoLoop(ctx context.Context) {
 		case w := <-t.writeChan:
 			if t.Client.GetStatus() != libol.CLAUEHED {
 				t.Client.Dropped++
-				libol.Error("TcpWorker.GoLoop: dropping by unAuth")
+				libol.Error("TcpWorker.Loop: dropping by unAuth")
 				continue
 			}
 
-			if err := t.Client.SendMsg(w); err != nil {
-				libol.Error("TcpWorker.GoLoop: %s", err)
+			if err := t.Client.WriteMsg(w); err != nil {
+				libol.Error("TcpWorker.Loop: %s", err)
 			}
 		case <-ctx.Done():
 			return

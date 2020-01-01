@@ -55,11 +55,11 @@ func (p *Point) Start() {
 	}
 
 	ctx := context.Background()
-	go p.tapWorker.GoRecv(ctx, p.tcpWorker.DoSend)
-	go p.tapWorker.GoLoop(ctx)
+	go p.tapWorker.Read(ctx, p.tcpWorker.DoWrite)
+	go p.tapWorker.Loop(ctx)
 
-	go p.tcpWorker.GoRecv(ctx, p.tapWorker.DoSend)
-	go p.tcpWorker.GoLoop(ctx)
+	go p.tcpWorker.Read(ctx, p.tapWorker.DoWrite)
+	go p.tcpWorker.Loop(ctx)
 }
 
 func (p *Point) Stop() {

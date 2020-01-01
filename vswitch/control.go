@@ -35,8 +35,8 @@ func (w *Control) OnClient(client *libol.TcpClient) error {
 	return nil
 }
 
-func (w *Control) OnRecv(client *libol.TcpClient, data []byte) error {
-	libol.Debug("Control.onRecv: %s % x", client.Addr, data)
+func (w *Control) OnRead(client *libol.TcpClient, data []byte) error {
+	libol.Debug("Control.onRead: %s % x", client.Addr, data)
 
 	//
 	return nil
@@ -49,8 +49,8 @@ func (w *Control) OnClose(client *libol.TcpClient) error {
 }
 
 func (w *Control) Start() {
-	go w.Server.GoAccept()
-	go w.Server.GoLoop(w)
+	go w.Server.Accept()
+	go w.Server.Loop(w)
 }
 
 func (w *Control) Stop() {

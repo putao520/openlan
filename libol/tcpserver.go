@@ -7,7 +7,7 @@ import (
 
 type OnTcpServer interface {
 	OnClient(*TcpClient) error
-	OnRecv(*TcpClient, []byte) error
+	OnRead(*TcpClient, []byte) error
 	OnClose(*TcpClient) error
 }
 
@@ -74,17 +74,17 @@ func (t *TcpServer) Close() {
 	}
 }
 
-func (t *TcpServer) GoAccept() {
-	Debug("TcpServer.GoAccept")
+func (t *TcpServer) Accept() {
+	Debug("TcpServer.Accept")
 	if t.listener == nil {
-		Error("TcpServer.GoAccept: invalid listener")
+		Error("TcpServer.Accept: invalid listener")
 	}
 
 	defer t.Close()
 	for {
 		conn, err := t.listener.Accept()
 		if err != nil {
-			Error("TcpServer.GoAccept: %s", err)
+			Error("TcpServer.Accept: %s", err)
 			return
 		}
 
@@ -95,8 +95,8 @@ func (t *TcpServer) GoAccept() {
 	return
 }
 
-func (t *TcpServer) GoLoop(on OnTcpServer) {
-	Debug("TcpServer.GoLoop")
+func (t *TcpServer) Loop(on OnTcpServer) {
+	Debug("TcpServer.Loop")
 	defer t.Close()
 	for {
 		select {
@@ -105,7 +105,7 @@ func (t *TcpServer) GoLoop(on OnTcpServer) {
 			t.clients[client] = true
 			if on != nil {
 				on.OnClient(client)
-				go t.GoRecv(client, on.OnRecv)
+				go t.Read(client, on.OnRead)
 			}
 		case client := <-t.offClients:
 			if ok := t.clients[client]; ok {
@@ -121,21 +121,22 @@ func (t *TcpServer) GoLoop(on OnTcpServer) {
 	}
 }
 
-func (t *TcpServer) GoRecv(client *TcpClient, onRecv func(*TcpClient, []byte) error) {
-	Debug("TcpServer.GoRecv: %s", client.Addr)
+func (t *TcpServer) Read(client *TcpClient, onRead func(*TcpClient, []byte) error) {
+	Debug("TcpServer.Read: %s", client.Addr)
 	for {
 		data := make([]byte, 4096)
-		length, err := client.RecvMsg(data)
+		length, err := client.ReadMsg(data)
 		if err != nil {
+			Error("TcpServer.Read: %s", err)
 			t.offClients <- client
 			break
 		}
 
 		if length > 0 {
 			t.RxCount++
-			Debug("TcpServer.GoRecv: length: %d ", length)
-			Debug("TcpServer.GoRecv: data  : % x", data[:length])
-			onRecv(client, data[:length])
+			Debug("TcpServer.Read: length: %d ", length)
+			Debug("TcpServer.Read: data  : % x", data[:length])
+			onRead(client, data[:length])
 		}
 	}
 }

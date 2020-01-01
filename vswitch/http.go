@@ -136,17 +136,17 @@ func (h *Http) LoadToken() error {
 	return nil
 }
 
-func (h *Http) GoStart() error {
-	libol.Info("Http.GoStart %s", h.listen)
+func (h *Http) Start() error {
+	libol.Info("Http.Start %s", h.listen)
 
 	if h.keyFile == "" || h.crtFile == "" {
 		if err := h.server.ListenAndServe(); err != nil {
-			libol.Error("Http.GoStart on %s: %s", h.listen, err)
+			libol.Error("Http.Start on %s: %s", h.listen, err)
 			return err
 		}
 	} else {
 		if err := h.server.ListenAndServeTLS(h.crtFile, h.keyFile); err != nil {
-			libol.Error("Http.GoStart on %s: %s", h.listen, err)
+			libol.Error("Http.Start on %s: %s", h.listen, err)
 			return err
 		}
 	}

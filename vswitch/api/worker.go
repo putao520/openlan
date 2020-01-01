@@ -9,5 +9,5 @@ type Worker interface {
 	GetId() string
 	GetServer() *libol.TcpServer
 	NewTap() (*models.TapDevice, error)
-	Send(*models.TapDevice, []byte)
+	Write(*models.TapDevice, []byte)
 }

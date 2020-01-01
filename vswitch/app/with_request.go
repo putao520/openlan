@@ -59,7 +59,7 @@ func (r *WithRequest) OnIpAddr(client *libol.TcpClient, data string) {
 		ipStr, netmask := service.Network.GetFreeAddr(client, FinNet)
 		if ipStr == "" {
 			libol.Error("WithRequest.OnIpAddr: no free address")
-			client.SendResp("ipaddr", "no free address")
+			client.WriteResp("ipaddr", "no free address")
 			return
 		}
 
@@ -73,7 +73,7 @@ func (r *WithRequest) OnIpAddr(client *libol.TcpClient, data string) {
 		}
 		libol.Info("WithRequest.OnIpAddr: response %s", respNet)
 		if respStr, err := json.Marshal(respNet); err == nil {
-			client.SendResp("ipaddr", string(respStr))
+			client.WriteResp("ipaddr", string(respStr))
 		}
 	}
 }

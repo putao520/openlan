@@ -16,7 +16,7 @@ type OnTapWorker interface {
 type TapWorker struct {
 	writeChan chan []byte
 	ifMtu     int
-	doRecv    func([]byte) error
+	doRead    func([]byte) error
 	config    *water.Config
 
 	On     OnTapWorker
@@ -83,12 +83,12 @@ func (a *TapWorker) NewEth(t uint16) *libol.Ether {
 	return eth
 }
 
-func (a *TapWorker) GoRecv(ctx context.Context, doRecv func([]byte) error) {
-	defer libol.Catch("TapWorker.GoRecv")
+func (a *TapWorker) Read(ctx context.Context, doRead func([]byte) error) {
+	defer libol.Catch("TapWorker.Read")
 	defer a.Close()
 
-	libol.Info("TapWorker.GoRev")
-	a.doRecv = doRecv
+	libol.Info("TapWorker.Read")
+	a.doRead = doRead
 
 	for {
 		data := make([]byte, a.ifMtu)
@@ -98,12 +98,12 @@ func (a *TapWorker) GoRecv(ctx context.Context, doRecv func([]byte) error) {
 
 		n, err := a.Device.Read(data)
 		if err != nil {
-			libol.Error("TapWorker.GoRev: %s", err)
+			libol.Error("TapWorker.Read: %s", err)
 			a.Open()
 			continue
 		}
 
-		libol.Debug("TapWorker.GoRev: % x", data[:n])
+		libol.Debug("TapWorker.Read: % x", data[:n])
 		if a.Device.IsTUN() {
 			eth := a.NewEth(libol.ETHPIP4)
 
@@ -112,15 +112,15 @@ func (a *TapWorker) GoRecv(ctx context.Context, doRecv func([]byte) error) {
 			buffer = append(buffer, data[0:n]...)
 			n += eth.Len
 
-			doRecv(buffer[:n])
+			doRead(buffer[:n])
 		} else {
-			doRecv(data[:n])
+			doRead(data[:n])
 		}
 	}
 }
 
-func (a *TapWorker) DoSend(data []byte) error {
-	libol.Debug("TapWorker.DoSend: % x", data)
+func (a *TapWorker) DoWrite(data []byte) error {
+	libol.Debug("TapWorker.DoWrite: % x", data)
 
 	a.writeChan <- data
 
@@ -164,8 +164,8 @@ func (a *TapWorker) onArp(data []byte) bool {
 		buffer = append(buffer, reply.Encode()...)
 
 		libol.Info("TapWorker.onArp % x.", buffer)
-		if a.doRecv != nil {
-			a.doRecv(buffer)
+		if a.doRead != nil {
+			a.doRead(buffer)
 		}
 
 		return true
@@ -174,11 +174,11 @@ func (a *TapWorker) onArp(data []byte) bool {
 	return false
 }
 
-func (a *TapWorker) GoLoop(ctx context.Context) {
-	defer libol.Catch("TapWorker.GoLoop")
+func (a *TapWorker) Loop(ctx context.Context) {
+	defer libol.Catch("TapWorker.Loop")
 	defer a.Close()
 
-	libol.Info("TapWorker.GoLoop")
+	libol.Info("TapWorker.Loop")
 
 	for {
 		select {
@@ -190,13 +190,13 @@ func (a *TapWorker) GoLoop(ctx context.Context) {
 			if a.Device.IsTUN() {
 				//Proxy arp request.
 				if a.onArp(w) {
-					libol.Info("TapWorker.GoLoop: Arp proxy.")
+					libol.Info("TapWorker.Loop: Arp proxy.")
 					continue
 				}
 
 				eth, err := libol.NewEtherFromFrame(w)
 				if err != nil {
-					libol.Error("TapWorker.GoLoop: %s", err)
+					libol.Error("TapWorker.Loop: %s", err)
 					continue
 				}
 				if eth.IsVlan() {
@@ -209,7 +209,7 @@ func (a *TapWorker) GoLoop(ctx context.Context) {
 			}
 
 			if _, err := a.Device.Write(w); err != nil {
-				libol.Error("TapWorker.GoLoop: %s", err)
+				libol.Error("TapWorker.Loop: %s", err)
 			}
 		case <-ctx.Done():
 			return

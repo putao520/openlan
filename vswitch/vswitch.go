@@ -51,7 +51,7 @@ func (b *VSwitch) Start() bool {
 
 	b.worker.Start()
 	if b.http != nil {
-		go b.http.GoStart()
+		go b.http.Start()
 	}
 
 	return true

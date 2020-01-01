@@ -97,7 +97,7 @@ func (w *WorkerBase) BrName() string {
 
 func (w *WorkerBase) showHook() {
 	for i, h := range w.hooks {
-		libol.Info("WorkerBase.showHook k:%d func: %p, %s", i, h, libol.FunName(h))
+		libol.Debug("WorkerBase.showHook k:%d,func:%p,%s", i, h, libol.FunName(h))
 	}
 }
 
@@ -128,11 +128,11 @@ func (w *WorkerBase) OnClient(client *libol.TcpClient) error {
 	return nil
 }
 
-func (w *WorkerBase) OnRecv(client *libol.TcpClient, data []byte) error {
-	libol.Debug("WorkerBase.onRecv: %s % x", client.Addr, data)
+func (w *WorkerBase) OnRead(client *libol.TcpClient, data []byte) error {
+	libol.Debug("WorkerBase.OnRead: %s % x", client.Addr, data)
 
 	if err := w.onHook(client, data); err != nil {
-		libol.Debug("WorkerBase.onRecv: %s dropping by %s", client.Addr, err)
+		libol.Debug("WorkerBase.OnRead: %s dropping by %s", client.Addr, err)
 		if client.GetStatus() != libol.CLAUEHED {
 			w.Server.DrpCount++
 		}
@@ -150,7 +150,7 @@ func (w *WorkerBase) OnRecv(client *libol.TcpClient, data []byte) error {
 	}
 
 	if _, err := dev.Write(data); err != nil {
-		libol.Error("WorkerBase.onRecv: %s", err)
+		libol.Error("WorkerBase.OnRead: %s", err)
 		return err
 	}
 
@@ -158,7 +158,7 @@ func (w *WorkerBase) OnRecv(client *libol.TcpClient, data []byte) error {
 }
 
 func (w *WorkerBase) OnClose(client *libol.TcpClient) error {
-	libol.Info("WorkerBase.onClose: %s", client.Addr)
+	libol.Info("WorkerBase.OnClose: %s", client.Addr)
 
 	service.Point.Del(client.Addr)
 	service.Network.FreeAddr(client)
@@ -171,8 +171,8 @@ func (w *WorkerBase) Start() {
 
 	w.LoadLinks()
 
-	go w.Server.GoAccept()
-	go w.Server.GoLoop(w)
+	go w.Server.Accept()
+	go w.Server.Loop(w)
 }
 
 func (w *WorkerBase) Stop() {
@@ -230,7 +230,7 @@ func (w *WorkerBase) NewTap() (*models.TapDevice, error) {
 	return nil, nil
 }
 
-func (w *WorkerBase) Send(dev *models.TapDevice, frame []byte) {
+func (w *WorkerBase) Write(dev *models.TapDevice, frame []byte) {
 	w.Server.TxCount++
 }
 

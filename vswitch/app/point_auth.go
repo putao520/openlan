@@ -36,11 +36,11 @@ func (p *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 		case "logi=":
 			if err := p.handleLogin(client, libol.DecodeParams(frame.Data)); err != nil {
 				libol.Error("PointAuth.OnFrame: %s", err)
-				client.SendResp("login", err.Error())
+				client.WriteResp("login", err.Error())
 				client.Close()
 				return err
 			}
-			client.SendResp("login", "okay.")
+			client.WriteResp("login", "okay.")
 		}
 
 		//If instruct is not login, continue to process.
@@ -50,7 +50,7 @@ func (p *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 	//Dropped all frames if not auth.
 	if client.GetStatus() != libol.CLAUEHED {
 		client.Dropped++
-		libol.Debug("PointAuth.onRecv: %s unAuth", client.Addr)
+		libol.Debug("PointAuth.onRead: %s unAuth", client.Addr)
 		return libol.Errer("unAuth client.")
 	}
 
@@ -105,27 +105,27 @@ func (p *PointAuth) onAuth(client *libol.TcpClient, user *models.User) error {
 	m.Alias = user.Alias
 
 	service.Point.Add(m)
-	go p.GoRecvOnTap(dev, client.SendMsg)
+	go p.ReadOnTap(dev, client.WriteMsg)
 
 	return nil
 }
 
-func (p *PointAuth) GoRecvOnTap(dev *models.TapDevice, doRecv func([]byte) error) {
-	libol.Info("PointAuth.GoRecv: %s", dev.Name())
+func (p *PointAuth) ReadOnTap(dev *models.TapDevice, doRead func([]byte) error) {
+	libol.Info("PointAuth.Read: %s", dev.Name())
 
 	defer dev.Close()
 	for {
 		data := make([]byte, p.ifMtu)
 		n, err := dev.Read(data)
 		if err != nil {
-			libol.Error("PointAuth.GoRev: %s", err)
+			libol.Error("PointAuth.Rev: %s", err)
 			break
 		}
 
-		libol.Debug("PointAuth.GoRev: % x\n", data[:n])
-		p.worker.Send(dev, data[:n])
-		if err := doRecv(data[:n]); err != nil {
-			libol.Error("PointAuth.GoRev: do-recv %s %s", dev.Name(), err)
+		libol.Debug("PointAuth.Rev: % x\n", data[:n])
+		p.worker.Write(dev, data[:n])
+		if err := doRead(data[:n]); err != nil {
+			libol.Error("PointAuth.Rev: do-recv %s %s", dev.Name(), err)
 		}
 	}
 }

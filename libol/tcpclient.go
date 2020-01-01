@@ -9,10 +9,6 @@ import (
 	"time"
 )
 
-var (
-	MAGIC = []byte{0xff, 0xff}
-)
-
 const (
 	CLINIT       = 0x00
 	CLCONNECTED  = 0x01
@@ -21,10 +17,6 @@ const (
 	CLCONNECTING = 0x04
 	CLTERMINAL   = 0x05
 	CLCLOSED     = 0x06
-)
-
-const (
-	HSIZE = 0x04
 )
 
 type TcpClient struct {
@@ -120,7 +112,9 @@ func (t *TcpClient) Close() {
 	}
 }
 
-func (t *TcpClient) recvX(buffer []byte) error {
+func (t *TcpClient) ReadFull(buffer []byte) error {
+	Debug("TcpClient.ReadFull %d", len(buffer))
+
 	offset := 0
 	left := len(buffer)
 	for left > 0 {
@@ -134,23 +128,22 @@ func (t *TcpClient) recvX(buffer []byte) error {
 		left -= n
 	}
 
-	Debug("TcpClient.recvX %d", len(buffer))
-	Debug("TcpClient.recvX Data: % x", buffer)
+	Debug("TcpClient.ReadFull Data: % x", buffer)
 
 	return nil
 }
 
-func (t *TcpClient) sendX(buffer []byte) error {
+func (t *TcpClient) WriteFull(buffer []byte) error {
 	offset := 0
 	size := len(buffer)
 	left := size - offset
 
-	Debug("TcpClient.sendX %d", size)
-	Debug("TcpClient.sendX Data: % x", buffer)
+	Debug("TcpClient.WriteFull %d", size)
+	Debug("TcpClient.WriteFull Data: % x", buffer)
 
 	for left > 0 {
 		tmp := buffer[offset:]
-		Debug("TcpClient.sendX tmp %d", len(tmp))
+		Debug("TcpClient.WriteFull tmp %d", len(tmp))
 		n, err := t.conn.Write(tmp)
 		if err != nil {
 			return err
@@ -161,7 +154,7 @@ func (t *TcpClient) sendX(buffer []byte) error {
 	return nil
 }
 
-func (t *TcpClient) SendMsg(data []byte) error {
+func (t *TcpClient) WriteMsg(data []byte) error {
 	if err := t.Connect(); err != nil {
 		return err
 	}
@@ -172,7 +165,7 @@ func (t *TcpClient) SendMsg(data []byte) error {
 	binary.BigEndian.PutUint16(buf[2:4], uint16(size))
 	copy(buf[HSIZE:], data)
 
-	if err := t.sendX(buf); err != nil {
+	if err := t.WriteFull(buf); err != nil {
 		t.TxError++
 		return err
 	}
@@ -182,29 +175,29 @@ func (t *TcpClient) SendMsg(data []byte) error {
 	return nil
 }
 
-func (t *TcpClient) RecvMsg(data []byte) (int, error) {
-	Debug("TcpClient.RecvMsg %s", t)
+func (t *TcpClient) ReadMsg(data []byte) (int, error) {
+	Debug("TcpClient.ReadMsg %s", t)
 
 	if !t.IsOk() {
-		return -1, Errer("%s: connection isn't okay", t)
+		return -1, Errer("%s: not okay", t)
 	}
 
 	h := make([]byte, HSIZE)
-	if err := t.recvX(h); err != nil {
+	if err := t.ReadFull(h); err != nil {
 		return -1, err
 	}
 
 	if !bytes.Equal(h[0:2], MAGIC) {
-		return -1, Errer("%s: isn't right magic header", t)
+		return -1, Errer("%s: wrong magic", t)
 	}
 
 	size := binary.BigEndian.Uint16(h[2:4])
 	if int(size) > t.maxSize || int(size) < t.minSize {
-		return -1, Errer("%s: isn't right data size (%d)", t, size)
+		return -1, Errer("%s: wrong size(%d)", t, size)
 	}
 
 	d := make([]byte, size)
-	if err := t.recvX(d); err != nil {
+	if err := t.ReadFull(d); err != nil {
 		return -1, err
 	}
 
@@ -238,21 +231,21 @@ func (t *TcpClient) IsInitialized() bool {
 	return t.GetStatus() == CLINIT
 }
 
-func (t *TcpClient) SendReq(action string, body string) error {
-	data := EncodeRequestCmd(action, body)
-	Debug("TcpClient.SendReq %d %s", len(data), data[6:])
+func (t *TcpClient) WriteReq(action string, body string) error {
+	data := EncodeRequest(action, body)
+	Debug("TcpClient.WriteReq %d %s", len(data), data[6:])
 
-	if err := t.SendMsg(data); err != nil {
+	if err := t.WriteMsg(data); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (t *TcpClient) SendResp(action string, body string) error {
-	data := EncodeReplyCmd(action, body)
-	Debug("TcpClient.SendResp %d %s", len(data), data[6:])
+func (t *TcpClient) WriteResp(action string, body string) error {
+	data := EncodeReply(action, body)
+	Debug("TcpClient.WriteResp %d %s", len(data), data[6:])
 
-	if err := t.SendMsg(data); err != nil {
+	if err := t.WriteMsg(data); err != nil {
 		return err
 	}
 	return nil
