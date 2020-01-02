@@ -1,4 +1,4 @@
-package models
+package network
 
 type Taper interface {
 	IsTUN() bool

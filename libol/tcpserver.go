@@ -6,9 +6,9 @@ import (
 )
 
 type OnTcpServer interface {
-	OnClient(*TcpClient) error
-	OnRead(*TcpClient, []byte) error
-	OnClose(*TcpClient) error
+	OnClient(client *TcpClient) error
+	OnRead(client *TcpClient, p []byte) error
+	OnClose(client *TcpClient) error
 }
 
 type TcpServer struct {
@@ -121,7 +121,7 @@ func (t *TcpServer) Loop(on OnTcpServer) {
 	}
 }
 
-func (t *TcpServer) Read(client *TcpClient, onRead func(*TcpClient, []byte) error) {
+func (t *TcpServer) Read(client *TcpClient, onRead func(client *TcpClient, p []byte) error) {
 	Debug("TcpServer.Read: %s", client.Addr)
 	for {
 		data := make([]byte, 4096)

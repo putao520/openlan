@@ -89,11 +89,10 @@ func (b *LinBridge) AddSlave(name string) error {
 	return nil
 }
 
-
 func (b *LinBridge) Name() string {
 	return b.name
 }
 
-func (b *LinBridge) SetName(value string)  {
+func (b *LinBridge) SetName(value string) {
 	b.name = value
 }

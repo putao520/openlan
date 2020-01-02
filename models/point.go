@@ -2,6 +2,7 @@ package models
 
 import (
 	"github.com/danieldin95/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/network"
 )
 
 type Point struct {
@@ -11,10 +12,10 @@ type Point struct {
 	Status string           `json:"status"`
 	IfName string           `json:"ifName"`
 	Client *libol.TcpClient `json:"-"`
-	Device Taper            `json:"-"`
+	Device network.Taper    `json:"-"`
 }
 
-func NewPoint(c *libol.TcpClient, d Taper) (w *Point) {
+func NewPoint(c *libol.TcpClient, d network.Taper) (w *Point) {
 	w = &Point{
 		Alias:  "",
 		Server: c.LocalAddr(),

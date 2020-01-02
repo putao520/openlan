@@ -150,10 +150,10 @@ func (p *Point) UpBr(name string) tenus.Bridger {
 	return br
 }
 
-func (p *Point) OnTap(tap *TapWorker) error {
+func (p *Point) OnTap(w *TapWorker) error {
 	libol.Info("Point.OnTap")
 
-	name := tap.Device.Name()
+	name := w.Device.Name()
 	link, err := tenus.NewLinkFrom(name)
 	if err != nil {
 		libol.Error("Point.OnTap: Get dev %s: %s", name, err)
@@ -234,7 +234,7 @@ func (p *Point) GetWorker() *TcpWorker {
 	return nil
 }
 
-func (p *Point) OnIpAddr(worker *TcpWorker, n *models.Network) error {
+func (p *Point) OnIpAddr(w *TcpWorker, n *models.Network) error {
 	libol.Info("Point.OnIpAddr: %s, %s, %s", n.IfAddr, n.Netmask, n.Routes)
 
 	if n.IfAddr == "" || p.link == nil {
@@ -288,7 +288,7 @@ func (p *Point) DelRoutes(routes []*models.Route) error {
 	return nil
 }
 
-func (p *Point) OnClose(worker *TcpWorker) error {
+func (p *Point) OnClose(w *TcpWorker) error {
 	libol.Info("Point.OnClose")
 
 	p.DelAddr(p.addr)
@@ -297,7 +297,7 @@ func (p *Point) OnClose(worker *TcpWorker) error {
 	return nil
 }
 
-func (p *Point) OnSuccess(worker *TcpWorker) error {
+func (p *Point) OnSuccess(w *TcpWorker) error {
 	libol.Info("Point.OnSuccess")
 
 	p.AddAddr(p.IfAddr)

@@ -10,7 +10,7 @@ import (
 )
 
 type OnTapWorker interface {
-	OnTap(*TapWorker) error
+	OnTap(w *TapWorker) error
 }
 
 type TapWorker struct {
@@ -83,7 +83,7 @@ func (a *TapWorker) NewEth(t uint16) *libol.Ether {
 	return eth
 }
 
-func (a *TapWorker) Read(ctx context.Context, doRead func([]byte) error) {
+func (a *TapWorker) Read(ctx context.Context, doRead func(p []byte) error) {
 	defer libol.Catch("TapWorker.Read")
 	defer a.Close()
 

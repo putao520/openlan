@@ -140,7 +140,7 @@ func (i *Ipv4) Encode() []byte {
 	_ = binary.Write(writer, binary.BigEndian, &i.ToS)
 	_ = binary.Write(writer, binary.BigEndian, &i.TotalLen)
 	_ = binary.Write(writer, binary.BigEndian, &i.Identifier)
-	f := uint16(i.Flag <<13 | i.FragOffset)
+	f := uint16(i.Flag<<13 | i.FragOffset)
 	_ = binary.Write(writer, binary.BigEndian, &f)
 	_ = binary.Write(writer, binary.BigEndian, &i.ToL)
 	_ = binary.Write(writer, binary.BigEndian, &i.Protocol)

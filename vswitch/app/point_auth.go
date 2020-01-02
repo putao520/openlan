@@ -5,6 +5,7 @@ import (
 	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
+	"github.com/danieldin95/openlan-go/network"
 	"github.com/danieldin95/openlan-go/service"
 	"github.com/danieldin95/openlan-go/vswitch/api"
 )
@@ -110,7 +111,7 @@ func (p *PointAuth) onAuth(client *libol.TcpClient, user *models.User) error {
 	return nil
 }
 
-func (p *PointAuth) ReadTap(dev models.Taper, doRead func([]byte) error) {
+func (p *PointAuth) ReadTap(dev network.Taper, doRead func(p []byte) error) {
 	libol.Info("PointAuth.ReadTap: %s", dev.Name())
 
 	defer dev.Close()

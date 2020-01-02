@@ -15,7 +15,7 @@ func TestTapWrite(t *testing.T) {
 
 	t.Logf("Tap.write: %s\n", dev.Name())
 
-	frame :=  make([]byte, 65)
+	frame := make([]byte, 65)
 	for i := 0; i < 64; i++ {
 		frame[i] = uint8(i)
 	}
@@ -39,7 +39,7 @@ func BenchmarkTapWrite64(b *testing.B) {
 
 	b.Logf("Tap.write: to %s", dev.Name())
 	for i := 0; i < b.N; i++ {
-		frame :=  make([]byte, 64)
+		frame := make([]byte, 64)
 		for i := 0; i < len(frame); i++ {
 			frame[i] = uint8(i)
 		}
@@ -65,7 +65,7 @@ func BenchmarkTapWrite1500(b *testing.B) {
 
 	b.Logf("Tap.write: to %s", dev.Name())
 	for i := 0; i < b.N; i++ {
-		frame :=  make([]byte, 1500)
+		frame := make([]byte, 1500)
 		for i := 0; i < len(frame); i++ {
 			frame[i] = uint8(i)
 		}

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
-	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/network"
 	"github.com/danieldin95/openlan-go/point"
 	"github.com/danieldin95/openlan-go/service"
@@ -25,7 +24,7 @@ type WorkerBase struct {
 	OnLines  *app.Online
 	Conf     *config.VSwitch
 
-	hooks     []func(*libol.TcpClient, *libol.Frame) error
+	hooks     []func(client *libol.TcpClient, frame *libol.Frame) error
 	newTime   int64
 	startTime int64
 	linksLock sync.RWMutex
@@ -39,7 +38,7 @@ func NewWorkerBase(server *libol.TcpServer, c *config.VSwitch) *WorkerBase {
 		Server:    server,
 		Neighbor:  nil,
 		Conf:      c,
-		hooks:     make([]func(*libol.TcpClient, *libol.Frame) error, 0, 64),
+		hooks:     make([]func(client *libol.TcpClient, frame *libol.Frame) error, 0, 64),
 		newTime:   time.Now().Unix(),
 		startTime: 0,
 		brName:    c.BrName,
@@ -101,7 +100,7 @@ func (w *WorkerBase) showHook() {
 	}
 }
 
-func (w *WorkerBase) setHook(hook func(*libol.TcpClient, *libol.Frame) error) {
+func (w *WorkerBase) setHook(hook func(client *libol.TcpClient, frame *libol.Frame) error) {
 	w.hooks = append(w.hooks, hook)
 }
 
@@ -225,12 +224,12 @@ func (w *WorkerBase) GetServer() *libol.TcpServer {
 	return w.Server
 }
 
-func (w *WorkerBase) NewTap() (models.Taper, error) {
+func (w *WorkerBase) NewTap() (network.Taper, error) {
 	//DO IMPLEMENT
 	return nil, nil
 }
 
-func (w *WorkerBase) Write(dev models.Taper, frame []byte) {
+func (w *WorkerBase) Write(dev network.Taper, frame []byte) {
 	w.Server.TxCount++
 }
 
@@ -260,7 +259,7 @@ func (w *Worker) FreeBr() {
 	w.Br.Close()
 }
 
-func (w *Worker) NewTap() (models.Taper, error) {
+func (w *Worker) NewTap() (network.Taper, error) {
 	libol.Debug("Worker.newTap")
 	dev, err := water.New(water.Config{DeviceType: water.TAP})
 	if err != nil {

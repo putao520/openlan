@@ -82,7 +82,7 @@ func (w *_network) List() <-chan *models.Network {
 	return c
 }
 
-func (w *_network) GetFreeAddr(client *libol.TcpClient, n *models.Network) (string, string) {
+func (w *_network) GetFreeAddr(client *libol.TcpClient, n *models.Network) (ip string, mask string) {
 	if n == nil || client == nil {
 		return "", ""
 	}
@@ -97,8 +97,8 @@ func (w *_network) GetFreeAddr(client *libol.TcpClient, n *models.Network) (stri
 		return ipStr, netmask
 	}
 
-	ip := netIp.To4()
-	start := binary.BigEndian.Uint32(ip[:4])
+	netip := netIp.To4()
+	start := binary.BigEndian.Uint32(netip[:4])
 
 	for i := 0; i < n.IpRange; i++ {
 		tmp := make([]byte, 4)

@@ -8,26 +8,26 @@ import (
 )
 
 type VSwitch struct {
-	Alias      string      `json:"alias"`
-	TcpListen  string      `json:"vs.addr"`
-	HttpDir    string      `json:"http.dir"`
-	HttpListen string      `json:"http.addr"`
-	IfMtu      int         `json:"if.mtu"`
-	IfAddr     string      `json:"if.addr"`
-	BrName     string      `json:"if.br"`
-	Token      string      `json:"admin.token"`
-	ConfDir    string      `json:"conf.dir"`
-	TokenFile  string      `json:"-"`
-	Password   string      `json:"-"`
-	Network    string      `json:"-"`
-	SaveFile   string      `json:"-"`
-	LogFile    string      `json:"log.file"`
-	Verbose    int         `json:"log.level"`
-	CrtDir     string      `json:"crt.dir"`
-	CrtFile    string      `json:"-"`
-	KeyFile    string      `json:"-"`
-	Links      []*Point    `json:"links"`
-	Script     string      `json:"script"`
+	Alias      string   `json:"alias"`
+	TcpListen  string   `json:"vs.addr"`
+	HttpDir    string   `json:"http.dir"`
+	HttpListen string   `json:"http.addr"`
+	IfMtu      int      `json:"if.mtu"`
+	IfAddr     string   `json:"if.addr"`
+	BrName     string   `json:"if.br"`
+	Token      string   `json:"admin.token"`
+	ConfDir    string   `json:"conf.dir"`
+	TokenFile  string   `json:"-"`
+	Password   string   `json:"-"`
+	Network    string   `json:"-"`
+	SaveFile   string   `json:"-"`
+	LogFile    string   `json:"log.file"`
+	Verbose    int      `json:"log.level"`
+	CrtDir     string   `json:"crt.dir"`
+	CrtFile    string   `json:"-"`
+	KeyFile    string   `json:"-"`
+	Links      []*Point `json:"links"`
+	Script     string   `json:"script"`
 }
 
 var VSwitchDefault = VSwitch{
@@ -40,11 +40,11 @@ var VSwitchDefault = VSwitch{
 	ConfDir:    ".",
 	IfMtu:      1518,
 	IfAddr:     "",
-	LogFile: "vswitch.error",
-	CrtDir:  "",
-	HttpDir: "public",
-	Links:   nil,
-	Script:  fmt.Sprintf("vswitch.%s.cmd", runtime.GOOS),
+	LogFile:    "vswitch.error",
+	CrtDir:     "",
+	HttpDir:    "public",
+	Links:      nil,
+	Script:     fmt.Sprintf("vswitch.%s.cmd", runtime.GOOS),
 }
 
 func NewVSwitch() (c *VSwitch) {

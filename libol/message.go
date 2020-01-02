@@ -6,6 +6,7 @@ import (
 )
 
 const HSIZE = 0x04
+
 var MAGIC = []byte{0xff, 0xff}
 
 func IsControl(data []byte) bool {

@@ -43,7 +43,7 @@ func (p *Point) newDevice() {
 	p.tapWorker = NewTapWorker(conf, p.config, p)
 }
 
-func (p *Point) OnTap(tap *TapWorker) error {
+func (p *Point) OnTap(w *TapWorker) error {
 	return nil
 }
 
@@ -115,14 +115,14 @@ func (p *Point) IfName() string {
 	return ""
 }
 
-func (p *Point) OnIpAddr(worker *TcpWorker, n *models.Network) error {
+func (p *Point) OnIpAddr(w *TcpWorker, n *models.Network) error {
 	return nil
 }
 
-func (p *Point) OnClose(worker *TcpWorker) error {
+func (p *Point) OnClose(w *TcpWorker) error {
 	return nil
 }
 
-func (p *Point) OnSuccess(worker *TcpWorker) error {
+func (p *Point) OnSuccess(w *TcpWorker) error {
 	return nil
 }

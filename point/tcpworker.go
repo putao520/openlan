@@ -11,9 +11,9 @@ import (
 )
 
 type OnTcpWorker interface {
-	OnClose(*TcpWorker) error
-	OnSuccess(*TcpWorker) error
-	OnIpAddr(*TcpWorker, *models.Network) error
+	OnClose(w *TcpWorker) error
+	OnSuccess(w *TcpWorker) error
+	OnIpAddr(w *TcpWorker, n *models.Network) error
 }
 
 type TcpWorker struct {
@@ -138,7 +138,7 @@ func (t *TcpWorker) onInstruct(data []byte) error {
 	return nil
 }
 
-func (t *TcpWorker) Read(ctx context.Context, doRead func([]byte) error) {
+func (t *TcpWorker) Read(ctx context.Context, doRead func(p []byte) error) {
 	defer libol.Catch("TcpWorker.Read")
 	defer t.Close()
 

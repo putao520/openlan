@@ -45,7 +45,7 @@ func (p *Point) newDevice() {
 	p.tapWorker = NewTapWorker(conf, p.config, p)
 }
 
-func (p *Point) OnTap(tap *TapWorker) error {
+func (p *Point) OnTap(w *TapWorker) error {
 	libol.Info("Point.OnTap")
 	return nil
 }
@@ -198,7 +198,7 @@ func (p *Point) DelRoutes(routes []*models.Route) error {
 	return nil
 }
 
-func (p *Point) OnIpAddr(worker *TcpWorker, n *models.Network) error {
+func (p *Point) OnIpAddr(w *TcpWorker, n *models.Network) error {
 	libol.Info("Point.OnIpAddr: %s, %s, %s", n.IfAddr, n.Netmask, n.Routes)
 
 	if n.IfAddr == "" {
@@ -213,7 +213,7 @@ func (p *Point) OnIpAddr(worker *TcpWorker, n *models.Network) error {
 	return nil
 }
 
-func (p *Point) OnClose(worker *TcpWorker) error {
+func (p *Point) OnClose(w *TcpWorker) error {
 	libol.Info("Point.OnClose")
 
 	p.DelAddr(p.addr)
@@ -222,7 +222,7 @@ func (p *Point) OnClose(worker *TcpWorker) error {
 	return nil
 }
 
-func (p *Point) OnSuccess(worker *TcpWorker) error {
+func (p *Point) OnSuccess(w *TcpWorker) error {
 	libol.Info("Point.OnSuccess")
 
 	p.AddAddr(p.IfAddr)

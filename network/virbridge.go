@@ -1,8 +1,8 @@
 package network
 
 type VirBridge struct {
-	mtu    int
-	name   string
+	mtu  int
+	name string
 }
 
 func NewVirBridge(name string, mtu int) *VirBridge {
@@ -23,11 +23,10 @@ func (b *VirBridge) AddSlave(name string) error {
 	return nil
 }
 
-
 func (b *VirBridge) Name() string {
 	return b.name
 }
 
-func (b *VirBridge) SetName(value string)  {
+func (b *VirBridge) SetName(value string) {
 	b.name = value
 }
