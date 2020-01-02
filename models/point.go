@@ -11,10 +11,10 @@ type Point struct {
 	Status string           `json:"status"`
 	IfName string           `json:"ifName"`
 	Client *libol.TcpClient `json:"-"`
-	Device *TapDevice       `json:"-"`
+	Device Taper            `json:"-"`
 }
 
-func NewPoint(c *libol.TcpClient, d *TapDevice) (w *Point) {
+func NewPoint(c *libol.TcpClient, d Taper) (w *Point) {
 	w = &Point{
 		Alias:  "",
 		Server: c.LocalAddr(),

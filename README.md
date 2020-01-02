@@ -100,8 +100,7 @@ Case2：
  
       if.addr    配置本地网桥的地址
       links      配置虚拟交换与其他虚拟交换之间链路
-      tls.crt    用于信道加密的证书
-      tls.key    用于信道加密的证书私约
+      crt.dir    存放信道加密证书的目录
       log.file   配置日志输出文件
 
 ### 运行Point

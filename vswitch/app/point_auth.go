@@ -105,27 +105,27 @@ func (p *PointAuth) onAuth(client *libol.TcpClient, user *models.User) error {
 	m.Alias = user.Alias
 
 	service.Point.Add(m)
-	go p.ReadOnTap(dev, client.WriteMsg)
+	go p.ReadTap(dev, client.WriteMsg)
 
 	return nil
 }
 
-func (p *PointAuth) ReadOnTap(dev *models.TapDevice, doRead func([]byte) error) {
-	libol.Info("PointAuth.Read: %s", dev.Name())
+func (p *PointAuth) ReadTap(dev models.Taper, doRead func([]byte) error) {
+	libol.Info("PointAuth.ReadTap: %s", dev.Name())
 
 	defer dev.Close()
 	for {
 		data := make([]byte, p.ifMtu)
 		n, err := dev.Read(data)
 		if err != nil {
-			libol.Error("PointAuth.Rev: %s", err)
+			libol.Error("PointAuth.ReadTap: %s", err)
 			break
 		}
 
-		libol.Debug("PointAuth.Rev: % x\n", data[:n])
+		libol.Debug("PointAuth.ReadTap: % x\n", data[:n])
 		p.worker.Write(dev, data[:n])
 		if err := doRead(data[:n]); err != nil {
-			libol.Error("PointAuth.Rev: do-recv %s %s", dev.Name(), err)
+			libol.Error("PointAuth.ReadTap: do-recv %s %s", dev.Name(), err)
 		}
 	}
 }

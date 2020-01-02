@@ -2,18 +2,18 @@ package vswitch
 
 import (
 	"fmt"
+	"github.com/danieldin95/openlan-go/config"
+	"github.com/danieldin95/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/models"
+	"github.com/danieldin95/openlan-go/network"
+	"github.com/danieldin95/openlan-go/point"
 	"github.com/danieldin95/openlan-go/service"
+	"github.com/danieldin95/openlan-go/vswitch/api"
+	"github.com/danieldin95/openlan-go/vswitch/app"
 	"github.com/songgao/water"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/danieldin95/openlan-go/config"
-	"github.com/danieldin95/openlan-go/libol"
-	"github.com/danieldin95/openlan-go/models"
-	"github.com/danieldin95/openlan-go/point"
-	"github.com/danieldin95/openlan-go/vswitch/api"
-	"github.com/danieldin95/openlan-go/vswitch/app"
 )
 
 type WorkerBase struct {
@@ -205,7 +205,7 @@ func (w *WorkerBase) AddLink(c *config.Point) {
 		w.links[c.Addr] = p
 		w.linksLock.Unlock()
 
-		service.Link.Add(p)
+		service.Link.Add(p, network.NewLinTap(p.GetDevice()))
 		p.Start()
 	}()
 }
@@ -225,24 +225,24 @@ func (w *WorkerBase) GetServer() *libol.TcpServer {
 	return w.Server
 }
 
-func (w *WorkerBase) NewTap() (*models.TapDevice, error) {
-	//TODO
+func (w *WorkerBase) NewTap() (models.Taper, error) {
+	//DO IMPLEMENT
 	return nil, nil
 }
 
-func (w *WorkerBase) Write(dev *models.TapDevice, frame []byte) {
+func (w *WorkerBase) Write(dev models.Taper, frame []byte) {
 	w.Server.TxCount++
 }
 
 type Worker struct {
 	*WorkerBase
-	Br Bridger
+	Br network.Bridger
 }
 
 func NewWorker(server *libol.TcpServer, c *config.VSwitch) *Worker {
 	w := &Worker{
 		WorkerBase: NewWorkerBase(server, c),
-		Br:         NewLinuxBridger(c.BrName, c.IfMtu),
+		Br:         network.NewLinBridge(c.BrName, c.IfMtu),
 	}
 	if w.Br.Name() == "" {
 		w.Br.SetName(w.BrName())
@@ -260,7 +260,7 @@ func (w *Worker) FreeBr() {
 	w.Br.Close()
 }
 
-func (w *Worker) NewTap() (*models.TapDevice, error) {
+func (w *Worker) NewTap() (models.Taper, error) {
 	libol.Debug("Worker.newTap")
 	dev, err := water.New(water.Config{DeviceType: water.TAP})
 	if err != nil {
@@ -272,7 +272,7 @@ func (w *Worker) NewTap() (*models.TapDevice, error) {
 
 	libol.Info("Worker.newTap %s", dev.Name())
 
-	return models.NewTapDevice(dev), nil
+	return network.NewLinTap(dev), nil
 }
 
 func (w *Worker) Start() {

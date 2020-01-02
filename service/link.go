@@ -15,7 +15,7 @@ var Link = _link{
 	links: make(map[string]*models.Point, 1024),
 }
 
-func (p *_link) Add(m *point.Point) {
+func (p *_link) Add(m *point.Point, tap models.Taper) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
@@ -25,7 +25,7 @@ func (p *_link) Add(m *point.Point) {
 		Uptime: m.UpTime(),
 		Status: m.State(),
 		Client: m.GetClient(),
-		Device: models.NewTapDevice(m.GetDevice()),
+		Device: tap,
 		IfName: m.IfName(),
 	}
 	p.links[m.Addr()] = link

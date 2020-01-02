@@ -8,6 +8,6 @@ import (
 type Worker interface {
 	GetId() string
 	GetServer() *libol.TcpServer
-	NewTap() (*models.TapDevice, error)
-	Write(*models.TapDevice, []byte)
+	NewTap() (models.Taper, error)
+	Write(models.Taper, []byte)
 }
