@@ -6,11 +6,11 @@ import (
 )
 
 type VirTap struct {
-	isTap bool
-	name  string
-	writeQ   *queue.Queue
+	isTap  bool
+	name   string
+	writeQ *queue.Queue
 	readQ  *queue.Queue
-	bridge    Bridger
+	bridge Bridger
 }
 
 func NewVirTap(isTap bool, name string) (*VirTap, error) {
@@ -18,10 +18,10 @@ func NewVirTap(isTap bool, name string) (*VirTap, error) {
 		name = Tapers.GenName()
 	}
 	tap := &VirTap{
-		isTap: isTap,
-		name:  name,
-		writeQ:   queue.New(1024*10),
-		readQ:  queue.New(1024*10),
+		isTap:  isTap,
+		name:   name,
+		writeQ: queue.New(1024 * 10),
+		readQ:  queue.New(1024 * 10),
 	}
 	Tapers.Add(tap)
 

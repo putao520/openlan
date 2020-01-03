@@ -15,7 +15,7 @@ func main() {
 	}
 
 	wg.Add(1)
-	go func () {
+	go func() {
 		for {
 			if rb.Len() == 0 {
 				break
@@ -34,7 +34,7 @@ func main() {
 	}
 
 	wg.Add(1)
-	go func () {
+	go func() {
 		for {
 			if q.Len() == 0 {
 				break

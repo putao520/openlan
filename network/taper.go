@@ -19,8 +19,8 @@ type Taper interface {
 }
 
 type tapers struct {
-	lock sync.RWMutex
-	index  int
+	lock    sync.RWMutex
+	index   int
 	devices map[string]Taper
 }
 
@@ -42,7 +42,7 @@ func (t *tapers) Add(tap Taper) {
 	t.devices[tap.Name()] = tap
 }
 
-func (t *tapers) Get(name string) Taper{
+func (t *tapers) Get(name string) Taper {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 

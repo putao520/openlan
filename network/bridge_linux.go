@@ -121,3 +121,7 @@ func (b *LinBridge) SetName(value string) {
 func (b *LinBridge) Input(m *Framer) error {
 	return nil
 }
+
+func (b *LinBridge) SetTimeout(value int) {
+	//TODO
+}

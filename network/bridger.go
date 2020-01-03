@@ -8,4 +8,5 @@ type Bridger interface {
 	AddSlave(dev Taper) error
 	DelSlave(dev Taper) error
 	Input(m *Framer) error
+	SetTimeout(value int)
 }

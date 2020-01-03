@@ -8,10 +8,10 @@ import (
 )
 
 type LinTap struct {
-	isTap bool
-	name  string
-	device   *water.Interface
-	bridge    Bridger
+	isTap  bool
+	name   string
+	device *water.Interface
+	bridge Bridger
 }
 
 func NewLinTap(isTap bool, name string) (*LinTap, error) {
@@ -25,8 +25,8 @@ func NewLinTap(isTap bool, name string) (*LinTap, error) {
 	}
 	tap := &LinTap{
 		device: device,
-		name: device.Name(),
-		isTap: device.IsTAP(),
+		name:   device.Name(),
+		isTap:  device.IsTAP(),
 	}
 
 	Tapers.Add(tap)

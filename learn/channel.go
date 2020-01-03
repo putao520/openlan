@@ -7,5 +7,4 @@ func main() {
 	ch <- 2
 	ch <- 3
 
-
 }
