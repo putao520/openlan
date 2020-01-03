@@ -42,7 +42,10 @@ func (t *VirTap) Name() string {
 
 func (t *VirTap) Read(p []byte) (n int, err error) {
 	result, err := t.readQ.Get(1)
-	return copy(p, result[0].([]byte)), err
+	if err == nil {
+		return copy(p, result[0].([]byte)), err
+	}
+	return 0, err
 }
 
 func (t *VirTap) InRead(p []byte) (n int, err error) {
