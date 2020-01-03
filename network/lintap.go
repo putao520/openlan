@@ -3,7 +3,6 @@ package network
 import (
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/milosgajdos83/tenus"
-	"github.com/pkg/errors"
 	"github.com/songgao/water"
 )
 
@@ -51,7 +50,7 @@ func (t *LinTap) Read(p []byte) (n int, err error) {
 }
 
 func (t *LinTap) InRead(p []byte) (n int, err error) {
-	return 0, errors.New("not support")
+	return 0, libol.Errer("not support")
 }
 
 func (t *LinTap) Write(p []byte) (n int, err error) {
@@ -59,7 +58,7 @@ func (t *LinTap) Write(p []byte) (n int, err error) {
 }
 
 func (t *LinTap) OutWrite() ([]byte, error) {
-	return nil, errors.New("not support")
+	return nil, libol.Errer("not support")
 }
 
 func (t *LinTap) Close() error {

@@ -47,7 +47,9 @@ func (b *VirBridge) Open(addr string) {
 }
 
 func (b *VirBridge) Close() error {
+	b.ticker.Stop()
 	b.inQ.Dispose()
+	b.done <- true
 	return nil
 }
 
@@ -101,31 +103,35 @@ func (b *VirBridge) Start() {
 		}
 	}
 	expired := func() {
-		select {
-		case <-b.done:
-			return
-		case <-b.ticker.C:
-			deletes := make([]string, 0, 1024)
+		for {
+			select {
+			case <-b.done:
+				return
+			case t := <-b.ticker.C:
+				libol.Debug("VirBridge.Start Tick at %s", t)
+				deletes := make([]string, 0, 1024)
 
-			//collect need deleted.
-			b.lock.RLock()
-			for index, learn := range b.learners {
-				now := time.Now().Unix()
-				if now-learn.Uptime > int64(b.timeout) {
-					deletes = append(deletes, index)
+				//collect need deleted.
+				b.lock.RLock()
+				for index, learn := range b.learners {
+					now := time.Now().Unix()
+					if now-learn.Uptime > int64(b.timeout) {
+						deletes = append(deletes, index)
+					}
 				}
-			}
-			b.lock.RUnlock()
+				b.lock.RUnlock()
 
-			//execute delete.
-			b.lock.Lock()
-			for _, d := range deletes {
-				if _, ok := b.learners[d]; ok {
-					delete(b.learners, d)
-					libol.Info("VirBridge.Start.Ticker: delete %s", d)
+				libol.Debug("VirBridge.Start Delete %d", len(deletes))
+				//execute delete.
+				b.lock.Lock()
+				for _, d := range deletes {
+					if _, ok := b.learners[d]; ok {
+						delete(b.learners, d)
+						libol.Info("VirBridge.Start.Ticker: delete %s", d)
+					}
 				}
+				b.lock.Unlock()
 			}
-			b.lock.Unlock()
 		}
 	}
 
