@@ -62,29 +62,53 @@ func (b *LinBridge) Open(addr string) {
 	b.device = br
 }
 
-func (b *LinBridge) Close() {
+func (b *LinBridge) Close() error {
+	var err error
+
 	if b.device != nil && b.ip != nil {
-		if err := b.device.UnsetLinkIp(b.ip, b.net); err != nil {
+		if err = b.device.UnsetLinkIp(b.ip, b.net); err != nil {
 			libol.Error("LinBridge.Close.UnsetLinkIp %s : %s", b.name, err)
 		}
 	}
+	return err
 }
 
-func (b *LinBridge) AddSlave(name string) error {
+func (b *LinBridge) AddSlave(dev Taper) error {
+	name := dev.Name()
+
 	link, err := tenus.NewLinkFrom(name)
 	if err != nil {
 		libol.Error("LinBridge.AddSlave: Get dev %s: %s", name, err)
 		return err
 	}
-
 	if err := link.SetLinkUp(); err != nil {
 		libol.Error("LinBridge.AddSlave.LinkUp: ", err)
 	}
-
 	if err := b.device.AddSlaveIfc(link.NetInterface()); err != nil {
 		libol.Error("LinBridge.AddSlave: Switch dev %s: %s", name, err)
 		return err
 	}
+
+	dev.Slave(b)
+	libol.Info("LinBridge.AddSlave: %s %s", name, b.name)
+
+	return nil
+}
+
+func (b *LinBridge) DelSlave(dev Taper) error {
+	name := dev.Name()
+
+	link, err := tenus.NewLinkFrom(name)
+	if err != nil {
+		libol.Error("LinBridge.DelSlave: Get dev %s: %s", name, err)
+		return err
+	}
+	if err := b.device.RemoveSlaveIfc(link.NetInterface()); err != nil {
+		libol.Error("LinBridge.DelSlave: Switch dev %s: %s", name, err)
+		return err
+	}
+
+	libol.Info("LinBridge.DelSlave: %s %s", name, b.name)
 
 	return nil
 }

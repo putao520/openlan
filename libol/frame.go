@@ -11,9 +11,8 @@ type Frame struct {
 
 func NewFrame(data []byte) (f *Frame) {
 	f = &Frame{
-		Data: make([]byte, len(data)),
+		Data: data,
 	}
-	copy(f.Data, data)
 
 	eth, err := NewEtherFromFrame(f.Data)
 	if err == nil {

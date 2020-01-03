@@ -4,6 +4,7 @@ type Bridger interface {
 	Name() string
 	SetName(string)
 	Open(addr string)
-	Close()
-	AddSlave(name string) error
+	Close() error
+	AddSlave(dev Taper) error
+	DelSlave(dev Taper) error
 }

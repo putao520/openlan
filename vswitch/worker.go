@@ -223,11 +223,6 @@ func (w *WorkerBase) GetServer() *libol.TcpServer {
 	return w.Server
 }
 
-func (w *WorkerBase) NewTap() (network.Taper, error) {
-	//DO IMPLEMENT
-	return nil, nil
-}
-
 func (w *WorkerBase) Write(dev network.Taper, frame []byte) {
 	w.Server.TxCount++
 }
@@ -259,18 +254,24 @@ func (w *Worker) FreeBr() {
 }
 
 func (w *Worker) NewTap() (network.Taper, error) {
-	libol.Debug("Worker.newTap")
+	libol.Debug("Worker.NewTap")
 	dev, err := network.NewLinTap(true, "")
 	if err != nil {
-		libol.Error("Worker.newTap: %s", err)
+		libol.Error("Worker.NewTap: %s", err)
 		return nil, err
 	}
 
-	w.Br.AddSlave(dev.Name())
-
-	libol.Info("Worker.newTap %s", dev.Name())
+	w.Br.AddSlave(dev)
+	libol.Info("Worker.NewTap %s", dev.Name())
 
 	return dev, nil
+}
+
+func (w *Worker) FreeTap(dev network.Taper) error {
+	w.Br.DelSlave(dev)
+	libol.Info("Worker.FreeTap %s", dev.Name())
+
+	return nil
 }
 
 func (w *Worker) Start() {

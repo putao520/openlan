@@ -5,47 +5,63 @@ import (
 )
 
 type LinTap struct {
-	dev *water.Interface
+	isTap bool
+	name  string
+	device   *water.Interface
+	bridge    Bridger
 }
 
 func NewLinTap(isTap bool, name string) (*LinTap, error) {
-	devType := water.DeviceType(water.TUN)
+	deviceType := water.DeviceType(water.TUN)
 	if isTap {
-		devType = water.TAP
+		deviceType = water.TAP
 	}
-
-	dev, err := water.New(water.Config{DeviceType: devType})
+	device, err := water.New(water.Config{DeviceType: deviceType})
 	if err != nil {
 		return nil, err
 	}
-
 	tap := &LinTap{
-		dev: dev,
+		device: device,
+		name: device.Name(),
+		isTap: device.IsTAP(),
 	}
+
+	Tapers.Add(tap)
 
 	return tap, nil
 }
 
 func (t *LinTap) IsTUN() bool {
-	return !t.dev.IsTUN()
+	return !t.isTap
 }
 
 func (t *LinTap) IsTAP() bool {
-	return t.dev.IsTAP()
+	return t.isTap
 }
 
 func (t *LinTap) Name() string {
-	return t.dev.Name()
+	return t.name
 }
 
 func (t *LinTap) Read(p []byte) (n int, err error) {
-	return t.dev.Read(p)
+	return t.device.Read(p)
 }
 
 func (t *LinTap) Write(p []byte) (n int, err error) {
-	return t.dev.Write(p)
+	return t.device.Write(p)
 }
 
 func (t *LinTap) Close() error {
-	return t.Close()
+	Tapers.Del(t.name)
+	if t.bridge != nil {
+		t.bridge.DelSlave(t)
+		t.bridge = nil
+	}
+	return t.device.Close()
+}
+
+func (t *LinTap) Slave(bridge Bridger) {
+	if t.bridge == nil {
+		t.bridge = bridge
+	}
 }
