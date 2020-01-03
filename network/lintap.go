@@ -1,6 +1,9 @@
 package network
 
 import (
+	"github.com/danieldin95/openlan-go/libol"
+	"github.com/milosgajdos83/tenus"
+	"github.com/pkg/errors"
 	"github.com/songgao/water"
 )
 
@@ -47,8 +50,16 @@ func (t *LinTap) Read(p []byte) (n int, err error) {
 	return t.device.Read(p)
 }
 
+func (t *LinTap) InRead(p []byte) (n int, err error) {
+	return 0, errors.New("not support")
+}
+
 func (t *LinTap) Write(p []byte) (n int, err error) {
 	return t.device.Write(p)
+}
+
+func (t *LinTap) OutWrite() ([]byte, error) {
+	return nil, errors.New("not support")
 }
 
 func (t *LinTap) Close() error {
@@ -64,4 +75,21 @@ func (t *LinTap) Slave(bridge Bridger) {
 	if t.bridge == nil {
 		t.bridge = bridge
 	}
+}
+
+func (t LinTap) Up() {
+	name := t.name
+	link, err := tenus.NewLinkFrom(name)
+	if err != nil {
+		libol.Error("LinBridge.AddSlave: link %s: %s", t, err)
+		return
+	}
+	if err := link.SetLinkUp(); err != nil {
+		libol.Error("LinBridge.AddSlave.LinkUp: %s %s", t, err)
+		return
+	}
+}
+
+func (t *LinTap) String() string {
+	return t.name
 }

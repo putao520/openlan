@@ -28,6 +28,7 @@ type VSwitch struct {
 	KeyFile    string   `json:"-"`
 	Links      []*Point `json:"links"`
 	Script     string   `json:"script"`
+	Bridger    string   `json："bridger"`
 }
 
 var VSwitchDefault = VSwitch{
@@ -45,6 +46,7 @@ var VSwitchDefault = VSwitch{
 	HttpDir:    "public",
 	Links:      nil,
 	Script:     fmt.Sprintf("vswitch.%s.cmd", runtime.GOOS),
+	Bridger:    "linux",
 }
 
 func NewVSwitch() (c *VSwitch) {
@@ -65,6 +67,7 @@ func NewVSwitch() (c *VSwitch) {
 	flag.StringVar(&c.BrName, "if:br", VSwitchDefault.BrName, "the bridge name")
 	flag.StringVar(&c.CrtDir, "crt:dir", VSwitchDefault.CrtFile, "The directory X509 certificate file on")
 	flag.StringVar(&c.Script, "script", VSwitchDefault.Script, "call script you assigned")
+	flag.StringVar(&c.Bridger, "bridger", VSwitchDefault.Bridger, "bridger using to such as: linux, virtual")
 
 	flag.Parse()
 	c.SaveFile = fmt.Sprintf("%s/vswitch.json", c.ConfDir)

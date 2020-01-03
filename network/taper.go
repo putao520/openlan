@@ -10,9 +10,12 @@ type Taper interface {
 	IsTAP() bool
 	Name() string
 	Read(p []byte) (n int, err error)
+	InRead(p []byte) (n int, err error)
 	Write(p []byte) (n int, err error)
+	OutWrite() ([]byte, error)
 	Close() error
 	Slave(br Bridger)
+	Up()
 }
 
 type tapers struct {
@@ -21,16 +24,15 @@ type tapers struct {
 	devices map[string]Taper
 }
 
-func (t tapers) NewName() string {
+func (t *tapers) GenName() string {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
-	newIndex := t.index
-	t.index += 1
-	return fmt.Sprintf("tap%d", newIndex)
+	t.index++
+	return fmt.Sprintf("vir%d", t.index)
 }
 
-func (t tapers) Add(tap Taper) {
+func (t *tapers) Add(tap Taper) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
@@ -40,7 +42,7 @@ func (t tapers) Add(tap Taper) {
 	t.devices[tap.Name()] = tap
 }
 
-func (t tapers) Get(name string) Taper{
+func (t *tapers) Get(name string) Taper{
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 
@@ -53,7 +55,7 @@ func (t tapers) Get(name string) Taper{
 	return nil
 }
 
-func (t tapers) Del(name string) {
+func (t *tapers) Del(name string) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
@@ -65,4 +67,4 @@ func (t tapers) Del(name string) {
 	}
 }
 
-var Tapers = tapers{}
+var Tapers = &tapers{}

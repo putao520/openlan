@@ -235,7 +235,11 @@ type Worker struct {
 func NewWorker(server *libol.TcpServer, c *config.VSwitch) *Worker {
 	w := &Worker{
 		WorkerBase: NewWorkerBase(server, c),
-		Br:         network.NewLinBridge(c.BrName, c.IfMtu),
+	}
+	if w.Conf.Bridger == "linux" {
+		w.Br = network.NewLinBridge(c.BrName, c.IfMtu)
+	} else {
+		w.Br = network.NewVirBridge(c.BrName, c.IfMtu)
 	}
 	if w.Br.Name() == "" {
 		w.Br.SetName(w.BrName())
@@ -254,13 +258,21 @@ func (w *Worker) FreeBr() {
 }
 
 func (w *Worker) NewTap() (network.Taper, error) {
+	var err error
+	var dev network.Taper
+
 	libol.Debug("Worker.NewTap")
-	dev, err := network.NewLinTap(true, "")
+	if w.Conf.Bridger == "linux" {
+		dev, err = network.NewLinTap(true, "")
+	} else {
+		dev, err = network.NewVirTap(true, "")
+	}
 	if err != nil {
 		libol.Error("Worker.NewTap: %s", err)
 		return nil, err
 	}
 
+	dev.Up()
 	w.Br.AddSlave(dev)
 	libol.Info("Worker.NewTap %s", dev.Name())
 

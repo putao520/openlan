@@ -1,21 +1,27 @@
 package network
 
-import "github.com/golang-collections/go-datastructures/queue"
+import (
+	"github.com/danieldin95/openlan-go/libol"
+	"github.com/golang-collections/go-datastructures/queue"
+)
 
 type VirTap struct {
 	isTap bool
 	name  string
-	inQ   *queue.Queue
-	outQ  *queue.Queue
+	writeQ   *queue.Queue
+	readQ  *queue.Queue
 	bridge    Bridger
 }
 
 func NewVirTap(isTap bool, name string) (*VirTap, error) {
+	if name == "" {
+		name = Tapers.GenName()
+	}
 	tap := &VirTap{
 		isTap: isTap,
 		name:  name,
-		inQ:   queue.New(1024*10),
-		outQ:  queue.New(1024*10),
+		writeQ:   queue.New(1024*10),
+		readQ:  queue.New(1024*10),
 	}
 	Tapers.Add(tap)
 
@@ -35,17 +41,46 @@ func (t *VirTap) Name() string {
 }
 
 func (t *VirTap) Read(p []byte) (n int, err error) {
-	result, err := t.inQ.Get(1)
+	result, err := t.readQ.Get(1)
 	return copy(p, result[0].([]byte)), err
 }
 
+func (t *VirTap) InRead(p []byte) (n int, err error) {
+	libol.Debug("VirTap.InRead: %s % x", t, p[:20])
+	return len(p), t.readQ.Put(p)
+}
+
 func (t *VirTap) Write(p []byte) (n int, err error) {
-	return len(p), t.outQ.Put(p)
+	libol.Debug("VirTap.Write: %s % x", t, p[:20])
+	return len(p), t.writeQ.Put(p)
+}
+
+func (t *VirTap) OutWrite() ([]byte, error) {
+	result, err := t.writeQ.Get(1)
+	if err != nil {
+		return nil, err
+	}
+	return result[0].([]byte), nil
+}
+
+func (t *VirTap) Deliver() {
+	for {
+		data, err := t.OutWrite()
+		if err != nil {
+			break
+		}
+		libol.Debug("VirTap.Deliver: %s % x", t, data[:20])
+		if t.bridge == nil {
+			continue
+		}
+
+		m := &Framer{Data: data, Source: t}
+		t.bridge.Input(m)
+	}
 }
 
 func (t *VirTap) Close() error {
-	t.outQ.Dispose()
-	t.inQ.Dispose()
+	t.readQ.Dispose()
 
 	if t.bridge != nil {
 		t.bridge.DelSlave(t)
@@ -59,4 +94,12 @@ func (t *VirTap) Slave(bridge Bridger) {
 	if t.bridge == nil {
 		t.bridge = bridge
 	}
+}
+
+func (t *VirTap) Up() {
+	go t.Deliver()
+}
+
+func (t *VirTap) String() string {
+	return t.name
 }

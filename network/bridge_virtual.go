@@ -6,11 +6,6 @@ import (
 	"sync"
 )
 
-type Framer struct {
-	Data   []byte
-	Device Taper
-}
-
 type VirBridge struct {
 	mtu     int
 	name    string
@@ -24,13 +19,15 @@ func NewVirBridge(name string, mtu int) *VirBridge {
 	b := &VirBridge{
 		name: name,
 		mtu:  mtu,
+		inQ:  queue.NewRingBuffer(1024*20),
+		devices: make(map[string]Taper, 1024),
+		dests:   make(map[string]Taper, 1024),
 	}
 	return b
 }
 
 func (b *VirBridge) Open(addr string) {
-	b.inQ = queue.NewRingBuffer(1024*20)
-
+	libol.Info("VirBridge.Open: not support address")
 	go b.Start()
 }
 
@@ -77,38 +74,46 @@ func (b *VirBridge) Start() {
 		if err != nil {
 			return
 		}
-
-		m := result.(Framer)
-		b.Flood(m.Data)
+		b.Flood(result.(*Framer))
 	}
 }
 
-func (b *VirBridge) Input(p []byte, t Taper) error {
-	m := &Framer{Data: p, Device: t}
+func (b *VirBridge) Input(m *Framer) error {
 	return b.inQ.Put(m)
 }
 
-func (b *VirBridge) Output(p []byte, t Taper) error {
-	return nil
-}
-
-func (b *VirBridge) FindDest(dest string) Taper {
-	return nil
-}
-
-func (b *VirBridge) AddDest(dest string, t Taper) {
-
-}
-
-func (b *VirBridge) Update(dest string, t Taper) {
-
-}
-
-func (b *VirBridge) Flood(p []byte) error {
+func (b *VirBridge) Output(m *Framer) error {
 	var err error
 
+	libol.Debug("VirBridge.Output: % x", m.Data[:20])
+	if dev := m.Output; dev != nil {
+		_, err = dev.InRead(m.Data)
+	}
+
+	return err
+}
+
+func (b *VirBridge) FindDest(d string) Taper {
+	return nil
+}
+
+func (b *VirBridge) AddDest(d string, t Taper) {
+}
+
+func (b *VirBridge) Update(d string, t Taper) {
+
+}
+
+func (b *VirBridge) Flood(m *Framer) error {
+	var err error
+
+	libol.Debug("VirBridge.Flood: % x", m.Data[:20])
 	for _, dev := range b.devices {
-		_, err = dev.Write(p)
+		if m.Source == dev {
+			continue
+		}
+
+		_, err = dev.InRead(m.Data)
 	}
 	return err
 }

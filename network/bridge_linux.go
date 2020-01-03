@@ -81,9 +81,6 @@ func (b *LinBridge) AddSlave(dev Taper) error {
 		libol.Error("LinBridge.AddSlave: Get dev %s: %s", name, err)
 		return err
 	}
-	if err := link.SetLinkUp(); err != nil {
-		libol.Error("LinBridge.AddSlave.LinkUp: ", err)
-	}
 	if err := b.device.AddSlaveIfc(link.NetInterface()); err != nil {
 		libol.Error("LinBridge.AddSlave: Switch dev %s: %s", name, err)
 		return err
@@ -119,4 +116,8 @@ func (b *LinBridge) Name() string {
 
 func (b *LinBridge) SetName(value string) {
 	b.name = value
+}
+
+func (b *LinBridge) Input(m *Framer) error {
+	return nil
 }
