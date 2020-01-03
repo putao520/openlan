@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/network"
 	"github.com/songgao/water"
 	"net"
 	"time"
@@ -20,7 +21,7 @@ type TapWorker struct {
 	config    *water.Config
 
 	On     OnTapWorker
-	Device *water.Interface
+	Device network.Taper
 	//for tunnel device.
 	EthDstAddr []byte
 	EthSrcAddr []byte
@@ -63,11 +64,19 @@ func (a *TapWorker) Open() {
 		time.Sleep(5 * time.Second) // sleep 5s and release cpu.
 	}
 
-	dev, err := water.New(*a.config)
+	var err error
+	var dev network.Taper
+	if a.config.DeviceType == water.TAP {
+		dev, err = network.NewLinTap(true, "")
+	} else {
+		dev, err = network.NewLinTap(false, "")
+	}
+
 	if err != nil {
 		libol.Error("TapWorker.Open %s", err)
 		return
 	}
+
 	libol.Info("TapWorker.Open %s", dev.Name())
 	a.Device = dev
 	if a.On != nil {

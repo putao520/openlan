@@ -1,16 +1,25 @@
 package network
 
 type VirTap struct {
-	isTAP bool
+	isTap bool
 	name  string
 }
 
+func NewVirTap(isTap bool, name string) (*VirTap, error) {
+	tap := &VirTap{
+		isTap: isTap,
+		name:  name,
+	}
+
+	return tap, nil
+}
+
 func (t *VirTap) IsTUN() bool {
-	return !t.isTAP
+	return !t.isTap
 }
 
 func (t *VirTap) IsTAP() bool {
-	return t.isTAP
+	return t.isTap
 }
 
 func (t *VirTap) Name() string {

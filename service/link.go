@@ -2,7 +2,6 @@ package service
 
 import (
 	"github.com/danieldin95/openlan-go/models"
-	"github.com/danieldin95/openlan-go/network"
 	"github.com/danieldin95/openlan-go/point"
 	"sync"
 )
@@ -16,7 +15,7 @@ var Link = _link{
 	links: make(map[string]*models.Point, 1024),
 }
 
-func (p *_link) Add(m *point.Point, tap network.Taper) {
+func (p *_link) Add(m *point.Point) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
@@ -26,7 +25,7 @@ func (p *_link) Add(m *point.Point, tap network.Taper) {
 		Uptime: m.UpTime(),
 		Status: m.State(),
 		Client: m.GetClient(),
-		Device: tap,
+		Device: m.GetDevice(),
 		IfName: m.IfName(),
 	}
 	p.links[m.Addr()] = link

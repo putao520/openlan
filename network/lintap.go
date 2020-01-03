@@ -1,17 +1,29 @@
 package network
 
-import "github.com/songgao/water"
+import (
+	"github.com/songgao/water"
+)
 
 type LinTap struct {
 	dev *water.Interface
 }
 
-func NewLinTap(dev *water.Interface) *LinTap {
-	t := &LinTap{
+func NewLinTap(isTap bool, name string) (*LinTap, error) {
+	devType := water.DeviceType(water.TUN)
+	if isTap {
+		devType = water.TAP
+	}
+
+	dev, err := water.New(water.Config{DeviceType: devType})
+	if err != nil {
+		return nil, err
+	}
+
+	tap := &LinTap{
 		dev: dev,
 	}
 
-	return t
+	return tap, nil
 }
 
 func (t *LinTap) IsTUN() bool {

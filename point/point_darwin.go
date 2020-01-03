@@ -8,6 +8,7 @@ import (
 	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
+	"github.com/danieldin95/openlan-go/network"
 	"github.com/songgao/water"
 )
 
@@ -76,7 +77,7 @@ func (p *Point) GetClient() *libol.TcpClient {
 	return nil
 }
 
-func (p *Point) GetDevice() *water.Interface {
+func (p *Point) GetDevice() network.Taper {
 	if p.tapWorker != nil {
 		return p.tapWorker.Device
 	}

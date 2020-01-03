@@ -9,7 +9,6 @@ import (
 	"github.com/danieldin95/openlan-go/service"
 	"github.com/danieldin95/openlan-go/vswitch/api"
 	"github.com/danieldin95/openlan-go/vswitch/app"
-	"github.com/songgao/water"
 	"strings"
 	"sync"
 	"time"
@@ -204,7 +203,7 @@ func (w *WorkerBase) AddLink(c *config.Point) {
 		w.links[c.Addr] = p
 		w.linksLock.Unlock()
 
-		service.Link.Add(p, network.NewLinTap(p.GetDevice()))
+		service.Link.Add(p)
 		p.Start()
 	}()
 }
@@ -261,7 +260,7 @@ func (w *Worker) FreeBr() {
 
 func (w *Worker) NewTap() (network.Taper, error) {
 	libol.Debug("Worker.newTap")
-	dev, err := water.New(water.Config{DeviceType: water.TAP})
+	dev, err := network.NewLinTap(true, "")
 	if err != nil {
 		libol.Error("Worker.newTap: %s", err)
 		return nil, err
@@ -271,7 +270,7 @@ func (w *Worker) NewTap() (network.Taper, error) {
 
 	libol.Info("Worker.newTap %s", dev.Name())
 
-	return network.NewLinTap(dev), nil
+	return dev, nil
 }
 
 func (w *Worker) Start() {
