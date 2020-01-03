@@ -26,7 +26,7 @@ func NewPoint(c *libol.TcpClient, d network.Taper) (w *Point) {
 	return
 }
 
-func (p *Point) Update() *Point{
+func (p *Point) Update() *Point {
 	p.Uptime = p.Client.UpTime()
 	p.Status = p.Client.GetState()
 	p.IfName = p.Device.Name()

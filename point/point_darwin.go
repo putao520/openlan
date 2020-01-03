@@ -29,9 +29,9 @@ func NewPoint(config *config.Point) (p *Point) {
 	}
 	client := libol.NewTcpClient(config.Addr, tlsConf)
 	p = &Point{
-		BrName:    config.BrName,
-		IfAddr:    config.IfAddr,
-		config:    config,
+		BrName: config.BrName,
+		IfAddr: config.IfAddr,
+		config: config,
 	}
 	p.tcpWorker = NewTcpWorker(client, config, p)
 	p.newDevice()
