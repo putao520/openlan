@@ -2,7 +2,6 @@ package network
 
 import (
 	"github.com/danieldin95/openlan-go/libol"
-	"github.com/milosgajdos83/tenus"
 	"github.com/songgao/water"
 )
 
@@ -77,16 +76,7 @@ func (t *LinTap) Slave(bridge Bridger) {
 }
 
 func (t LinTap) Up() {
-	name := t.name
-	link, err := tenus.NewLinkFrom(name)
-	if err != nil {
-		libol.Error("LinBridge.AddSlave: link %s: %s", t, err)
-		return
-	}
-	if err := link.SetLinkUp(); err != nil {
-		libol.Error("LinBridge.AddSlave.LinkUp: %s %s", t, err)
-		return
-	}
+	//TODO
 }
 
 func (t *LinTap) String() string {

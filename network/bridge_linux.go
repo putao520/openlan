@@ -81,6 +81,10 @@ func (b *LinBridge) AddSlave(dev Taper) error {
 		libol.Error("LinBridge.AddSlave: Get dev %s: %s", name, err)
 		return err
 	}
+	if err := link.SetLinkUp(); err != nil {
+		libol.Error("LinBridge.AddSlave.LinkUp: %s %s", name, err)
+		return err
+	}
 	if err := b.device.AddSlaveIfc(link.NetInterface()); err != nil {
 		libol.Error("LinBridge.AddSlave: Switch dev %s: %s", name, err)
 		return err
