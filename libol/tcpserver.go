@@ -122,9 +122,9 @@ func (t *TcpServer) Loop(on OnTcpServer) {
 }
 
 func (t *TcpServer) Read(client *TcpClient, onRead func(client *TcpClient, p []byte) error) {
+	data := make([]byte, 4096)
 	Debug("TcpServer.Read: %s", client.Addr)
 	for {
-		data := make([]byte, 4096)
 		length, err := client.ReadMsg(data)
 		if err != nil {
 			Error("TcpServer.Read: %s", err)

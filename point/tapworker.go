@@ -98,9 +98,9 @@ func (a *TapWorker) Read(ctx context.Context, doRead func(p []byte) error) {
 
 	libol.Info("TapWorker.Read")
 	a.doRead = doRead
+	data := make([]byte, a.ifMtu)
 
 	for {
-		data := make([]byte, a.ifMtu)
 		if a.Device == nil {
 			return
 		}
