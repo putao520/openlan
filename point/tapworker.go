@@ -38,7 +38,7 @@ func NewTapWorker(devCfg *water.Config, c *config.Point, on OnTapWorker) (a *Tap
 	}
 
 	a.Open()
-	if a.Device != nil && a.Device.IsTUN() {
+	if a.Device != nil && a.Device.IsTun() {
 		a.EthSrcIp = net.ParseIP(c.IfAddr).To4()
 		libol.Info("NewTapWorker srcIp: % x", a.EthSrcIp)
 
@@ -113,7 +113,7 @@ func (a *TapWorker) Read(ctx context.Context, doRead func(p []byte) error) {
 		}
 
 		libol.Debug("TapWorker.Read: % x", data[:n])
-		if a.Device.IsTUN() {
+		if a.Device.IsTun() {
 			eth := a.NewEth(libol.ETHPIP4)
 
 			buffer := make([]byte, 0, a.ifMtu)
@@ -196,7 +196,7 @@ func (a *TapWorker) Loop(ctx context.Context) {
 				return
 			}
 
-			if a.Device.IsTUN() {
+			if a.Device.IsTun() {
 				//Proxy arp request.
 				if a.onArp(w) {
 					libol.Info("TapWorker.Loop: Arp proxy.")

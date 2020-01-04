@@ -3,7 +3,6 @@ package network
 import (
 	"fmt"
 	"github.com/danieldin95/openlan-go/libol"
-	"github.com/golang-collections/go-datastructures/queue"
 	"sync"
 	"time"
 )
@@ -18,7 +17,6 @@ type Learner struct {
 type VirBridge struct {
 	mtu      int
 	name     string
-	inQ      *queue.Queue
 	lock     sync.RWMutex
 	devices  map[string]Taper
 	learners map[string]*Learner
@@ -31,7 +29,6 @@ func NewVirBridge(name string, mtu int) *VirBridge {
 	b := &VirBridge{
 		name:     name,
 		mtu:      mtu,
-		inQ:      queue.New(1024 * 32),
 		devices:  make(map[string]Taper, 1024),
 		learners: make(map[string]*Learner, 1024),
 		done:     make(chan bool),
@@ -48,7 +45,6 @@ func (b *VirBridge) Open(addr string) {
 
 func (b *VirBridge) Close() error {
 	b.ticker.Stop()
-	b.inQ.Dispose()
 	b.done <- true
 	return nil
 }
@@ -89,59 +85,57 @@ func (b *VirBridge) SetTimeout(value int) {
 	b.timeout = value
 }
 
-func (b *VirBridge) Start() {
-	forward := func() {
-		for {
-			result, err := b.inQ.Get(1)
-			if err != nil {
-				return
-			}
-			m := result[0].(*Framer)
-			if is := b.Unicast(m); !is {
-				b.Flood(m)
-			}
+func (b *VirBridge) Forward(m *Framer) error {
+	if is := b.Unicast(m); !is {
+		b.Flood(m)
+	}
+	return nil
+}
+
+func (b *VirBridge) Expire() error {
+	deletes := make([]string, 0, 1024)
+
+	//collect need deleted.
+	b.lock.RLock()
+	for index, learn := range b.learners {
+		now := time.Now().Unix()
+		if now-learn.Uptime > int64(b.timeout) {
+			deletes = append(deletes, index)
 		}
 	}
-	expired := func() {
+	b.lock.RUnlock()
+
+	libol.Debug("VirBridge.Expire delete %d", len(deletes))
+	//execute delete.
+	b.lock.Lock()
+	for _, d := range deletes {
+		if _, ok := b.learners[d]; ok {
+			delete(b.learners, d)
+			libol.Info("VirBridge.Expire: delete %s", d)
+		}
+	}
+	b.lock.Unlock()
+
+	return nil
+}
+
+func (b *VirBridge) Start() {
+	go func() {
 		for {
 			select {
 			case <-b.done:
 				return
 			case t := <-b.ticker.C:
-				libol.Debug("VirBridge.Start Tick at %s", t)
-				deletes := make([]string, 0, 1024)
-
-				//collect need deleted.
-				b.lock.RLock()
-				for index, learn := range b.learners {
-					now := time.Now().Unix()
-					if now-learn.Uptime > int64(b.timeout) {
-						deletes = append(deletes, index)
-					}
-				}
-				b.lock.RUnlock()
-
-				libol.Debug("VirBridge.Start Delete %d", len(deletes))
-				//execute delete.
-				b.lock.Lock()
-				for _, d := range deletes {
-					if _, ok := b.learners[d]; ok {
-						delete(b.learners, d)
-						libol.Info("VirBridge.Start.Ticker: delete %s", d)
-					}
-				}
-				b.lock.Unlock()
+				libol.Debug("VirBridge.Expire Tick at %s", t)
+				b.Expire()
 			}
 		}
-	}
-
-	go expired()
-	go forward()
+	}()
 }
 
 func (b *VirBridge) Input(m *Framer) error {
 	b.Learn(m)
-	return b.inQ.Put(m)
+	return b.Forward(m)
 }
 
 func (b *VirBridge) Output(m *Framer) error {
@@ -215,29 +209,31 @@ func (b *VirBridge) UpdateDest(d string) {
 func (b *VirBridge) Flood(m *Framer) error {
 	var err error
 
-	libol.Debug("VirBridge.Flood: % x", m.Data[:20])
-	for _, dev := range b.devices {
-		if m.Source == dev {
+	data := m.Data
+	src := m.Source
+	libol.Debug("VirBridge.Flood: % x", data[:20])
+	for _, dst := range b.devices {
+		if src == dst {
 			continue
 		}
-
-		_, err = dev.InRead(m.Data)
+		_, err = dst.InRead(data)
 	}
 	return err
 }
 
 func (b *VirBridge) Unicast(m *Framer) bool {
 	data := m.Data
+	src := m.Source
 	index := b.Eth2Str(data[:6])
 
 	if l := b.FindDest(index); l != nil {
-		dev := l.Device
-		if dev != m.Source {
-			if _, err := dev.InRead(m.Data); err != nil {
-				libol.Debug("VirBridge.Unicast: %s %s", dev, err)
+		dst := l.Device
+		if dst != src {
+			if _, err := dst.InRead(data); err != nil {
+				libol.Debug("VirBridge.Unicast: %s %s", dst, err)
 			}
 		}
-		libol.Debug("VirBridge.Unicast: from %s to %s % x", m.Source, dev, data[:20])
+		libol.Debug("VirBridge.Unicast: %s to %s % x", src, dst, data[:20])
 		return true
 	}
 

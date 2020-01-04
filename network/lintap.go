@@ -1,7 +1,6 @@
 package network
 
 import (
-	"github.com/danieldin95/openlan-go/libol"
 	"github.com/songgao/water"
 )
 
@@ -32,11 +31,11 @@ func NewLinTap(isTap bool, name string) (*LinTap, error) {
 	return tap, nil
 }
 
-func (t *LinTap) IsTUN() bool {
+func (t *LinTap) IsTun() bool {
 	return !t.isTap
 }
 
-func (t *LinTap) IsTAP() bool {
+func (t *LinTap) IsTap() bool {
 	return t.isTap
 }
 
@@ -49,15 +48,12 @@ func (t *LinTap) Read(p []byte) (n int, err error) {
 }
 
 func (t *LinTap) InRead(p []byte) (n int, err error) {
-	return 0, libol.Errer("not support")
+	//TODO
+	return 0, nil
 }
 
 func (t *LinTap) Write(p []byte) (n int, err error) {
 	return t.device.Write(p)
-}
-
-func (t *LinTap) OutWrite() ([]byte, error) {
-	return nil, libol.Errer("not support")
 }
 
 func (t *LinTap) Close() error {

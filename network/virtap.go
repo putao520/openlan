@@ -20,19 +20,19 @@ func NewVirTap(isTap bool, name string) (*VirTap, error) {
 	tap := &VirTap{
 		isTap:  isTap,
 		name:   name,
-		writeQ: queue.New(1024 * 10),
-		readQ:  queue.New(1024 * 10),
+		writeQ: queue.New(1024 * 32),
+		readQ:  queue.New(1024 * 16),
 	}
 	Tapers.Add(tap)
 
 	return tap, nil
 }
 
-func (t *VirTap) IsTUN() bool {
+func (t *VirTap) IsTun() bool {
 	return !t.isTap
 }
 
-func (t *VirTap) IsTAP() bool {
+func (t *VirTap) IsTap() bool {
 	return t.isTap
 }
 
@@ -84,6 +84,7 @@ func (t *VirTap) Deliver() {
 
 func (t *VirTap) Close() error {
 	t.readQ.Dispose()
+	t.writeQ.Dispose()
 
 	if t.bridge != nil {
 		t.bridge.DelSlave(t)

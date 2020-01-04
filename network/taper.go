@@ -6,13 +6,12 @@ import (
 )
 
 type Taper interface {
-	IsTUN() bool
-	IsTAP() bool
+	IsTun() bool
+	IsTap() bool
 	Name() string
 	Read(p []byte) (n int, err error)
 	InRead(p []byte) (n int, err error)
 	Write(p []byte) (n int, err error)
-	OutWrite() ([]byte, error)
 	Close() error
 	Slave(br Bridger)
 	Up()
