@@ -113,11 +113,10 @@ func (p *PointAuth) onAuth(client *libol.TcpClient, user *models.User) error {
 
 func (p *PointAuth) ReadTap(dev network.Taper, doRead func(p []byte) error) {
 	defer dev.Close()
-
-	data := make([]byte, p.ifMtu)
 	libol.Info("PointAuth.ReadTap: %s", dev.Name())
 
 	for {
+		data := make([]byte, p.ifMtu)
 		n, err := dev.Read(data)
 		if err != nil {
 			libol.Error("PointAuth.ReadTap: %s", err)

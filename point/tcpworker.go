@@ -142,7 +142,6 @@ func (t *TcpWorker) Read(ctx context.Context, doRead func(p []byte) error) {
 	defer libol.Catch("TcpWorker.Read")
 	defer t.Close()
 
-	data := make([]byte, t.maxSize)
 	libol.Info("TcpWorker.Read %t", t.Client.IsOk())
 
 	for {
@@ -156,6 +155,7 @@ func (t *TcpWorker) Read(ctx context.Context, doRead func(p []byte) error) {
 			continue
 		}
 
+		data := make([]byte, t.maxSize)
 		n, err := t.Client.ReadMsg(data)
 		if err != nil {
 			libol.Error("TcpWorker.Read: %s", err)

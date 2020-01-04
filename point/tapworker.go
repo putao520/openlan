@@ -98,13 +98,13 @@ func (a *TapWorker) Read(ctx context.Context, doRead func(p []byte) error) {
 
 	libol.Info("TapWorker.Read")
 	a.doRead = doRead
-	data := make([]byte, a.ifMtu)
 
 	for {
 		if a.Device == nil {
 			return
 		}
 
+		data := make([]byte, a.ifMtu)
 		n, err := a.Device.Read(data)
 		if err != nil {
 			libol.Error("TapWorker.Read: %s", err)
