@@ -9,7 +9,7 @@ import (
 func main() {
 	var remote *net.UDPAddr
 
-	listener, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.ParseIP("192.168.209.141"), Port: 9981})
+	listener, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.ParseIP("0.0.0.0"), Port: 9981})
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -35,7 +35,7 @@ func main() {
 			if n == 0 {
 				continue
 			}
-			//fmt.Printf("<%s> %d\n", remoteAddr, n)
+			fmt.Printf("<%s> %d\n", remoteAddr, n)
 			remote = remoteAddr
 			//fmt.Printf("<%s> %s\n", remoteAddr, data[:n])
 			_, err = device.Write(data[8:n])
@@ -54,7 +54,7 @@ func main() {
 			break
 		}
 
-		//fmt.Printf("<%s> %d %x\n", device.Name(), n, frameData[:20])
+		fmt.Printf("<%s> %d %x\n", device.Name(), n, frameData[:20])
 		if n == 0 || remote == nil {
 			continue
 		}

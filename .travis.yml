@@ -13,8 +13,8 @@ before_install:
   - go get -u -v github.com/gorilla/mux
   - go get -u -v github.com/golang-collections/go-datastructures/queue
   - |
-    if [[ "$TRAVIS_OS_NAME" != "windows" ]]; then
-      go get -u -v github.com/milosgajdos83/tenus
+    if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      go get -u -v github.com/vishvananda/netlink
     fi
 
 script:

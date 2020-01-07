@@ -8,10 +8,9 @@ import (
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/network"
-	"github.com/milosgajdos83/tenus"
 	"github.com/songgao/water"
+	"github.com/vishvananda/netlink"
 	"net"
-	"os/exec"
 )
 
 type Point struct {
@@ -22,7 +21,7 @@ type Point struct {
 	tapWorker *TapWorker
 	addr      string
 	routes    []*models.Route
-	link      tenus.Linker
+	link      netlink.Link
 	config    *config.Point
 }
 
@@ -75,7 +74,9 @@ func (p *Point) Start() {
 func (p *Point) Stop() {
 	defer libol.Catch("Point.Stop")
 
+	p.DelRoutes(p.routes)
 	p.DelAddr(p.addr)
+
 	p.tcpWorker.Stop()
 	p.tapWorker.Stop()
 }
@@ -85,13 +86,13 @@ func (p *Point) DelAddr(ipStr string) error {
 		return nil
 	}
 
-	ip, ipNet, err := net.ParseCIDR(ipStr)
+	ipAddr, err := netlink.ParseAddr(ipStr)
 	if err != nil {
 		libol.Error("Point.AddAddr.ParseCIDR %s: %s", ipStr, err)
 		return err
 	}
 
-	if err := p.link.UnsetLinkIp(ip, ipNet); err != nil {
+	if err := netlink.AddrDel(p.link, ipAddr); err != nil {
 		libol.Error("Point.DelAddr.UnsetLinkIp: %s", err)
 	}
 
@@ -106,12 +107,12 @@ func (p *Point) AddAddr(ipStr string) error {
 		return nil
 	}
 
-	ip, ipNet, err := net.ParseCIDR(ipStr)
+	ipAddr, err := netlink.ParseAddr(ipStr)
 	if err != nil {
 		libol.Error("Point.AddAddr.ParseCIDR %s: %s", ipStr, err)
 		return err
 	}
-	if err := p.link.SetLinkIp(ip, ipNet); err != nil {
+	if err := netlink.AddrAdd(p.link, ipAddr); err != nil {
 		libol.Error("Point.AddAddr.SetLinkIp: %s", err)
 		return err
 	}
@@ -123,27 +124,32 @@ func (p *Point) AddAddr(ipStr string) error {
 	return nil
 }
 
-func (p *Point) UpBr(name string) tenus.Bridger {
+func (p *Point) UpBr(name string) *netlink.Bridge {
 	if name == "" {
 		return nil
 	}
 
-	br, err := tenus.BridgeFromName(name)
-	if err != nil {
-		libol.Error("Point.UpBr.newBr: %s", err)
-		br, err = tenus.NewBridgeWithName(name)
+	la := netlink.LinkAttrs{TxQLen:-1, Name: name}
+	br := &netlink.Bridge{LinkAttrs: la}
+	if link, _ := netlink.LinkByName(name); link == nil {
+		err := netlink.LinkAdd(br)
 		if err != nil {
 			libol.Error("Point.UpBr.newBr: %s", err)
 			return nil
 		}
 	}
 
+	link, err := netlink.LinkByName(name)
+	if link == nil {
+		libol.Error("Point.UpBr.newBr: %s", err)
+		return nil
+	}
+
 	brCtl := libol.NewBrCtl(name)
 	if err := brCtl.Stp(true); err != nil {
 		libol.Error("Point.UpBr.Stp: %s", err)
 	}
-
-	if err := br.SetLinkUp(); err != nil {
+	if err := netlink.LinkSetUp(link); err != nil {
 		libol.Error("Point.UpBr.newBr.Up: %s", err)
 	}
 
@@ -154,23 +160,22 @@ func (p *Point) OnTap(w *TapWorker) error {
 	libol.Info("Point.OnTap")
 
 	name := w.Device.Name()
-	link, err := tenus.NewLinkFrom(name)
+	link, err := netlink.LinkByName(name)
 	if err != nil {
 		libol.Error("Point.OnTap: Get dev %s: %s", name, err)
 		return err
 	}
-
-	if err := link.SetLinkUp(); err != nil {
+	if err := netlink.LinkSetUp(link); err != nil {
 		libol.Error("Point.OnTap.SetLinkUp: %s: %s", name, err)
 		return err
 	}
 
 	if br := p.UpBr(p.BrName); br != nil {
-		if err := br.AddSlaveIfc(link.NetInterface()); err != nil {
+		if err := netlink.LinkSetMaster(link, br); err != nil {
 			libol.Error("Point.OnTap.AddSlave: Switch dev %s: %s", name, err)
 		}
 
-		link, err = tenus.NewLinkFrom(p.BrName)
+		link, err = netlink.LinkByName(p.BrName)
 		if err != nil {
 			libol.Error("Point.OnTap: Get dev %s: %s", p.BrName, err)
 		}
@@ -251,15 +256,22 @@ func (p *Point) OnIpAddr(w *TcpWorker, n *models.Network) error {
 }
 
 func (p *Point) AddRoutes(routes []*models.Route) error {
-	if routes == nil {
+	if routes == nil || p.link == nil {
 		return nil
 	}
 
 	for _, route := range routes {
-		out, err := exec.Command("/usr/sbin/ip", "route",
-			"add", route.Prefix, "dev", p.IfName(), "via", route.Nexthop).Output()
+		_, dst, err := net.ParseCIDR(route.Prefix)
 		if err != nil {
-			libol.Error("Point.OnIpAddr.route: %s, %s", err, out)
+			continue
+		}
+
+		nxt := net.ParseIP(route.Nexthop)
+		rte := netlink.Route{LinkIndex: p.link.Attrs().Index, Dst: dst, Gw: nxt}
+		libol.Debug("Point.AddRoute: %s", rte)
+		if err := netlink.RouteAdd(&rte); err != nil {
+			libol.Error("Point.AddRoute: %s", err)
+			continue
 		}
 		libol.Info("Point.OnIpAddr.route: %s via %s", route.Prefix, route.Nexthop)
 	}
@@ -270,15 +282,21 @@ func (p *Point) AddRoutes(routes []*models.Route) error {
 }
 
 func (p *Point) DelRoutes(routes []*models.Route) error {
-	if routes == nil {
+	if routes == nil || p.link == nil {
 		return nil
 	}
 
 	for _, route := range routes {
-		out, err := exec.Command("/usr/sbin/ip", "route",
-			"del", route.Prefix, "dev", p.IfName(), "via", route.Nexthop).Output()
+		_, dst, err := net.ParseCIDR(route.Prefix)
 		if err != nil {
-			libol.Error("Point.DelRoutes.route: %s, %s", err, out)
+			continue
+		}
+
+		nxt := net.ParseIP(route.Nexthop)
+		rte := netlink.Route{LinkIndex: p.link.Attrs().Index, Dst: dst, Gw: nxt}
+		if err := netlink.RouteDel(&rte); err != nil {
+			libol.Error("Point.DelRoute: %s", err)
+			continue
 		}
 		libol.Info("Point.DelRoutes.route: %s via %s", route.Prefix, route.Nexthop)
 	}
@@ -291,8 +309,8 @@ func (p *Point) DelRoutes(routes []*models.Route) error {
 func (p *Point) OnClose(w *TcpWorker) error {
 	libol.Info("Point.OnClose")
 
-	p.DelAddr(p.addr)
 	p.DelRoutes(p.routes)
+	p.DelAddr(p.addr)
 
 	return nil
 }

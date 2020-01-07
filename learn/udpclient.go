@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	sip := net.ParseIP("192.168.209.141")
+	sip := net.ParseIP("192.168.4.151")
 	srcAddr := &net.UDPAddr{IP: net.IPv4zero, Port: 0}
 	dstAddr := &net.UDPAddr{IP: sip, Port: 9981}
 
@@ -35,8 +35,8 @@ func main() {
 				continue
 			}
 
-			//fmt.Printf("<%s> %d\n", device.Name(), n)
-			//fmt.Printf("<%s> % x\n", device.Name(), frameData[:20])
+			fmt.Printf("<%s> %d\n", device.Name(), n)
+			fmt.Printf("<%s> % x\n", device.Name(), frameData[:20])
 
 			_, err = conn.Write(frameData[:n+8])
 			if err != nil {
@@ -54,7 +54,7 @@ func main() {
 		if n == 0 {
 			continue
 		}
-		//fmt.Printf("<%s> %s\n", remoteAddr, data[:n])
+		fmt.Printf("<%s> %x\n", dstAddr.String(), data[:n])
 		_, err = device.Write(data[8:n])
 		if err != nil {
 			fmt.Println(err)
