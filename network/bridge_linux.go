@@ -22,44 +22,45 @@ func NewLinBridge(name string, mtu int) *LinBridge {
 
 func (b *LinBridge) Open(addr string) {
 	var err error
-	var br netlink.Link
+	var dev netlink.Link
 
-	brName := b.name
-	br, err = netlink.LinkByName(brName)
+	la := netlink.LinkAttrs{TxQLen:-1, Name: b.name}
+        br := &netlink.Bridge{LinkAttrs: la}
+
+	dev, err = netlink.LinkByName(b.name)
 	if br == nil {
-		la := netlink.LinkAttrs{TxQLen:-1, Name: brName}
-		err := netlink.LinkAdd(&netlink.Bridge{LinkAttrs: la})
+		err := netlink.LinkAdd(br)
 		if err != nil {
 			libol.Error("LinBridge.newBr: %s", err)
 			return
 		}
-		br, err = netlink.LinkByName(brName)
+		dev, err = netlink.LinkByName(b.name)
 		if br == nil {
 			return
 		}
 	}
 
-	brCtl := libol.NewBrCtl(brName)
+	brCtl := libol.NewBrCtl(b.name)
 	if err := brCtl.Stp(true); err != nil {
 		libol.Error("LinBridge.newBr.Stp: %s", err)
 	}
-	if err = netlink.LinkSetUp(br); err != nil {
+	if err = netlink.LinkSetUp(dev); err != nil {
 		libol.Error("LinBridge.newBr: %s", err)
 	}
 
-	libol.Info("LinBridge.newBr %s", brName)
+	libol.Info("LinBridge.newBr %s", b.name)
 	if addr != "" {
 		ipAddr, err := netlink.ParseAddr(addr)
 		if err != nil {
 			libol.Error("LinBridge.newBr.ParseCIDR %s : %s", addr, err)
 		}
-		if err := netlink.AddrAdd(br, ipAddr); err != nil {
-			libol.Error("LinBridge.newBr.SetLinkIp %s : %s", brName, err)
+		if err := netlink.AddrAdd(dev, ipAddr); err != nil {
+			libol.Error("LinBridge.newBr.SetLinkIp %s : %s", b.name, err)
 		}
 		b.addr = ipAddr
 	}
 
-	b.device = br
+	b.device = dev
 }
 
 func (b *LinBridge) Close() error {
@@ -85,7 +86,10 @@ func (b *LinBridge) AddSlave(dev Taper) error {
 		libol.Error("LinBridge.AddSlave.LinkUp: %s %s", name, err)
 		return err
 	}
-	if err := netlink.LinkSetMaster(link, b.device); err != nil {
+
+	la := netlink.LinkAttrs{TxQLen:-1, Name: b.name}
+        br := &netlink.Bridge{LinkAttrs: la}
+	if err := netlink.LinkSetMaster(link, br); err != nil {
 		libol.Error("LinBridge.AddSlave: Switch dev %s: %s", name, err)
 		return err
 	}
@@ -104,7 +108,10 @@ func (b *LinBridge) DelSlave(dev Taper) error {
 		libol.Error("LinBridge.DelSlave: Get dev %s: %s", name, err)
 		return err
 	}
-	if err := netlink.LinkSetMaster(link, b.device); err != nil {
+
+	la := netlink.LinkAttrs{TxQLen:-1, Name: b.name}
+        br := &netlink.Bridge{LinkAttrs: la}
+	if err := netlink.LinkSetMaster(link, br); err != nil {
 		libol.Error("LinBridge.DelSlave: Switch dev %s: %s", name, err)
 		return err
 	}

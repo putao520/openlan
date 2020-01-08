@@ -1,16 +1,16 @@
 .PHONY: linux rpm win-zip test
 
 linux:
-	go build -o ./resource/point.linux.x86_64 main/point_linux.go
-	go build -o ./resource/vswitch.linux.x86_64 main/vswitch_linux.go
+	go build -mod=vendor -o ./resource/point.linux.x86_64 main/point_linux.go
+	go build -mod=vendor -o ./resource/vswitch.linux.x86_64 main/vswitch_linux.go
 
 windows:
-	go build -o ./resource/point.windows.x86_64 main/point_windows.go
+	go build -mod=vendor -o ./resource/point.windows.x86_64 main/point_windows.go
 
 osx: darwin
 
 darwin:
-	go build -o ./resource/point.darwin.x86_64 main/point_darwin.go
+	go build -mod=vendor -o ./resource/point.darwin.x86_64 main/point_darwin.go
 
 rpm:
 	./packaging/auto.sh
@@ -25,5 +25,5 @@ win-zip:
 	zip -r ./resource/openlan-wins.zip ./openlan-wins
 
 test:
-	go test github.com/danieldin95/openlan-go/point
-	go test -bench=. github.com/danieldin95/openlan-go/point
+	go test -mod=vendor github.com/danieldin95/openlan-go/point
+	go test -mod=vendor -bench=. github.com/danieldin95/openlan-go/point
