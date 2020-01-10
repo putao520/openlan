@@ -5,17 +5,16 @@ import (
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/service"
-	"github.com/danieldin95/openlan-go/vswitch/api"
 	"sync"
 )
 
 type Online struct {
 	lock   sync.RWMutex
 	lines  map[string]*models.Line
-	worker api.Worker
+	worker Worker
 }
 
-func NewOnline(w api.Worker, c *config.VSwitch) (o *Online) {
+func NewOnline(w Worker, c *config.VSwitch) (o *Online) {
 	o = &Online{
 		lines:  make(map[string]*models.Line, 1024*4),
 		worker: w,
@@ -23,14 +22,13 @@ func NewOnline(w api.Worker, c *config.VSwitch) (o *Online) {
 	return
 }
 
-func (o *Online) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
-	data := frame.Data
-	libol.Debug("Online.OnFrame % x.", data)
-
-	if libol.IsControl(data) {
+func (o *Online) OnFrame(client *libol.TcpClient, frame *libol.FrameMessage) error {
+	libol.Debug("Online.OnFrame %s.", frame)
+	if frame.IsControl() {
 		return nil
 	}
 
+	data := frame.Data()
 	eth, err := libol.NewEtherFromFrame(data)
 	if err != nil {
 		libol.Warn("Online.OnFrame %s", err)

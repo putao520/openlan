@@ -129,7 +129,7 @@ func (p *Point) UpBr(name string) *netlink.Bridge {
 		return nil
 	}
 
-	la := netlink.LinkAttrs{TxQLen:-1, Name: name}
+	la := netlink.LinkAttrs{TxQLen: -1, Name: name}
 	br := &netlink.Bridge{LinkAttrs: la}
 	if link, _ := netlink.LinkByName(name); link == nil {
 		err := netlink.LinkAdd(br)

@@ -58,7 +58,7 @@ func (t *TcpWorker) Close() {
 }
 
 func (t *TcpWorker) Connect() error {
-	s := t.Client.GetStatus()
+	s := t.Client.Status()
 	if s != libol.CLINIT {
 		libol.Warn("TcpWorker.Connect status %d->%d", s, libol.CLINIT)
 		t.Client.SetStatus(libol.CLINIT)
@@ -100,8 +100,12 @@ func (t *TcpWorker) TryNetwork(client *libol.TcpClient) error {
 }
 
 func (t *TcpWorker) onInstruct(data []byte) error {
-	action, resp := libol.DecodeCmdAndParams(data)
+	m := libol.NewFrameMessage(data)
+	if !m.IsControl() {
+		return nil
+	}
 
+	action, resp := m.CmdAndParams()
 	if action == "logi:" {
 		libol.Debug("TcpWorker.onInstruct.login: %s", resp)
 		if resp[:4] == "okay" {
@@ -190,7 +194,7 @@ func (t *TcpWorker) Loop(ctx context.Context) {
 	for {
 		select {
 		case w := <-t.writeChan:
-			if t.Client.GetStatus() != libol.CLAUEHED {
+			if t.Client.Status() != libol.CLAUEHED {
 				t.Client.Dropped++
 				libol.Error("TcpWorker.Loop: dropping by unAuth")
 				continue

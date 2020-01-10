@@ -7,7 +7,6 @@ import (
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/network"
 	"github.com/danieldin95/openlan-go/service"
-	"github.com/danieldin95/openlan-go/vswitch/api"
 )
 
 type PointAuth struct {
@@ -15,10 +14,10 @@ type PointAuth struct {
 	Failed  int
 
 	ifMtu  int
-	worker api.Worker
+	worker Worker
 }
 
-func NewPointAuth(w api.Worker, c *config.VSwitch) (p *PointAuth) {
+func NewPointAuth(w Worker, c *config.VSwitch) (p *PointAuth) {
 	p = &PointAuth{
 		ifMtu:  c.IfMtu,
 		worker: w,
@@ -26,16 +25,16 @@ func NewPointAuth(w api.Worker, c *config.VSwitch) (p *PointAuth) {
 	return
 }
 
-func (p *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
-	libol.Debug("PointAuth.OnFrame % x.", frame.Data)
+func (p *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.FrameMessage) error {
+	libol.Debug("PointAuth.OnFrame %s.", frame)
 
-	if libol.IsControl(frame.Data) {
-		action := libol.DecodeCmd(frame.Data)
+	if frame.IsControl() {
+		action, params := frame.CmdAndParams()
 		libol.Debug("PointAuth.OnFrame: %s", action)
 
 		switch action {
 		case "logi=":
-			if err := p.handleLogin(client, libol.DecodeParams(frame.Data)); err != nil {
+			if err := p.handleLogin(client, params); err != nil {
 				libol.Error("PointAuth.OnFrame: %s", err)
 				client.WriteResp("login", err.Error())
 				client.Close()
@@ -49,7 +48,7 @@ func (p *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 	}
 
 	//Dropped all frames if not auth.
-	if client.GetStatus() != libol.CLAUEHED {
+	if client.Status() != libol.CLAUEHED {
 		client.Dropped++
 		libol.Debug("PointAuth.onRead: %s unAuth", client.Addr)
 		return libol.NewErr("unAuth client.")
@@ -61,7 +60,7 @@ func (p *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 func (p *PointAuth) handleLogin(client *libol.TcpClient, data string) error {
 	libol.Debug("PointAuth.handleLogin: %s", data)
 
-	if client.GetStatus() == libol.CLAUEHED {
+	if client.Status() == libol.CLAUEHED {
 		libol.Warn("PointAuth.handleLogin: already auth %s", client)
 		return nil
 	}
@@ -92,7 +91,7 @@ func (p *PointAuth) handleLogin(client *libol.TcpClient, data string) error {
 }
 
 func (p *PointAuth) onAuth(client *libol.TcpClient, user *models.User) error {
-	if client.GetStatus() != libol.CLAUEHED {
+	if client.Status() != libol.CLAUEHED {
 		return libol.NewErr("not auth.")
 	}
 

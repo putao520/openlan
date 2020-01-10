@@ -4,7 +4,6 @@ import (
 	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/service"
-	"github.com/danieldin95/openlan-go/vswitch/api"
 	"net"
 	"sync"
 	"time"
@@ -15,10 +14,10 @@ import (
 type Neighbors struct {
 	lock      sync.RWMutex
 	neighbors map[string]*models.Neighbor
-	worker    api.Worker
+	worker    Worker
 }
 
-func NewNeighbors(w api.Worker, c *config.VSwitch) (e *Neighbors) {
+func NewNeighbors(w Worker, c *config.VSwitch) (e *Neighbors) {
 	e = &Neighbors{
 		neighbors: make(map[string]*models.Neighbor, 1024*10),
 		worker:    w,
@@ -26,14 +25,14 @@ func NewNeighbors(w api.Worker, c *config.VSwitch) (e *Neighbors) {
 	return
 }
 
-func (e *Neighbors) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
-	libol.Debug("Neighbors.OnFrame % x.", frame.Data)
-
-	if libol.IsControl(frame.Data) {
+func (e *Neighbors) OnFrame(client *libol.TcpClient, frame *libol.FrameMessage) error {
+	libol.Debug("Neighbors.OnFrame %s.", frame)
+	if frame.IsControl() {
 		return nil
 	}
 
-	eth, err := libol.NewEtherFromFrame(frame.Data)
+	data := frame.Data()
+	eth, err := libol.NewEtherFromFrame(data)
 	if err != nil {
 		libol.Warn("Neighbors.OnFrame %s", err)
 		return err
@@ -46,7 +45,7 @@ func (e *Neighbors) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 		return nil
 	}
 
-	arp, err := libol.NewArpFromFrame(frame.Data[eth.Len:])
+	arp, err := libol.NewArpFromFrame(data[eth.Len:])
 	if err != nil {
 		libol.Error("Neighbors.OnFrame %s.", err)
 		return nil

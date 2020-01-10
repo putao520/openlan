@@ -7,7 +7,6 @@ import (
 	"github.com/danieldin95/openlan-go/network"
 	"github.com/danieldin95/openlan-go/point"
 	"github.com/danieldin95/openlan-go/service"
-	"github.com/danieldin95/openlan-go/vswitch/api"
 	"github.com/danieldin95/openlan-go/vswitch/app"
 	"strings"
 	"sync"
@@ -23,7 +22,7 @@ type WorkerBase struct {
 	OnLines  *app.Online
 	Conf     *config.VSwitch
 
-	hooks     []func(client *libol.TcpClient, frame *libol.Frame) error
+	hooks     []func(client *libol.TcpClient, frame *libol.FrameMessage) error
 	newTime   int64
 	startTime int64
 	linksLock sync.RWMutex
@@ -37,7 +36,7 @@ func NewWorkerBase(server *libol.TcpServer, c *config.VSwitch) *WorkerBase {
 		Server:    server,
 		Neighbor:  nil,
 		Conf:      c,
-		hooks:     make([]func(client *libol.TcpClient, frame *libol.Frame) error, 0, 64),
+		hooks:     make([]func(client *libol.TcpClient, frame *libol.FrameMessage) error, 0, 64),
 		newTime:   time.Now().Unix(),
 		startTime: 0,
 		brName:    c.BrName,
@@ -58,7 +57,7 @@ func (w *WorkerBase) String() string {
 	return w.GetId()
 }
 
-func (w *WorkerBase) Init(a api.Worker) {
+func (w *WorkerBase) Init(a app.Worker) {
 	w.Auth = app.NewPointAuth(a, w.Conf)
 	w.Request = app.NewWithRequest(a, w.Conf)
 	w.Neighbor = app.NewNeighbors(a, w.Conf)
@@ -99,13 +98,12 @@ func (w *WorkerBase) showHook() {
 	}
 }
 
-func (w *WorkerBase) setHook(hook func(client *libol.TcpClient, frame *libol.Frame) error) {
+func (w *WorkerBase) setHook(hook func(client *libol.TcpClient, frame *libol.FrameMessage) error) {
 	w.hooks = append(w.hooks, hook)
 }
 
 func (w *WorkerBase) onHook(client *libol.TcpClient, data []byte) error {
-	frame := libol.NewFrame(data)
-
+	frame := libol.NewFrameMessage(data)
 	for _, h := range w.hooks {
 		libol.Debug("WorkerBase.onHook h:%p", h)
 		if h != nil {
@@ -131,7 +129,7 @@ func (w *WorkerBase) OnRead(client *libol.TcpClient, data []byte) error {
 
 	if err := w.onHook(client, data); err != nil {
 		libol.Debug("WorkerBase.OnRead: %s dropping by %s", client.Addr, err)
-		if client.GetStatus() != libol.CLAUEHED {
+		if client.Status() != libol.CLAUEHED {
 			w.Server.DrpCount++
 		}
 		return err

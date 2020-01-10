@@ -6,25 +6,23 @@ import (
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/service"
-	"github.com/danieldin95/openlan-go/vswitch/api"
 )
 
 type WithRequest struct {
-	worker api.Worker
+	worker Worker
 }
 
-func NewWithRequest(w api.Worker, c *config.VSwitch) (r *WithRequest) {
+func NewWithRequest(w Worker, c *config.VSwitch) (r *WithRequest) {
 	r = &WithRequest{
 		worker: w,
 	}
 	return
 }
 
-func (r *WithRequest) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
-	libol.Debug("WithRequest.OnFrame % x.", frame.Data)
-
-	if libol.IsControl(frame.Data) {
-		action, body := libol.DecodeCmdAndParams(frame.Data)
+func (r *WithRequest) OnFrame(client *libol.TcpClient, frame *libol.FrameMessage) error {
+	libol.Debug("WithRequest.OnFrame %s.", frame)
+	if frame.IsControl() {
+		action, body := frame.CmdAndParams()
 		libol.Debug("WithRequest.OnFrame: %s %s", action, body)
 
 		switch action {

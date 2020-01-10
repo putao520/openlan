@@ -25,12 +25,12 @@ type TcpClient struct {
 	minSize     int
 	onConnected func(*TcpClient) error
 	lock        sync.RWMutex
+	status      uint8
 
 	TxOkay  uint64
 	RxOkay  uint64
 	TxError uint64
 	Dropped uint64
-	Status  uint8
 	Addr    string
 	NewTime int64
 	TlsConf *tls.Config
@@ -46,7 +46,7 @@ func NewTcpClient(addr string, config *tls.Config) (t *TcpClient) {
 		RxOkay:      0,
 		TxError:     0,
 		Dropped:     0,
-		Status:      CLINIT,
+		status:      CLINIT,
 		onConnected: nil,
 		NewTime:     time.Now().Unix(),
 		TlsConf:     config,
@@ -72,7 +72,7 @@ func (t *TcpClient) LocalAddr() string {
 }
 
 func (t *TcpClient) Connect() (err error) {
-	if t.conn != nil || t.GetStatus() == CLTERMINAL || t.GetStatus() == CLUNAUTH {
+	if t.conn != nil || t.Status() == CLTERMINAL || t.Status() == CLUNAUTH {
 		return nil
 	}
 
@@ -102,7 +102,7 @@ func (t *TcpClient) OnConnected(on func(*TcpClient) error) {
 
 func (t *TcpClient) Close() {
 	if t.conn != nil {
-		if t.GetStatus() != CLTERMINAL {
+		if t.Status() != CLTERMINAL {
 			t.SetStatus(CLCLOSED)
 		}
 
@@ -182,12 +182,14 @@ func (t *TcpClient) ReadMsg(data []byte) (int, error) {
 		return -1, NewErr("%s: not okay", t)
 	}
 
-	b := make([]byte, HSIZE+t.maxSize)
-	h := b[:HSIZE]
+	hl := GetHeaderLen()
+	buffer := make([]byte, hl+t.maxSize)
+	h := buffer[:hl]
 	if err := t.ReadFull(h); err != nil {
 		return -1, err
 	}
-	if !bytes.Equal(h[0:2], MAGIC) {
+	magic := GetMagic()
+	if !bytes.Equal(h[0:2], magic) {
 		return -1, NewErr("%s: wrong magic", t)
 	}
 
@@ -195,7 +197,7 @@ func (t *TcpClient) ReadMsg(data []byte) (int, error) {
 	if int(size) > t.maxSize || int(size) < t.minSize {
 		return -1, NewErr("%s: wrong size(%d)", t, size)
 	}
-	d := b[HSIZE : HSIZE+size]
+	d := buffer[hl : hl+int(size)]
 	if err := t.ReadFull(d); err != nil {
 		return -1, err
 	}
@@ -223,15 +225,16 @@ func (t *TcpClient) IsOk() bool {
 }
 
 func (t *TcpClient) IsTerminal() bool {
-	return t.GetStatus() == CLTERMINAL
+	return t.Status() == CLTERMINAL
 }
 
 func (t *TcpClient) IsInitialized() bool {
-	return t.GetStatus() == CLINIT
+	return t.Status() == CLINIT
 }
 
 func (t *TcpClient) WriteReq(action string, body string) error {
-	data := EncodeRequest(action, body)
+	m := NewControlMessage(action, "= ", body)
+	data := m.Encode()
 	Debug("TcpClient.WriteReq %d %s", len(data), data[6:])
 
 	if err := t.WriteMsg(data); err != nil {
@@ -241,7 +244,8 @@ func (t *TcpClient) WriteReq(action string, body string) error {
 }
 
 func (t *TcpClient) WriteResp(action string, body string) error {
-	data := EncodeReply(action, body)
+	m := NewControlMessage(action, ": ", body)
+	data := m.Encode()
 	Debug("TcpClient.WriteResp %d %s", len(data), data[6:])
 
 	if err := t.WriteMsg(data); err != nil {
@@ -251,7 +255,7 @@ func (t *TcpClient) WriteResp(action string, body string) error {
 }
 
 func (t *TcpClient) GetState() string {
-	switch t.GetStatus() {
+	switch t.Status() {
 	case CLINIT:
 		return "initialized"
 	case CLCONNECTED:
@@ -283,14 +287,14 @@ func (t *TcpClient) Terminal() {
 	t.Close()
 }
 
-func (t *TcpClient) GetStatus() uint8 {
+func (t *TcpClient) Status() uint8 {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
-	return t.Status
+	return t.status
 }
 
 func (t *TcpClient) SetStatus(v uint8) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
-	t.Status = v
+	t.status = v
 }

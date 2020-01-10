@@ -24,8 +24,8 @@ func (b *LinBridge) Open(addr string) {
 	var err error
 	var dev netlink.Link
 
-	la := netlink.LinkAttrs{TxQLen:-1, Name: b.name}
-        br := &netlink.Bridge{LinkAttrs: la}
+	la := netlink.LinkAttrs{TxQLen: -1, Name: b.name}
+	br := &netlink.Bridge{LinkAttrs: la}
 
 	dev, err = netlink.LinkByName(b.name)
 	if br == nil {
@@ -87,8 +87,8 @@ func (b *LinBridge) AddSlave(dev Taper) error {
 		return err
 	}
 
-	la := netlink.LinkAttrs{TxQLen:-1, Name: b.name}
-        br := &netlink.Bridge{LinkAttrs: la}
+	la := netlink.LinkAttrs{TxQLen: -1, Name: b.name}
+	br := &netlink.Bridge{LinkAttrs: la}
 	if err := netlink.LinkSetMaster(link, br); err != nil {
 		libol.Error("LinBridge.AddSlave: Switch dev %s: %s", name, err)
 		return err
@@ -109,8 +109,8 @@ func (b *LinBridge) DelSlave(dev Taper) error {
 		return err
 	}
 
-	la := netlink.LinkAttrs{TxQLen:-1, Name: b.name}
-        br := &netlink.Bridge{LinkAttrs: la}
+	la := netlink.LinkAttrs{TxQLen: -1, Name: b.name}
+	br := &netlink.Bridge{LinkAttrs: la}
 	if err := netlink.LinkSetMaster(link, br); err != nil {
 		libol.Error("LinBridge.DelSlave: Switch dev %s: %s", name, err)
 		return err

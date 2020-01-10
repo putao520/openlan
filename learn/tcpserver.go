@@ -80,13 +80,12 @@ func main() {
 				fmt.Printf("error during read: %s", err)
 			}
 
-			_, err = device.Write(data[4:size+4])
+			_, err = device.Write(data[4 : size+4])
 			if err != nil {
 				fmt.Println(err)
 			}
 		}
 	}()
-
 
 	for {
 		frameData := make([]byte, 1600+4)

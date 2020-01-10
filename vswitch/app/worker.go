@@ -1,4 +1,4 @@
-package api
+package app
 
 import (
 	"github.com/danieldin95/openlan-go/libol"
