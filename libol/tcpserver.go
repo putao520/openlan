@@ -7,8 +7,8 @@ import (
 
 type TcpServerListener struct {
 	OnClient func(client *TcpClient) error
-	OnClose func(client *TcpClient) error
-	ReadAt func(client *TcpClient, p []byte) error
+	OnClose  func(client *TcpClient) error
+	ReadAt   func(client *TcpClient, p []byte) error
 }
 
 type TcpServerSts struct {
@@ -20,9 +20,9 @@ type TcpServerSts struct {
 }
 
 type TcpServer struct {
-	Addr     string
-	TlsConf  *tls.Config
-	Sts      TcpServerSts
+	Addr    string
+	TlsConf *tls.Config
+	Sts     TcpServerSts
 
 	listener   net.Listener
 	maxClient  int

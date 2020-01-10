@@ -11,10 +11,10 @@ import (
 )
 
 type TcpWorkerListener struct {
-	OnClose func(w *TcpWorker) error
+	OnClose   func(w *TcpWorker) error
 	OnSuccess func(w *TcpWorker) error
-	OnIpAddr func(w *TcpWorker, n *models.Network) error
-	ReadAt func(p []byte) error
+	OnIpAddr  func(w *TcpWorker, n *models.Network) error
+	ReadAt    func(p []byte) error
 }
 
 type TcpWorker struct {
@@ -45,10 +45,10 @@ func NewTcpWorker(client *libol.TcpClient, c *config.Point) (t *TcpWorker) {
 	t.Client.SetMaxSize(t.maxSize)
 
 	t.Client.Listener = libol.TcpClientListener{
-		OnConnected: func (client *libol.TcpClient) error {
+		OnConnected: func(client *libol.TcpClient) error {
 			return t.TryLogin(client)
 		},
-		OnClose: func (client *libol.TcpClient) error {
+		OnClose: func(client *libol.TcpClient) error {
 			return nil
 		},
 	}

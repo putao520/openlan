@@ -15,7 +15,7 @@ const (
 )
 
 type VSwitch struct {
-	Conf   *config.VSwitch
+	Conf *config.VSwitch
 
 	http   *Http
 	bridge network.Bridger
@@ -37,7 +37,7 @@ func NewVSwitch(c *config.VSwitch) *VSwitch {
 
 	server := libol.NewTcpServer(c.TcpListen, tlsConf)
 	v := VSwitch{
-		Conf: c,
+		Conf:   c,
 		worker: NewWorker(server, c),
 		http:   nil,
 		status: SW_INIT,
@@ -57,7 +57,7 @@ func NewVSwitch(c *config.VSwitch) *VSwitch {
 	}
 
 	v.worker.Listener = WorkerListener{
-		NewTap: v.NewTap,
+		NewTap:  v.NewTap,
 		FreeTap: v.FreeTap,
 	}
 

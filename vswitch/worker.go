@@ -14,7 +14,7 @@ import (
 )
 
 type WorkerListener struct {
-	NewTap func() (network.Taper, error)
+	NewTap  func() (network.Taper, error)
 	FreeTap func(dev network.Taper) error
 }
 
@@ -176,8 +176,8 @@ func (w *Worker) Start() {
 	go w.Server.Accept()
 	call := libol.TcpServerListener{
 		OnClient: w.OnClient,
-		OnClose: w.OnClose,
-		ReadAt: w.ReadAt,
+		OnClose:  w.OnClose,
+		ReadAt:   w.ReadAt,
 	}
 	go w.Server.Loop(call)
 }

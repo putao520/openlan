@@ -58,8 +58,8 @@ func (p *Point) Start() {
 	}
 
 	p.tapWorker.Listener = TapWorkerListener{
-		OnOpen:  p.OnTap,
-		ReadAt:  p.tcpWorker.DoWrite,
+		OnOpen: p.OnTap,
+		ReadAt: p.tcpWorker.DoWrite,
 	}
 	go p.tapWorker.Read(ctx)
 	go p.tapWorker.Loop(ctx)

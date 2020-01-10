@@ -22,8 +22,8 @@ type TapWorker struct {
 	EthSrcAddr []byte
 	EthSrcIp   []byte
 	//
-	Listener   TapWorkerListener
-	Device     network.Taper
+	Listener TapWorkerListener
+	Device   network.Taper
 
 	writeChan chan []byte
 	ifMtu     int

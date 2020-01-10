@@ -10,9 +10,9 @@ import (
 )
 
 type TcpClientListener struct {
-	OnClose func(client *TcpClient) error
+	OnClose     func(client *TcpClient) error
 	OnConnected func(client *TcpClient) error
-	OnStatus func(client *TcpClient, old, new uint8)
+	OnStatus    func(client *TcpClient, old, new uint8)
 }
 
 const (
@@ -39,11 +39,11 @@ type TcpClient struct {
 	Sts      TcpClientSts
 	Listener TcpClientListener
 
-	conn        net.Conn
-	maxSize     int
-	minSize     int
-	lock        sync.RWMutex
-	status      uint8
+	conn    net.Conn
+	maxSize int
+	minSize int
+	lock    sync.RWMutex
+	status  uint8
 }
 
 func NewTcpClient(addr string, config *tls.Config) (t *TcpClient) {
