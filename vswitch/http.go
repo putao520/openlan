@@ -227,7 +227,7 @@ func (h *Http) getIndex() string {
 		client, dev := p.Client, p.Device
 		body += fmt.Sprintf("%d, %s, %s, %s, %d, %d, %d, %s\n",
 			client.UpTime(), p.Alias, client.Addr, dev.Name(),
-			client.RxOkay, client.TxOkay, client.TxError, client.GetState())
+			client.Sts.RxOkay, client.Sts.TxOkay, client.Sts.TxError, client.GetState())
 	}
 
 	body += "\n"

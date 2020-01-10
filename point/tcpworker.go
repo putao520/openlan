@@ -10,15 +10,16 @@ import (
 	"time"
 )
 
-type OnTcpWorker interface {
-	OnClose(w *TcpWorker) error
-	OnSuccess(w *TcpWorker) error
-	OnIpAddr(w *TcpWorker, n *models.Network) error
+type TcpWorkerListener struct {
+	OnClose func(w *TcpWorker) error
+	OnSuccess func(w *TcpWorker) error
+	OnIpAddr func(w *TcpWorker, n *models.Network) error
+	ReadAt func(p []byte) error
 }
 
 type TcpWorker struct {
-	On     OnTcpWorker
-	Client *libol.TcpClient
+	Listener TcpWorkerListener
+	Client   *libol.TcpClient
 
 	readChan  chan []byte
 	writeChan chan []byte
@@ -30,9 +31,8 @@ type TcpWorker struct {
 	allowed   bool
 }
 
-func NewTcpWorker(client *libol.TcpClient, c *config.Point, on OnTcpWorker) (t *TcpWorker) {
+func NewTcpWorker(client *libol.TcpClient, c *config.Point) (t *TcpWorker) {
 	t = &TcpWorker{
-		On:        on,
 		Client:    client,
 		writeChan: make(chan []byte, 1024*10),
 		maxSize:   c.IfMtu,
@@ -43,7 +43,15 @@ func NewTcpWorker(client *libol.TcpClient, c *config.Point, on OnTcpWorker) (t *
 	}
 	t.user.Alias = c.Alias
 	t.Client.SetMaxSize(t.maxSize)
-	t.Client.OnConnected(t.TryLogin)
+
+	t.Client.Listener = libol.TcpClientListener{
+		OnConnected: func (client *libol.TcpClient) error {
+			return t.TryLogin(client)
+		},
+		OnClose: func (client *libol.TcpClient) error {
+			return nil
+		},
+	}
 
 	return
 }
@@ -53,15 +61,17 @@ func (t *TcpWorker) Stop() {
 }
 
 func (t *TcpWorker) Close() {
-	t.On.OnClose(t)
+	if t.Listener.OnClose != nil {
+		t.Listener.OnClose(t)
+	}
 	t.Client.Close()
 }
 
 func (t *TcpWorker) Connect() error {
 	s := t.Client.Status()
-	if s != libol.CLINIT {
-		libol.Warn("TcpWorker.Connect status %d->%d", s, libol.CLINIT)
-		t.Client.SetStatus(libol.CLINIT)
+	if s != libol.CL_INIT {
+		libol.Warn("TcpWorker.Connect status %d->%d", s, libol.CL_INIT)
+		t.Client.SetStatus(libol.CL_INIT)
 	}
 
 	if err := t.Client.Connect(); err != nil {
@@ -109,14 +119,16 @@ func (t *TcpWorker) onInstruct(data []byte) error {
 	if action == "logi:" {
 		libol.Debug("TcpWorker.onInstruct.login: %s", resp)
 		if resp[:4] == "okay" {
-			t.Client.SetStatus(libol.CLAUEHED)
-			t.On.OnSuccess(t)
+			t.Client.SetStatus(libol.CL_AUEHED)
+			if t.Listener.OnSuccess != nil {
+				t.Listener.OnSuccess(t)
+			}
 			if t.allowed {
 				t.TryNetwork(t.Client)
 			}
 			libol.Info("TcpWorker.onInstruct.login: success")
 		} else {
-			t.Client.SetStatus(libol.CLUNAUTH)
+			t.Client.SetStatus(libol.CL_UNAUTH)
 			libol.Error("TcpWorker.onInstruct.login: %s", resp)
 		}
 
@@ -135,14 +147,16 @@ func (t *TcpWorker) onInstruct(data []byte) error {
 		}
 
 		libol.Debug("TcpWorker.onInstruct.ipaddr: %s", resp)
-		t.On.OnIpAddr(t, &net)
+		if t.Listener.OnIpAddr != nil {
+			t.Listener.OnIpAddr(t, &net)
+		}
 
 	}
 
 	return nil
 }
 
-func (t *TcpWorker) Read(ctx context.Context, doRead func(p []byte) error) {
+func (t *TcpWorker) Read(ctx context.Context) {
 	defer libol.Catch("TcpWorker.Read")
 	defer t.Close()
 
@@ -172,8 +186,8 @@ func (t *TcpWorker) Read(ctx context.Context, doRead func(p []byte) error) {
 			frame := data[:n]
 			if libol.IsControl(frame) {
 				t.onInstruct(frame)
-			} else {
-				doRead(frame)
+			} else if t.Listener.ReadAt != nil {
+				t.Listener.ReadAt(frame)
 			}
 		}
 	}
@@ -194,8 +208,8 @@ func (t *TcpWorker) Loop(ctx context.Context) {
 	for {
 		select {
 		case w := <-t.writeChan:
-			if t.Client.Status() != libol.CLAUEHED {
-				t.Client.Dropped++
+			if t.Client.Status() != libol.CL_AUEHED {
+				t.Client.Sts.Dropped++
 				libol.Error("TcpWorker.Loop: dropping by unAuth")
 				continue
 			}
@@ -208,7 +222,7 @@ func (t *TcpWorker) Loop(ctx context.Context) {
 		}
 	}
 }
-func (t *TcpWorker) GetAuth() (string, string) {
+func (t *TcpWorker) Auth() (string, string) {
 	return t.user.Name, t.user.Password
 }
 

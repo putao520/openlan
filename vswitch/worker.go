@@ -13,14 +13,24 @@ import (
 	"time"
 )
 
-type WorkerBase struct {
-	Alias    string
-	Server   *libol.TcpServer
+type WorkerListener struct {
+	NewTap func() (network.Taper, error)
+	FreeTap func(dev network.Taper) error
+}
+
+type WorkerApps struct {
 	Auth     *app.PointAuth
 	Request  *app.WithRequest
 	Neighbor *app.Neighbors
 	OnLines  *app.Online
+}
+
+type Worker struct {
+	Alias    string
+	Server   *libol.TcpServer
 	Conf     *config.VSwitch
+	Listener WorkerListener
+	Apps     WorkerApps
 
 	hooks     []func(client *libol.TcpClient, frame *libol.FrameMessage) error
 	newTime   int64
@@ -30,11 +40,10 @@ type WorkerBase struct {
 	brName    string
 }
 
-func NewWorkerBase(server *libol.TcpServer, c *config.VSwitch) *WorkerBase {
-	w := WorkerBase{
+func NewWorker(server *libol.TcpServer, c *config.VSwitch) *Worker {
+	w := Worker{
 		Alias:     c.Alias,
 		Server:    server,
-		Neighbor:  nil,
 		Conf:      c,
 		hooks:     make([]func(client *libol.TcpClient, frame *libol.FrameMessage) error, 0, 64),
 		newTime:   time.Now().Unix(),
@@ -45,32 +54,33 @@ func NewWorkerBase(server *libol.TcpServer, c *config.VSwitch) *WorkerBase {
 
 	service.User.Load(w.Conf.Password)
 	service.Network.Load(w.Conf.Network)
+	w.AppInit()
 
 	return &w
 }
 
-func (w *WorkerBase) GetId() string {
+func (w *Worker) GetId() string {
 	return w.Server.Addr
 }
 
-func (w *WorkerBase) String() string {
+func (w *Worker) String() string {
 	return w.GetId()
 }
 
-func (w *WorkerBase) Init(a app.Worker) {
-	w.Auth = app.NewPointAuth(a, w.Conf)
-	w.Request = app.NewWithRequest(a, w.Conf)
-	w.Neighbor = app.NewNeighbors(a, w.Conf)
-	w.OnLines = app.NewOnline(a, w.Conf)
+func (w *Worker) AppInit() {
+	w.Apps.Auth = app.NewPointAuth(w, w.Conf)
+	w.Apps.Request = app.NewWithRequest(w, w.Conf)
+	w.Apps.Neighbor = app.NewNeighbors(w, w.Conf)
+	w.Apps.OnLines = app.NewOnline(w, w.Conf)
 
-	w.setHook(w.Auth.OnFrame)
-	w.setHook(w.Neighbor.OnFrame)
-	w.setHook(w.Request.OnFrame)
-	w.setHook(w.OnLines.OnFrame)
-	w.showHook()
+	w.hooks = append(w.hooks, w.Apps.Auth.OnFrame)
+	w.hooks = append(w.hooks, w.Apps.Neighbor.OnFrame)
+	w.hooks = append(w.hooks, w.Apps.Request.OnFrame)
+	w.hooks = append(w.hooks, w.Apps.OnLines.OnFrame)
+	w.ShowHook()
 }
 
-func (w *WorkerBase) LoadLinks() {
+func (w *Worker) LoadLinks() {
 	if w.Conf.Links != nil {
 		for _, lc := range w.Conf.Links {
 			lc.Default()
@@ -79,7 +89,7 @@ func (w *WorkerBase) LoadLinks() {
 	}
 }
 
-func (w *WorkerBase) BrName() string {
+func (w *Worker) BrName() string {
 	if w.brName == "" {
 		adds := strings.Split(w.Server.Addr, ":")
 		if len(adds) != 2 {
@@ -92,20 +102,16 @@ func (w *WorkerBase) BrName() string {
 	return w.brName
 }
 
-func (w *WorkerBase) showHook() {
+func (w *Worker) ShowHook() {
 	for i, h := range w.hooks {
-		libol.Debug("WorkerBase.showHook k:%d,func:%p,%s", i, h, libol.FunName(h))
+		libol.Debug("Worker.showHook k:%d,func:%p,%s", i, h, libol.FunName(h))
 	}
 }
 
-func (w *WorkerBase) setHook(hook func(client *libol.TcpClient, frame *libol.FrameMessage) error) {
-	w.hooks = append(w.hooks, hook)
-}
-
-func (w *WorkerBase) onHook(client *libol.TcpClient, data []byte) error {
+func (w *Worker) OnHook(client *libol.TcpClient, data []byte) error {
 	frame := libol.NewFrameMessage(data)
 	for _, h := range w.hooks {
-		libol.Debug("WorkerBase.onHook h:%p", h)
+		libol.Debug("Worker.onHook h:%p", h)
 		if h != nil {
 			if err := h(client, frame); err != nil {
 				return err
@@ -116,21 +122,21 @@ func (w *WorkerBase) onHook(client *libol.TcpClient, data []byte) error {
 	return nil
 }
 
-func (w *WorkerBase) OnClient(client *libol.TcpClient) error {
-	client.SetStatus(libol.CLCONNECTED)
+func (w *Worker) OnClient(client *libol.TcpClient) error {
+	client.SetStatus(libol.CL_CONNECTED)
 
-	libol.Info("WorkerBase.onClient: %s", client.Addr)
+	libol.Info("Worker.onClient: %s", client.Addr)
 
 	return nil
 }
 
-func (w *WorkerBase) OnRead(client *libol.TcpClient, data []byte) error {
-	libol.Debug("WorkerBase.OnRead: %s % x", client.Addr, data)
+func (w *Worker) ReadAt(client *libol.TcpClient, data []byte) error {
+	libol.Debug("Worker.OnRead: %s % x", client.Addr, data)
 
-	if err := w.onHook(client, data); err != nil {
-		libol.Debug("WorkerBase.OnRead: %s dropping by %s", client.Addr, err)
-		if client.Status() != libol.CLAUEHED {
-			w.Server.DrpCount++
+	if err := w.OnHook(client, data); err != nil {
+		libol.Debug("Worker.OnRead: %s dropping by %s", client.Addr, err)
+		if client.Status() != libol.CL_AUEHED {
+			w.Server.Sts.DrpCount++
 		}
 		return err
 	}
@@ -146,15 +152,15 @@ func (w *WorkerBase) OnRead(client *libol.TcpClient, data []byte) error {
 	}
 
 	if _, err := dev.Write(data); err != nil {
-		libol.NewErr("WorkerBase.OnRead: %s", err)
+		libol.NewErr("Worker.OnRead: %s", err)
 		return err
 	}
 
 	return nil
 }
 
-func (w *WorkerBase) OnClose(client *libol.TcpClient) error {
-	libol.Info("WorkerBase.OnClose: %s", client.Addr)
+func (w *Worker) OnClose(client *libol.TcpClient) error {
+	libol.Info("Worker.OnClose: %s", client.Addr)
 
 	service.Point.Del(client.Addr)
 	service.Network.FreeAddr(client)
@@ -162,17 +168,22 @@ func (w *WorkerBase) OnClose(client *libol.TcpClient) error {
 	return nil
 }
 
-func (w *WorkerBase) Start() {
+func (w *Worker) Start() {
 	w.startTime = time.Now().Unix()
 
 	w.LoadLinks()
 
 	go w.Server.Accept()
-	go w.Server.Loop(w)
+	call := libol.TcpServerListener{
+		OnClient: w.OnClient,
+		OnClose: w.OnClose,
+		ReadAt: w.ReadAt,
+	}
+	go w.Server.Loop(call)
 }
 
-func (w *WorkerBase) Stop() {
-	libol.Info("WorkerBase.Close")
+func (w *Worker) Stop() {
+	libol.Info("Worker.Close")
 
 	w.Server.Close()
 	for _, p := range w.links {
@@ -182,14 +193,14 @@ func (w *WorkerBase) Stop() {
 	w.startTime = 0
 }
 
-func (w *WorkerBase) UpTime() int64 {
+func (w *Worker) UpTime() int64 {
 	if w.startTime != 0 {
 		return time.Now().Unix() - w.startTime
 	}
 	return 0
 }
 
-func (w *WorkerBase) AddLink(c *config.Point) {
+func (w *Worker) AddLink(c *config.Point) {
 	c.Alias = w.Alias
 	c.BrName = w.BrName() //Reset bridge name.
 	c.Allowed = false
@@ -206,7 +217,7 @@ func (w *WorkerBase) AddLink(c *config.Point) {
 	}()
 }
 
-func (w *WorkerBase) DelLink(addr string) {
+func (w *Worker) DelLink(addr string) {
 	w.linksLock.Lock()
 	defer w.linksLock.Unlock()
 
@@ -217,79 +228,17 @@ func (w *WorkerBase) DelLink(addr string) {
 	}
 }
 
-func (w *WorkerBase) GetServer() *libol.TcpServer {
+func (w *Worker) GetServer() *libol.TcpServer {
 	return w.Server
 }
 
-func (w *WorkerBase) Write(dev network.Taper, frame []byte) {
-	w.Server.TxCount++
-}
-
-type Worker struct {
-	*WorkerBase
-	Br network.Bridger
-}
-
-func NewWorker(server *libol.TcpServer, c *config.VSwitch) *Worker {
-	w := &Worker{
-		WorkerBase: NewWorkerBase(server, c),
-	}
-	if w.Conf.Bridger == "linux" {
-		w.Br = network.NewLinBridge(c.BrName, c.IfMtu)
-	} else {
-		w.Br = network.NewVirBridge(c.BrName, c.IfMtu)
-	}
-	if w.Br.Name() == "" {
-		w.Br.SetName(w.BrName())
-	}
-
-	w.Init(w)
-	return w
-}
-
-func (w *Worker) NewBr() {
-	w.Br.Open(w.Conf.IfAddr)
-}
-
-func (w *Worker) FreeBr() {
-	w.Br.Close()
+func (w *Worker) Write(dev network.Taper, frame []byte) {
+	w.Server.Sts.TxCount++
 }
 
 func (w *Worker) NewTap() (network.Taper, error) {
-	var err error
-	var dev network.Taper
-
-	libol.Debug("Worker.NewTap")
-	if w.Conf.Bridger == "linux" {
-		dev, err = network.NewLinTap(true, "")
-	} else {
-		dev, err = network.NewVirTap(true, "")
+	if w.Listener.NewTap == nil {
+		return nil, libol.NewErr("Not Implement")
 	}
-	if err != nil {
-		libol.Error("Worker.NewTap: %s", err)
-		return nil, err
-	}
-
-	dev.Up()
-	w.Br.AddSlave(dev)
-	libol.Info("Worker.NewTap %s", dev.Name())
-
-	return dev, nil
-}
-
-func (w *Worker) FreeTap(dev network.Taper) error {
-	w.Br.DelSlave(dev)
-	libol.Info("Worker.FreeTap %s", dev.Name())
-
-	return nil
-}
-
-func (w *Worker) Start() {
-	w.NewBr()
-	w.WorkerBase.Start()
-}
-
-func (w *Worker) Stop() {
-	w.WorkerBase.Stop()
-	w.FreeBr()
+	return w.Listener.NewTap()
 }

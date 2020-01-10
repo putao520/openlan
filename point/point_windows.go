@@ -1,7 +1,6 @@
 package point
 
 import (
-	"context"
 	"crypto/tls"
 	"fmt"
 	"github.com/danieldin95/openlan-go/config"
@@ -35,14 +34,14 @@ func NewPoint(config *config.Point) (p *Point) {
 		IfAddr: config.IfAddr,
 		config: config,
 	}
-	p.tcpWorker = NewTcpWorker(client, config, p)
+	p.tcpWorker = NewTcpWorker(client, config)
 	p.newDevice()
 	return
 }
 
 func (p *Point) newDevice() {
 	conf := &water.Config{DeviceType: water.TAP}
-	p.tapWorker = NewTapWorker(conf, p.config, p)
+	p.tapWorker = NewTapWorker(conf, p.config)
 }
 
 func (p *Point) OnTap(w *TapWorker) error {
@@ -51,17 +50,26 @@ func (p *Point) OnTap(w *TapWorker) error {
 }
 
 func (p *Point) Start() {
+	ctx := context.Background()
 	libol.Debug("Point.Start Windows.")
 
 	if err := p.tcpWorker.Connect(); err != nil {
 		libol.Error("Point.Start %s", err)
 	}
 
-	ctx := context.Background()
-	go p.tapWorker.Read(ctx, p.tcpWorker.DoWrite)
+	p.tapWorker.Listener = TapWorkerListener{
+		OnOpen:  p.OnTap,
+		ReadAt:  p.tcpWorker.DoWrite,
+	}
+	go p.tapWorker.Read(ctx)
 	go p.tapWorker.Loop(ctx)
-
-	go p.tcpWorker.Read(ctx, p.tapWorker.DoWrite)
+	p.tcpWorker.Listener = TcpWorkerListener{
+		OnClose:   p.OnClose,
+		OnSuccess: p.OnSuccess,
+		OnIpAddr:  p.OnIpAddr,
+		ReadAt:    p.tapWorker.DoWrite,
+	}
+	go p.tcpWorker.Read(ctx)
 	go p.tcpWorker.Loop(ctx)
 }
 

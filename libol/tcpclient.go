@@ -9,47 +9,52 @@ import (
 	"time"
 )
 
+type TcpClientListener struct {
+	OnClose func(client *TcpClient) error
+	OnConnected func(client *TcpClient) error
+	OnStatus func(client *TcpClient, old, new uint8)
+}
+
 const (
-	CLINIT       = 0x00
-	CLCONNECTED  = 0x01
-	CLUNAUTH     = 0x02
-	CLAUEHED     = 0x03
-	CLCONNECTING = 0x04
-	CLTERMINAL   = 0x05
-	CLCLOSED     = 0x06
+	CL_INIT       = 0x00
+	CL_CONNECTED  = 0x01
+	CL_UNAUTH     = 0x02
+	CL_AUEHED     = 0x03
+	CL_CONNECTING = 0x04
+	CL_TERMINAL   = 0x05
+	CL_CLOSED     = 0x06
 )
 
-type TcpClient struct {
-	conn        net.Conn
-	maxSize     int
-	minSize     int
-	onConnected func(*TcpClient) error
-	lock        sync.RWMutex
-	status      uint8
-
+type TcpClientSts struct {
 	TxOkay  uint64
 	RxOkay  uint64
 	TxError uint64
 	Dropped uint64
-	Addr    string
-	NewTime int64
-	TlsConf *tls.Config
+}
+
+type TcpClient struct {
+	Addr     string
+	NewTime  int64
+	TlsConf  *tls.Config
+	Sts      TcpClientSts
+	Listener TcpClientListener
+
+	conn        net.Conn
+	maxSize     int
+	minSize     int
+	lock        sync.RWMutex
+	status      uint8
 }
 
 func NewTcpClient(addr string, config *tls.Config) (t *TcpClient) {
 	t = &TcpClient{
-		Addr:        addr,
-		conn:        nil,
-		maxSize:     1514,
-		minSize:     15,
-		TxOkay:      0,
-		RxOkay:      0,
-		TxError:     0,
-		Dropped:     0,
-		status:      CLINIT,
-		onConnected: nil,
-		NewTime:     time.Now().Unix(),
-		TlsConf:     config,
+		Addr:    addr,
+		NewTime: time.Now().Unix(),
+		Sts:     TcpClientSts{},
+		TlsConf: config,
+		maxSize: 1514,
+		minSize: 15,
+		status:  CL_INIT,
 	}
 
 	return
@@ -72,13 +77,12 @@ func (t *TcpClient) LocalAddr() string {
 }
 
 func (t *TcpClient) Connect() (err error) {
-	if t.conn != nil || t.Status() == CLTERMINAL || t.Status() == CLUNAUTH {
+	if t.conn != nil || t.Status() == CL_TERMINAL || t.Status() == CL_UNAUTH {
 		return nil
 	}
 
 	Info("TcpClient.Connect %s,%p", t.Addr, t.TlsConf)
-
-	t.SetStatus(CLCONNECTING)
+	t.SetStatus(CL_CONNECTING)
 	if t.TlsConf != nil {
 		t.conn, err = tls.Dial("tcp", t.Addr, t.TlsConf)
 	} else {
@@ -88,24 +92,23 @@ func (t *TcpClient) Connect() (err error) {
 		t.conn = nil
 		return err
 	}
-	t.SetStatus(CLCONNECTED)
-	if t.onConnected != nil {
-		t.onConnected(t)
+	t.SetStatus(CL_CONNECTED)
+	if t.Listener.OnConnected != nil {
+		t.Listener.OnConnected(t)
 	}
 
 	return nil
 }
 
-func (t *TcpClient) OnConnected(on func(*TcpClient) error) {
-	t.onConnected = on
-}
-
 func (t *TcpClient) Close() {
 	if t.conn != nil {
-		if t.Status() != CLTERMINAL {
-			t.SetStatus(CLCLOSED)
+		if t.Status() != CL_TERMINAL {
+			t.SetStatus(CL_CLOSED)
 		}
 
+		if t.Listener.OnClose != nil {
+			t.Listener.OnClose(t)
+		}
 		Info("TcpClient.Close %s", t.Addr)
 		t.conn.Close()
 		t.conn = nil
@@ -129,7 +132,6 @@ func (t *TcpClient) ReadFull(buffer []byte) error {
 	}
 
 	Debug("TcpClient.ReadFull Data: % x", buffer)
-
 	return nil
 }
 
@@ -166,11 +168,11 @@ func (t *TcpClient) WriteMsg(data []byte) error {
 	copy(buf[HSIZE:], data)
 
 	if err := t.WriteFull(buf); err != nil {
-		t.TxError++
+		t.Sts.TxError++
 		return err
 	}
 
-	t.TxOkay += uint64(size)
+	t.Sts.TxOkay += uint64(size)
 
 	return nil
 }
@@ -203,33 +205,9 @@ func (t *TcpClient) ReadMsg(data []byte) (int, error) {
 	}
 
 	copy(data, d)
-	t.RxOkay += uint64(size)
+	t.Sts.RxOkay += uint64(size)
 
 	return len(d), nil
-}
-
-func (t *TcpClient) GetMaxSize() int {
-	return t.maxSize
-}
-
-func (t *TcpClient) SetMaxSize(value int) {
-	t.maxSize = value
-}
-
-func (t *TcpClient) GetMinSize() int {
-	return t.minSize
-}
-
-func (t *TcpClient) IsOk() bool {
-	return t.conn != nil
-}
-
-func (t *TcpClient) IsTerminal() bool {
-	return t.Status() == CLTERMINAL
-}
-
-func (t *TcpClient) IsInitialized() bool {
-	return t.Status() == CLINIT
 }
 
 func (t *TcpClient) WriteReq(action string, body string) error {
@@ -256,19 +234,19 @@ func (t *TcpClient) WriteResp(action string, body string) error {
 
 func (t *TcpClient) GetState() string {
 	switch t.Status() {
-	case CLINIT:
+	case CL_INIT:
 		return "initialized"
-	case CLCONNECTED:
+	case CL_CONNECTED:
 		return "connected"
-	case CLUNAUTH:
+	case CL_UNAUTH:
 		return "unauthenticated"
-	case CLAUEHED:
+	case CL_AUEHED:
 		return "authenticated"
-	case CLCLOSED:
+	case CL_CLOSED:
 		return "closed"
-	case CLCONNECTING:
+	case CL_CONNECTING:
 		return "connecting"
-	case CLTERMINAL:
+	case CL_TERMINAL:
 		return "terminal"
 	}
 	return ""
@@ -283,7 +261,7 @@ func (t *TcpClient) String() string {
 }
 
 func (t *TcpClient) Terminal() {
-	t.SetStatus(CLTERMINAL)
+	t.SetStatus(CL_TERMINAL)
 	t.Close()
 }
 
@@ -296,5 +274,34 @@ func (t *TcpClient) Status() uint8 {
 func (t *TcpClient) SetStatus(v uint8) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
-	t.status = v
+	if t.status != v {
+		if t.Listener.OnStatus != nil {
+			t.Listener.OnStatus(t, t.status, v)
+		}
+		t.status = v
+	}
+}
+
+func (t *TcpClient) GetMaxSize() int {
+	return t.maxSize
+}
+
+func (t *TcpClient) SetMaxSize(value int) {
+	t.maxSize = value
+}
+
+func (t *TcpClient) GetMinSize() int {
+	return t.minSize
+}
+
+func (t *TcpClient) IsOk() bool {
+	return t.conn != nil
+}
+
+func (t *TcpClient) IsTerminal() bool {
+	return t.Status() == CL_TERMINAL
+}
+
+func (t *TcpClient) IsInitialized() bool {
+	return t.Status() == CL_INIT
 }

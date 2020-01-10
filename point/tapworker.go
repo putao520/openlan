@@ -10,31 +10,32 @@ import (
 	"time"
 )
 
-type OnTapWorker interface {
-	OnTap(w *TapWorker) error
+type TapWorkerListener struct {
+	OnOpen  func(w *TapWorker) error
+	OnClose func(w *TapWorker)
+	ReadAt  func([]byte) error
 }
 
 type TapWorker struct {
-	writeChan chan []byte
-	ifMtu     int
-	doRead    func([]byte) error
-	config    *water.Config
-
-	On     OnTapWorker
-	Device network.Taper
 	//for tunnel device.
 	EthDstAddr []byte
 	EthSrcAddr []byte
 	EthSrcIp   []byte
+	//
+	Listener   TapWorkerListener
+	Device     network.Taper
+
+	writeChan chan []byte
+	ifMtu     int
+	config    *water.Config
 }
 
-func NewTapWorker(devCfg *water.Config, c *config.Point, on OnTapWorker) (a *TapWorker) {
+func NewTapWorker(devCfg *water.Config, c *config.Point) (a *TapWorker) {
 	a = &TapWorker{
 		Device:    nil,
 		config:    devCfg,
 		writeChan: make(chan []byte, 1024*10),
 		ifMtu:     c.IfMtu, //1514
-		On:        on,
 	}
 
 	a.Open()
@@ -79,8 +80,8 @@ func (a *TapWorker) Open() {
 
 	libol.Info("TapWorker.Open %s", dev.Name())
 	a.Device = dev
-	if a.On != nil {
-		a.On.OnTap(a)
+	if a.Listener.OnOpen != nil {
+		a.Listener.OnOpen(a)
 	}
 }
 
@@ -92,13 +93,11 @@ func (a *TapWorker) NewEth(t uint16) *libol.Ether {
 	return eth
 }
 
-func (a *TapWorker) Read(ctx context.Context, doRead func(p []byte) error) {
+func (a *TapWorker) Read(ctx context.Context) {
 	defer libol.Catch("TapWorker.Read")
 	defer a.Close()
 
 	libol.Info("TapWorker.Read")
-	a.doRead = doRead
-
 	for {
 		if a.Device == nil {
 			return
@@ -120,10 +119,13 @@ func (a *TapWorker) Read(ctx context.Context, doRead func(p []byte) error) {
 			buffer = append(buffer, eth.Encode()...)
 			buffer = append(buffer, data[0:n]...)
 			n += eth.Len
-
-			doRead(buffer[:n])
+			if a.Listener.ReadAt != nil {
+				a.Listener.ReadAt(buffer[:n])
+			}
 		} else {
-			doRead(data[:n])
+			if a.Listener.ReadAt != nil {
+				a.Listener.ReadAt(data[:n])
+			}
 		}
 	}
 }
@@ -173,8 +175,8 @@ func (a *TapWorker) onArp(data []byte) bool {
 		buffer = append(buffer, reply.Encode()...)
 
 		libol.Info("TapWorker.onArp % x.", buffer)
-		if a.doRead != nil {
-			a.doRead(buffer)
+		if a.Listener.ReadAt != nil {
+			a.Listener.ReadAt(buffer)
 		}
 
 		return true
@@ -230,6 +232,9 @@ func (a *TapWorker) Close() {
 	libol.Info("TapWorker.Close")
 
 	if a.Device != nil {
+		if a.Listener.OnClose != nil {
+			a.Listener.OnClose(a)
+		}
 		a.Device.Close()
 		a.Device = nil
 	}
