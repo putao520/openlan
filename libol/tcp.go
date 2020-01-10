@@ -1,9 +1,6 @@
 package libol
 
-import (
-	"bytes"
-	"encoding/binary"
-)
+import "encoding/binary"
 
 const TCP_LEN = 20
 
@@ -46,35 +43,34 @@ func NewTcpFromFrame(frame []byte) (t *Tcp, err error) {
 
 func (t *Tcp) Decode(frame []byte) error {
 	if len(frame) < TCP_LEN {
-		return Errer("Tcp.Decode: too small header: %d", len(frame))
+		return NewErr("Tcp.Decode: too small header: %d", len(frame))
 	}
 
-	reader := bytes.NewReader(frame)
-	_ = binary.Read(reader, binary.BigEndian, &t.Source)
-	_ = binary.Read(reader, binary.BigEndian, &t.Destination)
-	_ = binary.Read(reader, binary.BigEndian, &t.Sequence)
-	_ = binary.Read(reader, binary.BigEndian, &t.Acknowledgment)
-	_ = binary.Read(reader, binary.BigEndian, &t.DataOffset)
-	_ = binary.Read(reader, binary.BigEndian, &t.ControlBits)
-	_ = binary.Read(reader, binary.BigEndian, &t.Window)
-	_ = binary.Read(reader, binary.BigEndian, &t.Checksum)
-	_ = binary.Read(reader, binary.BigEndian, &t.UrgentPointer)
+	t.Source = binary.BigEndian.Uint16(frame[0:2])
+	t.Destination = binary.BigEndian.Uint16(frame[2:4])
+	t.Sequence = binary.BigEndian.Uint32(frame[4:8])
+	t.Acknowledgment = binary.BigEndian.Uint32(frame[8:12])
+	t.DataOffset = uint8(frame[12])
+	t.ControlBits = uint8(frame[13])
+	t.Window = binary.BigEndian.Uint16(frame[14:16])
+	t.Checksum = binary.BigEndian.Uint16(frame[16:18])
+	t.UrgentPointer = binary.BigEndian.Uint16(frame[18:20])
 
 	return nil
 }
 
 func (t *Tcp) Encode() []byte {
-	writer := new(bytes.Buffer)
+	buffer := make([]byte, 32)
 
-	_ = binary.Write(writer, binary.BigEndian, &t.Source)
-	_ = binary.Write(writer, binary.BigEndian, &t.Destination)
-	_ = binary.Write(writer, binary.BigEndian, &t.Sequence)
-	_ = binary.Write(writer, binary.BigEndian, &t.Acknowledgment)
-	_ = binary.Write(writer, binary.BigEndian, &t.DataOffset)
-	_ = binary.Write(writer, binary.BigEndian, &t.ControlBits)
-	_ = binary.Write(writer, binary.BigEndian, &t.Window)
-	_ = binary.Write(writer, binary.BigEndian, &t.Checksum)
-	_ = binary.Write(writer, binary.BigEndian, &t.UrgentPointer)
+	binary.BigEndian.PutUint16(buffer[0:2], t.Source)
+	binary.BigEndian.PutUint16(buffer[2:4], t.Destination)
+	binary.BigEndian.PutUint32(buffer[4:8], t.Sequence)
+	binary.BigEndian.PutUint32(buffer[8:12], t.Acknowledgment)
+	buffer[12] = t.DataOffset
+	buffer[13] = t.ControlBits
+	binary.BigEndian.PutUint16(buffer[14:16], t.Window)
+	binary.BigEndian.PutUint16(buffer[16:18], t.Checksum)
+	binary.BigEndian.PutUint16(buffer[18:20], t.UrgentPointer)
 
-	return writer.Bytes()
+	return buffer[:t.Len]
 }

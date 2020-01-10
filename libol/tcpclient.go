@@ -179,7 +179,7 @@ func (t *TcpClient) ReadMsg(data []byte) (int, error) {
 	Debug("TcpClient.ReadMsg %s", t)
 
 	if !t.IsOk() {
-		return -1, Errer("%s: not okay", t)
+		return -1, NewErr("%s: not okay", t)
 	}
 
 	b := make([]byte, HSIZE+t.maxSize)
@@ -188,12 +188,12 @@ func (t *TcpClient) ReadMsg(data []byte) (int, error) {
 		return -1, err
 	}
 	if !bytes.Equal(h[0:2], MAGIC) {
-		return -1, Errer("%s: wrong magic", t)
+		return -1, NewErr("%s: wrong magic", t)
 	}
 
 	size := binary.BigEndian.Uint16(h[2:4])
 	if int(size) > t.maxSize || int(size) < t.minSize {
-		return -1, Errer("%s: wrong size(%d)", t, size)
+		return -1, NewErr("%s: wrong size(%d)", t, size)
 	}
 	d := b[HSIZE : HSIZE+size]
 	if err := t.ReadFull(d); err != nil {

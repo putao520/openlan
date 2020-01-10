@@ -127,7 +127,7 @@ func (t *TcpWorker) onInstruct(data []byte) error {
 	if action == "ipad:" {
 		net := models.Network{}
 		if err := json.Unmarshal([]byte(resp), &net); err != nil {
-			libol.Errer("TcpWorker.onInstruct.ipaddr: Invalid json data.")
+			libol.NewErr("TcpWorker.onInstruct.ipaddr: Invalid json data.")
 		}
 
 		libol.Debug("TcpWorker.onInstruct.ipaddr: %s", resp)

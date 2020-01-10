@@ -52,7 +52,7 @@ func NewEtherFromFrame(frame []byte) (e *Ether, err error) {
 
 func (e *Ether) Decode(frame []byte) error {
 	if len(frame) < 14 {
-		return Errer("Ether.Decode too small header: %d", len(frame))
+		return NewErr("Ether.Decode too small header: %d", len(frame))
 	}
 
 	e.Dst = frame[:6]

@@ -54,7 +54,7 @@ func (a *Arp) Decode(frame []byte) error {
 	var err error
 
 	if len(frame) < 8 {
-		return Errer("Arp.Decode: too small header: %d", len(frame))
+		return NewErr("Arp.Decode: too small header: %d", len(frame))
 	}
 
 	a.HrdCode = binary.BigEndian.Uint16(frame[0:2])
@@ -65,7 +65,7 @@ func (a *Arp) Decode(frame []byte) error {
 
 	p := uint8(8)
 	if len(frame) < int(p+2*(a.HrdLen+a.ProLen)) {
-		return Errer("Arp.Decode: too small frame: %d", len(frame))
+		return NewErr("Arp.Decode: too small frame: %d", len(frame))
 	}
 
 	a.SHwAddr = frame[p : p+a.HrdLen]

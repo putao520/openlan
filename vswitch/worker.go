@@ -139,16 +139,16 @@ func (w *WorkerBase) OnRead(client *libol.TcpClient, data []byte) error {
 
 	point := service.Point.Get(client.Addr)
 	if point == nil {
-		return libol.Errer("Point not found.")
+		return libol.NewErr("Point not found.")
 	}
 
 	dev := point.Device
 	if point == nil || point.Device == nil {
-		return libol.Errer("Tap devices is nil")
+		return libol.NewErr("Tap devices is nil")
 	}
 
 	if _, err := dev.Write(data); err != nil {
-		libol.Error("WorkerBase.OnRead: %s", err)
+		libol.NewErr("WorkerBase.OnRead: %s", err)
 		return err
 	}
 

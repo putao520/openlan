@@ -52,7 +52,7 @@ func (p *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.Frame) error {
 	if client.GetStatus() != libol.CLAUEHED {
 		client.Dropped++
 		libol.Debug("PointAuth.onRead: %s unAuth", client.Addr)
-		return libol.Errer("unAuth client.")
+		return libol.NewErr("unAuth client.")
 	}
 
 	return nil
@@ -68,7 +68,7 @@ func (p *PointAuth) handleLogin(client *libol.TcpClient, data string) error {
 
 	user := models.NewUser("", "")
 	if err := json.Unmarshal([]byte(data), user); err != nil {
-		return libol.Errer("Invalid json data.")
+		return libol.NewErr("Invalid json data.")
 	}
 
 	name := user.Name
@@ -88,12 +88,12 @@ func (p *PointAuth) handleLogin(client *libol.TcpClient, data string) error {
 
 	p.Failed++
 	client.SetStatus(libol.CLUNAUTH)
-	return libol.Errer("Auth failed.")
+	return libol.NewErr("Auth failed.")
 }
 
 func (p *PointAuth) onAuth(client *libol.TcpClient, user *models.User) error {
 	if client.GetStatus() != libol.CLAUEHED {
-		return libol.Errer("not auth.")
+		return libol.NewErr("not auth.")
 	}
 
 	libol.Info("PointAuth.onAuth: %s", client.Addr)

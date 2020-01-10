@@ -49,7 +49,7 @@ func (r *WithRequest) OnIpAddr(client *libol.TcpClient, data string) {
 
 	net := models.NewNetwork("", "")
 	if err := json.Unmarshal([]byte(data), net); err != nil {
-		libol.Errer("WithRequest.OnIpAddr: Invalid json data.")
+		libol.NewErr("WithRequest.OnIpAddr: Invalid json data.")
 	}
 
 	if net.IfAddr == "" {

@@ -7,7 +7,7 @@ type Err struct {
 	Message string
 }
 
-func Errer(message string, v ...interface{}) (e *Err) {
+func NewErr(message string, v ...interface{}) (e *Err) {
 	e = &Err{
 		Code:    0xFFff,
 		Message: fmt.Sprintf(message, v...),
