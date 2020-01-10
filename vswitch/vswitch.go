@@ -48,9 +48,9 @@ func NewVSwitch(c *config.VSwitch) *VSwitch {
 	}
 
 	if c.Bridger == "linux" {
-		v.bridge = network.NewLinBridge(c.BrName, c.IfMtu)
+		v.bridge = network.NewLinuxBridge(c.BrName, c.IfMtu)
 	} else {
-		v.bridge = network.NewVirBridge(c.BrName, c.IfMtu)
+		v.bridge = network.NewVirtualBridge(c.BrName, c.IfMtu)
 	}
 	if v.bridge.Name() == "" {
 		v.bridge.SetName(v.worker.BrName())
@@ -144,9 +144,9 @@ func (v *VSwitch) NewTap() (network.Taper, error) {
 
 	libol.Debug("Worker.NewTap")
 	if v.Conf.Bridger == "linux" {
-		dev, err = network.NewLinTap(true, "")
+		dev, err = network.NewLinuxTap(true, "")
 	} else {
-		dev, err = network.NewVirTap(true, "")
+		dev, err = network.NewVirtualTap(true, "")
 	}
 	if err != nil {
 		libol.Error("Worker.NewTap: %s", err)

@@ -67,16 +67,15 @@ func (p *Point) Start() {
 		OnOpen: p.OnTap,
 		ReadAt: p.tcpWorker.DoWrite,
 	}
-	go p.tapWorker.Read(ctx)
-	go p.tapWorker.Loop(ctx)
+	p.tapWorker.Start(ctx)
+
 	p.tcpWorker.Listener = TcpWorkerListener{
 		OnClose:   p.OnClose,
 		OnSuccess: p.OnSuccess,
 		OnIpAddr:  p.OnIpAddr,
 		ReadAt:    p.tapWorker.DoWrite,
 	}
-	go p.tcpWorker.Read(ctx)
-	go p.tcpWorker.Loop(ctx)
+	p.tcpWorker.Start(ctx)
 }
 
 func (p *Point) Stop() {
@@ -248,7 +247,7 @@ func (p *Point) GetWorker() *TcpWorker {
 }
 
 func (p *Point) OnIpAddr(w *TcpWorker, n *models.Network) error {
-	libol.Info("Point.OnIpAddr: %s, %s, %s", n.IfAddr, n.Netmask, n.Routes)
+	libol.Info("Point.OnIpAddr: %s/%s, %s", n.IfAddr, n.Netmask, n.Routes)
 
 	if n.IfAddr == "" || p.link == nil {
 		return nil

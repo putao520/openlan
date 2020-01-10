@@ -26,39 +26,49 @@ type TapWorker struct {
 	Device   network.Taper
 
 	writeChan chan []byte
-	ifMtu     int
-	config    *water.Config
+	devCfg   *water.Config
+	pointCfg *config.Point
 }
 
 func NewTapWorker(devCfg *water.Config, c *config.Point) (a *TapWorker) {
 	a = &TapWorker{
 		Device:    nil,
-		config:    devCfg,
+		devCfg:    devCfg,
+		pointCfg:  c,
 		writeChan: make(chan []byte, 1024*10),
-		ifMtu:     c.IfMtu, //1514
-	}
-
-	a.Open()
-	if a.Device != nil && a.Device.IsTun() {
-		a.EthSrcIp = net.ParseIP(c.IfAddr).To4()
-		libol.Info("NewTapWorker srcIp: % x", a.EthSrcIp)
-
-		if c.IfEthSrc == "" {
-			a.EthSrcAddr = libol.GenEthAddr(6)
-		} else {
-			if hw, err := net.ParseMAC(c.IfEthSrc); err == nil {
-				a.EthSrcAddr = []byte(hw)
-			}
-		}
-		if hw, err := net.ParseMAC(c.IfEthDst); err == nil {
-			a.EthDstAddr = []byte(hw)
-		}
-		libol.Info("NewTapWorker src: % x, dst: % x", a.EthSrcAddr, a.EthDstAddr)
 	}
 
 	return
 }
 
+func (a *TapWorker) DoTun() {
+	if a.Device == nil || !a.Device.IsTun() {
+		return
+	}
+
+	a.EthSrcIp = net.ParseIP(a.pointCfg.IfAddr).To4()
+	libol.Info("NewTapWorker srcIp: % x", a.EthSrcIp)
+
+	if a.pointCfg.IfEthSrc == "" {
+		a.EthSrcAddr = libol.GenEthAddr(6)
+	} else {
+		if hw, err := net.ParseMAC(a.pointCfg.IfEthSrc); err == nil {
+			a.EthSrcAddr = []byte(hw)
+		}
+	}
+	if hw, err := net.ParseMAC(a.pointCfg.IfEthDst); err == nil {
+		a.EthDstAddr = []byte(hw)
+	}
+	libol.Info("NewTapWorker src: %x, dst: %x", a.EthSrcAddr, a.EthDstAddr)
+
+}
+func (a *TapWorker) Start(ctx context.Context) {
+	a.Open()
+	a.DoTun()
+
+	go a.Read(ctx)
+	go a.Loop(ctx)
+}
 func (a *TapWorker) Open() {
 	if a.Device != nil {
 		a.Device.Close()
@@ -67,10 +77,10 @@ func (a *TapWorker) Open() {
 
 	var err error
 	var dev network.Taper
-	if a.config.DeviceType == water.TAP {
-		dev, err = network.NewLinTap(true, "")
+	if a.devCfg.DeviceType == water.TAP {
+		dev, err = network.NewLinuxTap(true, "")
 	} else {
-		dev, err = network.NewLinTap(false, "")
+		dev, err = network.NewLinuxTap(false, "")
 	}
 
 	if err != nil {
@@ -103,7 +113,7 @@ func (a *TapWorker) Read(ctx context.Context) {
 			return
 		}
 
-		data := make([]byte, a.ifMtu)
+		data := make([]byte, a.pointCfg.IfMtu)
 		n, err := a.Device.Read(data)
 		if err != nil {
 			libol.Error("TapWorker.Read: %s", err)
@@ -115,7 +125,7 @@ func (a *TapWorker) Read(ctx context.Context) {
 		if a.Device.IsTun() {
 			eth := a.NewEth(libol.ETHPIP4)
 
-			buffer := make([]byte, 0, a.ifMtu)
+			buffer := make([]byte, 0, a.pointCfg.IfMtu)
 			buffer = append(buffer, eth.Encode()...)
 			buffer = append(buffer, data[0:n]...)
 			n += eth.Len
@@ -170,7 +180,7 @@ func (a *TapWorker) onArp(data []byte) bool {
 		reply.SHwAddr = a.EthSrcAddr
 		reply.THwAddr = arp.SHwAddr
 
-		buffer := make([]byte, 0, a.ifMtu)
+		buffer := make([]byte, 0, a.pointCfg.IfMtu)
 		buffer = append(buffer, eth.Encode()...)
 		buffer = append(buffer, reply.Encode()...)
 

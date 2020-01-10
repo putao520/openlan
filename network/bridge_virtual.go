@@ -14,7 +14,7 @@ type Learner struct {
 	Newtime int64
 }
 
-type VirBridge struct {
+type VirtualBridge struct {
 	mtu      int
 	name     string
 	lock     sync.RWMutex
@@ -25,8 +25,8 @@ type VirBridge struct {
 	timeout  int
 }
 
-func NewVirBridge(name string, mtu int) *VirBridge {
-	b := &VirBridge{
+func NewVirtualBridge(name string, mtu int) *VirtualBridge {
+	b := &VirtualBridge{
 		name:     name,
 		mtu:      mtu,
 		devices:  make(map[string]Taper, 1024),
@@ -38,61 +38,61 @@ func NewVirBridge(name string, mtu int) *VirBridge {
 	return b
 }
 
-func (b *VirBridge) Open(addr string) {
-	libol.Info("VirBridge.Open: not support address")
+func (b *VirtualBridge) Open(addr string) {
+	libol.Info("VirtualBridge.Open: not support address")
 	go b.Start()
 }
 
-func (b *VirBridge) Close() error {
+func (b *VirtualBridge) Close() error {
 	b.ticker.Stop()
 	b.done <- true
 	return nil
 }
 
-func (b *VirBridge) AddSlave(dev Taper) error {
+func (b *VirtualBridge) AddSlave(dev Taper) error {
 	dev.Slave(b)
 
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	b.devices[dev.Name()] = dev
 
-	libol.Info("VirBridge.AddSlave: %s %s", dev.Name(), b.name)
+	libol.Info("VirtualBridge.AddSlave: %s %s", dev.Name(), b.name)
 
 	return nil
 }
 
-func (b *VirBridge) DelSlave(dev Taper) error {
+func (b *VirtualBridge) DelSlave(dev Taper) error {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	if _, ok := b.devices[dev.Name()]; ok {
 		delete(b.devices, dev.Name())
 	}
 
-	libol.Info("VirBridge.DelSlave: %s %s", dev.Name(), b.name)
+	libol.Info("VirtualBridge.DelSlave: %s %s", dev.Name(), b.name)
 
 	return nil
 }
 
-func (b *VirBridge) Name() string {
+func (b *VirtualBridge) Name() string {
 	return b.name
 }
 
-func (b *VirBridge) SetName(value string) {
+func (b *VirtualBridge) SetName(value string) {
 	b.name = value
 }
 
-func (b *VirBridge) SetTimeout(value int) {
+func (b *VirtualBridge) SetTimeout(value int) {
 	b.timeout = value
 }
 
-func (b *VirBridge) Forward(m *Framer) error {
+func (b *VirtualBridge) Forward(m *Framer) error {
 	if is := b.Unicast(m); !is {
 		b.Flood(m)
 	}
 	return nil
 }
 
-func (b *VirBridge) Expire() error {
+func (b *VirtualBridge) Expire() error {
 	deletes := make([]string, 0, 1024)
 
 	//collect need deleted.
@@ -105,13 +105,13 @@ func (b *VirBridge) Expire() error {
 	}
 	b.lock.RUnlock()
 
-	libol.Debug("VirBridge.Expire delete %d", len(deletes))
+	libol.Debug("VirtualBridge.Expire delete %d", len(deletes))
 	//execute delete.
 	b.lock.Lock()
 	for _, d := range deletes {
 		if _, ok := b.learners[d]; ok {
 			delete(b.learners, d)
-			libol.Info("VirBridge.Expire: delete %s", d)
+			libol.Info("VirtualBridge.Expire: delete %s", d)
 		}
 	}
 	b.lock.Unlock()
@@ -119,29 +119,29 @@ func (b *VirBridge) Expire() error {
 	return nil
 }
 
-func (b *VirBridge) Start() {
+func (b *VirtualBridge) Start() {
 	go func() {
 		for {
 			select {
 			case <-b.done:
 				return
 			case t := <-b.ticker.C:
-				libol.Debug("VirBridge.Expire Tick at %s", t)
+				libol.Debug("VirtualBridge.Expire Tick at %s", t)
 				b.Expire()
 			}
 		}
 	}()
 }
 
-func (b *VirBridge) Input(m *Framer) error {
+func (b *VirtualBridge) Input(m *Framer) error {
 	b.Learn(m)
 	return b.Forward(m)
 }
 
-func (b *VirBridge) Output(m *Framer) error {
+func (b *VirtualBridge) Output(m *Framer) error {
 	var err error
 
-	libol.Debug("VirBridge.Output: % x", m.Data[:20])
+	libol.Debug("VirtualBridge.Output: % x", m.Data[:20])
 	if dev := m.Output; dev != nil {
 		_, err = dev.InRead(m.Data)
 	}
@@ -149,7 +149,7 @@ func (b *VirBridge) Output(m *Framer) error {
 	return err
 }
 
-func (b *VirBridge) Eth2Str(addr []byte) string {
+func (b *VirtualBridge) Eth2Str(addr []byte) string {
 	if len(addr) < 6 {
 		return ""
 	}
@@ -157,7 +157,7 @@ func (b *VirBridge) Eth2Str(addr []byte) string {
 		addr[0], addr[1], addr[2], addr[3], addr[4], addr[5])
 }
 
-func (b *VirBridge) Learn(m *Framer) {
+func (b *VirtualBridge) Learn(m *Framer) {
 	source := m.Data[6:12]
 	if source[0]&0x01 == 0x01 {
 		return
@@ -177,11 +177,11 @@ func (b *VirBridge) Learn(m *Framer) {
 	learn.Dest = make([]byte, 6)
 	copy(learn.Dest, source)
 
-	libol.Info("VirBridge.Learn: %s on %s", index, m.Source)
+	libol.Info("VirtualBridge.Learn: %s on %s", index, m.Source)
 	b.AddDest(index, learn)
 }
 
-func (b *VirBridge) FindDest(d string) *Learner {
+func (b *VirtualBridge) FindDest(d string) *Learner {
 	b.lock.RLock()
 	defer b.lock.RUnlock()
 
@@ -191,13 +191,13 @@ func (b *VirBridge) FindDest(d string) *Learner {
 	return nil
 }
 
-func (b *VirBridge) AddDest(d string, l *Learner) {
+func (b *VirtualBridge) AddDest(d string, l *Learner) {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	b.learners[d] = l
 }
 
-func (b *VirBridge) UpdateDest(d string) {
+func (b *VirtualBridge) UpdateDest(d string) {
 	b.lock.RLock()
 	defer b.lock.RUnlock()
 
@@ -206,12 +206,12 @@ func (b *VirBridge) UpdateDest(d string) {
 	}
 }
 
-func (b *VirBridge) Flood(m *Framer) error {
+func (b *VirtualBridge) Flood(m *Framer) error {
 	var err error
 
 	data := m.Data
 	src := m.Source
-	libol.Debug("VirBridge.Flood: % x", data[:20])
+	libol.Debug("VirtualBridge.Flood: % x", data[:20])
 	for _, dst := range b.devices {
 		if src == dst {
 			continue
@@ -221,7 +221,7 @@ func (b *VirBridge) Flood(m *Framer) error {
 	return err
 }
 
-func (b *VirBridge) Unicast(m *Framer) bool {
+func (b *VirtualBridge) Unicast(m *Framer) bool {
 	data := m.Data
 	src := m.Source
 	index := b.Eth2Str(data[:6])
@@ -230,10 +230,10 @@ func (b *VirBridge) Unicast(m *Framer) bool {
 		dst := l.Device
 		if dst != src {
 			if _, err := dst.InRead(data); err != nil {
-				libol.Debug("VirBridge.Unicast: %s %s", dst, err)
+				libol.Debug("VirtualBridge.Unicast: %s %s", dst, err)
 			}
 		}
-		libol.Debug("VirBridge.Unicast: %s to %s % x", src, dst, data[:20])
+		libol.Debug("VirtualBridge.Unicast: %s to %s % x", src, dst, data[:20])
 		return true
 	}
 

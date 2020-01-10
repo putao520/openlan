@@ -56,6 +56,11 @@ func NewTcpWorker(client *libol.TcpClient, c *config.Point) (t *TcpWorker) {
 	return
 }
 
+func (t *TcpWorker) Start(ctx context.Context) {
+	go t.Read(ctx)
+	go t.Loop(ctx)
+}
+
 func (t *TcpWorker) Stop() {
 	t.Client.Terminal()
 }

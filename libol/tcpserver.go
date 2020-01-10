@@ -139,7 +139,7 @@ func (t *TcpServer) Read(client *TcpClient, ReadAt func(client *TcpClient, p []b
 		if length > 0 {
 			t.Sts.RxCount++
 			Debug("TcpServer.Read: length: %d ", length)
-			Debug("TcpServer.Read: data  : % x", data[:length])
+			Debug("TcpServer.Read: data  : %x", data[:length])
 			ReadAt(client, data[:length])
 		}
 	}

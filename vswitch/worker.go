@@ -130,7 +130,27 @@ func (w *Worker) OnClient(client *libol.TcpClient) error {
 	return nil
 }
 
-func (w *Worker) ReadAt(client *libol.TcpClient, data []byte) error {
+func (w *Worker) ReadTap(dev network.Taper, readAt func(p []byte) error) {
+	defer dev.Close()
+	libol.Info("Worker.ReadTap: %s", dev.Name())
+
+	for {
+		data := make([]byte, w.Conf.IfMtu)
+		n, err := dev.Read(data)
+		if err != nil {
+			libol.Error("Worker.ReadTap: %s", err)
+			break
+		}
+
+		libol.Debug("Worker.ReadTap: % x\n", data[:20])
+		w.Server.Sts.TxCount++
+		if err := readAt(data[:n]); err != nil {
+			libol.Error("Worker.ReadTap: do-recv %s %s", dev.Name(), err)
+		}
+	}
+}
+
+func (w *Worker) ReadClient(client *libol.TcpClient, data []byte) error {
 	libol.Debug("Worker.OnRead: %s % x", client.Addr, data)
 
 	if err := w.OnHook(client, data); err != nil {
@@ -177,7 +197,7 @@ func (w *Worker) Start() {
 	call := libol.TcpServerListener{
 		OnClient: w.OnClient,
 		OnClose:  w.OnClose,
-		ReadAt:   w.ReadAt,
+		ReadAt:   w.ReadClient,
 	}
 	go w.Server.Loop(call)
 }
@@ -230,10 +250,6 @@ func (w *Worker) DelLink(addr string) {
 
 func (w *Worker) GetServer() *libol.TcpServer {
 	return w.Server
-}
-
-func (w *Worker) Write(dev network.Taper, frame []byte) {
-	w.Server.Sts.TxCount++
 }
 
 func (w *Worker) NewTap() (network.Taper, error) {

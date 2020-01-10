@@ -4,14 +4,14 @@ import (
 	"github.com/songgao/water"
 )
 
-type LinTap struct {
+type LinuxTap struct {
 	isTap  bool
 	name   string
 	device *water.Interface
 	bridge Bridger
 }
 
-func NewLinTap(isTap bool, name string) (*LinTap, error) {
+func NewLinuxTap(isTap bool, name string) (*LinuxTap, error) {
 	deviceType := water.DeviceType(water.TUN)
 	if isTap {
 		deviceType = water.TAP
@@ -20,7 +20,7 @@ func NewLinTap(isTap bool, name string) (*LinTap, error) {
 	if err != nil {
 		return nil, err
 	}
-	tap := &LinTap{
+	tap := &LinuxTap{
 		device: device,
 		name:   device.Name(),
 		isTap:  device.IsTAP(),
@@ -31,32 +31,32 @@ func NewLinTap(isTap bool, name string) (*LinTap, error) {
 	return tap, nil
 }
 
-func (t *LinTap) IsTun() bool {
+func (t *LinuxTap) IsTun() bool {
 	return !t.isTap
 }
 
-func (t *LinTap) IsTap() bool {
+func (t *LinuxTap) IsTap() bool {
 	return t.isTap
 }
 
-func (t *LinTap) Name() string {
+func (t *LinuxTap) Name() string {
 	return t.name
 }
 
-func (t *LinTap) Read(p []byte) (n int, err error) {
+func (t *LinuxTap) Read(p []byte) (n int, err error) {
 	return t.device.Read(p)
 }
 
-func (t *LinTap) InRead(p []byte) (n int, err error) {
+func (t *LinuxTap) InRead(p []byte) (n int, err error) {
 	//TODO
 	return 0, nil
 }
 
-func (t *LinTap) Write(p []byte) (n int, err error) {
+func (t *LinuxTap) Write(p []byte) (n int, err error) {
 	return t.device.Write(p)
 }
 
-func (t *LinTap) Close() error {
+func (t *LinuxTap) Close() error {
 	Tapers.Del(t.name)
 	if t.bridge != nil {
 		t.bridge.DelSlave(t)
@@ -65,16 +65,16 @@ func (t *LinTap) Close() error {
 	return t.device.Close()
 }
 
-func (t *LinTap) Slave(bridge Bridger) {
+func (t *LinuxTap) Slave(bridge Bridger) {
 	if t.bridge == nil {
 		t.bridge = bridge
 	}
 }
 
-func (t LinTap) Up() {
+func (t LinuxTap) Up() {
 	//TODO
 }
 
-func (t *LinTap) String() string {
+func (t *LinuxTap) String() string {
 	return t.name
 }

@@ -131,7 +131,7 @@ func (t *TcpClient) ReadFull(buffer []byte) error {
 		left -= n
 	}
 
-	Debug("TcpClient.ReadFull Data: % x", buffer)
+	Debug("TcpClient.ReadFull Data: %x", buffer)
 	return nil
 }
 
@@ -141,7 +141,7 @@ func (t *TcpClient) WriteFull(buffer []byte) error {
 	left := size - offset
 
 	Debug("TcpClient.WriteFull %d", size)
-	Debug("TcpClient.WriteFull Data: % x", buffer)
+	Debug("TcpClient.WriteFull Data: %x", buffer)
 
 	for left > 0 {
 		tmp := buffer[offset:]

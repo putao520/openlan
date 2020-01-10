@@ -5,7 +5,6 @@ import (
 	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
-	"github.com/danieldin95/openlan-go/network"
 	"github.com/danieldin95/openlan-go/service"
 )
 
@@ -105,27 +104,7 @@ func (p *PointAuth) onAuth(client *libol.TcpClient, user *models.User) error {
 	m.Alias = user.Alias
 
 	service.Point.Add(m)
-	go p.ReadTap(dev, client.WriteMsg)
+	go p.worker.ReadTap(dev, client.WriteMsg)
 
 	return nil
-}
-
-func (p *PointAuth) ReadTap(dev network.Taper, doRead func(p []byte) error) {
-	defer dev.Close()
-	libol.Info("PointAuth.ReadTap: %s", dev.Name())
-
-	for {
-		data := make([]byte, p.ifMtu)
-		n, err := dev.Read(data)
-		if err != nil {
-			libol.Error("PointAuth.ReadTap: %s", err)
-			break
-		}
-
-		libol.Debug("PointAuth.ReadTap: % x\n", data[:n])
-		p.worker.Write(dev, data[:n])
-		if err := doRead(data[:n]); err != nil {
-			libol.Error("PointAuth.ReadTap: do-recv %s %s", dev.Name(), err)
-		}
-	}
 }

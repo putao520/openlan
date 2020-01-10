@@ -61,16 +61,15 @@ func (p *Point) Start() {
 		OnOpen: p.OnTap,
 		ReadAt: p.tcpWorker.DoWrite,
 	}
-	go p.tapWorker.Read(ctx)
-	go p.tapWorker.Loop(ctx)
+	p.tapWorker.Start(ctx)
+
 	p.tcpWorker.Listener = TcpWorkerListener{
 		OnClose:   p.OnClose,
 		OnSuccess: p.OnSuccess,
 		OnIpAddr:  p.OnIpAddr,
 		ReadAt:    p.tapWorker.DoWrite,
 	}
-	go p.tcpWorker.Read(ctx)
-	go p.tcpWorker.Loop(ctx)
+	p.tcpWorker.Start(ctx)
 }
 
 func (p *Point) Stop() {

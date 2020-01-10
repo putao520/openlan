@@ -8,6 +8,6 @@ import (
 type Worker interface {
 	GetId() string
 	GetServer() *libol.TcpServer
+	ReadTap (dev network.Taper, readAt func(p []byte) error)
 	NewTap() (network.Taper, error)
-	Write(network.Taper, []byte)
 }
