@@ -41,8 +41,16 @@ func NewTcpWorker(client *libol.TcpClient, c *config.Point) (t *TcpWorker) {
 		allowed:   c.Allowed,
 	}
 	t.user.Alias = c.Alias
-	t.Client.SetMaxSize(t.maxSize)
 
+	return
+}
+
+func (t *TcpWorker) Initialize() {
+	if t.Client == nil {
+		return
+	}
+
+	t.Client.SetMaxSize(t.maxSize)
 	t.Client.Listener = libol.TcpClientListener{
 		OnConnected: func(client *libol.TcpClient) error {
 			return t.TryLogin(client)
@@ -51,11 +59,11 @@ func NewTcpWorker(client *libol.TcpClient, c *config.Point) (t *TcpWorker) {
 			return nil
 		},
 	}
-
-	return
 }
 
 func (t *TcpWorker) Start(ctx context.Context, p Pointer) {
+	t.Initialize()
+
 	go t.Read(ctx)
 	go t.Loop(ctx)
 }

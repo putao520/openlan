@@ -25,6 +25,8 @@ type WorkerApps struct {
 	OnLines  *app.Online
 }
 
+type HookApi func(client *libol.TcpClient, frame *libol.FrameMessage) error
+
 type Worker struct {
 	Alias    string
 	Conf     *config.VSwitch
@@ -32,7 +34,7 @@ type Worker struct {
 	Apps     WorkerApps
 
 	server    *libol.TcpServer
-	hooks     []func(client *libol.TcpClient, frame *libol.FrameMessage) error
+	hooks     []HookApi
 	newTime   int64
 	startTime int64
 	linksLock sync.RWMutex
@@ -46,18 +48,30 @@ func NewWorker(server *libol.TcpServer, c *config.VSwitch) *Worker {
 		Alias:     c.Alias,
 		server:    server,
 		Conf:      c,
-		hooks:     make([]func(client *libol.TcpClient, frame *libol.FrameMessage) error, 0, 64),
 		newTime:   time.Now().Unix(),
 		startTime: 0,
 		brName:    c.BrName,
 		links:     make(map[string]*point.Point),
 	}
 
+	return &w
+}
+
+func (w *Worker) Initialize() {
 	service.User.Load(w.Conf.Password)
 	service.Network.Load(w.Conf.Network)
-	w.AppInit()
 
-	return &w
+	w.Apps.Auth = app.NewPointAuth(w, w.Conf)
+	w.Apps.Request = app.NewWithRequest(w, w.Conf)
+	w.Apps.Neighbor = app.NewNeighbors(w, w.Conf)
+	w.Apps.OnLines = app.NewOnline(w, w.Conf)
+
+	w.hooks = make([]HookApi, 0, 64)
+	w.hooks = append(w.hooks, w.Apps.Auth.OnFrame)
+	w.hooks = append(w.hooks, w.Apps.Neighbor.OnFrame)
+	w.hooks = append(w.hooks, w.Apps.Request.OnFrame)
+	w.hooks = append(w.hooks, w.Apps.OnLines.OnFrame)
+	w.ShowHook()
 }
 
 func (w *Worker) ID() string {
@@ -66,19 +80,6 @@ func (w *Worker) ID() string {
 
 func (w *Worker) String() string {
 	return w.ID()
-}
-
-func (w *Worker) AppInit() {
-	w.Apps.Auth = app.NewPointAuth(w, w.Conf)
-	w.Apps.Request = app.NewWithRequest(w, w.Conf)
-	w.Apps.Neighbor = app.NewNeighbors(w, w.Conf)
-	w.Apps.OnLines = app.NewOnline(w, w.Conf)
-
-	w.hooks = append(w.hooks, w.Apps.Auth.OnFrame)
-	w.hooks = append(w.hooks, w.Apps.Neighbor.OnFrame)
-	w.hooks = append(w.hooks, w.Apps.Request.OnFrame)
-	w.hooks = append(w.hooks, w.Apps.OnLines.OnFrame)
-	w.ShowHook()
 }
 
 func (w *Worker) LoadLinks() {
@@ -190,6 +191,8 @@ func (w *Worker) OnClose(client *libol.TcpClient) error {
 }
 
 func (w *Worker) Start(v VSwitcher) {
+	w.Initialize()
+
 	w.uuid = v.UUID()
 	w.startTime = time.Now().Unix()
 	w.LoadLinks()

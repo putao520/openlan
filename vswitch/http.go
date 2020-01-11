@@ -38,10 +38,15 @@ func NewHttp(worker *Worker, c *config.VSwitch) (h *Http) {
 		keyFile:    c.KeyFile,
 		pubDir:     c.HttpDir,
 	}
+
+	return
+}
+
+func (h *Http) Initialize() {
 	r := h.Router()
 	if h.server == nil {
 		h.server = &http.Server{
-			Addr:         c.HttpListen,
+			Addr:         h.listen,
 			WriteTimeout: time.Second * 15,
 			ReadTimeout:  time.Second * 15,
 			IdleTimeout:  time.Second * 60,
@@ -59,8 +64,6 @@ func NewHttp(worker *Worker, c *config.VSwitch) (h *Http) {
 
 	h.SaveToken()
 	h.LoadRouter()
-
-	return
 }
 
 func (h *Http) Middleware(next http.Handler) http.Handler {
@@ -137,6 +140,8 @@ func (h *Http) LoadToken() error {
 }
 
 func (h *Http) Start() error {
+	h.Initialize()
+
 	libol.Info("Http.Start %s", h.listen)
 
 	if h.keyFile == "" || h.crtFile == "" {

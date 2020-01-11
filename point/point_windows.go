@@ -26,24 +26,29 @@ type Point struct {
 }
 
 func NewPoint(config *config.Point) (p *Point) {
-	var tlsConf *tls.Config
-	if config.Tls {
-		tlsConf = &tls.Config{InsecureSkipVerify: true}
-	}
-	client := libol.NewTcpClient(config.Addr, tlsConf)
 	p = &Point{
 		BrName: config.BrName,
 		IfAddr: config.IfAddr,
 		config: config,
 	}
-	p.tcpWorker = NewTcpWorker(client, config)
-	p.newDevice()
+
 	return
 }
 
-func (p *Point) newDevice() {
-	conf := &water.Config{DeviceType: water.TAP}
-	p.tapWorker = NewTapWorker(conf, p.config)
+func (p *Point) Initialize() {
+	if p.config == nil {
+		return
+	}
+
+	var tlsConf *tls.Config
+	if p.config.Tls {
+		tlsConf = &tls.Config{InsecureSkipVerify: true}
+	}
+	client := libol.NewTcpClient(p.config.Addr, tlsConf)
+	p.tcpWorker = NewTcpWorker(client, p.config)
+
+	devConf := &water.Config{DeviceType: water.TAP}
+	p.tapWorker = NewTapWorker(devConf, p.config)
 }
 
 func (p *Point) OnTap(w *TapWorker) error {
@@ -52,6 +57,12 @@ func (p *Point) OnTap(w *TapWorker) error {
 }
 
 func (p *Point) Start() {
+	if p.tcpWorker != nil || p.tapWorker != nil {
+		return
+	}
+
+	p.Initialize()
+
 	ctx := context.Background()
 	libol.Debug("Point.Start Windows.")
 
@@ -76,11 +87,18 @@ func (p *Point) Start() {
 }
 
 func (p *Point) Stop() {
+	if p.tapWorker == nil || p.tcpWorker == nil {
+		return
+	}
+
 	defer libol.Catch("Point.Stop")
 
 	p.DelAddr(p.addr)
 	p.tapWorker.Stop()
 	p.tcpWorker.Stop()
+
+	p.tapWorker = nil
+	p.tcpWorker = nil
 }
 
 func (p *Point) Client() *libol.TcpClient {

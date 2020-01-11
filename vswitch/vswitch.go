@@ -44,18 +44,20 @@ func NewVSwitch(c *config.VSwitch) *VSwitch {
 	v := VSwitch{
 		Conf:   c,
 		worker: NewWorker(server, c),
-		http:   nil,
 		status: SW_INIT,
 	}
 
-	if c.HttpListen != "" {
-		v.http = NewHttp(v.worker, c)
-	}
+	return &v
+}
 
-	if c.Bridger == "linux" {
-		v.bridge = network.NewLinuxBridge(c.BrName, c.IfMtu)
+func (v *VSwitch) Initialize() {
+	if v.Conf.HttpListen != "" {
+		v.http = NewHttp(v.worker, v.Conf)
+	}
+	if v.Conf.Bridger == "linux" {
+		v.bridge = network.NewLinuxBridge(v.Conf.BrName, v.Conf.IfMtu)
 	} else {
-		v.bridge = network.NewVirtualBridge(c.BrName, c.IfMtu)
+		v.bridge = network.NewVirtualBridge(v.Conf.BrName, v.Conf.IfMtu)
 	}
 	if v.bridge.Name() == "" {
 		v.bridge.SetName(v.worker.BrName())
@@ -65,8 +67,6 @@ func NewVSwitch(c *config.VSwitch) *VSwitch {
 		NewTap:  v.NewTap,
 		FreeTap: v.FreeTap,
 	}
-
-	return &v
 }
 
 func (v *VSwitch) Start() bool {
@@ -78,6 +78,8 @@ func (v *VSwitch) Start() bool {
 	} else {
 		v.status = SW_STARTED
 	}
+
+	v.Initialize()
 
 	v.worker.Start(v)
 	v.bridge.Open(v.Conf.IfAddr)
@@ -101,7 +103,9 @@ func (v *VSwitch) Stop() bool {
 	v.worker.Stop()
 	if v.http != nil {
 		v.http.Shutdown()
+		v.http = nil
 	}
+
 	return true
 }
 

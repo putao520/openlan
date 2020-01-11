@@ -27,38 +27,46 @@ type Point struct {
 }
 
 func NewPoint(config *config.Point) (p *Point) {
-	var tlsConf *tls.Config
-	if config.Tls {
-		tlsConf = &tls.Config{InsecureSkipVerify: true}
-	}
-
 	p = &Point{
 		BrName: config.BrName,
 		IfAddr: config.IfAddr,
 		config: config,
 	}
-	client := libol.NewTcpClient(config.Addr, tlsConf)
-	p.tcpWorker = NewTcpWorker(client, config)
-	p.newDevice()
 
 	return
 }
 
-func (p *Point) newDevice() {
+func (p *Point) Initialize() {
+	if p.config == nil {
+		return
+	}
+
 	var conf *water.Config
+	var tlsConf *tls.Config
+
+	if p.config.Tls {
+		tlsConf = &tls.Config{InsecureSkipVerify: true}
+	}
+	client := libol.NewTcpClient(p.config.Addr, tlsConf)
+	p.tcpWorker = NewTcpWorker(client, p.config)
 
 	if p.config.IfTun {
 		conf = &water.Config{DeviceType: water.TUN}
 	} else {
 		conf = &water.Config{DeviceType: water.TAP}
 	}
-
 	p.tapWorker = NewTapWorker(conf, p.config)
 }
 
 func (p *Point) Start() {
-	ctx := context.Background()
+	if p.tapWorker != nil || p.tcpWorker != nil {
+		return
+	}
+
+	p.Initialize()
+
 	libol.Debug("Point.Start linux.")
+	ctx := context.Background()
 
 	p.tcpWorker.SetUUID(p.UUID())
 	if err := p.tcpWorker.Connect(); err != nil {
@@ -81,6 +89,10 @@ func (p *Point) Start() {
 }
 
 func (p *Point) Stop() {
+	if p.tapWorker == nil || p.tcpWorker == nil {
+		return
+	}
+
 	defer libol.Catch("Point.Stop")
 
 	p.DelRoutes(p.routes)
@@ -88,6 +100,9 @@ func (p *Point) Stop() {
 
 	p.tcpWorker.Stop()
 	p.tapWorker.Stop()
+
+	p.tcpWorker = nil
+	p.tapWorker = nil
 }
 
 func (p *Point) DelAddr(ipStr string) error {

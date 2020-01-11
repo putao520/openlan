@@ -21,22 +21,24 @@ type Point struct {
 }
 
 func NewPoint(config *config.Point) (p *Point) {
-	var tlsConf *tls.Config
-	if config.Tls {
-		tlsConf = &tls.Config{InsecureSkipVerify: true}
-	}
-	client := libol.NewTcpClient(config.Addr, tlsConf)
 	p = &Point{
 		BrName: config.BrName,
 		IfAddr: config.IfAddr,
 		config: config,
 	}
-	p.tcpWorker = NewTcpWorker(client, config)
-	p.newDevice()
+
 	return
 }
 
-func (p *Point) newDevice() {
+func (p *Point) Initialize() {
+	var tlsConf *tls.Config
+	if p.config.Tls {
+		tlsConf = &tls.Config{InsecureSkipVerify: true}
+	}
+
+	client := libol.NewTcpClient(p.config.Addr, tlsConf)
+	p.tcpWorker = NewTcpWorker(client, p.config)
+
 	conf := &water.Config{DeviceType: water.TUN}
 	p.tapWorker = NewTapWorker(conf, p.config)
 }
@@ -46,6 +48,12 @@ func (p *Point) OnTap(w *TapWorker) error {
 }
 
 func (p *Point) Start() {
+	if p.tapWorker != nil || p.tcpWorker != nil {
+		return
+	}
+
+	p.Initialize()
+
 	ctx := context.Background()
 	libol.Debug("Point.Start Darwin.")
 
@@ -70,10 +78,17 @@ func (p *Point) Start() {
 }
 
 func (p *Point) Stop() {
+	if p.tapWorker == nil || p.tcpWorker == nil {
+		return
+	}
+
 	defer libol.Catch("Point.Stop")
 
 	p.tapWorker.Stop()
 	p.tcpWorker.Stop()
+
+	p.tapWorker = nil
+	p.tcpWorker = nil
 }
 
 func (p *Point) Client() *libol.TcpClient {
@@ -91,7 +106,7 @@ func (p *Point) Device() network.Taper {
 }
 
 func (p *Point) UpTime() int64 {
-	client := p.GetClient()
+	client := p.Client()
 	if client != nil {
 		return client.UpTime()
 	}
@@ -99,7 +114,7 @@ func (p *Point) UpTime() int64 {
 }
 
 func (p *Point) State() string {
-	client := p.GetClient()
+	client := p.Client()
 	if client != nil {
 		return client.State()
 	}
@@ -107,7 +122,7 @@ func (p *Point) State() string {
 }
 
 func (p *Point) Addr() string {
-	client := p.GetClient()
+	client := p.Client()
 	if client != nil {
 		return client.Addr
 	}
@@ -115,7 +130,7 @@ func (p *Point) Addr() string {
 }
 
 func (p *Point) IfName() string {
-	dev := p.GetDevice()
+	dev := p.Device()
 	if dev != nil {
 		return dev.Name()
 	}

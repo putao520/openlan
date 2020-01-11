@@ -40,6 +40,11 @@ func NewTapWorker(devCfg *water.Config, c *config.Point) (a *TapWorker) {
 	return
 }
 
+func (a *TapWorker) Initialize() {
+	a.Open()
+	a.DoTun()
+}
+
 func (a *TapWorker) DoTun() {
 	if a.Device == nil || !a.Device.IsTun() {
 		return
@@ -61,13 +66,7 @@ func (a *TapWorker) DoTun() {
 	libol.Info("NewTapWorker src: %x, dst: %x", a.EthSrcAddr, a.EthDstAddr)
 
 }
-func (a *TapWorker) Start(ctx context.Context, p Pointer) {
-	a.Open()
-	a.DoTun()
 
-	go a.Read(ctx)
-	go a.Loop(ctx)
-}
 func (a *TapWorker) Open() {
 	if a.Device != nil {
 		a.Device.Close()
@@ -249,8 +248,14 @@ func (a *TapWorker) Close() {
 	}
 }
 
+func (a *TapWorker) Start(ctx context.Context, p Pointer) {
+	a.Initialize()
+
+	go a.Read(ctx)
+	go a.Loop(ctx)
+}
+
 func (a *TapWorker) Stop() {
 	close(a.writeChan)
 	a.Close()
-	a.Device = nil
 }
