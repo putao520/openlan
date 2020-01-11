@@ -17,13 +17,12 @@ type TapWorkerListener struct {
 }
 
 type TapWorker struct {
+	Device   network.Taper
+	Listener TapWorkerListener
 	//for tunnel device.
 	EthDstAddr []byte
 	EthSrcAddr []byte
 	EthSrcIp   []byte
-	//
-	Listener TapWorkerListener
-	Device   network.Taper
 
 	writeChan chan []byte
 	devCfg   *water.Config
@@ -62,7 +61,7 @@ func (a *TapWorker) DoTun() {
 	libol.Info("NewTapWorker src: %x, dst: %x", a.EthSrcAddr, a.EthDstAddr)
 
 }
-func (a *TapWorker) Start(ctx context.Context) {
+func (a *TapWorker) Start(ctx context.Context, p Pointer) {
 	a.Open()
 	a.DoTun()
 
@@ -251,5 +250,7 @@ func (a *TapWorker) Close() {
 }
 
 func (a *TapWorker) Stop() {
+	close(a.writeChan)
 	a.Close()
+	a.Device = nil
 }

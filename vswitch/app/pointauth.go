@@ -102,6 +102,7 @@ func (p *PointAuth) onAuth(client *libol.TcpClient, user *models.User) error {
 
 	m := models.NewPoint(client, dev)
 	m.Alias = user.Alias
+	m.UUID  = user.UUID
 
 	service.Point.Add(m)
 	go p.worker.ReadTap(dev, client.WriteMsg)

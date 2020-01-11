@@ -21,7 +21,6 @@ type TcpWorker struct {
 	Listener TcpWorkerListener
 	Client   *libol.TcpClient
 
-	readChan  chan []byte
 	writeChan chan []byte
 	maxSize   int
 	alias     string
@@ -56,13 +55,15 @@ func NewTcpWorker(client *libol.TcpClient, c *config.Point) (t *TcpWorker) {
 	return
 }
 
-func (t *TcpWorker) Start(ctx context.Context) {
+func (t *TcpWorker) Start(ctx context.Context, p Pointer) {
 	go t.Read(ctx)
 	go t.Loop(ctx)
 }
 
 func (t *TcpWorker) Stop() {
+	close(t.writeChan)
 	t.Client.Terminal()
+	t.Client = nil
 }
 
 func (t *TcpWorker) Close() {
@@ -227,6 +228,7 @@ func (t *TcpWorker) Loop(ctx context.Context) {
 		}
 	}
 }
+
 func (t *TcpWorker) Auth() (string, string) {
 	return t.user.Name, t.user.Password
 }
@@ -241,4 +243,8 @@ func (t *TcpWorker) SetAuth(auth string) {
 
 func (t *TcpWorker) SetAddr(addr string) {
 	t.Client.Addr = addr
+}
+
+func (t *TcpWorker) SetUUID(v string) {
+	t.user.UUID = v
 }

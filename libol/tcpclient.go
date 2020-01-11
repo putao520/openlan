@@ -232,7 +232,7 @@ func (t *TcpClient) WriteResp(action string, body string) error {
 	return nil
 }
 
-func (t *TcpClient) GetState() string {
+func (t *TcpClient) State() string {
 	switch t.Status() {
 	case CL_INIT:
 		return "initialized"
@@ -282,7 +282,7 @@ func (t *TcpClient) SetStatus(v uint8) {
 	}
 }
 
-func (t *TcpClient) GetMaxSize() int {
+func (t *TcpClient) MaxSize() int {
 	return t.maxSize
 }
 
@@ -290,7 +290,7 @@ func (t *TcpClient) SetMaxSize(value int) {
 	t.maxSize = value
 }
 
-func (t *TcpClient) GetMinSize() int {
+func (t *TcpClient) MinSize() int {
 	return t.minSize
 }
 

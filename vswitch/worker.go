@@ -27,23 +27,24 @@ type WorkerApps struct {
 
 type Worker struct {
 	Alias    string
-	Server   *libol.TcpServer
 	Conf     *config.VSwitch
 	Listener WorkerListener
 	Apps     WorkerApps
 
+	server   *libol.TcpServer
 	hooks     []func(client *libol.TcpClient, frame *libol.FrameMessage) error
 	newTime   int64
 	startTime int64
 	linksLock sync.RWMutex
 	links     map[string]*point.Point
 	brName    string
+	uuid      string
 }
 
 func NewWorker(server *libol.TcpServer, c *config.VSwitch) *Worker {
 	w := Worker{
 		Alias:     c.Alias,
-		Server:    server,
+		server:    server,
 		Conf:      c,
 		hooks:     make([]func(client *libol.TcpClient, frame *libol.FrameMessage) error, 0, 64),
 		newTime:   time.Now().Unix(),
@@ -59,12 +60,12 @@ func NewWorker(server *libol.TcpServer, c *config.VSwitch) *Worker {
 	return &w
 }
 
-func (w *Worker) GetId() string {
-	return w.Server.Addr
+func (w *Worker) ID() string {
+	return w.server.Addr
 }
 
 func (w *Worker) String() string {
-	return w.GetId()
+	return w.ID()
 }
 
 func (w *Worker) AppInit() {
@@ -91,7 +92,7 @@ func (w *Worker) LoadLinks() {
 
 func (w *Worker) BrName() string {
 	if w.brName == "" {
-		adds := strings.Split(w.Server.Addr, ":")
+		adds := strings.Split(w.server.Addr, ":")
 		if len(adds) != 2 {
 			w.brName = "brol-default"
 		} else {
@@ -143,7 +144,7 @@ func (w *Worker) ReadTap(dev network.Taper, readAt func(p []byte) error) {
 		}
 
 		libol.Debug("Worker.ReadTap: % x\n", data[:20])
-		w.Server.Sts.TxCount++
+		w.server.Sts.TxCount++
 		if err := readAt(data[:n]); err != nil {
 			libol.Error("Worker.ReadTap: do-recv %s %s", dev.Name(), err)
 		}
@@ -156,7 +157,7 @@ func (w *Worker) ReadClient(client *libol.TcpClient, data []byte) error {
 	if err := w.OnHook(client, data); err != nil {
 		libol.Debug("Worker.OnRead: %s dropping by %s", client.Addr, err)
 		if client.Status() != libol.CL_AUEHED {
-			w.Server.Sts.DrpCount++
+			w.server.Sts.DrpCount++
 		}
 		return err
 	}
@@ -188,24 +189,24 @@ func (w *Worker) OnClose(client *libol.TcpClient) error {
 	return nil
 }
 
-func (w *Worker) Start() {
+func (w *Worker) Start(v VSwitcher) {
+	w.uuid = v.UUID()
 	w.startTime = time.Now().Unix()
-
 	w.LoadLinks()
 
-	go w.Server.Accept()
+	go w.server.Accept()
 	call := libol.TcpServerListener{
 		OnClient: w.OnClient,
 		OnClose:  w.OnClose,
 		ReadAt:   w.ReadClient,
 	}
-	go w.Server.Loop(call)
+	go w.server.Loop(call)
 }
 
 func (w *Worker) Stop() {
 	libol.Info("Worker.Close")
 
-	w.Server.Close()
+	w.server.Close()
 	for _, p := range w.links {
 		p.Stop()
 	}
@@ -248,8 +249,8 @@ func (w *Worker) DelLink(addr string) {
 	}
 }
 
-func (w *Worker) GetServer() *libol.TcpServer {
-	return w.Server
+func (w *Worker) Server() *libol.TcpServer {
+	return w.server
 }
 
 func (w *Worker) NewTap() (network.Taper, error) {
@@ -257,4 +258,8 @@ func (w *Worker) NewTap() (network.Taper, error) {
 		return nil, libol.NewErr("Not Implement")
 	}
 	return w.Listener.NewTap()
+}
+
+func (w *Worker) UUID() string {
+	return w.uuid
 }

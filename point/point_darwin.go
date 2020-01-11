@@ -17,6 +17,7 @@ type Point struct {
 	tcpWorker *TcpWorker
 	tapWorker *TapWorker
 	config    *config.Point
+	uuid      string
 }
 
 func NewPoint(config *config.Point) (p *Point) {
@@ -48,6 +49,7 @@ func (p *Point) Start() {
 	ctx := context.Background()
 	libol.Debug("Point.Start Darwin.")
 
+	p.tcpWorker.SetUUID(p.UUID())
 	if err := p.tcpWorker.Connect(); err != nil {
 		libol.Error("Point.Start %s", err)
 	}
@@ -56,7 +58,7 @@ func (p *Point) Start() {
 		OnOpen: p.OnTap,
 		ReadAt: p.tcpWorker.DoWrite,
 	}
-	p.tapWorker.Start(ctx)
+	p.tapWorker.Start(ctx, p)
 
 	p.tcpWorker.Listener = TcpWorkerListener{
 		OnClose:   p.OnClose,
@@ -64,7 +66,7 @@ func (p *Point) Start() {
 		OnIpAddr:  p.OnIpAddr,
 		ReadAt:    p.tapWorker.DoWrite,
 	}
-	p.tcpWorker.Start(ctx)
+	p.tcpWorker.Start(ctx, p)
 }
 
 func (p *Point) Stop() {
@@ -74,14 +76,14 @@ func (p *Point) Stop() {
 	p.tcpWorker.Stop()
 }
 
-func (p *Point) GetClient() *libol.TcpClient {
+func (p *Point) Client() *libol.TcpClient {
 	if p.tcpWorker != nil {
 		return p.tcpWorker.Client
 	}
 	return nil
 }
 
-func (p *Point) GetDevice() network.Taper {
+func (p *Point) Device() network.Taper {
 	if p.tapWorker != nil {
 		return p.tapWorker.Device
 	}
@@ -99,7 +101,7 @@ func (p *Point) UpTime() int64 {
 func (p *Point) State() string {
 	client := p.GetClient()
 	if client != nil {
-		return client.GetState()
+		return client.State()
 	}
 	return ""
 }
@@ -130,4 +132,11 @@ func (p *Point) OnClose(w *TcpWorker) error {
 
 func (p *Point) OnSuccess(w *TcpWorker) error {
 	return nil
+}
+
+func (p *Point) UUID() string {
+	if p.uuid == "" {
+		p.uuid = libol.GenToken(32)
+	}
+	return p.uuid
 }

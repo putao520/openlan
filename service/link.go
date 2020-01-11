@@ -24,8 +24,8 @@ func (p *_link) Add(m *point.Point) {
 		Server: m.Addr(),
 		Uptime: m.UpTime(),
 		Status: m.State(),
-		Client: m.GetClient(),
-		Device: m.GetDevice(),
+		Client: m.Client(),
+		Device: m.Device(),
 		IfName: m.IfName(),
 	}
 	p.links[m.Addr()] = link

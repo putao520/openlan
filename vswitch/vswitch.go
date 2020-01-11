@@ -14,6 +14,10 @@ const (
 	SW_STOPPED = 0x03
 )
 
+type VSwitcher interface {
+	UUID() string
+}
+
 type VSwitch struct {
 	Conf *config.VSwitch
 
@@ -22,6 +26,7 @@ type VSwitch struct {
 	worker *Worker
 	lock   sync.RWMutex
 	status int
+	uuid   string
 }
 
 func NewVSwitch(c *config.VSwitch) *VSwitch {
@@ -74,7 +79,7 @@ func (v *VSwitch) Start() bool {
 		v.status = SW_STARTED
 	}
 
-	v.worker.Start()
+	v.worker.Start(v)
 	v.bridge.Open(v.Conf.IfAddr)
 	if v.http != nil {
 		go v.http.Start()
@@ -106,7 +111,7 @@ func (v *VSwitch) IsStated() bool {
 	return v.status == SW_STARTED
 }
 
-func (v *VSwitch) GetState() string {
+func (v *VSwitch) State() string {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
@@ -122,20 +127,20 @@ func (v *VSwitch) GetState() string {
 	return ""
 }
 
-func (v *VSwitch) GetBrName() string {
+func (v *VSwitch) BrName() string {
 	return v.worker.BrName()
 }
 
-func (v *VSwitch) GetUpTime() int64 {
+func (v *VSwitch) UpTime() int64 {
 	return v.worker.UpTime()
 }
 
-func (v *VSwitch) GetWorker() *Worker {
+func (v *VSwitch) Worker() *Worker {
 	return v.worker
 }
 
-func (v *VSwitch) GetServer() *libol.TcpServer {
-	return v.worker.Server
+func (v *VSwitch) Server() *libol.TcpServer {
+	return v.worker.Server()
 }
 
 func (v *VSwitch) NewTap() (network.Taper, error) {
@@ -165,4 +170,11 @@ func (v *VSwitch) FreeTap(dev network.Taper) error {
 	libol.Info("Worker.FreeTap %s", dev.Name())
 
 	return nil
+}
+
+func (v *VSwitch) UUID() string {
+	if v.uuid == "" {
+		v.uuid = libol.GenToken(32)
+	}
+	return v.uuid
 }

@@ -7,6 +7,7 @@ type User struct {
 	Name     string `json:"name"`
 	Token    string `json:"token"`
 	Password string `json:"password"`
+	UUID     string `json:"uuid"`
 }
 
 func NewUser(name string, password string) (this *User) {
@@ -18,5 +19,5 @@ func NewUser(name string, password string) (this *User) {
 }
 
 func (u *User) String() string {
-	return fmt.Sprintf("%s, %s, %s", u.Name, u.Password, u.Token)
+	return fmt.Sprintf("%s, %s, %s, %s", u.UUID, u.Name, u.Password, u.Token)
 }

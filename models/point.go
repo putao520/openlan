@@ -6,6 +6,7 @@ import (
 )
 
 type Point struct {
+	UUID   string           `json:"uuid"`
 	Alias  string           `json:"alias"`
 	Server string           `json:"server"`
 	Uptime int64            `json:"uptime"`
@@ -28,7 +29,7 @@ func NewPoint(c *libol.TcpClient, d network.Taper) (w *Point) {
 
 func (p *Point) Update() *Point {
 	p.Uptime = p.Client.UpTime()
-	p.Status = p.Client.GetState()
+	p.Status = p.Client.State()
 	p.IfName = p.Device.Name()
 	return p
 }

@@ -215,19 +215,19 @@ func (h *Http) PubFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Http) getIndex() string {
-	body := fmt.Sprintf("# uptime: %d\n", h.worker.UpTime())
+	body := fmt.Sprintf("# uptime: %d, uuid: %s\n", h.worker.UpTime(), h.worker.UUID())
 	body += "\n"
 	body += "# point accessed to this vswith.\n"
-	body += "uptime, alias, remote, device, receipt, transmis, error, state\n"
+	body += "uuid, uptime, alias, remote, device, receipt, transmis, error, state\n"
 	for p := range service.Point.List() {
 		if p == nil {
 			break
 		}
 
 		client, dev := p.Client, p.Device
-		body += fmt.Sprintf("%d, %s, %s, %s, %d, %d, %d, %s\n",
-			client.UpTime(), p.Alias, client.Addr, dev.Name(),
-			client.Sts.RxOkay, client.Sts.TxOkay, client.Sts.TxError, client.GetState())
+		body += fmt.Sprintf("%s, %d, %s, %s, %s, %d, %d, %d, %s\n",
+			p.UUID, client.UpTime(), p.Alias, client.Addr, dev.Name(),
+			client.Sts.RxOkay, client.Sts.TxOkay, client.Sts.TxError, client.State())
 	}
 
 	body += "\n"
@@ -252,7 +252,7 @@ func (h *Http) getIndex() string {
 
 		client, dev := p.Client, p.Device
 		body += fmt.Sprintf("%d, %s, %s, %s\n",
-			client.UpTime(), dev.Name(), client.Addr, client.GetState())
+			client.UpTime(), dev.Name(), client.Addr, client.State())
 	}
 
 	body += "\n"
