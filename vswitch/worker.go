@@ -31,7 +31,7 @@ type Worker struct {
 	Listener WorkerListener
 	Apps     WorkerApps
 
-	server   *libol.TcpServer
+	server    *libol.TcpServer
 	hooks     []func(client *libol.TcpClient, frame *libol.FrameMessage) error
 	newTime   int64
 	startTime int64

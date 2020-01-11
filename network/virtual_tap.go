@@ -22,8 +22,8 @@ func NewVirtualTap(isTap bool, name string) (*VirtualTap, error) {
 	tap := &VirtualTap{
 		isTap:  isTap,
 		name:   name,
-		writeQ: make(chan []byte, 1024 * 32),
-		readQ:  make(chan []byte, 1024 * 16),
+		writeQ: make(chan []byte, 1024*32),
+		readQ:  make(chan []byte, 1024*16),
 	}
 	Tapers.Add(tap)
 
@@ -50,7 +50,7 @@ func (t *VirtualTap) Read(p []byte) (n int, err error) {
 	}
 	t.lock.RUnlock()
 
-	result := <- t.readQ
+	result := <-t.readQ
 	return copy(p, result), nil
 }
 
@@ -88,7 +88,7 @@ func (t *VirtualTap) OutWrite() ([]byte, error) {
 	}
 	t.lock.RUnlock()
 
-	return <- t.writeQ, nil
+	return <-t.writeQ, nil
 }
 
 func (t *VirtualTap) Deliver() {

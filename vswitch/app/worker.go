@@ -8,7 +8,7 @@ import (
 type Worker interface {
 	ID() string
 	Server() *libol.TcpServer
-	ReadTap (dev network.Taper, readAt func(p []byte) error)
+	ReadTap(dev network.Taper, readAt func(p []byte) error)
 	NewTap() (network.Taper, error)
 	UUID() string
 }

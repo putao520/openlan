@@ -25,8 +25,8 @@ type TapWorker struct {
 	EthSrcIp   []byte
 
 	writeChan chan []byte
-	devCfg   *water.Config
-	pointCfg *config.Point
+	devCfg    *water.Config
+	pointCfg  *config.Point
 }
 
 func NewTapWorker(devCfg *water.Config, c *config.Point) (a *TapWorker) {
