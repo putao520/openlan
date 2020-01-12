@@ -225,7 +225,7 @@ func (t *TcpWorker) Loop() {
 
 	for {
 		w, ok := <-t.writeChan
-		if !ok  || t.Client == nil {
+		if !ok || t.Client == nil {
 			break
 		}
 
