@@ -1,144 +1,47 @@
 package point
 
 import (
-	"context"
-	"crypto/tls"
-	"fmt"
 	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
-	"github.com/danieldin95/openlan-go/network"
-	"github.com/songgao/water"
 	"os/exec"
 	"strings"
 )
 
 type Point struct {
+	MixPoint
 	BrName string
-	IfAddr string
 
-	tcpWorker *TcpWorker
-	tapWorker *TapWorker
 	addr      string
 	routes    []*models.Route
 	config    *config.Point
-	uuid      string
 }
 
-func NewPoint(config *config.Point) (p *Point) {
-	p = &Point{
-		BrName: config.BrName,
-		IfAddr: config.IfAddr,
-		config: config,
+func NewPoint(config *config.Point) *Point {
+	p := Point{
+		BrName:   config.BrName,
+		MixPoint: NewMixPoint(config),
 	}
-
-	return
+	return &p
 }
 
 func (p *Point) Initialize() {
-	if p.config == nil {
-		return
-	}
-
-	var tlsConf *tls.Config
-	if p.config.Tls {
-		tlsConf = &tls.Config{InsecureSkipVerify: true}
-	}
-	client := libol.NewTcpClient(p.config.Addr, tlsConf)
-	p.tcpWorker = NewTcpWorker(client, p.config)
-
-	devConf := &water.Config{DeviceType: water.TAP}
-	p.tapWorker = NewTapWorker(devConf, p.config)
-}
-
-func (p *Point) OnTap(w *TapWorker) error {
-	libol.Info("Point.OnTap")
-	return nil
+	p.MixPoint.Initialize()
+	p.worker.Listener.AddAddr = p.AddAddr
+	p.worker.Listener.DelAddr = p.DelAddr
+	p.worker.Listener.AddRoutes = p.AddRoutes
+	p.worker.Listener.DelRoutes = p.DelRoutes
 }
 
 func (p *Point) Start() {
 	libol.Debug("Point.Start Windows.")
-	if p.tcpWorker != nil || p.tapWorker != nil {
-		return
-	}
-
 	p.Initialize()
-
-	p.tcpWorker.SetUUID(p.UUID())
-	p.tcpWorker.Listener = TcpWorkerListener{
-		OnClose:   p.OnClose,
-		OnSuccess: p.OnSuccess,
-		OnIpAddr:  p.OnIpAddr,
-		ReadAt:    p.tapWorker.DoWrite,
-	}
-	p.tapWorker.Listener = TapWorkerListener{
-		OnOpen: p.OnTap,
-		ReadAt: p.tcpWorker.DoWrite,
-	}
-
-	p.tapWorker.Start(p)
-	p.tcpWorker.Start(p)
+	p.worker.Start()
 }
 
 func (p *Point) Stop() {
-	if p.tapWorker == nil || p.tcpWorker == nil {
-		return
-	}
-
 	defer libol.Catch("Point.Stop")
-
-	p.DelAddr(p.addr)
-	p.tapWorker.Stop()
-	p.tcpWorker.Stop()
-
-	p.tapWorker = nil
-	p.tcpWorker = nil
-}
-
-func (p *Point) Client() *libol.TcpClient {
-	if p.tcpWorker != nil {
-		return p.tcpWorker.Client
-	}
-	return nil
-}
-
-func (p *Point) Device() network.Taper {
-	if p.tapWorker != nil {
-		return p.tapWorker.Device
-	}
-	return nil
-}
-
-func (p *Point) UpTime() int64 {
-	client := p.Client()
-	if client != nil {
-		return client.UpTime()
-	}
-	return 0
-}
-
-func (p *Point) State() string {
-	client := p.Client()
-	if client != nil {
-		return client.State()
-	}
-	return ""
-}
-
-func (p *Point) Addr() string {
-	client := p.Client()
-	if client != nil {
-		return client.Addr
-	}
-	return ""
-}
-
-func (p *Point) IfName() string {
-	dev := p.Device()
-	if dev != nil {
-		return dev.Name()
-	}
-	return ""
+	p.worker.Stop()
 }
 
 func (p *Point) AddAddr(ipStr string) error {
@@ -218,43 +121,4 @@ func (p *Point) DelRoutes(routes []*models.Route) error {
 	p.routes = nil
 
 	return nil
-}
-
-func (p *Point) OnIpAddr(w *TcpWorker, n *models.Network) error {
-	libol.Info("Point.OnIpAddr: %s, %s, %s", n.IfAddr, n.Netmask, n.Routes)
-
-	if n.IfAddr == "" {
-		return nil
-	}
-
-	prefix := libol.Netmask2Len(n.Netmask)
-	ipStr := fmt.Sprintf("%s/%d", n.IfAddr, prefix)
-	p.AddAddr(ipStr)
-	p.AddRoutes(n.Routes)
-
-	return nil
-}
-
-func (p *Point) OnClose(w *TcpWorker) error {
-	libol.Info("Point.OnClose")
-
-	p.DelAddr(p.addr)
-	p.DelRoutes(p.routes)
-
-	return nil
-}
-
-func (p *Point) OnSuccess(w *TcpWorker) error {
-	libol.Info("Point.OnSuccess")
-
-	p.AddAddr(p.IfAddr)
-
-	return nil
-}
-
-func (p *Point) UUID() string {
-	if p.uuid == "" {
-		p.uuid = libol.GenToken(32)
-	}
-	return p.uuid
 }

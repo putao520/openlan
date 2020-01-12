@@ -60,7 +60,7 @@ func (t *TcpWorker) Initialize() {
 	}
 }
 
-func (t *TcpWorker) Start(p Pointer) {
+func (t *TcpWorker) Start() {
 	t.Initialize()
 	t.Connect()
 

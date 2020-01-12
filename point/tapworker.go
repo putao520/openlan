@@ -244,7 +244,7 @@ func (a *TapWorker) Close() {
 	}
 }
 
-func (a *TapWorker) Start(p Pointer) {
+func (a *TapWorker) Start() {
 	a.Initialize()
 
 	go a.Read()

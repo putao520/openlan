@@ -3,7 +3,10 @@ package main
 import (
 	"fmt"
 	"github.com/danieldin95/openlan-go/config"
+	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/point"
+	"os"
+	"os/signal"
 )
 
 func main() {
@@ -13,17 +16,27 @@ func main() {
 	s.CallBefore()
 	p := point.NewPoint(c)
 	p.Start()
-	s.CallAfter(p.IfName(), p.IfAddr)
+	s.CallAfter(p.IfName(), p.IfAddr())
 
-	for {
-		fmt.Println("Please press enter `q` to exit...")
+	x := make(chan os.Signal)
+	signal.Notify(x)
 
-		input := ""
-		if fmt.Scanln(&input); input == "q" {
-			break
+	go func() {
+		for {
+			input := ""
+			if fmt.Scanln(&input); input == "quit" {
+				fmt.Printf("press `CTRL+C` to exit...\n")
+				break
+			}
+			fmt.Printf("UUID  : %s\n", p.UUID())
+			fmt.Printf("State : %s\n", p.State())
+			fmt.Printf("Uptime: %d\n", p.UpTime())
+			fmt.Printf("Device: %s\n", p.IfName())
 		}
-	}
+	}()
 
+	sig := <-x
+	libol.Warn("exit by %d", sig)
 	s.CallExit()
 	p.Stop()
 	fmt.Println("Done!")

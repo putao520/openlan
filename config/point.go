@@ -56,6 +56,9 @@ func NewPoint() (c *Point) {
 		LogFile: PointDefault.LogFile,
 	}
 
+	if runtime.GOOS == "darwin" {
+		PointDefault.IfTun = true
+	}
 	flag.StringVar(&c.Alias, "alias", PointDefault.Alias, "the alias for this point")
 	flag.StringVar(&c.Addr, "vs:addr", PointDefault.Addr, "the server connect to")
 	flag.StringVar(&c.Auth, "vs:auth", PointDefault.Auth, "the auth login to")

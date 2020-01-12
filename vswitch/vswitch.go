@@ -5,6 +5,7 @@ import (
 	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/network"
+	"runtime"
 	"sync"
 )
 
@@ -54,7 +55,8 @@ func (v *VSwitch) Initialize() {
 	if v.Conf.HttpListen != "" {
 		v.http = NewHttp(v.worker, v.Conf)
 	}
-	if v.Conf.Bridger == "linux" {
+
+	if v.Conf.Bridger == "linux" && runtime.GOOS == "linux" {
 		v.bridge = network.NewLinuxBridge(v.Conf.BrName, v.Conf.IfMtu)
 	} else {
 		v.bridge = network.NewVirtualBridge(v.Conf.BrName, v.Conf.IfMtu)

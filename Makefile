@@ -2,7 +2,7 @@
 
 linux:
 	go build -mod=vendor -o ./resource/point.linux.x86_64 main/point_linux.go
-	go build -mod=vendor -o ./resource/vswitch.linux.x86_64 main/vswitch_linux.go
+	go build -mod=vendor -o ./resource/vswitch.linux.x86_64 main/vswitch.go
 
 windows:
 	go build -mod=vendor -o ./resource/point.windows.x86_64 main/point_windows.go

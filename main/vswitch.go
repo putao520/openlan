@@ -3,12 +3,10 @@ package main
 import (
 	"fmt"
 	"github.com/danieldin95/openlan-go/config"
+	"github.com/danieldin95/openlan-go/vswitch"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
-
-	"github.com/danieldin95/openlan-go/vswitch"
 )
 
 func main() {
@@ -22,15 +20,12 @@ func main() {
 
 	x := make(chan os.Signal)
 	signal.Notify(x, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-x
-		s.CallExit()
-		vs.Stop()
-		fmt.Println("Done!")
-		os.Exit(0)
-	}()
+	signal.Notify(x, os.Interrupt, syscall.SIGKILL)
+	signal.Notify(x, os.Interrupt, syscall.SIGQUIT) //CTL+/
+	signal.Notify(x, os.Interrupt, syscall.SIGINT) //CTL+C
 
-	for {
-		time.Sleep(1000 * time.Second)
-	}
+	<-x
+	s.CallExit()
+	vs.Stop()
+	fmt.Println("Done!")
 }

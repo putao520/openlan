@@ -24,11 +24,13 @@ func (b *LinuxBridge) Open(addr string) {
 	var err error
 	var dev netlink.Link
 
+	libol.Debug("LinuxBridge.Open: %s", b.name)
+
 	la := netlink.LinkAttrs{TxQLen: -1, Name: b.name}
 	br := &netlink.Bridge{LinkAttrs: la}
 
 	dev, err = netlink.LinkByName(b.name)
-	if br == nil {
+	if dev == nil {
 		err := netlink.LinkAdd(br)
 		if err != nil {
 			libol.Error("LinuxBridge.newBr: %s", err)
