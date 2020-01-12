@@ -1,7 +1,6 @@
 package point
 
 import (
-	"context"
 	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/network"
@@ -101,14 +100,13 @@ func (a *TapWorker) NewEth(t uint16) *libol.Ether {
 	return eth
 }
 
-func (a *TapWorker) Read(ctx context.Context) {
+func (a *TapWorker) Read() {
 	defer libol.Catch("TapWorker.Read")
-	defer a.Close()
 
 	libol.Info("TapWorker.Read")
 	for {
 		if a.Device == nil {
-			return
+			break
 		}
 
 		data := make([]byte, a.pointCfg.IfMtu)
@@ -136,6 +134,9 @@ func (a *TapWorker) Read(ctx context.Context) {
 			}
 		}
 	}
+
+	a.Close()
+	libol.Info("TapWorker.Read exit")
 }
 
 func (a *TapWorker) DoWrite(data []byte) error {
@@ -186,54 +187,49 @@ func (a *TapWorker) onArp(data []byte) bool {
 		if a.Listener.ReadAt != nil {
 			a.Listener.ReadAt(buffer)
 		}
-
 		return true
 	}
-
 	return false
 }
 
-func (a *TapWorker) Loop(ctx context.Context) {
-	defer libol.Catch("TapWorker.Loop")
-	defer a.Close()
-
+func (a *TapWorker) Loop() {
 	libol.Info("TapWorker.Loop")
+	defer libol.Catch("TapWorker.Loop")
 
 	for {
-		select {
-		case w := <-a.writeChan:
-			if a.Device == nil {
-				return
+		w, ok := <-a.writeChan
+		if a.Device == nil || !ok {
+			break
+		}
+
+		if a.Device.IsTun() {
+			//Proxy arp request.
+			if a.onArp(w) {
+				libol.Info("TapWorker.Loop: Arp proxy.")
+				continue
 			}
 
-			if a.Device.IsTun() {
-				//Proxy arp request.
-				if a.onArp(w) {
-					libol.Info("TapWorker.Loop: Arp proxy.")
-					continue
-				}
-
-				eth, err := libol.NewEtherFromFrame(w)
-				if err != nil {
-					libol.Error("TapWorker.Loop: %s", err)
-					continue
-				}
-				if eth.IsVlan() {
-					w = w[18:]
-				} else if eth.IsIP4() {
-					w = w[14:]
-				} else { // default is Ethernet is 14 bytes.
-					w = w[14:]
-				}
-			}
-
-			if _, err := a.Device.Write(w); err != nil {
+			eth, err := libol.NewEtherFromFrame(w)
+			if err != nil {
 				libol.Error("TapWorker.Loop: %s", err)
+				continue
 			}
-		case <-ctx.Done():
-			return
+			if eth.IsVlan() {
+				w = w[18:]
+			} else if eth.IsIP4() {
+				w = w[14:]
+			} else { // default is Ethernet is 14 bytes.
+				w = w[14:]
+			}
+		}
+
+		if _, err := a.Device.Write(w); err != nil {
+			libol.Error("TapWorker.Loop: %s", err)
 		}
 	}
+
+	a.Close()
+	libol.Info("TapWorker.Loop exit")
 }
 
 func (a *TapWorker) Close() {
@@ -248,11 +244,11 @@ func (a *TapWorker) Close() {
 	}
 }
 
-func (a *TapWorker) Start(ctx context.Context, p Pointer) {
+func (a *TapWorker) Start(p Pointer) {
 	a.Initialize()
 
-	go a.Read(ctx)
-	go a.Loop(ctx)
+	go a.Read()
+	go a.Loop()
 }
 
 func (a *TapWorker) Stop() {

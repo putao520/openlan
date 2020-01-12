@@ -1,7 +1,6 @@
 package point
 
 import (
-	"context"
 	"encoding/json"
 	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
@@ -61,11 +60,12 @@ func (t *TcpWorker) Initialize() {
 	}
 }
 
-func (t *TcpWorker) Start(ctx context.Context, p Pointer) {
+func (t *TcpWorker) Start(p Pointer) {
 	t.Initialize()
+	t.Connect()
 
-	go t.Read(ctx)
-	go t.Loop(ctx)
+	go t.Read()
+	go t.Loop()
 }
 
 func (t *TcpWorker) Stop() {
@@ -75,6 +75,10 @@ func (t *TcpWorker) Stop() {
 }
 
 func (t *TcpWorker) Close() {
+	if t.Client == nil {
+		return
+	}
+
 	if t.Listener.OnClose != nil {
 		t.Listener.OnClose(t)
 	}
@@ -170,15 +174,13 @@ func (t *TcpWorker) onInstruct(data []byte) error {
 	return nil
 }
 
-func (t *TcpWorker) Read(ctx context.Context) {
-	defer libol.Catch("TcpWorker.Read")
-	defer t.Close()
-
+func (t *TcpWorker) Read() {
 	libol.Info("TcpWorker.Read %t", t.Client.IsOk())
+	defer libol.Catch("TcpWorker.Read")
 
 	for {
-		if t.Client.IsTerminal() {
-			return
+		if t.Client == nil || t.Client.IsTerminal() {
+			break
 		}
 
 		if !t.Client.IsOk() {
@@ -205,6 +207,9 @@ func (t *TcpWorker) Read(ctx context.Context) {
 			}
 		}
 	}
+
+	t.Close()
+	libol.Info("TcpWorker.Read exit")
 }
 
 func (t *TcpWorker) DoWrite(data []byte) error {
@@ -215,26 +220,28 @@ func (t *TcpWorker) DoWrite(data []byte) error {
 	return nil
 }
 
-func (t *TcpWorker) Loop(ctx context.Context) {
+func (t *TcpWorker) Loop() {
 	defer libol.Catch("TcpWorker.Loop")
-	defer t.Close()
 
 	for {
-		select {
-		case w := <-t.writeChan:
-			if t.Client.Status() != libol.CL_AUEHED {
-				t.Client.Sts.Dropped++
-				libol.Error("TcpWorker.Loop: dropping by unAuth")
-				continue
-			}
+		w, ok := <-t.writeChan
+		if !ok  || t.Client == nil {
+			break
+		}
 
-			if err := t.Client.WriteMsg(w); err != nil {
-				libol.Error("TcpWorker.Loop: %s", err)
-			}
-		case <-ctx.Done():
-			return
+		if t.Client.Status() != libol.CL_AUEHED {
+			t.Client.Sts.Dropped++
+			libol.Error("TcpWorker.Loop: dropping by unAuth")
+			continue
+		}
+		if err := t.Client.WriteMsg(w); err != nil {
+			libol.Error("TcpWorker.Loop: %s", err)
+			break
 		}
 	}
+
+	t.Close()
+	libol.Info("TcpWorker.Loop exit")
 }
 
 func (t *TcpWorker) Auth() (string, string) {

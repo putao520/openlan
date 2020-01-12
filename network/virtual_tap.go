@@ -22,8 +22,6 @@ func NewVirtualTap(isTap bool, name string) (*VirtualTap, error) {
 	tap := &VirtualTap{
 		isTap:  isTap,
 		name:   name,
-		writeQ: make(chan []byte, 1024*32),
-		readQ:  make(chan []byte, 1024*16),
 	}
 	Tapers.Add(tap)
 
@@ -44,7 +42,7 @@ func (t *VirtualTap) Name() string {
 
 func (t *VirtualTap) Read(p []byte) (n int, err error) {
 	t.lock.RLock()
-	if t.closed {
+	if t.closed  || t.readQ == nil {
 		t.lock.RUnlock()
 		return 0, libol.NewErr("Close")
 	}
@@ -57,7 +55,7 @@ func (t *VirtualTap) Read(p []byte) (n int, err error) {
 func (t *VirtualTap) InRead(p []byte) (n int, err error) {
 	libol.Debug("VirtualTap.InRead: %s % x", t, p[:20])
 	t.lock.RLock()
-	if t.closed {
+	if t.closed || t.readQ == nil {
 		t.lock.RUnlock()
 		return 0, libol.NewErr("Close")
 	}
@@ -70,7 +68,7 @@ func (t *VirtualTap) InRead(p []byte) (n int, err error) {
 func (t *VirtualTap) Write(p []byte) (n int, err error) {
 	libol.Debug("VirtualTap.Write: %s % x", t, p[:20])
 	t.lock.RLock()
-	if t.closed {
+	if t.closed  || t.writeQ == nil {
 		t.lock.RUnlock()
 		return 0, libol.NewErr("Close")
 	}
@@ -82,7 +80,7 @@ func (t *VirtualTap) Write(p []byte) (n int, err error) {
 
 func (t *VirtualTap) OutWrite() ([]byte, error) {
 	t.lock.RLock()
-	if t.closed {
+	if t.closed  || t.writeQ == nil {
 		t.lock.RUnlock()
 		return nil, libol.NewErr("Close")
 	}
@@ -122,7 +120,10 @@ func (t *VirtualTap) Close() error {
 		t.bridge.DelSlave(t)
 		t.bridge = nil
 	}
+	t.readQ = nil
+	t.writeQ = nil
 	Tapers.Del(t.name)
+
 	return nil
 }
 
@@ -134,6 +135,15 @@ func (t *VirtualTap) Slave(bridge Bridger) {
 
 func (t *VirtualTap) Up() {
 	t.lock.Lock()
+	if t.closed {
+		Tapers.Add(t)
+	}
+	if t.writeQ == nil {
+		t.writeQ = make(chan []byte, 1024*32)
+	}
+	if t.readQ == nil {
+		t.readQ  = make(chan []byte, 1024*16)
+	}
 	t.closed = false
 	t.lock.Unlock()
 

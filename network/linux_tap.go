@@ -1,10 +1,13 @@
 package network
 
 import (
+	"github.com/danieldin95/openlan-go/libol"
 	"github.com/songgao/water"
+	"sync"
 )
 
 type LinuxTap struct {
+	lock   sync.RWMutex
 	isTap  bool
 	name   string
 	device *water.Interface
@@ -23,7 +26,7 @@ func NewLinuxTap(isTap bool, name string) (*LinuxTap, error) {
 	tap := &LinuxTap{
 		device: device,
 		name:   device.Name(),
-		isTap:  device.IsTAP(),
+		isTap:  isTap,
 	}
 
 	Tapers.Add(tap)
@@ -44,25 +47,55 @@ func (t *LinuxTap) Name() string {
 }
 
 func (t *LinuxTap) Read(p []byte) (n int, err error) {
+	t.lock.RLock()
+	if t.device == nil {
+		t.lock.RUnlock()
+		return 0, libol.NewErr("Closed")
+	}
+	t.lock.RUnlock()
+
 	return t.device.Read(p)
 }
 
 func (t *LinuxTap) InRead(p []byte) (n int, err error) {
-	//TODO
+	t.lock.RLock()
+	if t.device == nil {
+		t.lock.RUnlock()
+		return 0, libol.NewErr("Closed")
+	}
+	t.lock.RUnlock()
+
 	return 0, nil
 }
 
 func (t *LinuxTap) Write(p []byte) (n int, err error) {
+	t.lock.RLock()
+	if t.device == nil {
+		t.lock.RUnlock()
+		return 0, libol.NewErr("Closed")
+	}
+	t.lock.RUnlock()
+
 	return t.device.Write(p)
 }
 
 func (t *LinuxTap) Close() error {
+	t.lock.RLock()
+	defer t.lock.RUnlock()
+
+	if t.device == nil {
+		return nil
+	}
+
 	Tapers.Del(t.name)
 	if t.bridge != nil {
 		t.bridge.DelSlave(t)
 		t.bridge = nil
 	}
-	return t.device.Close()
+	err := t.device.Close()
+	t.device = nil
+
+	return err
 }
 
 func (t *LinuxTap) Slave(bridge Bridger) {
@@ -71,8 +104,23 @@ func (t *LinuxTap) Slave(bridge Bridger) {
 	}
 }
 
-func (t LinuxTap) Up() {
-	//TODO
+func (t *LinuxTap) Up() {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+
+	if t.device == nil {
+		deviceType := water.DeviceType(water.TUN)
+		if t.IsTap() {
+			deviceType = water.TAP
+		}
+		device, err := water.New(water.Config{DeviceType: deviceType})
+		if err != nil {
+			libol.Error("LinuxTap.Up %s", err)
+			return
+		}
+		t.device = device
+		Tapers.Add(t)
+	}
 }
 
 func (t *LinuxTap) String() string {

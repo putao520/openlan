@@ -1,7 +1,6 @@
 package point
 
 import (
-	"context"
 	"crypto/tls"
 	"fmt"
 	"github.com/danieldin95/openlan-go/config"
@@ -59,33 +58,27 @@ func (p *Point) Initialize() {
 }
 
 func (p *Point) Start() {
+	libol.Debug("Point.Start linux.")
 	if p.tapWorker != nil || p.tcpWorker != nil {
 		return
 	}
 
 	p.Initialize()
 
-	libol.Debug("Point.Start linux.")
-	ctx := context.Background()
-
 	p.tcpWorker.SetUUID(p.UUID())
-	if err := p.tcpWorker.Connect(); err != nil {
-		libol.Error("Point.Start %s", err)
-	}
-
-	p.tapWorker.Listener = TapWorkerListener{
-		OnOpen: p.OnTap,
-		ReadAt: p.tcpWorker.DoWrite,
-	}
-	p.tapWorker.Start(ctx, p)
-
 	p.tcpWorker.Listener = TcpWorkerListener{
 		OnClose:   p.OnClose,
 		OnSuccess: p.OnSuccess,
 		OnIpAddr:  p.OnIpAddr,
 		ReadAt:    p.tapWorker.DoWrite,
 	}
-	p.tcpWorker.Start(ctx, p)
+	p.tapWorker.Listener = TapWorkerListener{
+		OnOpen: p.OnTap,
+		ReadAt: p.tcpWorker.DoWrite,
+	}
+
+	p.tapWorker.Start(p)
+	p.tcpWorker.Start(p)
 }
 
 func (p *Point) Stop() {

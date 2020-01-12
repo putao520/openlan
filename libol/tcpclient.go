@@ -81,7 +81,11 @@ func (t *TcpClient) Connect() (err error) {
 		return nil
 	}
 
-	Info("TcpClient.Connect %s,%p", t.Addr, t.TlsConf)
+	schema := "tcp"
+	if t.TlsConf != nil {
+		schema = "tls"
+	}
+	Info("TcpClient.Connect %s://%s", schema, t.Addr)
 	t.SetStatus(CL_CONNECTING)
 	if t.TlsConf != nil {
 		t.conn, err = tls.Dial("tcp", t.Addr, t.TlsConf)
