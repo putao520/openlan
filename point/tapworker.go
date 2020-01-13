@@ -6,6 +6,7 @@ import (
 	"github.com/danieldin95/openlan-go/network"
 	"github.com/songgao/water"
 	"net"
+	"sync"
 	"time"
 )
 
@@ -23,6 +24,7 @@ type TapWorker struct {
 	EthSrcAddr []byte
 	EthSrcIp   []byte
 
+	lock      sync.RWMutex
 	writeChan chan []byte
 	devCfg    *water.Config
 	pointCfg  *config.Point
@@ -234,6 +236,8 @@ func (a *TapWorker) Loop() {
 
 func (a *TapWorker) Close() {
 	libol.Info("TapWorker.Close")
+	a.lock.Lock()
+	defer a.lock.Unlock()
 
 	if a.Device != nil {
 		if a.Listener.OnClose != nil {

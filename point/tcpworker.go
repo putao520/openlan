@@ -6,6 +6,7 @@ import (
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -17,6 +18,7 @@ type TcpWorkerListener struct {
 }
 
 type TcpWorker struct {
+	lock     sync.RWMutex
 	Listener TcpWorkerListener
 	Client   *libol.TcpClient
 
@@ -69,12 +71,18 @@ func (t *TcpWorker) Start() {
 }
 
 func (t *TcpWorker) Stop() {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+
 	close(t.writeChan)
 	t.Client.Terminal()
 	t.Client = nil
 }
 
 func (t *TcpWorker) Close() {
+	t.lock.RLock()
+	defer t.lock.RUnlock()
+
 	if t.Client == nil {
 		return
 	}
