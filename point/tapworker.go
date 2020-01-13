@@ -117,7 +117,7 @@ func (a *TapWorker) Read() {
 			continue
 		}
 
-		libol.Debug("TapWorker.Read: % x", data[:n])
+		libol.Debug("TapWorker.Read: %x", data[:n])
 		if a.Device.IsTun() {
 			eth := a.NewEth(libol.ETHPIP4)
 
@@ -140,7 +140,7 @@ func (a *TapWorker) Read() {
 }
 
 func (a *TapWorker) DoWrite(data []byte) error {
-	libol.Debug("TapWorker.DoWrite: % x", data)
+	libol.Debug("TapWorker.DoWrite: %x", data)
 
 	a.writeChan <- data
 
@@ -183,7 +183,7 @@ func (a *TapWorker) onArp(data []byte) bool {
 		buffer = append(buffer, eth.Encode()...)
 		buffer = append(buffer, reply.Encode()...)
 
-		libol.Info("TapWorker.onArp % x.", buffer)
+		libol.Info("TapWorker.onArp %x.", buffer)
 		if a.Listener.ReadAt != nil {
 			a.Listener.ReadAt(buffer)
 		}

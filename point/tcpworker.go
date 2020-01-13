@@ -197,7 +197,7 @@ func (t *TcpWorker) Read() {
 			continue
 		}
 
-		libol.Debug("TcpWorker.Read: % x", data[:n])
+		libol.Debug("TcpWorker.Read: %x", data[:n])
 		if n > 0 {
 			frame := data[:n]
 			if libol.IsControl(frame) {
@@ -213,7 +213,7 @@ func (t *TcpWorker) Read() {
 }
 
 func (t *TcpWorker) DoWrite(data []byte) error {
-	libol.Debug("TcpWorker.DoWrite: % x", data)
+	libol.Debug("TcpWorker.DoWrite: %x", data)
 
 	t.writeChan <- data
 
