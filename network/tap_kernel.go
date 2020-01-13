@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-type LinuxTap struct {
+type KernelTap struct {
 	lock   sync.RWMutex
 	isTap  bool
 	name   string
@@ -14,7 +14,7 @@ type LinuxTap struct {
 	bridge Bridger
 }
 
-func NewLinuxTap(isTap bool, name string) (*LinuxTap, error) {
+func NewKernelTap(isTap bool, name string) (*KernelTap, error) {
 	deviceType := water.DeviceType(water.TUN)
 	if isTap {
 		deviceType = water.TAP
@@ -23,7 +23,7 @@ func NewLinuxTap(isTap bool, name string) (*LinuxTap, error) {
 	if err != nil {
 		return nil, err
 	}
-	tap := &LinuxTap{
+	tap := &KernelTap{
 		device: device,
 		name:   device.Name(),
 		isTap:  isTap,
@@ -34,19 +34,19 @@ func NewLinuxTap(isTap bool, name string) (*LinuxTap, error) {
 	return tap, nil
 }
 
-func (t *LinuxTap) IsTun() bool {
+func (t *KernelTap) IsTun() bool {
 	return !t.isTap
 }
 
-func (t *LinuxTap) IsTap() bool {
+func (t *KernelTap) IsTap() bool {
 	return t.isTap
 }
 
-func (t *LinuxTap) Name() string {
+func (t *KernelTap) Name() string {
 	return t.name
 }
 
-func (t *LinuxTap) Read(p []byte) (n int, err error) {
+func (t *KernelTap) Read(p []byte) (n int, err error) {
 	t.lock.RLock()
 	if t.device == nil {
 		t.lock.RUnlock()
@@ -57,7 +57,7 @@ func (t *LinuxTap) Read(p []byte) (n int, err error) {
 	return t.device.Read(p)
 }
 
-func (t *LinuxTap) InRead(p []byte) (n int, err error) {
+func (t *KernelTap) InRead(p []byte) (n int, err error) {
 	t.lock.RLock()
 	if t.device == nil {
 		t.lock.RUnlock()
@@ -68,7 +68,7 @@ func (t *LinuxTap) InRead(p []byte) (n int, err error) {
 	return 0, nil
 }
 
-func (t *LinuxTap) Write(p []byte) (n int, err error) {
+func (t *KernelTap) Write(p []byte) (n int, err error) {
 	t.lock.RLock()
 	if t.device == nil {
 		t.lock.RUnlock()
@@ -79,7 +79,7 @@ func (t *LinuxTap) Write(p []byte) (n int, err error) {
 	return t.device.Write(p)
 }
 
-func (t *LinuxTap) Close() error {
+func (t *KernelTap) Close() error {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 
@@ -98,13 +98,13 @@ func (t *LinuxTap) Close() error {
 	return err
 }
 
-func (t *LinuxTap) Slave(bridge Bridger) {
+func (t *KernelTap) Slave(bridge Bridger) {
 	if t.bridge == nil {
 		t.bridge = bridge
 	}
 }
 
-func (t *LinuxTap) Up() {
+func (t *KernelTap) Up() {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
@@ -115,7 +115,7 @@ func (t *LinuxTap) Up() {
 		}
 		device, err := water.New(water.Config{DeviceType: deviceType})
 		if err != nil {
-			libol.Error("LinuxTap.Up %s", err)
+			libol.Error("KernelTap.Up %s", err)
 			return
 		}
 		t.device = device
@@ -123,6 +123,6 @@ func (t *LinuxTap) Up() {
 	}
 }
 
-func (t *LinuxTap) String() string {
+func (t *KernelTap) String() string {
 	return t.name
 }

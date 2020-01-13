@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-type VirtualTap struct {
+type UserSpaceTap struct {
 	lock   sync.RWMutex
 	closed bool
 	isTap  bool
@@ -15,11 +15,11 @@ type VirtualTap struct {
 	bridge Bridger
 }
 
-func NewVirtualTap(isTap bool, name string) (*VirtualTap, error) {
+func NewUserSpaceTap(isTap bool, name string) (*UserSpaceTap, error) {
 	if name == "" {
 		name = Tapers.GenName()
 	}
-	tap := &VirtualTap{
+	tap := &UserSpaceTap{
 		isTap: isTap,
 		name:  name,
 	}
@@ -28,19 +28,19 @@ func NewVirtualTap(isTap bool, name string) (*VirtualTap, error) {
 	return tap, nil
 }
 
-func (t *VirtualTap) IsTun() bool {
+func (t *UserSpaceTap) IsTun() bool {
 	return !t.isTap
 }
 
-func (t *VirtualTap) IsTap() bool {
+func (t *UserSpaceTap) IsTap() bool {
 	return t.isTap
 }
 
-func (t *VirtualTap) Name() string {
+func (t *UserSpaceTap) Name() string {
 	return t.name
 }
 
-func (t *VirtualTap) Read(p []byte) (n int, err error) {
+func (t *UserSpaceTap) Read(p []byte) (n int, err error) {
 	t.lock.RLock()
 	if t.closed || t.readQ == nil {
 		t.lock.RUnlock()
@@ -52,8 +52,8 @@ func (t *VirtualTap) Read(p []byte) (n int, err error) {
 	return copy(p, result), nil
 }
 
-func (t *VirtualTap) InRead(p []byte) (n int, err error) {
-	libol.Debug("VirtualTap.InRead: %s % x", t, p[:20])
+func (t *UserSpaceTap) InRead(p []byte) (n int, err error) {
+	libol.Debug("UserSpaceTap.InRead: %s % x", t, p[:20])
 	t.lock.RLock()
 	if t.closed || t.readQ == nil {
 		t.lock.RUnlock()
@@ -65,8 +65,8 @@ func (t *VirtualTap) InRead(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-func (t *VirtualTap) Write(p []byte) (n int, err error) {
-	libol.Debug("VirtualTap.Write: %s % x", t, p[:20])
+func (t *UserSpaceTap) Write(p []byte) (n int, err error) {
+	libol.Debug("UserSpaceTap.Write: %s % x", t, p[:20])
 	t.lock.RLock()
 	if t.closed || t.writeQ == nil {
 		t.lock.RUnlock()
@@ -78,7 +78,7 @@ func (t *VirtualTap) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-func (t *VirtualTap) OutWrite() ([]byte, error) {
+func (t *UserSpaceTap) OutWrite() ([]byte, error) {
 	t.lock.RLock()
 	if t.closed || t.writeQ == nil {
 		t.lock.RUnlock()
@@ -89,13 +89,13 @@ func (t *VirtualTap) OutWrite() ([]byte, error) {
 	return <-t.writeQ, nil
 }
 
-func (t *VirtualTap) Deliver() {
+func (t *UserSpaceTap) Deliver() {
 	for {
 		data, err := t.OutWrite()
 		if err != nil || data == nil {
 			break
 		}
-		libol.Debug("VirtualTap.Deliver: %s % x", t, data[:20])
+		libol.Debug("UserSpaceTap.Deliver: %s % x", t, data[:20])
 		if t.bridge == nil {
 			continue
 		}
@@ -105,7 +105,7 @@ func (t *VirtualTap) Deliver() {
 	}
 }
 
-func (t *VirtualTap) Close() error {
+func (t *UserSpaceTap) Close() error {
 	t.lock.Lock()
 	if t.closed {
 		t.lock.Unlock()
@@ -127,13 +127,13 @@ func (t *VirtualTap) Close() error {
 	return nil
 }
 
-func (t *VirtualTap) Slave(bridge Bridger) {
+func (t *UserSpaceTap) Slave(bridge Bridger) {
 	if t.bridge == nil {
 		t.bridge = bridge
 	}
 }
 
-func (t *VirtualTap) Up() {
+func (t *UserSpaceTap) Up() {
 	t.lock.Lock()
 	if t.closed {
 		Tapers.Add(t)
@@ -150,6 +150,6 @@ func (t *VirtualTap) Up() {
 	go t.Deliver()
 }
 
-func (t *VirtualTap) String() string {
+func (t *UserSpaceTap) String() string {
 	return t.name
 }

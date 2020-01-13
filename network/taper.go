@@ -17,6 +17,13 @@ type Taper interface {
 	Up()
 }
 
+func NewTaper(tap, name string, isTap bool) (Taper, error) {
+	if tap == "linux" {
+		return NewKernelTap(isTap, name)
+	}
+	return NewUserSpaceTap(isTap, name)
+}
+
 type tapers struct {
 	lock    sync.RWMutex
 	index   int

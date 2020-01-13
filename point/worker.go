@@ -2,13 +2,529 @@ package point
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/network"
 	"github.com/songgao/water"
+	"net"
+	"strings"
+	"sync"
+	"time"
 )
+
+type TcpWorkerListener struct {
+	OnClose   func(w *TcpWorker) error
+	OnSuccess func(w *TcpWorker) error
+	OnIpAddr  func(w *TcpWorker, n *models.Network) error
+	ReadAt    func(p []byte) error
+}
+
+type TcpWorker struct {
+	lock     sync.RWMutex
+	Listener TcpWorkerListener
+	Client   *libol.TcpClient
+
+	writeChan chan []byte
+	maxSize   int
+	alias     string
+	user      *models.User
+	network   *models.Network
+	routes    map[string]*models.Route
+	allowed   bool
+}
+
+func NewTcpWorker(client *libol.TcpClient, c *config.Point) (t *TcpWorker) {
+	t = &TcpWorker{
+		Client:    client,
+		writeChan: make(chan []byte, 1024*10),
+		maxSize:   c.IfMtu,
+		user:      models.NewUser(c.Name(), c.Password()),
+		network:   models.NewNetwork(c.Tenant(), c.IfAddr),
+		routes:    make(map[string]*models.Route, 64),
+		allowed:   c.Allowed,
+	}
+	t.user.Alias = c.Alias
+
+	return
+}
+
+func (t *TcpWorker) Initialize() {
+	if t.Client == nil {
+		return
+	}
+
+	t.Client.SetMaxSize(t.maxSize)
+	t.Client.Listener = libol.TcpClientListener{
+		OnConnected: func(client *libol.TcpClient) error {
+			return t.TryLogin(client)
+		},
+		OnClose: func(client *libol.TcpClient) error {
+			return nil
+		},
+	}
+}
+
+func (t *TcpWorker) Start() {
+	t.Initialize()
+	t.Connect()
+
+	go t.Read()
+	go t.Loop()
+}
+
+func (t *TcpWorker) Stop() {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+
+	close(t.writeChan)
+	t.Client.Terminal()
+	t.Client = nil
+}
+
+func (t *TcpWorker) Close() {
+	t.lock.RLock()
+	defer t.lock.RUnlock()
+
+	if t.Client == nil {
+		return
+	}
+
+	if t.Listener.OnClose != nil {
+		t.Listener.OnClose(t)
+	}
+	t.Client.Close()
+}
+
+func (t *TcpWorker) Connect() error {
+	s := t.Client.Status()
+	if s != libol.CL_INIT {
+		libol.Warn("TcpWorker.Connect status %d->%d", s, libol.CL_INIT)
+		t.Client.SetStatus(libol.CL_INIT)
+	}
+
+	if err := t.Client.Connect(); err != nil {
+		libol.Error("TcpWorker.Connect %s", err)
+		return err
+	}
+	return nil
+}
+
+func (t *TcpWorker) TryLogin(client *libol.TcpClient) error {
+	body, err := json.Marshal(t.user)
+	if err != nil {
+		libol.Error("TcpWorker.TryLogin: %s", err)
+		return err
+	}
+
+	libol.Info("TcpWorker.TryLogin: %s", body)
+	if err := client.WriteReq("login", string(body)); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *TcpWorker) TryNetwork(client *libol.TcpClient) error {
+	body, err := json.Marshal(t.network)
+	if err != nil {
+		libol.Error("TcpWorker.TryNetwork: %s", err)
+		return err
+	}
+
+	libol.Info("TcpWorker.TryNetwork: %s", body)
+	if err := client.WriteReq("ipaddr", string(body)); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *TcpWorker) onInstruct(data []byte) error {
+	m := libol.NewFrameMessage(data)
+	if !m.IsControl() {
+		return nil
+	}
+
+	action, resp := m.CmdAndParams()
+	if action == "logi:" {
+		libol.Debug("TcpWorker.onInstruct.login: %s", resp)
+		if resp[:4] == "okay" {
+			t.Client.SetStatus(libol.CL_AUEHED)
+			if t.Listener.OnSuccess != nil {
+				t.Listener.OnSuccess(t)
+			}
+			if t.allowed {
+				t.TryNetwork(t.Client)
+			}
+			libol.Info("TcpWorker.onInstruct.login: success")
+		} else {
+			t.Client.SetStatus(libol.CL_UNAUTH)
+			libol.Error("TcpWorker.onInstruct.login: %s", resp)
+		}
+
+		return nil
+	}
+
+	if libol.IsErrorResponse(resp) {
+		libol.Error("TcpWorker.onInstruct.%s: %s", action, resp)
+		return nil
+	}
+
+	if action == "ipad:" {
+		net := models.Network{}
+		if err := json.Unmarshal([]byte(resp), &net); err != nil {
+			libol.NewErr("TcpWorker.onInstruct.ipaddr: Invalid json data.")
+		}
+
+		libol.Debug("TcpWorker.onInstruct.ipaddr: %s", resp)
+		if t.Listener.OnIpAddr != nil {
+			t.Listener.OnIpAddr(t, &net)
+		}
+
+	}
+
+	return nil
+}
+
+func (t *TcpWorker) Read() {
+	libol.Info("TcpWorker.Read %t", t.Client.IsOk())
+	defer libol.Catch("TcpWorker.Read")
+
+	for {
+		if t.Client == nil || t.Client.IsTerminal() {
+			break
+		}
+
+		if !t.Client.IsOk() {
+			time.Sleep(30 * time.Second) // sleep 30s and release cpu.
+			t.Connect()
+			continue
+		}
+
+		data := make([]byte, t.maxSize)
+		n, err := t.Client.ReadMsg(data)
+		if err != nil {
+			libol.Error("TcpWorker.Read: %s", err)
+			t.Close()
+			continue
+		}
+
+		libol.Debug("TcpWorker.Read: %x", data[:n])
+		if n > 0 {
+			frame := data[:n]
+			if libol.IsControl(frame) {
+				t.onInstruct(frame)
+			} else if t.Listener.ReadAt != nil {
+				t.Listener.ReadAt(frame)
+			}
+		}
+	}
+
+	t.Close()
+	libol.Info("TcpWorker.Read exit")
+}
+
+func (t *TcpWorker) DoWrite(data []byte) error {
+	libol.Debug("TcpWorker.DoWrite: %x", data)
+
+	t.writeChan <- data
+
+	return nil
+}
+
+func (t *TcpWorker) Loop() {
+	defer libol.Catch("TcpWorker.Loop")
+
+	for {
+		w, ok := <-t.writeChan
+		if !ok || t.Client == nil {
+			break
+		}
+
+		if t.Client.Status() != libol.CL_AUEHED {
+			t.Client.Sts.Dropped++
+			libol.Error("TcpWorker.Loop: dropping by unAuth")
+			continue
+		}
+		if err := t.Client.WriteMsg(w); err != nil {
+			libol.Error("TcpWorker.Loop: %s", err)
+			break
+		}
+	}
+
+	t.Close()
+	libol.Info("TcpWorker.Loop exit")
+}
+
+func (t *TcpWorker) Auth() (string, string) {
+	return t.user.Name, t.user.Password
+}
+
+func (t *TcpWorker) SetAuth(auth string) {
+	values := strings.Split(auth, ":")
+	t.user.Name = values[0]
+	if len(values) > 1 {
+		t.user.Password = values[1]
+	}
+}
+
+func (t *TcpWorker) SetAddr(addr string) {
+	t.Client.Addr = addr
+}
+
+func (t *TcpWorker) SetUUID(v string) {
+	t.user.UUID = v
+}
+
+type TapWorkerListener struct {
+	OnOpen  func(w *TapWorker) error
+	OnClose func(w *TapWorker)
+	ReadAt  func([]byte) error
+}
+
+type TapWorker struct {
+	Device   network.Taper
+	Listener TapWorkerListener
+	//for tunnel device.
+	EthDstAddr []byte
+	EthSrcAddr []byte
+	EthSrcIp   []byte
+
+	lock      sync.RWMutex
+	writeChan chan []byte
+	devCfg    *water.Config
+	pointCfg  *config.Point
+}
+
+func NewTapWorker(devCfg *water.Config, c *config.Point) (a *TapWorker) {
+	a = &TapWorker{
+		Device:    nil,
+		devCfg:    devCfg,
+		pointCfg:  c,
+		writeChan: make(chan []byte, 1024*10),
+	}
+
+	return
+}
+
+func (a *TapWorker) Initialize() {
+	a.Open()
+	a.DoTun()
+}
+
+func (a *TapWorker) DoTun() {
+	if a.Device == nil || !a.Device.IsTun() {
+		return
+	}
+
+	a.EthSrcIp = net.ParseIP(a.pointCfg.IfAddr).To4()
+	libol.Info("NewTapWorker srcIp: % x", a.EthSrcIp)
+
+	if a.pointCfg.IfEthSrc == "" {
+		a.EthSrcAddr = libol.GenEthAddr(6)
+	} else {
+		if hw, err := net.ParseMAC(a.pointCfg.IfEthSrc); err == nil {
+			a.EthSrcAddr = []byte(hw)
+		}
+	}
+	if hw, err := net.ParseMAC(a.pointCfg.IfEthDst); err == nil {
+		a.EthDstAddr = []byte(hw)
+	}
+	libol.Info("NewTapWorker src: %x, dst: %x", a.EthSrcAddr, a.EthDstAddr)
+
+}
+
+func (a *TapWorker) Open() {
+	if a.Device != nil {
+		a.Device.Close()
+		time.Sleep(5 * time.Second) // sleep 5s and release cpu.
+	}
+
+	var err error
+	var dev network.Taper
+	if a.devCfg.DeviceType == water.TAP {
+		dev, err = network.NewKernelTap(true, "")
+	} else {
+		dev, err = network.NewKernelTap(false, "")
+	}
+	if err != nil {
+		libol.Error("TapWorker.Open %s", err)
+		return
+	}
+
+	libol.Info("TapWorker.Open %s", dev.Name())
+	a.Device = dev
+	if a.Listener.OnOpen != nil {
+		a.Listener.OnOpen(a)
+	}
+}
+
+func (a *TapWorker) NewEth(t uint16) *libol.Ether {
+	eth := libol.NewEther(t)
+	eth.Dst = a.EthDstAddr
+	eth.Src = a.EthSrcAddr
+
+	return eth
+}
+
+func (a *TapWorker) Read() {
+	defer libol.Catch("TapWorker.Read")
+
+	libol.Info("TapWorker.Read")
+	for {
+		if a.Device == nil {
+			break
+		}
+
+		data := make([]byte, a.pointCfg.IfMtu)
+		n, err := a.Device.Read(data)
+		if err != nil {
+			libol.Error("TapWorker.Read: %s", err)
+			a.Open()
+			continue
+		}
+
+		libol.Debug("TapWorker.Read: %x", data[:n])
+		if a.Device.IsTun() {
+			eth := a.NewEth(libol.ETHPIP4)
+
+			buffer := make([]byte, 0, a.pointCfg.IfMtu)
+			buffer = append(buffer, eth.Encode()...)
+			buffer = append(buffer, data[0:n]...)
+			n += eth.Len
+			if a.Listener.ReadAt != nil {
+				a.Listener.ReadAt(buffer[:n])
+			}
+		} else {
+			if a.Listener.ReadAt != nil {
+				a.Listener.ReadAt(data[:n])
+			}
+		}
+	}
+
+	a.Close()
+	libol.Info("TapWorker.Read exit")
+}
+
+func (a *TapWorker) DoWrite(data []byte) error {
+	libol.Debug("TapWorker.DoWrite: %x", data)
+
+	a.writeChan <- data
+
+	return nil
+}
+
+func (a *TapWorker) onArp(data []byte) bool {
+	libol.Debug("TapWorker.onArp")
+	eth, err := libol.NewEtherFromFrame(data)
+	if err != nil {
+		libol.Warn("TapWorker.onArp %s", err)
+		return false
+	}
+
+	if !eth.IsArp() {
+		return false
+	}
+
+	arp, err := libol.NewArpFromFrame(data[eth.Len:])
+	if err != nil {
+		libol.Error("TapWorker.onArp %s.", err)
+		return false
+	}
+
+	if arp.IsIP4() {
+		if arp.OpCode != libol.ARP_REQUEST {
+			return false
+		}
+
+		eth := a.NewEth(libol.ETHPARP)
+
+		reply := libol.NewArp()
+		reply.OpCode = libol.ARP_REPLY
+		reply.SIpAddr = a.EthSrcIp
+		reply.TIpAddr = arp.SIpAddr
+		reply.SHwAddr = a.EthSrcAddr
+		reply.THwAddr = arp.SHwAddr
+
+		buffer := make([]byte, 0, a.pointCfg.IfMtu)
+		buffer = append(buffer, eth.Encode()...)
+		buffer = append(buffer, reply.Encode()...)
+
+		libol.Info("TapWorker.onArp %x.", buffer)
+		if a.Listener.ReadAt != nil {
+			a.Listener.ReadAt(buffer)
+		}
+		return true
+	}
+	return false
+}
+
+func (a *TapWorker) Loop() {
+	libol.Info("TapWorker.Loop")
+	defer libol.Catch("TapWorker.Loop")
+
+	for {
+		w, ok := <-a.writeChan
+		if a.Device == nil || !ok {
+			break
+		}
+
+		if a.Device.IsTun() {
+			//Proxy arp request.
+			if a.onArp(w) {
+				libol.Info("TapWorker.Loop: Arp proxy.")
+				continue
+			}
+
+			eth, err := libol.NewEtherFromFrame(w)
+			if err != nil {
+				libol.Error("TapWorker.Loop: %s", err)
+				continue
+			}
+			if eth.IsVlan() {
+				w = w[18:]
+			} else if eth.IsIP4() {
+				w = w[14:]
+			} else { // default is Ethernet is 14 bytes.
+				w = w[14:]
+			}
+		}
+
+		if _, err := a.Device.Write(w); err != nil {
+			libol.Error("TapWorker.Loop: %s", err)
+		}
+	}
+
+	a.Close()
+	libol.Info("TapWorker.Loop exit")
+}
+
+func (a *TapWorker) Close() {
+	libol.Info("TapWorker.Close")
+	a.lock.Lock()
+	defer a.lock.Unlock()
+
+	if a.Device != nil {
+		if a.Listener.OnClose != nil {
+			a.Listener.OnClose(a)
+		}
+		a.Device.Close()
+		a.Device = nil
+	}
+}
+
+func (a *TapWorker) Start() {
+	a.Initialize()
+
+	go a.Read()
+	go a.Loop()
+}
+
+func (a *TapWorker) Stop() {
+	close(a.writeChan)
+	a.Close()
+}
 
 type WorkerListener struct {
     AddAddr func(ipStr string) error

@@ -5,7 +5,6 @@ import (
 	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/network"
-	"runtime"
 	"sync"
 )
 
@@ -56,11 +55,7 @@ func (v *VSwitch) Initialize() {
 		v.http = NewHttp(v.worker, v.Conf)
 	}
 
-	if v.Conf.Bridger == "linux" && runtime.GOOS == "linux" {
-		v.bridge = network.NewLinuxBridge(v.Conf.BrName, v.Conf.IfMtu)
-	} else {
-		v.bridge = network.NewVirtualBridge(v.Conf.BrName, v.Conf.IfMtu)
-	}
+	v.bridge = network.NewBridger(v.Conf.Bridger, v.Conf.BrName, v.Conf.IfMtu)
 	if v.bridge.Name() == "" {
 		v.bridge.SetName(v.worker.BrName())
 	}
@@ -150,15 +145,9 @@ func (v *VSwitch) Server() *libol.TcpServer {
 }
 
 func (v *VSwitch) NewTap() (network.Taper, error) {
-	var err error
-	var dev network.Taper
-
 	libol.Debug("Worker.NewTap")
-	if v.Conf.Bridger == "linux" {
-		dev, err = network.NewLinuxTap(true, "")
-	} else {
-		dev, err = network.NewVirtualTap(true, "")
-	}
+
+	dev, err := network.NewTaper(v.Conf.Bridger, "", true,)
 	if err != nil {
 		libol.Error("Worker.NewTap: %s", err)
 		return nil, err

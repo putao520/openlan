@@ -5,7 +5,8 @@ linux:
 	go build -mod=vendor -o ./resource/vswitch.linux.x86_64 main/vswitch.go
 
 windows:
-	go build -mod=vendor -o ./resource/point.windows.x86_64 main/point_windows.go
+	go build -mod=vendor -o ./resource/point.windows.x86_64.exe main/point_windows.go
+	go build -mod=vendor -o ./resource/vswitch.windows.x86_64.exe main/vswitch.go
 
 osx: darwin
 
@@ -20,8 +21,8 @@ rpm:
 
 win-zip:
 	mkdir -p ./openlan-wins
-	cp -rvf ./resource/point.windows.x86_64 ./openlan-wins/point.windows.x86_64.exe
-	cp -rvf ./resource/point.json ./openlan-wins/point.json
+	cp -rvf ./resource/point.windows.x86_64 ./openlan-wins
+	cp -rvf ./resource/point.json ./openlan-wins
 	zip -r ./resource/openlan-wins.zip ./openlan-wins
 
 test:
