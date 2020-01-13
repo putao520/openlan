@@ -54,9 +54,6 @@ func NewVSwitch() (c *VSwitch) {
 		LogFile: VSwitchDefault.LogFile,
 	}
 
-	if runtime.GOOS != "linux" {
-		VSwitchDefault.Bridger = "virtual"
-	}
 	flag.StringVar(&c.Alias, "alias", VSwitchDefault.Alias, "the alias for this switch")
 	flag.IntVar(&c.Verbose, "log:level", VSwitchDefault.Verbose, "logger level")
 	flag.StringVar(&c.LogFile, "log:file", VSwitchDefault.LogFile, "logger file")
