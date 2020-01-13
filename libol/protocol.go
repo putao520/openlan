@@ -18,7 +18,6 @@ const (
 	ETHPVLAN = 0x8100
 )
 
-
 type Ether struct {
 	Dst  []byte
 	Src  []byte
@@ -87,8 +86,6 @@ func (e *Ether) IsIP4() bool {
 	return e.Type == ETHPIP4
 }
 
-
-
 type Vlan struct {
 	Tci uint16
 	Vid uint16
@@ -136,7 +133,6 @@ func (n *Vlan) Encode() []byte {
 
 	return buffer[:4]
 }
-
 
 const (
 	ARP_REQUEST = 1
@@ -245,7 +241,6 @@ func (a *Arp) Encode() []byte {
 func (a *Arp) IsIP4() bool {
 	return a.ProCode == ETHPIP4
 }
-
 
 const (
 	IPV4_VER = 0x04
@@ -387,8 +382,6 @@ func (i *Ipv4) IsIP4() bool {
 	return i.Version == IPV4_VER
 }
 
-
-
 const TCP_LEN = 20
 
 type Tcp struct {
@@ -462,7 +455,6 @@ func (t *Tcp) Encode() []byte {
 	return buffer[:t.Len]
 }
 
-
 const UDP_LEN = 8
 
 type Udp struct {
@@ -513,4 +505,3 @@ func (u *Udp) Encode() []byte {
 
 	return buffer[:u.Len]
 }
-

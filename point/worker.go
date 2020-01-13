@@ -527,9 +527,9 @@ func (a *TapWorker) Stop() {
 }
 
 type WorkerListener struct {
-    AddAddr func(ipStr string) error
-	DelAddr func(ipStr string) error
-	OnTap func(w *TapWorker) error
+	AddAddr   func(ipStr string) error
+	DelAddr   func(ipStr string) error
+	OnTap     func(w *TapWorker) error
 	AddRoutes func(routes []*models.Route) error
 	DelRoutes func(routes []*models.Route) error
 }

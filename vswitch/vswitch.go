@@ -147,7 +147,7 @@ func (v *VSwitch) Server() *libol.TcpServer {
 func (v *VSwitch) NewTap() (network.Taper, error) {
 	libol.Debug("Worker.NewTap")
 
-	dev, err := network.NewTaper(v.Conf.Bridger, "", true,)
+	dev, err := network.NewTaper(v.Conf.Bridger, "", true)
 	if err != nil {
 		libol.Error("Worker.NewTap: %s", err)
 		return nil, err

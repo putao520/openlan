@@ -153,8 +153,6 @@ func (t *TcpServer) Read(client *TcpClient, ReadAt func(client *TcpClient, p []b
 	}
 }
 
-
-
 type TcpClientListener struct {
 	OnClose     func(client *TcpClient) error
 	OnConnected func(client *TcpClient) error
@@ -455,4 +453,3 @@ func (t *TcpClient) IsTerminal() bool {
 func (t *TcpClient) IsInitialized() bool {
 	return t.Status() == CL_INIT
 }
-

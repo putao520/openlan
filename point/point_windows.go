@@ -12,9 +12,9 @@ type Point struct {
 	MixPoint
 	BrName string
 
-	addr      string
-	routes    []*models.Route
-	config    *config.Point
+	addr   string
+	routes []*models.Route
+	config *config.Point
 }
 
 func NewPoint(config *config.Point) *Point {
