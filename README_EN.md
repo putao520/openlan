@@ -45,7 +45,7 @@ The point is endpoint to access OpenLan vswitch, and all points behind the same 
 ## on Windows
 ### Firstly, Install tap-windows6
 
-Download `resource/tap-windows-9.21.2.exe`, then install it. 
+Download [tap-windows-9](https://github.com/danieldin95/openlan-go/releases/download/tap-windows-9/tap-windows-9.21.2.exe), then install it. 
 
 ### Finally, Configure Access Authentication
 
