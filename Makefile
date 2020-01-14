@@ -12,6 +12,7 @@ osx: darwin
 
 darwin:
 	go build -mod=vendor -o ./resource/point.darwin.x86_64 main/point_darwin.go
+	go build -mod=vendor -o ./resource/vswitch.darwin.x86_64 main/vswitch.go
 
 rpm:
 	./packaging/auto.sh
