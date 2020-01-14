@@ -1,0 +1,6 @@
+{
+  "vs.tls": true,
+  "vs.addr": "openlan.net",
+  "vs.auth": "hi@admin:hi123$",
+  "log.file": "./packaging/point/point.log"
+}

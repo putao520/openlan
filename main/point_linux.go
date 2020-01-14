@@ -32,10 +32,12 @@ func main() {
 				fmt.Printf("press `CTRL+C` to exit...\n")
 				break
 			}
-			fmt.Printf("UUID  : %s\n", p.UUID())
-			fmt.Printf("State : %s\n", p.State())
-			fmt.Printf("Uptime: %d\n", p.UpTime())
-			fmt.Printf("Device: %s\n", p.IfName())
+			if input == "s" || input == "state" {
+				fmt.Printf("UUID  : %s\n", p.UUID())
+				fmt.Printf("State : %s\n", p.State())
+				fmt.Printf("Uptime: %d\n", p.UpTime())
+				fmt.Printf("Device: %s\n", p.IfName())
+			}
 		}
 	}()
 
