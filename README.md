@@ -53,7 +53,7 @@ Case2：
 ## 在Windows系统中
 ### 首先安装虚拟网卡驱动 tap-windows6
 
-下载资源[tap-windows-9](https://github.com/danieldin95/openlan-go/releases/download/tap-windows-9/tap-windows-9.21.2.exe), 然后点击安装它。
+下载资源 [tap-windows-9](https://github.com/danieldin95/openlan-go/releases/download/tap-windows-9/tap-windows-9.21.2.exe), 然后点击安装它。
 
 ### 最后配置接入认证
 
