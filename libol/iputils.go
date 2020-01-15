@@ -50,7 +50,7 @@ func IpAddrAdd(name, addr string) ([]byte, error) {
 		}
 		return exec.Command("/usr/sbin/ip", args...).CombinedOutput()
 	case "windows":
-		args :=[]string{
+		args := []string{
 			"interface", "ipv4", "add", "address",
 			"name=" + name, "address=" + addr, "store=active",
 		}
@@ -79,7 +79,7 @@ func IpAddrDel(name, addr string) ([]byte, error) {
 	}
 }
 
-func IpAddrShow(name string) []string{
+func IpAddrShow(name string) []string {
 	switch runtime.GOOS {
 	case "windows":
 		addrs := make([]string, 0, 4)
@@ -144,7 +144,7 @@ func IpRouteDel(name, prefix, nexthop string) ([]byte, error) {
 	}
 }
 
-func IpRouteShow(name string) []string{
+func IpRouteShow(name string) []string {
 	switch runtime.GOOS {
 	default:
 		return nil

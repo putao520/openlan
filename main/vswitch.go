@@ -22,7 +22,7 @@ func main() {
 	signal.Notify(x, os.Interrupt, syscall.SIGTERM)
 	signal.Notify(x, os.Interrupt, syscall.SIGKILL)
 	signal.Notify(x, os.Interrupt, syscall.SIGQUIT) //CTL+/
-	signal.Notify(x, os.Interrupt, syscall.SIGINT) //CTL+C
+	signal.Notify(x, os.Interrupt, syscall.SIGINT)  //CTL+C
 
 	<-x
 	s.CallExit()
