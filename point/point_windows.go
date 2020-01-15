@@ -4,8 +4,6 @@ import (
 	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
-	"os/exec"
-	"strings"
 )
 
 type Point struct {
@@ -49,9 +47,13 @@ func (p *Point) AddAddr(ipStr string) error {
 		return nil
 	}
 
-	out, err := exec.Command("netsh", "interface",
-		"ipv4", "add", "address", p.IfName(),
-		ipStr, "store=active").Output()
+	addrExisted := libol.IpAddrShow(p.IfName())
+	if len(addrExisted) > 0 {
+		for _, addr := range addrExisted {
+			libol.IpAddrDel(p.IfName(), addr)
+		}
+	}
+	out, err := libol.IpAddrAdd(p.IfName(), ipStr)
 	if err != nil {
 		libol.Error("Point.AddAddr: %s, %s", err, out)
 		return err
@@ -68,10 +70,7 @@ func (p *Point) DelAddr(ipStr string) error {
 		return nil
 	}
 
-	ipAddr := strings.Split(ipStr, "/")[0]
-	out, err := exec.Command("netsh", "interface",
-		"ipv4", "delete", "address", p.IfName(),
-		ipAddr, "store=active").Output()
+	out, err := libol.IpAddrDel(p.IfName(), ipStr)
 	if err != nil {
 		libol.Error("Point.DelAddr: %s, %s", err, out)
 		return err
@@ -88,9 +87,7 @@ func (p *Point) AddRoutes(routes []*models.Route) error {
 	}
 
 	for _, route := range routes {
-		out, err := exec.Command("netsh", "interface",
-			"ipv4", "add", "route", route.Prefix,
-			p.IfName(), route.Nexthop, "store=active").Output()
+		out, err := libol.IpRouteAdd(p.IfName(), route.Prefix, route.Nexthop)
 		if err != nil {
 			libol.Error("Point.AddRoutes: %s, %s", err, out)
 			continue
@@ -108,9 +105,7 @@ func (p *Point) DelRoutes(routes []*models.Route) error {
 	}
 
 	for _, route := range routes {
-		out, err := exec.Command("netsh", "interface",
-			"ipv4", "del", "route", route.Prefix,
-			p.IfName(), route.Nexthop, "store=active").Output()
+		out, err := libol.IpRouteDel(p.IfName(), route.Prefix, route.Nexthop)
 		if err != nil {
 			libol.Error("Point.DelRoutes: %s, %s", err, out)
 			continue

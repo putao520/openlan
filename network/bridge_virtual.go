@@ -23,6 +23,8 @@ type VirtualBridge struct {
 	done     chan bool
 	ticker   *time.Ticker
 	timeout  int
+	addr     string
+	device   Taper
 }
 
 func NewVirtualBridge(name string, mtu int) *VirtualBridge {
@@ -39,11 +41,37 @@ func NewVirtualBridge(name string, mtu int) *VirtualBridge {
 }
 
 func (b *VirtualBridge) Open(addr string) {
-	libol.Info("VirtualBridge.Open: not support address")
+	libol.Info("VirtualBridge.Open %s", addr)
+	if addr != "" {
+		tap, err := NewKernelTap(true, "")
+		if err != nil {
+			libol.Error("VirtualBridge.Open new kernel %s", err)
+		} else {
+			out, err := libol.IpLinkUp(tap.Name())
+			if err != nil {
+				libol.Error("VirtualBridge.Open.IpAddr %s:%s", err, out)
+			}
+			b.addr = addr
+			b.device = tap
+			out, err = libol.IpAddrAdd(b.device.Name(), b.addr)
+			if err != nil {
+				libol.Error("VirtualBridge.Open.IpAddr %s:%s", err, out)
+			}
+			libol.Info("VirtualBridge.Open %s", tap.Name())
+		}
+	} else {
+		libol.Warn("VirtualBridge.Open: not support address")
+	}
 	go b.Start()
 }
 
 func (b *VirtualBridge) Close() error {
+	if b.device != nil {
+		out, err := libol.IpAddrDel(b.device.Name(), b.addr)
+		if err != nil {
+			libol.Error("VirtualBridge.Close.IpAddr %s:%s", err, out)
+		}
+	}
 	b.ticker.Stop()
 	b.done <- true
 	return nil
