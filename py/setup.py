@@ -11,8 +11,5 @@ setup(
             'openlan-utils = olutils.__main__:main',
         ]
     },
-    install_requires=[
-        'requests==2.20.0',
-        'ruamel.yaml==0.16.5'
-    ],
+    install_requires=open('requirements.txt').readlines(),
 )
