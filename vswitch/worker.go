@@ -231,13 +231,13 @@ func (w *Worker) AddLink(c *config.Point) {
 
 	go func() {
 		p := point.NewPoint(c)
+		p.Start()
 
 		w.linksLock.Lock()
 		w.links[c.Addr] = p
 		w.linksLock.Unlock()
 
 		service.Link.Add(p)
-		p.Start()
 	}()
 }
 
