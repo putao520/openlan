@@ -8,12 +8,6 @@ import (
 	"sync"
 )
 
-const (
-	SW_INIT    = 0x01
-	SW_STARTED = 0x02
-	SW_STOPPED = 0x03
-)
-
 type VSwitcher interface {
 	UUID() string
 }
@@ -25,7 +19,6 @@ type VSwitch struct {
 	bridge network.Bridger
 	worker *Worker
 	lock   sync.RWMutex
-	status int
 	uuid   string
 }
 
@@ -44,7 +37,6 @@ func NewVSwitch(c *config.VSwitch) *VSwitch {
 	v := VSwitch{
 		Conf:   c,
 		worker: NewWorker(server, c),
-		status: SW_INIT,
 	}
 
 	return &v
@@ -66,66 +58,39 @@ func (v *VSwitch) Initialize() {
 	}
 }
 
-func (v *VSwitch) Start() bool {
+func (v *VSwitch) Start() error {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
-	if v.status == SW_STARTED {
-		return false
-	} else {
-		v.status = SW_STARTED
+	if v.bridge != nil || v.http != nil {
+		return libol.NewErr("already running")
 	}
 
 	v.Initialize()
-
 	v.worker.Start(v)
 	v.bridge.Open(v.Conf.IfAddr)
 	if v.http != nil {
 		go v.http.Start()
 	}
-	return true
+	return nil
 }
 
-func (v *VSwitch) Stop() bool {
+func (v *VSwitch) Stop() error {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
-	if v.status != SW_STARTED {
-		return false
-	} else {
-		v.status = SW_STOPPED
+	if v.bridge == nil {
+		return libol.NewErr("already closed")
 	}
 
 	v.bridge.Close()
-	v.worker.Stop()
+	v.bridge = nil
 	if v.http != nil {
 		v.http.Shutdown()
 		v.http = nil
 	}
-
-	return true
-}
-
-func (v *VSwitch) IsStated() bool {
-	v.lock.Lock()
-	defer v.lock.Unlock()
-	return v.status == SW_STARTED
-}
-
-func (v *VSwitch) State() string {
-	v.lock.Lock()
-	defer v.lock.Unlock()
-
-	switch v.status {
-	case SW_INIT:
-		return "initialized"
-	case SW_STARTED:
-		return "started"
-	case SW_STOPPED:
-		return "stopped"
-	}
-
-	return ""
+	v.worker.Stop()
+	return nil
 }
 
 func (v *VSwitch) BrName() string {
