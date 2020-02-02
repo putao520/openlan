@@ -1,5 +1,5 @@
 Name: openlan-point
-Version: 4.0
+Version: 4.1
 Release: 1%{?dist}
 Summary: OpenLan's Project Software
 Group: Applications/Communications
@@ -16,7 +16,7 @@ OpenLan's Project Point Software
 
 %build
 cd %_source_dir
-go build -o ./resource/point.linux.x86_64 main/point_linux.go
+go build -mod=vendor -o ./resource/point.linux.x86_64 main/point_linux.go
 
 %install
 

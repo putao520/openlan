@@ -1,5 +1,5 @@
 Name: openlan-vswitch
-Version: 4.0
+Version: 4.1
 Release: 1%{?dist}
 Summary: OpenLan's Project Software
 Group: Applications/Communications
@@ -16,7 +16,7 @@ OpenLan's Project Software
 
 %build
 cd %_source_dir
-go build -o ./resource/vswitch.linux.x86_64 main/vswitch_linux.go
+go build -mod=vendor -o ./resource/vswitch.linux.x86_64 main/vswitch.go
 
 virtualenv %_venv
 %_venv/bin/pip install --upgrade "%_source_dir/py"

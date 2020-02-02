@@ -64,13 +64,13 @@ func (w *Worker) Initialize() {
 	w.Apps.Auth = app.NewPointAuth(w, w.Conf)
 	w.Apps.Request = app.NewWithRequest(w, w.Conf)
 	w.Apps.Neighbor = app.NewNeighbors(w, w.Conf)
-	w.Apps.OnLines = app.NewOnline(w, w.Conf)
+	//w.Apps.OnLines = app.NewOnline(w, w.Conf)
 
 	w.hooks = make([]HookApi, 0, 64)
 	w.hooks = append(w.hooks, w.Apps.Auth.OnFrame)
 	w.hooks = append(w.hooks, w.Apps.Neighbor.OnFrame)
 	w.hooks = append(w.hooks, w.Apps.Request.OnFrame)
-	w.hooks = append(w.hooks, w.Apps.OnLines.OnFrame)
+	//w.hooks = append(w.hooks, w.Apps.OnLines.OnFrame)
 	w.ShowHook()
 }
 

@@ -244,7 +244,7 @@ func (t *TcpWorker) Loop() {
 
 		if t.Client.Status() != libol.CL_AUEHED {
 			t.Client.Sts.Dropped++
-			libol.Error("TcpWorker.Loop: dropping by unAuth")
+			libol.Debug("TcpWorker.Loop: dropping by unAuth")
 			continue
 		}
 		if err := t.Client.WriteMsg(w); err != nil {

@@ -18,7 +18,7 @@ rpm:
 	./packaging/auto.sh
 	rpmbuild -ba packaging/openlan-point.spec
 	rpmbuild -ba packaging/openlan-vswitch.spec
-	cp -rvf ~/rpmbuild/RPMS/x86_64/openlan-* resource
+	cp -rvf ~/rpmbuild/RPMS/x86_64/openlan-*.rpm resource
 
 win-zip:
 	mkdir -p openlan-wins

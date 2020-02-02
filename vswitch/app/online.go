@@ -81,6 +81,8 @@ func (o *Online) AddLine(line *models.Line) {
 	o.lock.Lock()
 	defer o.lock.Unlock()
 
+	//TODO remove older one.
+
 	if _, ok := o.lines[line.String()]; !ok {
 		libol.Info("Online.AddLine %s", line)
 		o.lines[line.String()] = line
