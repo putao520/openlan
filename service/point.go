@@ -26,6 +26,7 @@ func (p *_point) Get(addr string) *models.Point {
 	defer p.lock.RUnlock()
 
 	if m, ok := p.clients[addr]; ok {
+		m.Update()
 		return m
 	}
 	return nil
@@ -49,6 +50,7 @@ func (p *_point) List() <-chan *models.Point {
 		defer p.lock.RUnlock()
 
 		for _, m := range p.clients {
+			m.Update()
 			c <- m
 		}
 		c <- nil //Finish channel by nil.

@@ -27,6 +27,7 @@ func (p *_link) Add(m *point.Point) {
 		Client: m.Client(),
 		Device: m.Device(),
 		IfName: m.IfName(),
+		UUID:   m.UUID(),
 	}
 	p.links[m.Addr()] = link
 }
@@ -36,6 +37,7 @@ func (p *_link) Get(key string) *models.Point {
 	defer p.lock.RUnlock()
 
 	if m, ok := p.links[key]; ok {
+		m.Update()
 		return m
 	}
 	return nil
@@ -58,6 +60,7 @@ func (p *_link) List() <-chan *models.Point {
 		defer p.lock.RUnlock()
 
 		for _, m := range p.links {
+			m.Update()
 			c <- m
 		}
 		c <- nil //Finish channel by nil.

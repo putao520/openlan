@@ -33,7 +33,3 @@ func (l *Line) String() string {
 	return fmt.Sprintf("%d:%s:%s:%d:%d:%d",
 		l.EthType, l.IpSource, l.IPDest, l.IpProtocol, l.PortSource, l.PortDest)
 }
-
-func (l *Line) Update() {
-	l.HitTime = time.Now().Unix()
-}

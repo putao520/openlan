@@ -7,6 +7,7 @@ import (
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/service"
 	"sync"
+	"time"
 )
 
 type Online struct {
@@ -97,11 +98,12 @@ func (o *Online) AddLine(line *models.Line) {
 	}
 
 	libol.Debug("Online.AddLine %d", o.lineList.Len())
-	if _, ok := o.lines[line.String()]; !ok {
+	find, ok := o.lines[line.String()]
+	if !ok {
 		o.lineList.PushBack(line)
 		o.lines[line.String()] = line
 		service.Online.Add(line)
-	} else {
-		o.lines[line.String()].Update()
+	} else if find != nil {
+		find.HitTime = time.Now().Unix()
 	}
 }

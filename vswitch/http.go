@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"sort"
 	"text/template"
 	"time"
 )
@@ -220,53 +221,84 @@ func (h *Http) PubFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Http) getIndex() string {
-	body := fmt.Sprintf("# uptime: %d, uuid: %s\n", h.worker.UpTime(), h.worker.UUID())
+	// header
+	body := fmt.Sprintf("# uuid: %s\n", h.worker.UUID())
+	body += fmt.Sprintf("# uptime: %d\n", h.worker.UpTime())
 	body += "\n"
-	body += "# point accessed to this vswith.\n"
-	body += "uuid, uptime, alias, remote, device, receipt, transmis, error, state\n"
+	// point
+	pointList := make([]*models.Point, 0, 128)
 	for p := range service.Point.List() {
 		if p == nil {
 			break
 		}
-
+		pointList = append(pointList, p)
+	}
+	sort.SliceStable(pointList, func(i, j int) bool {
+		return pointList[i].UUID > pointList[j].UUID
+	})
+	body += "# point accessed to.\n"
+	body += "uuid, uptime, alias, remote, device, receipt, transmis, error, state\n"
+	for _, p := range pointList {
 		client, dev := p.Client, p.Device
 		body += fmt.Sprintf("%s, %d, %s, %s, %s, %d, %d, %d, %s\n",
-			p.UUID, client.UpTime(), p.Alias, client.Addr, dev.Name(),
+			p.UUID, p.Uptime, p.Alias, client.Addr, dev.Name(),
 			client.Sts.RxOkay, client.Sts.TxOkay, client.Sts.TxError, client.State())
 	}
 
-	body += "\n"
-	body += "# neighbor we discovered on this vswitch.\n"
-	body += "uptime, ethernet, address, remote\n"
+	// neighbor
+	neighborList := make([]*models.Neighbor, 0, 128)
 	for n := range service.Neighbor.List() {
 		if n == nil {
 			break
 		}
-
+		neighborList = append(neighborList, n)
+	}
+	sort.SliceStable(neighborList, func(i, j int) bool {
+		return neighborList[i].IpAddr.String() > neighborList[j].IpAddr.String()
+	})
+	body += "\n"
+	body += "# neighbor we discovered on.\n"
+	body += "uptime, ethernet, address, remote\n"
+	for _, n := range neighborList {
 		body += fmt.Sprintf("%d, %s, %s, %s\n",
 			n.UpTime(), n.HwAddr, n.IpAddr, n.Client)
 	}
 
-	body += "\n"
-	body += "# link which connect to other vswitch.\n"
-	body += "uptime, device, remote, state\n"
+	// link
+	linkList := make([]*models.Point, 0, 128)
 	for p := range service.Link.List() {
 		if p == nil {
 			break
 		}
-
+		linkList = append(linkList, p)
+	}
+	sort.SliceStable(linkList, func(i, j int) bool {
+		return linkList[i].UUID > linkList[j].UUID
+	})
+	body += "\n"
+	body += "# link which connect to other.\n"
+	body += "uuid, uptime, device, remote, state\n"
+	for _, p := range linkList {
 		client, dev := p.Client, p.Device
-		body += fmt.Sprintf("%d, %s, %s, %s\n",
-			client.UpTime(), dev.Name(), client.Addr, client.State())
+		body += fmt.Sprintf("%s, %d, %s, %s, %s\n",
+			p.UUID, client.UpTime(), dev.Name(), client.Addr, client.State())
 	}
 
-	body += "\n"
-	body += "# online that traces the destination from point.\n"
-	body += "source, dest address, protocol, source, dest port\n"
+	// line
+	lineList := make([]*models.Line, 0, 128)
 	for l := range service.Online.List() {
 		if l == nil {
 			break
 		}
+		lineList = append(lineList, l)
+	}
+	sort.SliceStable(lineList, func(i, j int) bool {
+		return lineList[i].String() > lineList[j].String()
+	})
+	body += "\n"
+	body += "# online that traces the destination from point.\n"
+	body += "source, dest address, protocol, source, dest port\n"
+	for _, l := range lineList {
 		body += fmt.Sprintf("%s, %s, %s, %d, %d\n",
 			l.IpSource, l.IPDest, libol.IpProto2Str(l.IpProtocol), l.PortSource, l.PortDest)
 	}
@@ -356,7 +388,6 @@ func (h *Http) ListLink(w http.ResponseWriter, r *http.Request) {
 		if l == nil {
 			break
 		}
-		l.Update()
 		links = append(links, l)
 	}
 
@@ -369,7 +400,6 @@ func (h *Http) GetLink(w http.ResponseWriter, r *http.Request) {
 
 	link := service.Link.Get(vars["id"])
 	if link != nil {
-		link.Update()
 		h.ResponseJson(w, link)
 	} else {
 		http.Error(w, vars["id"], http.StatusNotFound)
@@ -410,7 +440,6 @@ func (h *Http) ListPoint(w http.ResponseWriter, r *http.Request) {
 		if u == nil {
 			break
 		}
-		u.Update()
 		points = append(points, u)
 	}
 	h.ResponseJson(w, points)
@@ -420,7 +449,6 @@ func (h *Http) GetPoint(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	point := service.Point.Get(vars["id"])
 	if point != nil {
-		point.Update()
 		h.ResponseJson(w, point)
 	} else {
 		http.Error(w, vars["id"], http.StatusNotFound)
