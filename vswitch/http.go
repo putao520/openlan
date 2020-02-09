@@ -236,8 +236,9 @@ func (h *Http) getIndex() string {
 	sort.SliceStable(pointList, func(i, j int) bool {
 		return pointList[i].UUID > pointList[j].UUID
 	})
-	body += "# point accessed to.\n"
-	body += "uuid, uptime, alias, remote, device, receipt, transmis, error, state\n"
+	body += "# point accessed to. and "
+	body += fmt.Sprintf("total %d.\n", len(pointList))
+	body += "# uuid, uptime, alias, remote, device, receipt, transmis, error, state\n"
 	for _, p := range pointList {
 		client, dev := p.Client, p.Device
 		body += fmt.Sprintf("%s, %d, %s, %s, %s, %d, %d, %d, %s\n",
@@ -257,8 +258,9 @@ func (h *Http) getIndex() string {
 		return neighborList[i].IpAddr.String() > neighborList[j].IpAddr.String()
 	})
 	body += "\n"
-	body += "# neighbor we discovered on.\n"
-	body += "uptime, ethernet, address, remote\n"
+	body += "# neighbor we discovered on. and "
+	body += fmt.Sprintf("total %d.\n", len(neighborList))
+	body += "# uptime, ethernet, address, remote\n"
 	for _, n := range neighborList {
 		body += fmt.Sprintf("%d, %s, %s, %s\n",
 			n.UpTime(), n.HwAddr, n.IpAddr, n.Client)
@@ -276,8 +278,9 @@ func (h *Http) getIndex() string {
 		return linkList[i].UUID > linkList[j].UUID
 	})
 	body += "\n"
-	body += "# link which connect to other.\n"
-	body += "uuid, uptime, device, remote, state\n"
+	body += "# link which connect to other. and "
+	body += fmt.Sprintf("total %d.\n", len(linkList))
+	body += "# uuid, uptime, device, remote, state\n"
 	for _, p := range linkList {
 		client, dev := p.Client, p.Device
 		body += fmt.Sprintf("%s, %d, %s, %s, %s\n",
@@ -296,8 +299,9 @@ func (h *Http) getIndex() string {
 		return lineList[i].String() > lineList[j].String()
 	})
 	body += "\n"
-	body += "# online that traces the destination from point.\n"
-	body += "source, dest address, protocol, source, dest port\n"
+	body += "# online that traces the destination from point. and "
+	body += fmt.Sprintf("total %d.\n", len(lineList))
+	body += "# source, dest address, protocol, source, dest port\n"
 	for _, l := range lineList {
 		body += fmt.Sprintf("%s, %s, %s, %d, %d\n",
 			l.IpSource, l.IPDest, libol.IpProto2Str(l.IpProtocol), l.PortSource, l.PortDest)
