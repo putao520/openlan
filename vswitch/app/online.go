@@ -1,6 +1,7 @@
 package app
 
 import (
+	"container/list"
 	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
@@ -9,15 +10,20 @@ import (
 )
 
 type Online struct {
-	lock   sync.RWMutex
-	lines  map[string]*models.Line
-	worker Worker
+	max       int
+	lock      sync.RWMutex
+	lines     map[string]*models.Line
+	lineList  *list.List
+	worker    Worker
 }
 
 func NewOnline(w Worker, c *config.VSwitch) (o *Online) {
+	max := 128
 	o = &Online{
-		lines:  make(map[string]*models.Line, 1024*4),
-		worker: w,
+		max:      max,
+		lines:    make(map[string]*models.Line, max),
+		lineList: list.New(),
+		worker:   w,
 	}
 	return
 }
@@ -50,8 +56,6 @@ func (o *Online) OnFrame(client *libol.TcpClient, frame *libol.FrameMessage) err
 		line.IpProtocol = ip.Protocol
 
 		switch ip.Protocol {
-		case libol.IPPROTO_ICMP:
-			//TODO
 		case libol.IPPROTO_TCP:
 			tcp, err := libol.NewTcpFromFrame(data)
 			if err != nil {
@@ -81,15 +85,23 @@ func (o *Online) AddLine(line *models.Line) {
 	o.lock.Lock()
 	defer o.lock.Unlock()
 
-	//TODO remove older one.
+	libol.Debug("Online.AddLine %s", line)
+	if o.lineList.Len() > o.max {
+		if e := o.lineList.Front(); e != nil {
+			lastLine := e.Value.(*models.Line)
 
+			o.lineList.Remove(e)
+			delete(o.lines, lastLine.String())
+			service.Online.Del(lastLine.String())
+		}
+	}
+
+	libol.Debug("Online.AddLine %d", o.lineList.Len())
 	if _, ok := o.lines[line.String()]; !ok {
-		libol.Info("Online.AddLine %s", line)
+		o.lineList.PushBack(line)
 		o.lines[line.String()] = line
 		service.Online.Add(line)
+	} else {
+		o.lines[line.String()].Update()
 	}
-}
-
-func (o *Online) OnClientClose(client *libol.TcpClient) {
-	//TODO
 }
