@@ -19,7 +19,7 @@ type Online struct {
 }
 
 func NewOnline(w Worker, c *config.VSwitch) (o *Online) {
-	max := 128
+	max := 4
 	o = &Online{
 		max:      max,
 		lines:    make(map[string]*models.Line, max),
@@ -87,19 +87,18 @@ func (o *Online) AddLine(line *models.Line) {
 	defer o.lock.Unlock()
 
 	libol.Debug("Online.AddLine %s", line)
-	if o.lineList.Len() > o.max {
-		if e := o.lineList.Front(); e != nil {
-			lastLine := e.Value.(*models.Line)
-
-			o.lineList.Remove(e)
-			delete(o.lines, lastLine.String())
-			service.Online.Del(lastLine.String())
-		}
-	}
-
 	libol.Debug("Online.AddLine %d", o.lineList.Len())
 	find, ok := o.lines[line.String()]
 	if !ok {
+		if o.lineList.Len() >= o.max {
+			if e := o.lineList.Front(); e != nil {
+				lastLine := e.Value.(*models.Line)
+
+				o.lineList.Remove(e)
+				delete(o.lines, lastLine.String())
+				service.Online.Del(lastLine.String())
+			}
+		}
 		o.lineList.PushBack(line)
 		o.lines[line.String()] = line
 		service.Online.Add(line)
