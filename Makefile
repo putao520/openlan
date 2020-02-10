@@ -36,6 +36,5 @@ docker:
 	# docker run -d  -p 10000:10000 -p 10002:10002 openlan-vswitch:latest
 
 test:
-	go test -mod=vendor github.com/danieldin95/openlan-go/point
 	go test -mod=vendor -bench=. github.com/danieldin95/openlan-go/point
-	go test -mod=vendor github.com/danieldin95/openlan-go/libol
+	go test -mod=vendor -bench=. github.com/danieldin95/openlan-go/libol

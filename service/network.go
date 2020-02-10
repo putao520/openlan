@@ -5,20 +5,18 @@ import (
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
 	"net"
-	"sync"
 )
 
 type _network struct {
-	lock       sync.RWMutex
-	networks   map[string]*models.Network
-	usedAddr   map[string]string
-	clientUsed map[string]string
+	networks   *libol.SafeStrMap
+	usedAddr   *libol.SafeStrMap
+	clientUsed *libol.SafeStrMap
 }
 
 var Network = _network{
-	networks:   make(map[string]*models.Network, 1024),
-	usedAddr:   make(map[string]string, 1024),
-	clientUsed: make(map[string]string, 1024),
+	networks:   libol.NewSafeStrMap(1024),
+	usedAddr:   libol.NewSafeStrMap(1024),
+	clientUsed: libol.NewSafeStrMap(1024),
 }
 
 func (w *_network) Load(path string) error {
@@ -30,37 +28,24 @@ func (w *_network) Load(path string) error {
 	}
 
 	for _, net := range nets {
-		w.networks[net.Tenant] = net
+		w.Add(net)
 	}
 
 	return nil
 }
 
 func (w *_network) Add(n *models.Network) {
-	w.lock.Lock()
-	defer w.lock.Unlock()
-
-	w.networks[n.Tenant] = n
-	//TODO save to db.
+	w.networks.Set(n.Tenant, n)
 }
 
 func (w *_network) Del(name string) {
-	w.lock.Lock()
-	defer w.lock.Unlock()
-
-	if _, ok := w.networks[name]; ok {
-		delete(w.networks, name)
-	}
+	w.networks.Del(name)
 }
 
 func (w *_network) Get(name string) *models.Network {
-	w.lock.RLock()
-	defer w.lock.RUnlock()
-
-	if u, ok := w.networks[name]; ok {
-		return u
+	if v := w.networks.Get(name); v != nil {
+		return v.(*models.Network)
 	}
-
 	return nil
 }
 
@@ -70,12 +55,9 @@ func (w *_network) List() <-chan *models.Network {
 	c := make(chan *models.Network, 128)
 
 	go func() {
-		w.lock.RLock()
-		defer w.lock.RUnlock()
-
-		for _, u := range w.networks {
-			c <- u
-		}
+		w.networks.Iter(func(k string, v interface{}) {
+			c <- v.(*models.Network)
+		})
 		c <- nil //Finish channel by nil.
 	}()
 
@@ -87,9 +69,6 @@ func (w *_network) GetFreeAddr(client *libol.TcpClient, n *models.Network) (ip s
 		return "", ""
 	}
 
-	w.lock.Lock()
-	defer w.lock.Unlock()
-
 	ipStr := ""
 	netmask := n.Netmask
 	netIp := net.ParseIP(n.IpAddr)
@@ -97,15 +76,15 @@ func (w *_network) GetFreeAddr(client *libol.TcpClient, n *models.Network) (ip s
 		return ipStr, netmask
 	}
 
-	netip := netIp.To4()
-	start := binary.BigEndian.Uint32(netip[:4])
+	netIp4 := netIp.To4()
+	start := binary.BigEndian.Uint32(netIp4[:4])
 
 	for i := 0; i < n.IpRange; i++ {
 		tmp := make([]byte, 4)
 		binary.BigEndian.PutUint32(tmp[:4], start)
 
 		tmpStr := net.IP(tmp).String()
-		if _, ok := w.usedAddr[tmpStr]; !ok {
+		if _, ok := w.usedAddr.GetEx(tmpStr); !ok {
 			ipStr = tmpStr
 			break
 		}
@@ -114,19 +93,17 @@ func (w *_network) GetFreeAddr(client *libol.TcpClient, n *models.Network) (ip s
 	}
 
 	if ipStr != "" {
-		w.usedAddr[ipStr] = client.Addr
-		w.clientUsed[client.Addr] = ipStr
+		w.usedAddr.Set(ipStr, client.Addr)
+		w.clientUsed.Set(client.Addr, ipStr)
 	}
 
 	return ipStr, netmask
 }
 
 func (w *_network) FreeAddr(client *libol.TcpClient) {
-	w.lock.Lock()
-	defer w.lock.Unlock()
-
-	if ipStr, ok := w.clientUsed[client.Addr]; ok {
-		delete(w.clientUsed, client.Addr)
-		delete(w.usedAddr, ipStr)
+	if v := w.clientUsed.Get(client.Addr); v != nil {
+		ipStr := v.(string)
+		w.clientUsed.Del(client.Addr)
+		w.usedAddr.Del(ipStr)
 	}
 }

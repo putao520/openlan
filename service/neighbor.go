@@ -1,55 +1,45 @@
 package service
 
 import (
+	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
-	"sync"
 )
 
 type _neighbor struct {
-	lock      sync.RWMutex
-	neighbors map[string]*models.Neighbor
+	neighbors *libol.SafeStrMap
 }
 
 var Neighbor = _neighbor{
-	neighbors: make(map[string]*models.Neighbor, 1024),
+	neighbors: libol.NewSafeStrMap(1024),
+}
+
+func (p *_neighbor) Init(size int) {
+	p.neighbors = libol.NewSafeStrMap(size)
 }
 
 func (p *_neighbor) Add(m *models.Neighbor) {
-	p.lock.Lock()
-	defer p.lock.Unlock()
-
-	p.neighbors[m.IpAddr.String()] = m
+	p.neighbors.Set(m.IpAddr.String(), m)
 }
 
 func (p *_neighbor) Get(key string) *models.Neighbor {
-	p.lock.RLock()
-	defer p.lock.RUnlock()
-
-	if m, ok := p.neighbors[key]; ok {
-		return m
+	v := p.neighbors.Get(key)
+	if v != nil {
+		return v.(*models.Neighbor)
 	}
 	return nil
 }
 
 func (p *_neighbor) Del(key string) {
-	p.lock.Lock()
-	defer p.lock.Unlock()
-
-	if _, ok := p.neighbors[key]; ok {
-		delete(p.neighbors, key)
-	}
+	p.neighbors.Del(key)
 }
 
 func (p *_neighbor) List() <-chan *models.Neighbor {
 	c := make(chan *models.Neighbor, 128)
 
 	go func() {
-		p.lock.RLock()
-		defer p.lock.RUnlock()
-
-		for _, m := range p.neighbors {
-			c <- m
-		}
+		p.neighbors.Iter(func(k string, v interface{}) {
+			c <- v.(*models.Neighbor)
+		})
 		c <- nil //Finish channel by nil.
 	}()
 

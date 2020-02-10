@@ -19,7 +19,7 @@ type Online struct {
 }
 
 func NewOnline(w Worker, c *config.VSwitch) (o *Online) {
-	max := 4
+	max := 64
 	o = &Online{
 		max:      max,
 		lines:    make(map[string]*models.Line, max),

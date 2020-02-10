@@ -1,31 +1,29 @@
 package service
 
 import (
+	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
-	"sync"
 )
 
 type _point struct {
-	lock    sync.RWMutex
-	clients map[string]*models.Point
+	clients *libol.SafeStrMap
 }
 
 var Point = _point{
-	clients: make(map[string]*models.Point, 1024),
+	clients: libol.NewSafeStrMap(1024),
+}
+
+func (p *_point) Init(size int) {
+	p.clients = libol.NewSafeStrMap(size)
 }
 
 func (p *_point) Add(m *models.Point) {
-	p.lock.Lock()
-	defer p.lock.Unlock()
-
-	p.clients[m.Client.Addr] = m
+	p.clients.Set(m.Client.Addr, m)
 }
 
 func (p *_point) Get(addr string) *models.Point {
-	p.lock.RLock()
-	defer p.lock.RUnlock()
-
-	if m, ok := p.clients[addr]; ok {
+	if v := p.clients.Get(addr); v != nil {
+		m := v.(*models.Point)
 		m.Update()
 		return m
 	}
@@ -33,12 +31,10 @@ func (p *_point) Get(addr string) *models.Point {
 }
 
 func (p *_point) Del(addr string) {
-	p.lock.Lock()
-	defer p.lock.Unlock()
-
-	if m, ok := p.clients[addr]; ok {
+	if v := p.clients.Get(addr); v != nil {
+		m := v.(*models.Point)
 		m.Device.Close()
-		delete(p.clients, addr)
+		p.clients.Del(addr)
 	}
 }
 
@@ -46,13 +42,11 @@ func (p *_point) List() <-chan *models.Point {
 	c := make(chan *models.Point, 128)
 
 	go func() {
-		p.lock.RLock()
-		defer p.lock.RUnlock()
-
-		for _, m := range p.clients {
+		p.clients.Iter(func(k string, v interface{}) {
+			m := v.(*models.Point)
 			m.Update()
 			c <- m
-		}
+		})
 		c <- nil //Finish channel by nil.
 	}()
 
