@@ -7,7 +7,7 @@ import (
 	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
-	"github.com/danieldin95/openlan-go/service"
+	"github.com/danieldin95/openlan-go/vswitch/service"
 	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"

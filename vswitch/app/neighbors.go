@@ -3,7 +3,7 @@ package app
 import (
 	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/models"
-	"github.com/danieldin95/openlan-go/service"
+	"github.com/danieldin95/openlan-go/vswitch/service"
 	"net"
 	"sync"
 	"time"

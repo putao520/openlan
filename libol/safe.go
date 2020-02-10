@@ -39,7 +39,9 @@ func (sm *SafeMap) Set(k interface{}, v interface{}) error {
 	if sm.size != 0 && len(sm.data) >= sm.size {
 		return NewErr("SageMap.Set already full")
 	}
-	sm.data[k] = v
+	if _, ok := sm.data[k]; !ok {
+		sm.data[k] = v
+	}
 	return nil
 }
 
@@ -125,7 +127,9 @@ func (sm *SafeStrMap) Set(k string, v interface{}) error {
 	if sm.size != 0 && len(sm.data) >= sm.size {
 		return NewErr("SageMap.Set already full")
 	}
-	sm.data[k] = v
+	if _, ok := sm.data[k]; !ok {
+		sm.data[k] = v
+	}
 	return nil
 }
 
