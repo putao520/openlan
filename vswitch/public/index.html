@@ -7,6 +7,10 @@
         body {
             background: #fdfcf8;
         }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+        }
         .worker{
 
         }
@@ -28,15 +32,22 @@
         .table {
 
         }
-        table,td,th {
-            border: 1px solid black;
+        .table table {
+            width: 100%;
+            border: 1px solid #000000;
         }
-        td, th {
+        .table td, th {
+            border: 1px solid #000000;
             text-align: center;
+        }
+        .table th {
+            font-weight: normal;
+            font-size: small;
         }
     </style>
 </head>
 <body>
+<div class="container">
     <div class="worker">
         <p><span>UUID:</span> <span>{{ .Worker.UUID }}</span></p>
         <p><span>UpTime:</span> <span>{{ .Worker.Uptime }}</span></p>
@@ -60,7 +71,6 @@
                     <th>Device</th>
                     <th>Receipt</th>
                     <th>Transmit</th>
-                    <th>Error</th>
                     <th>State</th>
                 </tr>
                 </thead>
@@ -74,7 +84,6 @@
                     <td>{{ .Device }}</td>
                     <td>{{ .RxBytes }}</td>
                     <td>{{ .TxBytes }}</td>
-                    <td>{{ .ErrPkt }}</td>
                     <td>{{ .State }}</td>
                 </tr>
                 {{ end }}
@@ -179,5 +188,6 @@
             </table>
         </div>
     </div>
+</div>
 </body>
 </html>
