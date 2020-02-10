@@ -9,7 +9,7 @@ import (
 type Line struct {
 	EthType    uint16
 	IpSource   net.IP
-	IPDest     net.IP
+	IpDest     net.IP
 	IpProtocol uint8
 	PortDest   uint16
 	PortSource uint16
@@ -31,5 +31,5 @@ func NewLine(t uint16) *Line {
 
 func (l *Line) String() string {
 	return fmt.Sprintf("%d:%s:%s:%d:%d:%d",
-		l.EthType, l.IpSource, l.IPDest, l.IpProtocol, l.PortSource, l.PortDest)
+		l.EthType, l.IpSource, l.IpDest, l.IpProtocol, l.PortSource, l.PortDest)
 }

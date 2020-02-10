@@ -36,7 +36,7 @@ cp %_source_dir/resource/vswitch.service %{buildroot}/usr/lib/systemd/system
 
 mkdir -p %{buildroot}/var/openlan
 cp -R %_source_dir/resource/ca %{buildroot}/var/openlan
-cp -R %_source_dir/public %{buildroot}/var/openlan
+cp -R %_source_dir/vswitch/public %{buildroot}/var/openlan
 
 cat > %{buildroot}/etc/vswitch/vswitch.password.example << EOF
 hi:hi@123$

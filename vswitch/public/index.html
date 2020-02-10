@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Virtual Switch - OpenLan Project</title>
+    <style type="text/css">
+        body {
+            background: #fdfcf8;
+        }
+        .worker{
+
+        }
+        .point {
+
+        }
+        .link {
+
+        }
+        .neighbor {
+
+        }
+        .online {
+
+        }
+        .header{
+
+        }
+        .table {
+
+        }
+        table,td,th {
+            border: 1px solid black;
+        }
+        td, th {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="worker">
+        <p><span>UUID:</span> <span>{{ .Worker.UUID }}</span></p>
+        <p><span>UpTime:</span> <span>{{ .Worker.Uptime }}</span></p>
+    </div>
+    <div class="point">
+        {{ $pointLen := len .Points }}
+        <div class="header">
+            <p>
+                <span>The point accessed to, and total </span><span>{{ $pointLen }}</span>
+            </p>
+        </div>
+        <div class="table">
+            <table>
+                <thead>
+                <tr>
+                    <!--uuid, uptime, alias, remote, device, receipt, transmis, error, state -->
+                    <th>UUID</th>
+                    <th>UpTime</th>
+                    <th>Alias</th>
+                    <th>Address</th>
+                    <th>Device</th>
+                    <th>Receipt</th>
+                    <th>Transmit</th>
+                    <th>Error</th>
+                    <th>State</th>
+                </tr>
+                </thead>
+                <tbody>
+                {{ range .Points }}
+                <tr>
+                    <td>{{ .UUID }}</td>
+                    <td>{{ .Uptime }}</td>
+                    <td>{{ .Alias }}</td>
+                    <td>{{ .Address }}</td>
+                    <td>{{ .Device }}</td>
+                    <td>{{ .RxBytes }}</td>
+                    <td>{{ .TxBytes }}</td>
+                    <td>{{ .ErrPkt }}</td>
+                    <td>{{ .State }}</td>
+                </tr>
+                {{ end }}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="link">
+        {{ $linkLen := len .Links }}
+        <div class="header">
+            <p>
+                <span>The link which connect to other, and total </span><span>{{ $linkLen }}</span>
+            </p>
+        </div>
+        <div class="table">
+            <table>
+                <thead>
+                <tr>
+                    <!--uuid, uptime, device, remote, state -->
+                    <th>UUID</th>
+                    <th>UpTime</th>
+                    <th>Device</th>
+                    <th>Address</th>
+                    <th>State</th>
+                </tr>
+                </thead>
+                <tbody>
+                {{ range .Links }}
+                    <tr>
+                        <td>{{ .UUID }}</td>
+                        <td>{{ .Uptime }}</td>
+                        <td>{{ .Device }}</td>
+                        <td>{{ .Address }}</td>
+                        <td>{{ .State }}</td>
+                    </tr>
+                {{ end }}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="neighbor">
+        {{ $neighborLen := len .Neighbors }}
+        <div class="header">
+            <p>
+                <span>The neighbor we discovered on, and total </span><span>{{ $neighborLen }}</span>
+            </p>
+        </div>
+        <div class="table">
+            <table>
+                <thead>
+                <tr>
+                    <!--uptime, ethernet, address, remote -->
+                    <th>UpTime</th>
+                    <th>Ethernet</th>
+                    <th>IP Address</th>
+                    <th>On Client</th>
+                </tr>
+                </thead>
+                <tbody>
+                {{ range .Neighbors }}
+                    <tr>
+                        <td>{{ .Uptime }}</td>
+                        <td>{{ .HwAddr }}</td>
+                        <td>{{ .IpAddr }}</td>
+                        <td>{{ .Client }}</td>
+                    </tr>
+                {{ end }}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="online">
+        {{ $onlineLen := len .OnLines }}
+        <div class="header">
+            <p>
+                <span>The flow traced from point, and total </span><span>{{ $onlineLen }}</span>
+            </p>
+        </div>
+        <div class="table">
+            <table>
+                <thead>
+                <tr>
+                    <!--source, dest address, protocol, source, dest port -->
+                    <th>Source</th>
+                    <th>Destination Address</th>
+                    <th>Protocol</th>
+                    <th>Source</th>
+                    <th>Destination Port</th>
+                </tr>
+                </thead>
+                <tbody>
+                {{ range .OnLines }}
+                    <tr>
+                        <td>{{ .IpSource }}</td>
+                        <td>{{ .IpDest }}</td>
+                        <td>{{ .IpProto }}</td>
+                        <td>{{ .PortSource }}</td>
+                        <td>{{ .PortDest }}</td>
+                    </tr>
+                {{ end }}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

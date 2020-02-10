@@ -53,7 +53,7 @@ func (o *Online) OnFrame(client *libol.TcpClient, frame *libol.FrameMessage) err
 
 		line := models.NewLine(eth.Type)
 		line.IpSource = ip.Source
-		line.IPDest = ip.Destination
+		line.IpDest = ip.Destination
 		line.IpProtocol = ip.Protocol
 
 		switch ip.Protocol {

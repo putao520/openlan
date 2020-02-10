@@ -220,12 +220,10 @@ func (h *Http) PubFile(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "%s\n", contents)
 }
 
-func (h *Http) getIndex() string {
-	// header
-	body := fmt.Sprintf("# uuid: %s\n", h.worker.UUID())
-	body += fmt.Sprintf("# uptime: %d\n", h.worker.UpTime())
-	body += "\n"
-	// point
+func (h *Http) getIndex(body *IndexSchema) *IndexSchema {
+	body.Worker.UUID = h.worker.UUID()
+	body.Worker.Uptime = h.worker.UpTime()
+
 	pointList := make([]*models.Point, 0, 128)
 	for p := range service.Point.List() {
 		if p == nil {
@@ -236,17 +234,22 @@ func (h *Http) getIndex() string {
 	sort.SliceStable(pointList, func(i, j int) bool {
 		return pointList[i].UUID > pointList[j].UUID
 	})
-	body += "# point accessed to. and "
-	body += fmt.Sprintf("total %d.\n", len(pointList))
-	body += "# uuid, uptime, alias, remote, device, receipt, transmis, error, state\n"
 	for _, p := range pointList {
 		client, dev := p.Client, p.Device
-		body += fmt.Sprintf("%s, %d, %s, %s, %s, %d, %d, %d, %s\n",
-			p.UUID, p.Uptime, p.Alias, client.Addr, dev.Name(),
-			client.Sts.RxOkay, client.Sts.TxOkay, client.Sts.TxError, client.State())
+		point := PointSchema{
+			Uptime: p.Uptime,
+			UUID: p.UUID,
+			Alias: p.Alias,
+			Address: client.Addr,
+			Device: dev.Name(),
+			RxBytes: client.Sts.RxOkay,
+			TxBytes: client.Sts.TxOkay,
+			ErrPkt: client.Sts.TxError,
+			State: client.State(),
+		}
+		body.Points = append(body.Points, point)
 	}
 
-	// neighbor
 	neighborList := make([]*models.Neighbor, 0, 128)
 	for n := range service.Neighbor.List() {
 		if n == nil {
@@ -257,16 +260,16 @@ func (h *Http) getIndex() string {
 	sort.SliceStable(neighborList, func(i, j int) bool {
 		return neighborList[i].IpAddr.String() > neighborList[j].IpAddr.String()
 	})
-	body += "\n"
-	body += "# neighbor we discovered on. and "
-	body += fmt.Sprintf("total %d.\n", len(neighborList))
-	body += "# uptime, ethernet, address, remote\n"
 	for _, n := range neighborList {
-		body += fmt.Sprintf("%d, %s, %s, %s\n",
-			n.UpTime(), n.HwAddr, n.IpAddr, n.Client)
+		neighbor := NeighborSchema{
+			Uptime: n.UpTime(),
+			HwAddr: n.HwAddr.String(),
+			IpAddr: n.IpAddr.String(),
+			Client: n.Client.String(),
+		}
+		body.Neighbors = append(body.Neighbors, neighbor)
 	}
 
-	// link
 	linkList := make([]*models.Point, 0, 128)
 	for p := range service.Link.List() {
 		if p == nil {
@@ -277,17 +280,18 @@ func (h *Http) getIndex() string {
 	sort.SliceStable(linkList, func(i, j int) bool {
 		return linkList[i].UUID > linkList[j].UUID
 	})
-	body += "\n"
-	body += "# link which connect to other. and "
-	body += fmt.Sprintf("total %d.\n", len(linkList))
-	body += "# uuid, uptime, device, remote, state\n"
 	for _, p := range linkList {
 		client, dev := p.Client, p.Device
-		body += fmt.Sprintf("%s, %d, %s, %s, %s\n",
-			p.UUID, client.UpTime(), dev.Name(), client.Addr, client.State())
+		link := LinkSchema{
+			UUID: p.UUID,
+			Uptime:client.UpTime(),
+			Device: dev.Name(),
+			Address: client.Addr,
+			State: client.State(),
+		}
+		body.Links = append(body.Links, link)
 	}
 
-	// line
 	lineList := make([]*models.Line, 0, 128)
 	for l := range service.Online.List() {
 		if l == nil {
@@ -298,30 +302,34 @@ func (h *Http) getIndex() string {
 	sort.SliceStable(lineList, func(i, j int) bool {
 		return lineList[i].String() > lineList[j].String()
 	})
-	body += "\n"
-	body += "# online that traces the destination from point. and "
-	body += fmt.Sprintf("total %d.\n", len(lineList))
-	body += "# source, dest address, protocol, source, dest port\n"
 	for _, l := range lineList {
-		body += fmt.Sprintf("%s, %s, %s, %d, %d\n",
-			l.IpSource, l.IPDest, libol.IpProto2Str(l.IpProtocol), l.PortSource, l.PortDest)
+		online := OnLineSchema{
+			EthType: l.EthType,
+			IpSource: l.IpSource.String(),
+			IpDest: l.IpDest.String(),
+			IpProto: libol.IpProto2Str(l.IpProtocol),
+			PortSource: l.PortSource,
+			PortDest: l.PortDest,
+		}
+		body.OnLines = append(body.OnLines, online)
+
 	}
 	return body
 }
 
 func (h *Http) IndexHtml(w http.ResponseWriter, r *http.Request) {
-	body := h.getIndex()
+	body := IndexSchema{
+		Points: make([]PointSchema, 0, 128),
+		Links: make([]LinkSchema, 0, 128),
+		Neighbors: make([]NeighborSchema, 0, 128),
+		OnLines: make([]OnLineSchema, 0, 128),
+	}
 	file := h.getFile("/index.html")
 	if t, err := template.ParseFiles(file); err == nil {
-		data := struct {
-			Body string
-		}{
-			Body: body,
-		}
-		t.Execute(w, data)
+		t.Execute(w, h.getIndex(&body))
 	} else {
 		libol.Error("Http.Index %s", err)
-		fmt.Fprintf(w, body)
+		fmt.Fprintf(w, "template.ParseFiles %d", err)
 	}
 }
 
