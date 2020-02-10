@@ -21,9 +21,11 @@ rpm:
 	cp -rvf ~/rpmbuild/RPMS/x86_64/openlan-*.rpm resource
 
 win-zip:
-	mkdir -p openlan-wins
-	cp -rvf resource/point.windows.x86_64 openlan-wins
+	rm -rf openlan-wins && mkdir -p openlan-wins
 	cp -rvf resource/point.json openlan-wins
+	cp -rvf resource/point.windows.x86_64.exe openlan-wins
+	cp -rvf resource/vswitch.windows.x86_64.exe openlan-wins
+	rm -rf resource/openlan-wins.zip
 	zip -r resource/openlan-wins.zip openlan-wins
 
 docker:
@@ -36,3 +38,4 @@ docker:
 test:
 	go test -mod=vendor github.com/danieldin95/openlan-go/point
 	go test -mod=vendor -bench=. github.com/danieldin95/openlan-go/point
+	go test -mod=vendor github.com/danieldin95/openlan-go/libol

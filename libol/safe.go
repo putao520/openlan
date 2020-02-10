@@ -2,31 +2,37 @@ package libol
 
 import "sync"
 
-//m := NewSMap(1024)
+//m := NewSafeMap(1024)
 //m.Set("hi", 1)
-//a=3
+//a :=3
 //m.Set("hip", &a)
 //c := m.Get("hip").(*int)
 //fmt.Printf("%s\n%d\n", m, *c)
 
-type SMap struct {
+type SafeMap struct {
 	Data map[interface{}]interface{}
 	Lock sync.RWMutex
 }
 
-func NewSMap(size int) *SMap {
-	return &SMap{
+func NewSafeMap(size int) *SafeMap {
+	return &SafeMap{
 		Data: make(map[interface{}]interface{}, size),
 	}
 }
 
-func (sm *SMap) Set(k interface{}, v interface{}) {
+func (sm *SafeMap) Len() int {
+	sm.Lock.RLock()
+	defer sm.Lock.RUnlock()
+	return len(sm.Data)
+}
+
+func (sm *SafeMap) Set(k interface{}, v interface{}) {
 	sm.Lock.Lock()
 	defer sm.Lock.Unlock()
 	sm.Data[k] = v
 }
 
-func (sm *SMap) Del(k interface{}) {
+func (sm *SafeMap) Del(k interface{}) {
 	sm.Lock.RLock()
 	defer sm.Lock.RUnlock()
 
@@ -35,20 +41,20 @@ func (sm *SMap) Del(k interface{}) {
 	}
 }
 
-func (sm *SMap) Get(k interface{}) interface{} {
+func (sm *SafeMap) Get(k interface{}) interface{} {
 	sm.Lock.RLock()
 	defer sm.Lock.RUnlock()
 	return sm.Data[k]
 }
 
-func (sm *SMap) GetEx(k string) (interface{}, bool) {
+func (sm *SafeMap) GetEx(k string) (interface{}, bool) {
 	sm.Lock.RLock()
 	defer sm.Lock.RUnlock()
 	v, ok := sm.Data[k]
 	return v, ok
 }
 
-func (sm *SMap) List() <-chan interface{} {
+func (sm *SafeMap) List() <-chan interface{} {
 	ret := make(chan interface{}, 1024)
 
 	go func() {
@@ -64,26 +70,26 @@ func (sm *SMap) List() <-chan interface{} {
 	return ret
 }
 
-// a := SVar
+// a := SafeVar
 // a.Set(0x01)
 // a.Get().(int)
 
-type SVar struct {
+type SafeVar struct {
 	Data interface{}
 	Lock sync.RWMutex
 }
 
-func NewSVar(size int) *SVar {
-	return &SVar{}
+func NewSafeVar(size int) *SafeVar {
+	return &SafeVar{}
 }
 
-func (sv *SVar) Set(v interface{}) {
+func (sv *SafeVar) Set(v interface{}) {
 	sv.Lock.Lock()
 	defer sv.Lock.Unlock()
 	sv.Data = v
 }
 
-func (sv *SVar) Get() interface{} {
+func (sv *SafeVar) Get() interface{} {
 	sv.Lock.RLock()
 	defer sv.Lock.RUnlock()
 	return sv.Data

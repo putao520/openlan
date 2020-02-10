@@ -1,7 +1,6 @@
 package network
 
 import (
-	"github.com/songgao/water"
 	"sync"
 	"testing"
 )
@@ -10,25 +9,24 @@ func TestBridgeWriteAndReadByTap(t *testing.T) {
 	var wg sync.WaitGroup
 
 	//open bridge.
-	br := NewBridger("br-test", 1500)
+	br := NewBridger("linux", "br-test", 1500)
 	br.Open("")
 
 	//open tap device
-	cfg := water.Config{DeviceType: water.TAP}
-	dev01, err := water.New(cfg)
+	dev01, err := NewKernelTap(true, "")
 	if err != nil {
 		t.Errorf("Tap.Open %s", err)
 		return
 	}
 
-	dev02, err := water.New(cfg)
+	dev02, err := NewKernelTap(true, "")
 	if err != nil {
 		t.Errorf("Tap.Open %s", err)
 		return
 	}
 
-	br.AddSlave(dev01.Name())
-	br.AddSlave(dev02.Name())
+	br.AddSlave(dev01)
+	br.AddSlave(dev02)
 
 	wg.Add(1)
 	go func() {
