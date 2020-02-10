@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"strings"
 	"text/template"
 	"time"
 )
@@ -288,6 +289,7 @@ func (h *Http) getIndex(body *IndexSchema) *IndexSchema {
 			Device: dev.Name(),
 			Address: client.Addr,
 			State: client.State(),
+			IpAddr: strings.Split(client.Addr, ":")[0],
 		}
 		body.Links = append(body.Links, link)
 	}

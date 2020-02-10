@@ -107,7 +107,7 @@
                         <td>{{ .UUID }}</td>
                         <td>{{ .Uptime }}</td>
                         <td>{{ .Device }}</td>
-                        <td>{{ .Address }}</td>
+                        <td><a href="https://{{ .IpAddr }}:10000">{{ .Address }}</a></td>
                         <td>{{ .State }}</td>
                     </tr>
                 {{ end }}

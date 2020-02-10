@@ -23,6 +23,7 @@ type LinkSchema struct {
 	UUID    string
 	Alias   string
 	Address string
+	IpAddr  string
 	Device  string
 	RxBytes uint64
 	TxBytes uint64
