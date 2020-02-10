@@ -1,5 +1,5 @@
 Name: openlan-vswitch
-Version: 4.1
+Version: 4.2
 Release: 1%{?dist}
 Summary: OpenLan's Project Software
 Group: Applications/Communications
