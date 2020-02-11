@@ -20,13 +20,15 @@ rpm:
 	rpmbuild -ba packaging/openlan-vswitch.spec
 	cp -rvf ~/rpmbuild/RPMS/x86_64/openlan-*.rpm resource
 
+WIN_DIR = "openlan-windows-"$$(cat VERSION)
+
 win-zip:
-	rm -rf openlan-wins && mkdir -p openlan-wins
-	cp -rvf resource/point.json openlan-wins
-	cp -rvf resource/point.windows.x86_64.exe openlan-wins
-	cp -rvf resource/vswitch.windows.x86_64.exe openlan-wins
-	rm -rf resource/openlan-wins.zip
-	zip -r resource/openlan-wins.zip openlan-wins
+	rm -rf $(WIN_DIR) && mkdir -p $(WIN_DIR)
+	cp -rvf resource/point.json $(WIN_DIR)
+	cp -rvf resource/point.windows.x86_64.exe $(WIN_DIR)
+	cp -rvf resource/vswitch.windows.x86_64.exe $(WIN_DIR)
+	rm -rf resource/$(WIN_DIR).zip
+	zip -r resource/$(WIN_DIR).zip $(WIN_DIR)
 
 docker:
 	docker build -t openlan-point -f packaging/point/Dockerfile .
