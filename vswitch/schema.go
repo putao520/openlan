@@ -1,6 +1,5 @@
 package vswitch
 
-
 type WorkerSchema struct {
 	Uptime int64
 	UUID   string

@@ -238,15 +238,15 @@ func (h *Http) getIndex(body *IndexSchema) *IndexSchema {
 	for _, p := range pointList {
 		client, dev := p.Client, p.Device
 		point := PointSchema{
-			Uptime: p.Uptime,
-			UUID: p.UUID,
-			Alias: p.Alias,
+			Uptime:  p.Uptime,
+			UUID:    p.UUID,
+			Alias:   p.Alias,
 			Address: client.Addr,
-			Device: dev.Name(),
+			Device:  dev.Name(),
 			RxBytes: client.Sts.RxOkay,
 			TxBytes: client.Sts.TxOkay,
-			ErrPkt: client.Sts.TxError,
-			State: client.State(),
+			ErrPkt:  client.Sts.TxError,
+			State:   client.State(),
 		}
 		body.Points = append(body.Points, point)
 	}
@@ -284,12 +284,12 @@ func (h *Http) getIndex(body *IndexSchema) *IndexSchema {
 	for _, p := range linkList {
 		client, dev := p.Client, p.Device
 		link := LinkSchema{
-			UUID: p.UUID,
-			Uptime:client.UpTime(),
-			Device: dev.Name(),
+			UUID:    p.UUID,
+			Uptime:  client.UpTime(),
+			Device:  dev.Name(),
 			Address: client.Addr,
-			State: client.State(),
-			IpAddr: strings.Split(client.Addr, ":")[0],
+			State:   client.State(),
+			IpAddr:  strings.Split(client.Addr, ":")[0],
 		}
 		body.Links = append(body.Links, link)
 	}
@@ -306,12 +306,12 @@ func (h *Http) getIndex(body *IndexSchema) *IndexSchema {
 	})
 	for _, l := range lineList {
 		online := OnLineSchema{
-			EthType: l.EthType,
-			IpSource: l.IpSource.String(),
-			IpDest: l.IpDest.String(),
-			IpProto: libol.IpProto2Str(l.IpProtocol),
+			EthType:    l.EthType,
+			IpSource:   l.IpSource.String(),
+			IpDest:     l.IpDest.String(),
+			IpProto:    libol.IpProto2Str(l.IpProtocol),
 			PortSource: l.PortSource,
-			PortDest: l.PortDest,
+			PortDest:   l.PortDest,
 		}
 		body.OnLines = append(body.OnLines, online)
 
@@ -321,10 +321,10 @@ func (h *Http) getIndex(body *IndexSchema) *IndexSchema {
 
 func (h *Http) IndexHtml(w http.ResponseWriter, r *http.Request) {
 	body := IndexSchema{
-		Points: make([]PointSchema, 0, 128),
-		Links: make([]LinkSchema, 0, 128),
+		Points:    make([]PointSchema, 0, 128),
+		Links:     make([]LinkSchema, 0, 128),
 		Neighbors: make([]NeighborSchema, 0, 128),
-		OnLines: make([]OnLineSchema, 0, 128),
+		OnLines:   make([]OnLineSchema, 0, 128),
 	}
 	file := h.getFile("/index.html")
 	if t, err := template.ParseFiles(file); err == nil {

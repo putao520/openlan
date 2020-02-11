@@ -11,11 +11,11 @@ import (
 )
 
 type Online struct {
-	max       int
-	lock      sync.RWMutex
-	lines     map[string]*models.Line
-	lineList  *list.List
-	worker    Worker
+	max      int
+	lock     sync.RWMutex
+	lines    map[string]*models.Line
+	lineList *list.List
+	worker   Worker
 }
 
 func NewOnline(w Worker, c *config.VSwitch) (o *Online) {
