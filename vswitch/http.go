@@ -122,6 +122,7 @@ func (h *Http) LoadRouter() {
 	h.Router().HandleFunc("/api/point/{id}", h.GetPoint).Methods("GET")
 	h.Router().HandleFunc("/api/network", h.ListNetwork).Methods("GET")
 	h.Router().HandleFunc("/api/network/{id}", h.GetNetwork).Methods("GET")
+	h.Router().HandleFunc("/api/online", h.ListOnline).Methods("GET")
 }
 
 func (h *Http) LoadToken() error {
@@ -499,4 +500,15 @@ func (h *Http) GetNetwork(w http.ResponseWriter, r *http.Request) {
 	} else {
 		http.Error(w, vars["id"], http.StatusNotFound)
 	}
+}
+
+func (h *Http) ListOnline(w http.ResponseWriter, r *http.Request) {
+	nets := make([]OnLineSchema, 0, 1024)
+	for u := range service.Online.List() {
+		if u == nil {
+			break
+		}
+		nets = append(nets, NewOnLineSchema(u))
+	}
+	h.ResponseJson(w, nets)
 }

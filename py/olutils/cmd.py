@@ -164,3 +164,10 @@ def cmd_list_neighbor(client, opt):
     resp = client.request("neighbor", "GET")
     return resp
 
+
+@cli.parser('list-online', help="display all online")
+@cli.output
+@with_client
+def cmd_list_online(client, opt):
+    resp = client.request("online", "GET")
+    return resp
