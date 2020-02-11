@@ -76,6 +76,14 @@ def parse_args():
 cli = Cli(parse.add_subparsers())
 
 
+@cli.parser('list', help="display overview")
+@cli.output
+@with_client
+def cmd_list_index(client, opt):
+    resp = client.request("index", "GET")
+    return resp
+
+
 @cli.parser('list-user', help="display all users")
 @cli.output
 @with_client

@@ -13,7 +13,6 @@ import (
 	"net/http"
 	"os"
 	"sort"
-	"strings"
 	"text/template"
 	"time"
 )
@@ -109,6 +108,7 @@ func (h *Http) SaveToken() error {
 func (h *Http) LoadRouter() {
 	h.Router().HandleFunc("/", h.IndexHtml)
 	h.Router().HandleFunc("/favicon.ico", h.PubFile)
+	h.Router().HandleFunc("/api/index", h.GetIndex).Methods("GET")
 	h.Router().HandleFunc("/api/link", h.ListLink).Methods("GET")
 	h.Router().HandleFunc("/api/link/{id}", h.GetLink).Methods("GET")
 	h.Router().HandleFunc("/api/link/{id}", h.AddLink).Methods("POST")
@@ -222,8 +222,7 @@ func (h *Http) PubFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Http) getIndex(body *IndexSchema) *IndexSchema {
-	body.Worker.UUID = h.worker.UUID()
-	body.Worker.Uptime = h.worker.UpTime()
+	body.Worker = NewWorkerSchema(h.worker)
 
 	pointList := make([]*models.Point, 0, 128)
 	for p := range service.Point.List() {
@@ -236,19 +235,7 @@ func (h *Http) getIndex(body *IndexSchema) *IndexSchema {
 		return pointList[i].UUID > pointList[j].UUID
 	})
 	for _, p := range pointList {
-		client, dev := p.Client, p.Device
-		point := PointSchema{
-			Uptime:  p.Uptime,
-			UUID:    p.UUID,
-			Alias:   p.Alias,
-			Address: client.Addr,
-			Device:  dev.Name(),
-			RxBytes: client.Sts.RxOkay,
-			TxBytes: client.Sts.TxOkay,
-			ErrPkt:  client.Sts.TxError,
-			State:   client.State(),
-		}
-		body.Points = append(body.Points, point)
+		body.Points = append(body.Points, NewPointSchema(p))
 	}
 
 	neighborList := make([]*models.Neighbor, 0, 128)
@@ -262,13 +249,7 @@ func (h *Http) getIndex(body *IndexSchema) *IndexSchema {
 		return neighborList[i].IpAddr.String() > neighborList[j].IpAddr.String()
 	})
 	for _, n := range neighborList {
-		neighbor := NeighborSchema{
-			Uptime: n.UpTime(),
-			HwAddr: n.HwAddr.String(),
-			IpAddr: n.IpAddr.String(),
-			Client: n.Client.String(),
-		}
-		body.Neighbors = append(body.Neighbors, neighbor)
+		body.Neighbors = append(body.Neighbors, NewNeighborSchema(n))
 	}
 
 	linkList := make([]*models.Point, 0, 128)
@@ -282,16 +263,7 @@ func (h *Http) getIndex(body *IndexSchema) *IndexSchema {
 		return linkList[i].UUID > linkList[j].UUID
 	})
 	for _, p := range linkList {
-		client, dev := p.Client, p.Device
-		link := LinkSchema{
-			UUID:    p.UUID,
-			Uptime:  client.UpTime(),
-			Device:  dev.Name(),
-			Address: client.Addr,
-			State:   client.State(),
-			IpAddr:  strings.Split(client.Addr, ":")[0],
-		}
-		body.Links = append(body.Links, link)
+		body.Links = append(body.Links, NewLinkSchema(p))
 	}
 
 	lineList := make([]*models.Line, 0, 128)
@@ -305,15 +277,7 @@ func (h *Http) getIndex(body *IndexSchema) *IndexSchema {
 		return lineList[i].String() > lineList[j].String()
 	})
 	for _, l := range lineList {
-		online := OnLineSchema{
-			EthType:    l.EthType,
-			IpSource:   l.IpSource.String(),
-			IpDest:     l.IpDest.String(),
-			IpProto:    libol.IpProto2Str(l.IpProtocol),
-			PortSource: l.PortSource,
-			PortDest:   l.PortDest,
-		}
-		body.OnLines = append(body.OnLines, online)
+		body.OnLines = append(body.OnLines, NewOnLineSchema(l))
 
 	}
 	return body
@@ -335,13 +299,61 @@ func (h *Http) IndexHtml(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *Http) GetIndex(w http.ResponseWriter, r *http.Request) {
+	body := IndexSchema{
+		Points:    make([]PointSchema, 0, 128),
+		Links:     make([]LinkSchema, 0, 128),
+		Neighbors: make([]NeighborSchema, 0, 128),
+		OnLines:   make([]OnLineSchema, 0, 128),
+		Network:   make([]NetworkSchema, 0, 128),
+	}
+	body.Worker = NewWorkerSchema(h.worker)
+	for p := range service.Point.List() {
+		if p == nil {
+			break
+		}
+		body.Points = append(body.Points, NewPointSchema(p))
+	}
+	for n := range service.Neighbor.List() {
+		if n == nil {
+			break
+		}
+		body.Neighbors = append(body.Neighbors, NewNeighborSchema(n))
+	}
+	for p := range service.Link.List() {
+		if p == nil {
+			break
+		}
+		body.Links = append(body.Links, NewLinkSchema(p))
+	}
+	for l := range service.Online.List() {
+		if l == nil {
+			break
+		}
+		body.OnLines = append(body.OnLines, NewOnLineSchema(l))
+	}
+	for l := range service.Online.List() {
+		if l == nil {
+			break
+		}
+		body.OnLines = append(body.OnLines, NewOnLineSchema(l))
+	}
+	for n := range service.Network.List() {
+		if n == nil {
+			break
+		}
+		body.Network = append(body.Network, NewNetworkSchema(n))
+	}
+
+	h.ResponseJson(w, body)
+}
 func (h *Http) ListUser(w http.ResponseWriter, r *http.Request) {
-	users := make([]*models.User, 0, 1024)
+	users := make([]UserSchema, 0, 1024)
 	for u := range service.User.List() {
 		if u == nil {
 			break
 		}
-		users = append(users, u)
+		users = append(users, NewUserSchema(u))
 	}
 	h.ResponseJson(w, users)
 }
@@ -350,7 +362,7 @@ func (h *Http) GetUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	user := service.User.Get(vars["id"])
 	if user != nil {
-		h.ResponseJson(w, user)
+		h.ResponseJson(w, NewUserSchema(user))
 	} else {
 		http.Error(w, vars["id"], http.StatusNotFound)
 	}
@@ -364,13 +376,13 @@ func (h *Http) AddUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := &models.User{}
+	user := &UserSchema{}
 	if err := json.Unmarshal([]byte(body), user); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	service.User.Add(user)
+	service.User.Add(user.ToModel())
 	h.ResponseMsg(w, 0, "")
 }
 
@@ -384,25 +396,24 @@ func (h *Http) DelUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Http) ListNeighbor(w http.ResponseWriter, r *http.Request) {
-	neighbors := make([]*models.Neighbor, 0, 1024)
+	neighbors := make([]NeighborSchema, 0, 1024)
 	for n := range service.Neighbor.List() {
 		if n == nil {
 			break
 		}
-
-		neighbors = append(neighbors, n)
+		neighbors = append(neighbors, NewNeighborSchema(n))
 	}
 
 	h.ResponseJson(w, neighbors)
 }
 
 func (h *Http) ListLink(w http.ResponseWriter, r *http.Request) {
-	links := make([]*models.Point, 0, 1024)
+	links := make([]LinkSchema, 0, 1024)
 	for l := range service.Link.List() {
 		if l == nil {
 			break
 		}
-		links = append(links, l)
+		links = append(links, NewLinkSchema(l))
 	}
 
 	h.ResponseJson(w, links)
@@ -414,7 +425,7 @@ func (h *Http) GetLink(w http.ResponseWriter, r *http.Request) {
 
 	link := service.Link.Get(vars["id"])
 	if link != nil {
-		h.ResponseJson(w, link)
+		h.ResponseJson(w, NewLinkSchema(link))
 	} else {
 		http.Error(w, vars["id"], http.StatusNotFound)
 	}
@@ -449,12 +460,12 @@ func (h *Http) DelLink(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Http) ListPoint(w http.ResponseWriter, r *http.Request) {
-	points := make([]*models.Point, 0, 1024)
+	points := make([]PointSchema, 0, 1024)
 	for u := range service.Point.List() {
 		if u == nil {
 			break
 		}
-		points = append(points, u)
+		points = append(points, NewPointSchema(u))
 	}
 	h.ResponseJson(w, points)
 }
@@ -463,19 +474,19 @@ func (h *Http) GetPoint(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	point := service.Point.Get(vars["id"])
 	if point != nil {
-		h.ResponseJson(w, point)
+		h.ResponseJson(w, NewPointSchema(point))
 	} else {
 		http.Error(w, vars["id"], http.StatusNotFound)
 	}
 }
 
 func (h *Http) ListNetwork(w http.ResponseWriter, r *http.Request) {
-	nets := make([]*models.Network, 0, 1024)
+	nets := make([]NetworkSchema, 0, 1024)
 	for u := range service.Network.List() {
 		if u == nil {
 			break
 		}
-		nets = append(nets, u)
+		nets = append(nets, NewNetworkSchema(u))
 	}
 	h.ResponseJson(w, nets)
 }
@@ -484,7 +495,7 @@ func (h *Http) GetNetwork(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	net := service.Network.Get(vars["id"])
 	if net != nil {
-		h.ResponseJson(w, net)
+		h.ResponseJson(w, NewNetworkSchema(net))
 	} else {
 		http.Error(w, vars["id"], http.StatusNotFound)
 	}

@@ -7,7 +7,7 @@ all:
 	@echo "make publish - upload to pypi"
 
 release: publish
-r
+
 dev:
 	pip install -requirements.txt
 	python setup.py develop
