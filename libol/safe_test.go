@@ -44,6 +44,42 @@ func TestSafeMap(t *testing.T) {
 	}
 }
 
+func TestZeroMapSet(t *testing.T) {
+	m := make(map[string]int, 32)
+	m["hi"] = 1
+	i := m["hi"]
+	assert.Equal(t, i, 1, "be the same.")
+
+	m["hi"] = 3
+	c := m["hi"]
+	assert.Equal(t, c, 3, "be the same.")
+	assert.Equal(t, 1, len(m), "be the same.")
+}
+
+func TestZeroSafeMapSet(t *testing.T) {
+	m := NewSafeMap(0)
+	m.Set("hi", 1)
+	i := m.Get("hi")
+	assert.Equal(t, i, 1, "be the same.")
+
+	m.Set("hi", 3)
+	c := m.Get("hi").(int)
+	assert.Equal(t, c, 1, "be the same.")
+	assert.Equal(t, 1, m.Len(), "be the same.")
+}
+
+func TestZeroSafeStrMapSet(t *testing.T) {
+	m := NewSafeStrMap(0)
+	m.Set("hi", 1)
+	i := m.Get("hi")
+	assert.Equal(t, i, 1, "be the same.")
+
+	m.Set("hi", 3)
+	c := m.Get("hi").(int)
+	assert.Equal(t, c, 1, "be the same.")
+	assert.Equal(t, 1, m.Len(), "be the same.")
+}
+
 func TestZeroSafeMap(t *testing.T) {
 	m := NewSafeMap(0)
 	m.Set("hi", 1)

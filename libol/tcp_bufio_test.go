@@ -91,7 +91,7 @@ func TestClientAndServer(t *testing.T) {
 	go startClient(wg, ok, 128, c)
 
 	wg.Wait()
-	fmt.Printf("Total tx: %d, rx: %d\n", c.Tx, c.Rx)
+	//fmt.Printf("Total tx: %d, rx: %d\n", c.Tx, c.Rx)
 }
 
 func BenchmarkClientAndServer(b *testing.B) {
@@ -105,5 +105,5 @@ func BenchmarkClientAndServer(b *testing.B) {
 	go startClient(wg, ok, b.N, c)
 
 	wg.Wait()
-	fmt.Printf("Total tx: %d, rx: %d\n", c.Tx, c.Rx)
+	//fmt.Printf("Total tx: %d, rx: %d\n", c.Tx, c.Rx)
 }

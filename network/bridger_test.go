@@ -30,13 +30,13 @@ func TestBridgeWriteAndReadByTap(t *testing.T) {
 
 	wg.Add(1)
 	go func() {
-		t.Logf("Tap.write: %s\n", dev01.Name())
+		//t.Logf("Tap.write: %s\n", dev01.Name())
 
 		frame := make([]byte, 65)
 		for i := 0; i < 64; i++ {
 			frame[i] = uint8(i)
 		}
-		t.Logf("Tap.write: %x", frame)
+		//t.Logf("Tap.write: %x", frame)
 		n, err := dev01.Write(frame)
 		if err != nil {
 			t.Errorf("Tap.write: %s", err)
