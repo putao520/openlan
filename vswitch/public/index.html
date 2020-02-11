@@ -4,46 +4,53 @@
     <meta charset="UTF-8">
     <title>Virtual Switch - OpenLan Project</title>
     <style type="text/css">
+        @media (min-device-width : 320px) and (max-device-width : 860px) {
+            .container {
+                width: 100%;
+                margin: 0 auto;
+            }
+        }
+        @media (min-device-width : 860px) {
+            .container {
+                width: 70%;
+            }
+        }
         body {
             font-family: monospace;
             background: #fdfcf8;
         }
         .container {
-            width: 80%;
+            min-width: 800px;
             margin: 0 auto;
         }
-        .worker{
-
-        }
-        .point {
-
-        }
-        .link {
-
-        }
-        .neighbor {
-
-        }
-        .online {
-
-        }
-        .header{
-
-        }
-        .table {
-
-        }
-        .table table {
+        .worker, .point, .link, .neighbor, .online {
             width: 100%;
             border: 1px solid #000000;
+            padding: 2px 5px;
+            margin: 2px auto;
         }
-        .table td, th {
-            border: 1px solid #000000;
-            text-align: center;
+        .panel-header {
+            margin: 8px 0px;
         }
-        .table th {
+        .panel-header p {
+            margin: 0px 0px;
+        }
+        .panel-body {
+            margin: 2px 0px 8px 0px;
+        }
+        .panel-table {
+            width: 100%;
+        }
+        .panel-table table {
+            width: 100%;
+        }
+        .panel-table th {
             font-weight: normal;
             font-size: small;
+        }
+        .panel-table td, th {
+            border: 1px solid #000000;
+            text-align: center;
         }
     </style>
 </head>
@@ -54,17 +61,15 @@
         <p><span>UpTime:</span> <span>{{ .Worker.Uptime }}</span></p>
     </div>
     <div class="point">
-        {{ $pointLen := len .Points }}
-        <div class="header">
+        <div class="panel-header">
             <p>
-                <span>The point accessed to, and total </span><span>{{ $pointLen }}</span>
+                <span>The point accessed to, and total </span><span>{{ len .Points }}</span>.
             </p>
         </div>
-        <div class="table">
-            <table>
+        <div class="panel-body">
+            <table class="panel-table">
                 <thead>
                 <tr>
-                    <!--uuid, uptime, alias, remote, device, receipt, transmis, error, state -->
                     <th>UUID</th>
                     <th>UpTime</th>
                     <th>Alias</th>
@@ -93,17 +98,15 @@
         </div>
     </div>
     <div class="link">
-        {{ $linkLen := len .Links }}
-        <div class="header">
-            <p>
-                <span>The link which connect to other, and total </span><span>{{ $linkLen }}</span>
-            </p>
+        <div class="panel-header">
+            <div>
+                <span>The link which connect to other, and total </span><span>{{ len .Links }}</span>.
+            </div>
         </div>
-        <div class="table">
-            <table>
+        <div class="panel-body">
+            <table class="panel-table">
                 <thead>
                 <tr>
-                    <!--uuid, uptime, device, remote, state -->
                     <th>UUID</th>
                     <th>UpTime</th>
                     <th>Device</th>
@@ -126,17 +129,15 @@
         </div>
     </div>
     <div class="neighbor">
-        {{ $neighborLen := len .Neighbors }}
-        <div class="header">
-            <p>
-                <span>The neighbor we discovered on, and total </span><span>{{ $neighborLen }}</span>
-            </p>
+        <div class="panel-header">
+            <div>
+                <span>The neighbor we discovered on, and total </span><span>{{ len .Neighbors }}</span>.
+            </div>
         </div>
-        <div class="table">
-            <table>
+        <div class="panel-body">
+            <table class="panel-table">
                 <thead>
                 <tr>
-                    <!--uptime, ethernet, address, remote -->
                     <th>UpTime</th>
                     <th>Ethernet</th>
                     <th>IP Address</th>
@@ -157,17 +158,15 @@
         </div>
     </div>
     <div class="online">
-        {{ $onlineLen := len .OnLines }}
-        <div class="header">
-            <p>
-                <span>The flow traced from point, and total </span><span>{{ $onlineLen }}</span>
-            </p>
+        <div class="panel-header">
+            <div>
+                <span>The flow traced from point, and total </span><span>{{ len .OnLines }}</span>.
+            </div>
         </div>
-        <div class="table">
-            <table>
+        <div class="panel-body">
+            <table class="panel-table">
                 <thead>
                 <tr>
-                    <!--source, dest address, protocol, source, dest port -->
                     <th>Source</th>
                     <th>Destination Address</th>
                     <th>Protocol</th>

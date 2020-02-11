@@ -48,6 +48,7 @@ func (w *_user) Add(user *models.User) {
 	if name == "" {
 		name = user.Token
 	}
+	w.users.Del(name)
 	w.users.Set(name, user)
 }
 

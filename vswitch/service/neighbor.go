@@ -18,6 +18,7 @@ func (p *_neighbor) Init(size int) {
 }
 
 func (p *_neighbor) Add(m *models.Neighbor) {
+	p.neighbors.Del(m.IpAddr.String())
 	p.neighbors.Set(m.IpAddr.String(), m)
 }
 
