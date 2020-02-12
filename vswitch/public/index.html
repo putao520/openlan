@@ -38,32 +38,41 @@
         }
         .panel-header {
             margin: 8px 0;
+            width: 100%;
         }
         .panel-header p {
             margin: 0;
         }
         .panel-body {
-            margin: 2px 0 8px 0;
+            margin: 8px 0;
+            width: 100%;
         }
-        .panel-table {
+        .table-display {
             width: 100%;
             border-collapse: collapse;
         }
-        .panel-table tr:nth-child(even)
+        .table-display tr:nth-child(even)
         {
             background: #f1f1f1;
         }
-        .panel-table tr:nth-child(odd)
+        .table-display tr:nth-child(odd)
         {
             background: inherit;
         }
-        .panel-table th {
+        .table-display th {
             font-weight: normal;
             font-size: small;
         }
-        .panel-table td, th {
+        .table-display td, th {
             text-align: center;
             border: 1px solid #000000;
+        }
+        .table-list {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table-list td:first-child {
+            font-size: small;
         }
         .authenticated {
             color: darkgreen;
@@ -79,8 +88,24 @@
 <body>
 <div class="container">
     <div class="worker">
-        <p><span>UUID:</span> <span>{{ .Worker.UUID }}</span></p>
-        <p><span>UpTime:</span> <span>{{ .Worker.Uptime }}</span></p>
+        <div class="panel-body">
+            <table class="table-list">
+                <tbody>
+                    <tr>
+                        <td>UUID:</td>
+                        <td>{{ .Worker.UUID }}</td>
+                    </tr>
+                    <tr>
+                        <td>UpTime:</td>
+                        <td>{{ .Worker.Uptime }}</td>
+                    </tr>
+                    <tr>
+                        <td>Alias:</td>
+                        <td>{{ .Worker.Alias }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
     <div class="point">
         <div class="panel-header">
@@ -89,7 +114,7 @@
             </p>
         </div>
         <div class="panel-body">
-            <table class="panel-table">
+            <table class="table-display">
                 <thead>
                 <tr>
                     <th>UUID</th>
@@ -126,7 +151,7 @@
             </div>
         </div>
         <div class="panel-body">
-            <table class="panel-table">
+            <table class="table-display">
                 <thead>
                 <tr>
                     <th>UUID</th>
@@ -157,7 +182,7 @@
             </div>
         </div>
         <div class="panel-body">
-            <table class="panel-table">
+            <table class="table-display">
                 <thead>
                 <tr>
                     <th>UpTime</th>
@@ -186,7 +211,7 @@
             </div>
         </div>
         <div class="panel-body">
-            <table class="panel-table">
+            <table class="table-display">
                 <thead>
                 <tr>
                     <th>Source</th>
