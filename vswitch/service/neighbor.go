@@ -22,9 +22,17 @@ func (p *_neighbor) Add(m *models.Neighbor) {
 	p.neighbors.Set(m.IpAddr.String(), m)
 }
 
+func (p *_neighbor) Update(m *models.Neighbor) *models.Neighbor {
+	if v := p.neighbors.Get(m.IpAddr.String()); v != nil {
+		n := v.(*models.Neighbor)
+		n.HwAddr = m.HwAddr
+		n.HitTime = m.HitTime
+	}
+	return nil
+}
+
 func (p *_neighbor) Get(key string) *models.Neighbor {
-	v := p.neighbors.Get(key)
-	if v != nil {
+	if v := p.neighbors.Get(key); v != nil {
 		return v.(*models.Neighbor)
 	}
 	return nil

@@ -96,6 +96,7 @@ func NewNeighborSchema(n *models.Neighbor) NeighborSchema {
 }
 
 type OnLineSchema struct {
+	Uptime     int64  `json:"uptime"`
 	EthType    uint16 `json:"ethType"`
 	IpSource   string `json:"ipSource"`
 	IpDest     string `json:"ipDestination"`
@@ -106,6 +107,7 @@ type OnLineSchema struct {
 
 func NewOnLineSchema(l *models.Line) OnLineSchema {
 	return OnLineSchema{
+		Uptime:     l.UpTime(),
 		EthType:    l.EthType,
 		IpSource:   l.IpSource.String(),
 		IpDest:     l.IpDest.String(),

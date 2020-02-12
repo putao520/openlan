@@ -65,27 +65,27 @@ func (e *Neighbors) AddNeighbor(neb *models.Neighbor) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
-	if n, ok := e.neighbors[neb.HwAddr.String()]; ok {
+	if n, ok := e.neighbors[neb.IpAddr.String()]; ok {
 		libol.Debug("Neighbors.AddNeighbor: update %s.", neb)
 		n.IpAddr = neb.IpAddr
 		n.Client = neb.Client
 		n.HitTime = time.Now().Unix()
+		service.Neighbor.Update(neb)
 	} else {
 		libol.Info("Neighbors.AddNeighbor: new %s.", neb)
-		e.neighbors[neb.HwAddr.String()] = neb
+		e.neighbors[neb.IpAddr.String()] = neb
+		service.Neighbor.Add(neb)
 	}
-
-	service.Neighbor.Add(neb)
 }
 
-func (e *Neighbors) DelNeighbor(hwAddr net.HardwareAddr) {
+func (e *Neighbors) DelNeighbor(ipAddr net.IP) {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
 
-	libol.Info("Neighbors.DelNeighbor %s.", hwAddr)
-	if n := e.neighbors[hwAddr.String()]; n != nil {
-		service.Neighbor.Del(n.IpAddr.String())
-		delete(e.neighbors, hwAddr.String())
+	libol.Info("Neighbors.DelNeighbor %s.", ipAddr)
+	if n := e.neighbors[ipAddr.String()]; n != nil {
+		service.Neighbor.Del(ipAddr.String())
+		delete(e.neighbors, ipAddr.String())
 	}
 }
 

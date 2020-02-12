@@ -33,5 +33,5 @@ func NewNeighbor(hwAddr net.HardwareAddr, ipAddr net.IP, client *libol.TcpClient
 }
 
 func (e *Neighbor) UpTime() int64 {
-	return time.Now().Unix() - e.NewTime
+	return time.Now().Unix() - e.HitTime
 }

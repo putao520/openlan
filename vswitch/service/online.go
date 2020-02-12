@@ -21,6 +21,14 @@ func (p *_online) Add(m *models.Line) {
 	p.lines.Set(m.String(), m)
 }
 
+func (p *_online) Update(m *models.Line) *models.Line {
+	if v := p.lines.Get(m.String()); v != nil {
+		l := v.(*models.Line)
+		l.HitTime = m.HitTime
+	}
+	return nil
+}
+
 func (p *_online) Get(key string) *models.Line {
 	if v := p.lines.Get(key); v != nil {
 		return v.(*models.Line)

@@ -104,5 +104,6 @@ func (o *Online) AddLine(line *models.Line) {
 		service.Online.Add(line)
 	} else if find != nil {
 		find.HitTime = time.Now().Unix()
+		service.Online.Update(find)
 	}
 }
