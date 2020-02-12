@@ -4,13 +4,16 @@
     <meta charset="UTF-8">
     <title>Virtual Switch - OpenLan Project</title>
     <style type="text/css">
-        @media (min-device-width : 320px) and (max-device-width : 860px) {
+        @media
+        (min-device-width : 320px)
+        and (max-device-width : 860px) {
             .container {
                 width: 100%;
                 margin: 0 auto;
             }
         }
-        @media (min-device-width : 860px) {
+        @media
+        (min-device-width : 860px) {
             .container {
                 width: 70%;
             }
@@ -30,31 +33,38 @@
             width: 100%;
             border: 1px solid #000000;
             border-radius: 4px;
-            padding: 0px 6px;
+            padding: 0 6px;
             margin: 8px 2px;
         }
         .panel-header {
-            margin: 8px 0px;
+            margin: 8px 0;
         }
         .panel-header p {
-            margin: 0px 0px;
+            margin: 0;
         }
         .panel-body {
-            margin: 2px 0px 8px 0px;
+            margin: 2px 0 8px 0;
         }
         .panel-table {
             width: 100%;
+            border-collapse: collapse;
         }
-        .panel-table table {
-            width: 100%;
+        .panel-table tr:nth-child(even)
+        {
+            background: #f1f1f1;
+        }
+        .panel-table tr:nth-child(odd)
+        {
+            background: inherit;
         }
         .panel-table th {
             font-weight: normal;
             font-size: small;
         }
         .panel-table td, th {
-            border: 1px solid #000000;
             text-align: center;
+            border: 1px solid #000000;
+            border-radius: 2px;
         }
         .authenticated {
             color: darkgreen;
