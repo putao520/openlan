@@ -276,7 +276,7 @@ func (h *Http) getIndex(body *IndexSchema) *IndexSchema {
 		lineList = append(lineList, l)
 	}
 	sort.SliceStable(lineList, func(i, j int) bool {
-		return lineList[i].String() > lineList[j].String()
+		return lineList[i].UpTime() < lineList[j].UpTime()
 	})
 	for _, l := range lineList {
 		body.OnLines = append(body.OnLines, NewOnLineSchema(l))
