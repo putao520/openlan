@@ -1,3 +1,0 @@
-export OL_SERVER="openlan.net"
-export OL_TOKEN="iqdot5grbx2cg7ayb"
-export PS1='[\u@\h \W(vswitch_admin)]\$ '

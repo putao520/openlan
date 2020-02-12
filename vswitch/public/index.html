@@ -23,6 +23,9 @@
             min-width: 800px;
             margin: 0 auto;
         }
+        .container a {
+            text-decoration: none;
+        }
         .worker, .point, .link, .neighbor, .online {
             width: 100%;
             border: 1px solid #000000;
@@ -51,6 +54,24 @@
         .panel-table td, th {
             border: 1px solid #000000;
             text-align: center;
+        }
+        .authenticated {
+            color: white;
+            background-color: green;
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+        .unauthenticated, .terminal, .closed {
+            color: white;
+            background-color: chocolate;
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+        .initialized, .connected, .connecting {
+            color: white;
+            background-color: black;
+            padding: 0 2px;
+            border-radius: 2px;
         }
     </style>
 </head>
@@ -90,7 +111,7 @@
                     <td>{{ .Device }}</td>
                     <td>{{ .RxBytes }}</td>
                     <td>{{ .TxBytes }}</td>
-                    <td>{{ .State }}</td>
+                    <td><span class="{{ .State }}">{{ .State }}</span></td>
                 </tr>
                 {{ end }}
                 </tbody>
@@ -121,7 +142,7 @@
                         <td>{{ .Uptime }}</td>
                         <td>{{ .Device }}</td>
                         <td><a href="https://{{ .IpAddr }}:10000">{{ .Address }}</a></td>
-                        <td>{{ .State }}</td>
+                        <td><span class="{{ .State }}">{{ .State }}</span></td>
                     </tr>
                 {{ end }}
                 </tbody>
