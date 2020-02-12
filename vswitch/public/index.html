@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Virtual Switch - OpenLan Project</title>
+    <title>Virtual Switch - {{ .Worker.Alias }}</title>
     <style type="text/css">
         @media
         (min-device-width : 320px)
@@ -97,7 +97,7 @@
                     </tr>
                     <tr>
                         <td>UpTime:</td>
-                        <td>{{ .Worker.Uptime }}</td>
+                        <td>{{ prettyTime .Worker.Uptime }}</td>
                     </tr>
                     <tr>
                         <td>Alias:</td>
@@ -131,7 +131,7 @@
                 {{ range .Points }}
                 <tr>
                     <td>{{ .UUID }}</td>
-                    <td>{{ .Uptime }}</td>
+                    <td>{{ prettyTime .Uptime }}</td>
                     <td>{{ .Alias }}</td>
                     <td>{{ .Address }}</td>
                     <td>{{ .Device }}</td>
@@ -165,7 +165,7 @@
                 {{ range .Links }}
                     <tr>
                         <td>{{ .UUID }}</td>
-                        <td>{{ .Uptime }}</td>
+                        <td>{{ prettyTime .Uptime }}</td>
                         <td>{{ .Device }}</td>
                         <td><a href="https://{{ .IpAddr }}:10000">{{ .Address }}</a></td>
                         <td><span class="{{ .State }}">{{ .State }}</span></td>
@@ -194,7 +194,7 @@
                 <tbody>
                 {{ range .Neighbors }}
                     <tr>
-                        <td>{{ .Uptime }}</td>
+                        <td>{{ prettyTime .Uptime }}</td>
                         <td>{{ .HwAddr }}</td>
                         <td>{{ .IpAddr }}</td>
                         <td>{{ .Client }}</td>

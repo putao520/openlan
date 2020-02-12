@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path"
 	"sort"
 	"text/template"
 	"time"
@@ -284,6 +285,22 @@ func (h *Http) getIndex(body *IndexSchema) *IndexSchema {
 	return body
 }
 
+func (h *Http) ParseFiles(w http.ResponseWriter, name string, data interface{}) error {
+	file := path.Base(name)
+	tmpl, err := template.New(file).Funcs(template.FuncMap{
+		"prettyTime": libol.PrettyTime,
+	}).ParseFiles(name)
+	if err != nil {
+		fmt.Fprintf(w, "template.ParseFiles %s", err)
+		return err
+	}
+	if err := tmpl.Execute(w, data); err != nil {
+		fmt.Fprintf(w, "template.ParseFiles %s", err)
+		return err
+	}
+	return nil
+}
+
 func (h *Http) IndexHtml(w http.ResponseWriter, r *http.Request) {
 	body := IndexSchema{
 		Points:    make([]PointSchema, 0, 128),
@@ -291,12 +308,10 @@ func (h *Http) IndexHtml(w http.ResponseWriter, r *http.Request) {
 		Neighbors: make([]NeighborSchema, 0, 128),
 		OnLines:   make([]OnLineSchema, 0, 128),
 	}
+	h.getIndex(&body)
 	file := h.getFile("/index.html")
-	if t, err := template.ParseFiles(file); err == nil {
-		t.Execute(w, h.getIndex(&body))
-	} else {
+	if err := h.ParseFiles(w, file, &body); err != nil {
 		libol.Error("Http.Index %s", err)
-		fmt.Fprintf(w, "template.ParseFiles %d", err)
 	}
 }
 
@@ -308,44 +323,7 @@ func (h *Http) GetIndex(w http.ResponseWriter, r *http.Request) {
 		OnLines:   make([]OnLineSchema, 0, 128),
 		Network:   make([]NetworkSchema, 0, 128),
 	}
-	body.Worker = NewWorkerSchema(h.worker)
-	for p := range service.Point.List() {
-		if p == nil {
-			break
-		}
-		body.Points = append(body.Points, NewPointSchema(p))
-	}
-	for n := range service.Neighbor.List() {
-		if n == nil {
-			break
-		}
-		body.Neighbors = append(body.Neighbors, NewNeighborSchema(n))
-	}
-	for p := range service.Link.List() {
-		if p == nil {
-			break
-		}
-		body.Links = append(body.Links, NewLinkSchema(p))
-	}
-	for l := range service.Online.List() {
-		if l == nil {
-			break
-		}
-		body.OnLines = append(body.OnLines, NewOnLineSchema(l))
-	}
-	for l := range service.Online.List() {
-		if l == nil {
-			break
-		}
-		body.OnLines = append(body.OnLines, NewOnLineSchema(l))
-	}
-	for n := range service.Network.List() {
-		if n == nil {
-			break
-		}
-		body.Network = append(body.Network, NewNetworkSchema(n))
-	}
-
+	h.getIndex(&body)
 	h.ResponseJson(w, body)
 }
 func (h *Http) ListUser(w http.ResponseWriter, r *http.Request) {

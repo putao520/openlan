@@ -3,6 +3,7 @@ package libol
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"net"
@@ -117,4 +118,18 @@ func IsErrorResponse(s string) bool {
 	}
 
 	return true
+}
+
+func PrettyTime(t int64) string {
+	mins := t / 60
+	if mins < 60 {
+		return fmt.Sprintf("%dm%ds", mins, t%60)
+	}
+
+	hours := mins / 60
+	if hours < 24 {
+		return fmt.Sprintf("%dh%dm", hours, mins%60)
+	}
+
+	return fmt.Sprintf("%dd%dh", hours/24, hours%24)
 }
