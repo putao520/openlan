@@ -1,8 +1,18 @@
 .PHONY: linux rpm win-zip test
 
-linux:
-	go build -mod=vendor -o resource/point.linux.x86_64 main/point_linux.go
-	go build -mod=vendor -o resource/vswitch.linux.x86_64 main/vswitch.go
+PKG = github.com/danieldin95/openlan-go/config
+
+LDFLAGS += -X $(PKG).Commit=$$(git rev-list -1 HEAD)
+LDFLAGS += -X $(PKG).Date=$$(date +%FT%T%z)
+LDFLAGS += -X $(PKG).Version=$$(cat VERSION)
+
+linux: linux-point linux-vswitch
+
+linux-point:
+	go build -mod=vendor -ldflags "$(LDFLAGS)" -o resource/point.linux.x86_64 main/point_linux.go
+
+linux-vswitch:
+	go build -mod=vendor -ldflags "$(LDFLAGS)" -o resource/vswitch.linux.x86_64 main/vswitch.go
 
 windows:
 	go build -mod=vendor -o resource/point.windows.x86_64.exe main/point_windows.go
@@ -11,8 +21,8 @@ windows:
 osx: darwin
 
 darwin:
-	go build -mod=vendor -o resource/point.darwin.x86_64 main/point_darwin.go
-	go build -mod=vendor -o resource/vswitch.darwin.x86_64 main/vswitch.go
+	go build -mod=vendor -ldflags "$(LDFLAGS)" -o resource/point.darwin.x86_64 main/point_darwin.go
+	go build -mod=vendor -ldflags "$(LDFLAGS)" -o resource/vswitch.darwin.x86_64 main/vswitch.go
 
 rpm:
 	./packaging/auto.sh

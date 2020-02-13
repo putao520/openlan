@@ -67,10 +67,6 @@ func (p *Point) AddAddr(ipStr string) error {
 }
 
 func (p *Point) DelAddr(ipStr string) error {
-	if ipStr == "" {
-		ipStr = p.addr
-	}
-
 	ipv4 := strings.Split(ipStr, "/")[0]
 	out, err := libol.IpAddrDel(p.IfName(), ipv4)
 	if err != nil {
@@ -102,10 +98,6 @@ func (p *Point) AddRoutes(routes []*models.Route) error {
 }
 
 func (p *Point) DelRoutes(routes []*models.Route) error {
-	if routes == nil {
-		routes = p.routes
-	}
-
 	for _, route := range routes {
 		out, err := libol.IpRouteDel(p.IfName(), route.Prefix, route.Nexthop)
 		if err != nil {

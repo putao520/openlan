@@ -16,7 +16,7 @@ OpenLan's Project Point Software
 
 %build
 cd %_source_dir
-go build -mod=vendor -o ./resource/point.linux.x86_64 main/point_linux.go
+make linux-point
 
 %install
 

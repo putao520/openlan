@@ -47,9 +47,6 @@ func (p *Point) Stop() {
 }
 
 func (p *Point) DelAddr(ipStr string) error {
-	if ipStr == "" {
-		ipStr = p.addr
-	}
 	if p.link == nil || ipStr == "" {
 		return nil
 	}
@@ -181,9 +178,6 @@ func (p *Point) AddRoutes(routes []*models.Route) error {
 }
 
 func (p *Point) DelRoutes(routes []*models.Route) error {
-	if routes == nil {
-		routes = p.routes
-	}
 	if routes == nil || p.link == nil {
 		return nil
 	}

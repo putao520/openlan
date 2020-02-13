@@ -16,7 +16,7 @@ OpenLan's Project Software
 
 %build
 cd %_source_dir
-go build -mod=vendor -o ./resource/vswitch.linux.x86_64 main/vswitch.go
+make linux-vswitch
 
 virtualenv %_venv
 %_venv/bin/pip install --upgrade "%_source_dir/py"

@@ -542,6 +542,7 @@ type Worker struct {
 	tapWorker *TapWorker
 	config    *config.Point
 	uuid      string
+	network   *models.Network
 }
 
 func NewWorker(config *config.Point) (p *Worker) {
@@ -602,12 +603,7 @@ func (p *Worker) Stop() {
 		return
 	}
 
-	if p.Listener.DelRoutes != nil {
-		p.Listener.DelRoutes(nil)
-	}
-	if p.Listener.DelAddr != nil {
-		p.Listener.DelAddr("")
-	}
+	p.FreeIpAddr()
 	p.tcpWorker.Stop()
 	p.tapWorker.Stop()
 	p.tcpWorker = nil
@@ -679,20 +675,30 @@ func (p *Worker) OnIpAddr(w *TcpWorker, n *models.Network) error {
 	if p.Listener.AddRoutes != nil {
 		p.Listener.AddRoutes(n.Routes)
 	}
+	p.network = n
 
 	return nil
 }
 
-func (p *Worker) OnClose(w *TcpWorker) error {
-	libol.Info("Worker.OnClose")
+func (p *Worker) FreeIpAddr() {
+	if p.network == nil {
+		return
+	}
 
 	if p.Listener.DelRoutes != nil {
-		p.Listener.DelRoutes(nil)
+		p.Listener.DelRoutes(p.network.Routes)
 	}
 	if p.Listener.DelAddr != nil {
-		p.Listener.DelAddr("")
+		prefix := libol.Netmask2Len(p.network.Netmask)
+		ipStr := fmt.Sprintf("%s/%d", p.network.IfAddr, prefix)
+		p.Listener.DelAddr(ipStr)
 	}
+	p.network = nil
+}
 
+func (p *Worker) OnClose(w *TcpWorker) error {
+	libol.Info("Worker.OnClose")
+	p.FreeIpAddr()
 	return nil
 }
 

@@ -7,6 +7,12 @@ import (
 	"strings"
 )
 
+var (
+	Date    string
+	Version string
+	Commit  string
+)
+
 type RedisConfig struct {
 	Enable bool   `json:"enable"`
 	Addr   string `json:"addr"`
@@ -26,4 +32,10 @@ func GetAlias() string {
 		return hostname
 	}
 	return libol.GenToken(13)
+}
+
+func init() {
+	libol.Info("Config: Version %s", Version)
+	libol.Info("Config: Date %s", Date)
+	libol.Info("Config: Commit %s", Commit)
 }
