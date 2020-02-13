@@ -15,8 +15,7 @@ Requires: net-tools
 OpenLan's Project Software
 
 %build
-cd %_source_dir
-make linux-vswitch
+cd %_source_dir && make linux/vswitch
 
 virtualenv %_venv
 %_venv/bin/pip install --upgrade "%_source_dir/py"

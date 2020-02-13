@@ -15,8 +15,7 @@ Requires: iproute
 OpenLan's Project Point Software
 
 %build
-cd %_source_dir
-make linux-point
+cd %_source_dir && make linux/point
 
 %install
 
