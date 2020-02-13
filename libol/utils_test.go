@@ -32,3 +32,31 @@ func TestPrettyTime(t *testing.T) {
 	s = PrettyTime(86400 + 3600*23 + 59)
 	assert.Equal(t, "1d23h", s, "be the same.")
 }
+
+func TestPrettyBytes(t *testing.T) {
+	var s string
+
+	s = PrettyBytes(1023)
+	assert.Equal(t, "1023B", s, "be the same.")
+
+	s = PrettyBytes(1024*2 + 8)
+	assert.Equal(t, "2.00K", s, "be the same.")
+
+	s = PrettyBytes(1024*1024 + 1)
+	assert.Equal(t, "1.00M", s, "be the same.")
+
+	s = PrettyBytes(1024*1024 + 1024*256 + 1023)
+	assert.Equal(t, "1.25M", s, "be the same.")
+
+	s = PrettyBytes(1024*1024 + 1024*1023)
+	assert.Equal(t, "1.99M", s, "be the same.")
+
+	s = PrettyBytes(1024 * 1024 * 1024)
+	assert.Equal(t, "1.00G", s, "be the same.")
+
+	s = PrettyBytes(1024*1024*1024 + 1024*1024*5 + 59)
+	assert.Equal(t, "1.00G", s, "be the same.")
+
+	s = PrettyBytes(1024*1024*1024 + 1024*1024*512 + 59)
+	assert.Equal(t, "1.50G", s, "be the same.")
+}

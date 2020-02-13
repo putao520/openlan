@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Virtual Switch - {{ .Worker.Alias }}</title>
+    <title>Virtual Switch | {{ .Worker.Alias }}</title>
     <style type="text/css">
         @media
         (min-device-width : 320px)
@@ -65,7 +65,7 @@
         }
         .table-display td, th {
             text-align: center;
-            border: 1px solid #000000;
+            border: 1px solid #ccc;
         }
         .table-list {
             width: 100%;
@@ -143,8 +143,8 @@
                     <td>{{ .Alias }}</td>
                     <td>{{ .Address }}</td>
                     <td>{{ .Device }}</td>
-                    <td>{{ .RxBytes }}</td>
-                    <td>{{ .TxBytes }}</td>
+                    <td>{{ prettyBytes .RxBytes }}</td>
+                    <td>{{ prettyBytes .TxBytes }}</td>
                     <td><span class="{{ .State }}">{{ .State }}</span></td>
                 </tr>
                 {{ end }}

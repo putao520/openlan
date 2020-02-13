@@ -290,6 +290,7 @@ func (h *Http) ParseFiles(w http.ResponseWriter, name string, data interface{}) 
 	file := path.Base(name)
 	tmpl, err := template.New(file).Funcs(template.FuncMap{
 		"prettyTime": libol.PrettyTime,
+		"prettyBytes": libol.PrettyBytes,
 	}).ParseFiles(name)
 	if err != nil {
 		fmt.Fprintf(w, "template.ParseFiles %s", err)
