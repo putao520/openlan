@@ -131,6 +131,6 @@ Case2：
 
 # 欢迎捐赠
 
-![欢迎使用支付宝对该项目进行捐赠](https://raw.githubusercontent.com/danieldin95/openlan-go/master/resource/donation.png)
+![欢迎使用支付宝对该项目进行捐赠](https://raw.githubusercontent.com/danieldin95/openlan-go/master/resource/donation.jpg)
 
 欢迎使用支付宝手扫描上面的二维码，对该项目进行捐赠。捐赠款项将用于持续优化OpenLAN以及完善文档。
