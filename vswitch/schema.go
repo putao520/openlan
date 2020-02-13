@@ -7,10 +7,25 @@ import (
 	"strings"
 )
 
+type VersionSchema struct {
+	Version string  `json:"version"`
+	Date    string `json:"date"`
+	Commit  string `json:"commit"`
+}
+
+
+func NewVersionSchema() VersionSchema {
+	return VersionSchema{
+		Version: config.Version,
+		Date:    config.Date,
+		Commit:  config.Commit,
+	}
+}
+
 type WorkerSchema struct {
-	Uptime int64  `json:"uptime"`
-	UUID   string `json:"uuid"`
-	Alias  string `json:"alias"`
+	Uptime  int64  `json:"uptime"`
+	UUID    string `json:"uuid"`
+	Alias   string `json:"alias"`
 }
 
 func NewWorkerSchema(w *Worker) WorkerSchema {
@@ -118,6 +133,7 @@ func NewOnLineSchema(l *models.Line) OnLineSchema {
 }
 
 type IndexSchema struct {
+	Version   VersionSchema    `json:"version"`
 	Worker    WorkerSchema     `json:"worker"`
 	Points    []PointSchema    `json:"points"`
 	Links     []LinkSchema     `json:"links"`

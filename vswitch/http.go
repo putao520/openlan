@@ -224,6 +224,7 @@ func (h *Http) PubFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Http) getIndex(body *IndexSchema) *IndexSchema {
+	body.Version = NewVersionSchema()
 	body.Worker = NewWorkerSchema(h.worker)
 
 	pointList := make([]*models.Point, 0, 128)

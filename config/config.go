@@ -36,6 +36,6 @@ func GetAlias() string {
 
 func init() {
 	libol.Info("Config: version is %s", Version)
-	libol.Info("Config: building on %s", Date)
+	libol.Info("Config: built on %s", Date)
 	libol.Info("Config: commit at %s", Commit)
 }
