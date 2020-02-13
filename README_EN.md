@@ -5,7 +5,7 @@
 
 The OpenLAN project help you to build a local area network via the Internet.  
 
-Case1:
+## Branch Access
 
                                        vSwitch(Central) - 10.1.2.10/24
                                                 ^
@@ -20,7 +20,7 @@ Case1:
                      Point                    Point                       Point
                  10.1.2.11/24              10.1.2.12/24                  10.1.2.13/24
 
-Case2:
+## Multiple Area
                 
                    192.168.1.20/24                                 192.168.1.22/24
                          |                                                 |
