@@ -7,7 +7,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/danieldin95/openlan-go)](https://goreportcard.com/report/lightstar-dev/openlan-go)
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-OpenLan旨在解决局域网数据报文在广域网的传输问题，并建立基于租户的虚拟以太网络。
+OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立基于租户的虚拟以太网络。
 
 ## 分支接入
 
@@ -129,11 +129,11 @@ OpenLan旨在解决局域网数据报文在广域网的传输问题，并建立�
     
     L:\openlan-go> go build -o ./resource/point.windows.x86_64.exe main/point_windows.go
 
-# 欢迎捐赠
+# 捐赠
 
 <img src="https://raw.githubusercontent.com/danieldin95/openlan-go/master/resource/donation.jpg" width="46%">
 
-欢迎使用支付宝手扫描上面的二维码，对该项目进行捐赠。捐赠款项将用于持续开发OpenLAN、完善文档、安装支持等。
+欢迎使用支付宝手扫描上面的二维码，对该项目进行捐赠。捐赠款项将用于持续开发OpenLAN已经完善文档。
 
 欢迎关注
 
