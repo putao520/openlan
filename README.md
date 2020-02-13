@@ -133,11 +133,11 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
 
 <img src="https://raw.githubusercontent.com/danieldin95/openlan-go/master/resource/donation.jpg" width="46%">
 
-欢迎使用支付宝手扫描上面的二维码，对该项目进行捐赠。捐赠款项将用于持续开发OpenLAN已经完善文档。
+欢迎使用支付宝手扫描上面的二维码，对该项目进行捐赠。
 
 欢迎关注
 
-微信: DanielDin
+微信号: DanielDin
 
-邮件: danieldin95@163.com
+邮件地址: danieldin95@163.com
 
