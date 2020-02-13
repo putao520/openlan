@@ -62,6 +62,9 @@ func (t *TcpWorker) Initialize() {
 			return t.TryLogin(client)
 		},
 		OnClose: func(client *libol.TcpClient) error {
+			if t.Listener.OnClose != nil {
+				t.Listener.OnClose(t)
+			}
 			return nil
 		},
 	}
@@ -76,11 +79,12 @@ func (t *TcpWorker) Start() {
 }
 
 func (t *TcpWorker) Stop() {
+	t.Client.Terminal()
+
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
 	close(t.writeChan)
-	t.Client.Terminal()
 	t.Client = nil
 }
 
@@ -90,10 +94,6 @@ func (t *TcpWorker) Close() {
 
 	if t.Client == nil {
 		return
-	}
-
-	if t.Listener.OnClose != nil {
-		t.Listener.OnClose(t)
 	}
 	t.Client.Close()
 }

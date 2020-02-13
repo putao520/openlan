@@ -221,7 +221,9 @@ func (t *TcpClient) LocalAddr() string {
 }
 
 func (t *TcpClient) Connect() (err error) {
-	if t.conn != nil || t.Status() == CL_TERMINAL || t.Status() == CL_UNAUTH {
+	t.lock.Lock()
+	if t.conn != nil || t.status == CL_TERMINAL || t.status == CL_UNAUTH {
+		t.lock.Unlock()
 		return nil
 	}
 
@@ -230,7 +232,7 @@ func (t *TcpClient) Connect() (err error) {
 		schema = "tls"
 	}
 	Info("TcpClient.Connect %s://%s", schema, t.Addr)
-	t.SetStatus(CL_CONNECTING)
+	t.status = CL_CONNECTING
 	if t.TlsConf != nil {
 		t.conn, err = tls.Dial("tcp", t.Addr, t.TlsConf)
 	} else {
@@ -238,9 +240,12 @@ func (t *TcpClient) Connect() (err error) {
 	}
 	if err != nil {
 		t.conn = nil
+		t.lock.Unlock()
 		return err
 	}
-	t.SetStatus(CL_CONNECTED)
+	t.status = CL_CONNECTED
+	t.lock.Unlock()
+
 	if t.Listener.OnConnected != nil {
 		t.Listener.OnConnected(t)
 	}
@@ -249,17 +254,21 @@ func (t *TcpClient) Connect() (err error) {
 }
 
 func (t *TcpClient) Close() {
+	t.lock.Lock()
 	if t.conn != nil {
-		if t.Status() != CL_TERMINAL {
-			t.SetStatus(CL_CLOSED)
-		}
-
-		if t.Listener.OnClose != nil {
-			t.Listener.OnClose(t)
+		if t.status != CL_TERMINAL {
+			t.status = CL_CLOSED
 		}
 		Info("TcpClient.Close %s", t.Addr)
 		t.conn.Close()
 		t.conn = nil
+		t.lock.Unlock()
+
+		if t.Listener.OnClose != nil {
+			t.Listener.OnClose(t)
+		}
+	} else {
+		t.lock.Unlock()
 	}
 }
 

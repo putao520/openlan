@@ -4,6 +4,7 @@ import (
 	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
+	"strings"
 )
 
 type Point struct {
@@ -67,15 +68,16 @@ func (p *Point) AddAddr(ipStr string) error {
 
 func (p *Point) DelAddr(ipStr string) error {
 	if ipStr == "" {
-		return nil
+		ipStr = p.addr
 	}
 
-	out, err := libol.IpAddrDel(p.IfName(), ipStr)
+	ipv4 := strings.Split(ipStr, "/")[0]
+	out, err := libol.IpAddrDel(p.IfName(), ipv4)
 	if err != nil {
 		libol.Error("Point.DelAddr: %s, %s", err, out)
 		return err
 	}
-	libol.Info("Point.DelAddr: %s", ipStr)
+	libol.Info("Point.DelAddr: %s", ipv4)
 	p.addr = ""
 
 	return nil
@@ -101,7 +103,7 @@ func (p *Point) AddRoutes(routes []*models.Route) error {
 
 func (p *Point) DelRoutes(routes []*models.Route) error {
 	if routes == nil {
-		return nil
+		routes = p.routes
 	}
 
 	for _, route := range routes {
