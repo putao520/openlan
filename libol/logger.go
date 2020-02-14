@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"runtime/debug"
+	"sync"
 )
 
 const (
@@ -19,10 +20,11 @@ const (
 
 type Logger struct {
 	Level    int
-	Errors   *list.List
-	Logs     *list.List
 	FileName string
 	FileLog  *log.Logger
+
+	lock     sync.Mutex
+	errors   *list.List
 }
 
 func (l *Logger) Debug(format string, v ...interface{}) {
@@ -73,17 +75,20 @@ func (l *Logger) SaveError(format string, v ...interface{}) {
 		l.FileLog.Println(m)
 	}
 
-	if l.Errors.Len() > 1024 {
-		l.Errors.Remove(l.Errors.Front())
+	l.lock.Lock()
+	defer l.lock.Unlock()
+	if l.errors.Len() >= 1024 {
+		if e := l.errors.Front(); e != nil {
+			l.errors.Remove(e)
+		}
 	}
-	l.Errors.PushBack(m)
+	l.errors.PushBack(m)
 }
 
 var Log = Logger{
 	Level:    INFO,
 	FileName: ".log.error",
-	Errors:   list.New(),
-	Logs:     list.New(),
+	errors:   list.New(),
 }
 
 func Error(format string, v ...interface{}) {

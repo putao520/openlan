@@ -107,22 +107,22 @@ func (t *UserSpaceTap) Deliver() {
 
 func (t *UserSpaceTap) Close() error {
 	t.lock.Lock()
+	defer t.lock.Unlock()
+
 	if t.closed {
-		t.lock.Unlock()
 		return nil
 	}
-	t.closed = true
-	t.lock.Unlock()
 
 	close(t.readQ)
 	close(t.writeQ)
+	Tapers.Del(t.name)
 	if t.bridge != nil {
 		t.bridge.DelSlave(t)
 		t.bridge = nil
 	}
 	t.readQ = nil
 	t.writeQ = nil
-	Tapers.Del(t.name)
+	t.closed = true
 
 	return nil
 }

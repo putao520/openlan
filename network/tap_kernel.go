@@ -80,8 +80,8 @@ func (t *KernelTap) Write(p []byte) (n int, err error) {
 }
 
 func (t *KernelTap) Close() error {
-	t.lock.RLock()
-	defer t.lock.RUnlock()
+	t.lock.Lock()
+	defer t.lock.Unlock()
 
 	if t.device == nil {
 		return nil

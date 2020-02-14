@@ -169,7 +169,7 @@ func (w *Worker) ReadClient(client *libol.TcpClient, data []byte) error {
 	}
 
 	dev := point.Device
-	if point == nil || point.Device == nil {
+	if point == nil || dev == nil {
 		return libol.NewErr("Tap devices is nil")
 	}
 
