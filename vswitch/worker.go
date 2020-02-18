@@ -148,6 +148,7 @@ func (w *Worker) ReadTap(dev network.Taper, readAt func(p []byte) error) {
 		w.server.Sts.TxCount++
 		if err := readAt(data[:n]); err != nil {
 			libol.Error("Worker.ReadTap: do-recv %s %s", dev.Name(), err)
+			break
 		}
 	}
 }
@@ -160,7 +161,7 @@ func (w *Worker) ReadClient(client *libol.TcpClient, data []byte) error {
 		if client.Status() != libol.CL_AUEHED {
 			w.server.Sts.DrpCount++
 		}
-		return err
+		return nil
 	}
 
 	point := service.Point.Get(client.Addr)

@@ -143,12 +143,15 @@ func (t *TcpServer) Read(client *TcpClient, ReadAt func(client *TcpClient, p []b
 			t.offClients <- client
 			break
 		}
-
-		if length > 0 {
-			t.Sts.RxCount++
-			Debug("TcpServer.Read: length: %d ", length)
-			Debug("TcpServer.Read: data  : %x", data[:length])
-			ReadAt(client, data[:length])
+		if length <= 0 {
+			continue
+		}
+		t.Sts.RxCount++
+		Debug("TcpServer.Read: length: %d ", length)
+		Debug("TcpServer.Read: data  : %x", data[:length])
+		if err := ReadAt(client, data[:length]); err != nil {
+			Error("TcpServer.Read: do-write %s", err)
+			break
 		}
 	}
 }
