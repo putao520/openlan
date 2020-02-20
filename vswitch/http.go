@@ -107,23 +107,25 @@ func (h *Http) SaveToken() error {
 }
 
 func (h *Http) LoadRouter() {
-	h.Router().HandleFunc("/", h.IndexHtml)
-	h.Router().HandleFunc("/favicon.ico", h.PubFile)
-	h.Router().HandleFunc("/api/index", h.GetIndex).Methods("GET")
-	h.Router().HandleFunc("/api/link", h.ListLink).Methods("GET")
-	h.Router().HandleFunc("/api/link/{id}", h.GetLink).Methods("GET")
-	h.Router().HandleFunc("/api/link/{id}", h.AddLink).Methods("POST")
-	h.Router().HandleFunc("/api/link/{id}", h.DelLink).Methods("DELETE")
-	h.Router().HandleFunc("/api/user", h.ListUser).Methods("GET")
-	h.Router().HandleFunc("/api/user/{id}", h.GetUser).Methods("GET")
-	h.Router().HandleFunc("/api/user/{id}", h.AddUser).Methods("POST")
-	h.Router().HandleFunc("/api/user/{id}", h.DelUser).Methods("DELETE")
-	h.Router().HandleFunc("/api/neighbor", h.ListNeighbor).Methods("GET")
-	h.Router().HandleFunc("/api/point", h.ListPoint).Methods("GET")
-	h.Router().HandleFunc("/api/point/{id}", h.GetPoint).Methods("GET")
-	h.Router().HandleFunc("/api/network", h.ListNetwork).Methods("GET")
-	h.Router().HandleFunc("/api/network/{id}", h.GetNetwork).Methods("GET")
-	h.Router().HandleFunc("/api/online", h.ListOnline).Methods("GET")
+	router := h.Router()
+
+	router.HandleFunc("/", h.IndexHtml)
+	router.HandleFunc("/favicon.ico", h.PubFile)
+	router.HandleFunc("/api/index", h.GetIndex).Methods("GET")
+	router.HandleFunc("/api/link", h.ListLink).Methods("GET")
+	router.HandleFunc("/api/link/{id}", h.GetLink).Methods("GET")
+	router.HandleFunc("/api/link/{id}", h.AddLink).Methods("POST")
+	router.HandleFunc("/api/link/{id}", h.DelLink).Methods("DELETE")
+	router.HandleFunc("/api/user", h.ListUser).Methods("GET")
+	router.HandleFunc("/api/user/{id}", h.GetUser).Methods("GET")
+	router.HandleFunc("/api/user/{id}", h.AddUser).Methods("POST")
+	router.HandleFunc("/api/user/{id}", h.DelUser).Methods("DELETE")
+	router.HandleFunc("/api/neighbor", h.ListNeighbor).Methods("GET")
+	router.HandleFunc("/api/point", h.ListPoint).Methods("GET")
+	router.HandleFunc("/api/point/{id}", h.GetPoint).Methods("GET")
+	router.HandleFunc("/api/network", h.ListNetwork).Methods("GET")
+	router.HandleFunc("/api/network/{id}", h.GetNetwork).Methods("GET")
+	router.HandleFunc("/api/online", h.ListOnline).Methods("GET")
 }
 
 func (h *Http) LoadToken() error {

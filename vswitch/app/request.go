@@ -69,7 +69,7 @@ func (r *WithRequest) OnIpAddr(client *libol.TcpClient, data string) {
 			Netmask: netmask,
 			Routes:  FinNet.Routes,
 		}
-		libol.Info("WithRequest.OnIpAddr: response %s", respNet)
+		libol.Info("WithRequest.OnIpAddr: resp %s", respNet)
 		if respStr, err := json.Marshal(respNet); err == nil {
 			client.WriteResp("ipaddr", string(respStr))
 		}
