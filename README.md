@@ -129,7 +129,7 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
     
     L:\openlan-go> go build -o ./resource/point.windows.x86_64.exe main/point_windows.go
 
-# 捐赠
+# 欢迎捐赠
 
 <img src="https://raw.githubusercontent.com/danieldin95/openlan-go/master/resource/donation.jpg" width="46%">
 
