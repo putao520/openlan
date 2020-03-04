@@ -229,31 +229,35 @@ func (t *TcpClient) Connect() (err error) {
 		t.lock.Unlock()
 		return nil
 	}
-
 	schema := "tcp"
 	if t.TlsConf != nil {
 		schema = "tls"
 	}
+	if t.conn != nil {
+		t.conn.Close()
+		t.conn = nil
+	}
 	Info("TcpClient.Connect %s://%s", schema, t.Addr)
 	t.status = CL_CONNECTING
-	if t.TlsConf != nil {
-		t.conn, err = tls.Dial("tcp", t.Addr, t.TlsConf)
-	} else {
-		t.conn, err = net.Dial("tcp", t.Addr)
-	}
-	if err != nil {
-		t.conn = nil
-		t.lock.Unlock()
-		return err
-	}
-	t.status = CL_CONNECTED
 	t.lock.Unlock()
 
-	if t.Listener.OnConnected != nil {
-		t.Listener.OnConnected(t)
+	var conn net.Conn
+	if t.TlsConf != nil {
+		conn, err = tls.Dial("tcp", t.Addr, t.TlsConf)
+	} else {
+		conn, err = net.Dial("tcp", t.Addr)
+	}
+	if err == nil {
+		t.lock.Lock()
+		t.conn = conn
+		t.status = CL_CONNECTED
+		t.lock.Unlock()
+		if t.Listener.OnConnected != nil {
+			t.Listener.OnConnected(t)
+		}
 	}
 
-	return nil
+	return err
 }
 
 func (t *TcpClient) Close() {
