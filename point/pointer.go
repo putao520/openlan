@@ -39,14 +39,7 @@ func NewMixPoint(config *config.Point) MixPoint {
 func (p *MixPoint) Initialize() {
 	libol.Info("MixPoint.Initialize")
 	p.initialize = true
-
 	p.worker.SetUUID(p.UUID())
-	p.worker.Listener.AddAddr = nil
-	p.worker.Listener.DelAddr = nil
-	p.worker.Listener.AddRoutes = nil
-	p.worker.Listener.DelRoutes = nil
-	p.worker.Listener.OnTap = nil
-
 	p.worker.Initialize()
 }
 

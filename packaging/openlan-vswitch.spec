@@ -1,5 +1,5 @@
 Name: openlan-vswitch
-Version: 4.2
+Version: 4.2.14
 Release: 1%{?dist}
 Summary: OpenLan's Project Software
 Group: Applications/Communications
@@ -37,8 +37,8 @@ mkdir -p %{buildroot}/var/openlan
 cp -R %_source_dir/resource/ca %{buildroot}/var/openlan
 cp -R %_source_dir/vswitch/public %{buildroot}/var/openlan
 
-cat > %{buildroot}/etc/vswitch/vswitch.password.example << EOF
-hi:hi@123$
+cat > %{buildroot}/etc/vswitch/password.example << EOF
+hi@tenant:hi@123$
 EOF
 
 mkdir -p %{buildroot}/opt/openlan-utils
