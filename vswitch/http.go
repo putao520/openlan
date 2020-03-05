@@ -291,7 +291,7 @@ func (h *Http) getIndex(body *IndexSchema) *IndexSchema {
 func (h *Http) ParseFiles(w http.ResponseWriter, name string, data interface{}) error {
 	file := path.Base(name)
 	tmpl, err := template.New(file).Funcs(template.FuncMap{
-		"prettyTime": libol.PrettyTime,
+		"prettyTime":  libol.PrettyTime,
 		"prettyBytes": libol.PrettyBytes,
 	}).ParseFiles(name)
 	if err != nil {

@@ -33,31 +33,34 @@ type Worker struct {
 	Listener WorkerListener
 	Apps     WorkerApps
 
-	server    *libol.TcpServer
-	hooks     []HookApi
-	newTime   int64
-	startTime int64
-	linksLock sync.RWMutex
-	links     map[string]*point.Point
-	brName    string
-	uuid      string
+	server      *libol.TcpServer
+	hooks       []HookApi
+	newTime     int64
+	startTime   int64
+	linksLock   sync.RWMutex
+	links       map[string]*point.Point
+	brName      string
+	uuid        string
+	initialized bool
 }
 
 func NewWorker(server *libol.TcpServer, c *config.VSwitch) *Worker {
 	w := Worker{
-		Alias:     c.Alias,
-		server:    server,
-		Conf:      c,
-		newTime:   time.Now().Unix(),
-		startTime: 0,
-		brName:    c.BrName,
-		links:     make(map[string]*point.Point),
+		Alias:       c.Alias,
+		server:      server,
+		Conf:        c,
+		newTime:     time.Now().Unix(),
+		startTime:   0,
+		brName:      c.BrName,
+		links:       make(map[string]*point.Point),
+		initialized: false,
 	}
 
 	return &w
 }
 
 func (w *Worker) Initialize() {
+	w.initialized = true
 	service.User.Load(w.Conf.Password)
 	service.Network.Load(w.Conf.Network)
 
@@ -192,7 +195,9 @@ func (w *Worker) OnClose(client *libol.TcpClient) error {
 }
 
 func (w *Worker) Start(v VSwitcher) {
-	w.Initialize()
+	if !w.initialized {
+		w.Initialize()
+	}
 
 	w.uuid = v.UUID()
 	w.startTime = time.Now().Unix()
@@ -232,13 +237,14 @@ func (w *Worker) AddLink(c *config.Point) {
 
 	go func() {
 		p := point.NewPoint(c)
-		p.Start()
+		p.Initialize()
 
 		w.linksLock.Lock()
 		w.links[c.Addr] = p
 		w.linksLock.Unlock()
 
 		service.Link.Add(p)
+		p.Start()
 	}()
 }
 

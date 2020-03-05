@@ -36,8 +36,10 @@ func (p *Point) Initialize() {
 }
 
 func (p *Point) Start() {
-	libol.Debug("Point.Start linux.")
-	p.Initialize()
+	libol.Info("Point.Start linux.")
+	if !p.initialize {
+		p.Initialize()
+	}
 	p.worker.Start()
 }
 

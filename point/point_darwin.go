@@ -19,8 +19,10 @@ func NewPoint(config *config.Point) *Point {
 }
 
 func (p *Point) Start() {
-	libol.Debug("Point.Start Darwin.")
-	p.Initialize()
+	libol.Info("Point.Start Darwin.")
+	if !p.initialize {
+		p.Initialize()
+	}
 	p.worker.Start()
 }
 

@@ -27,24 +27,26 @@ type TcpWorker struct {
 	Listener TcpWorkerListener
 	Client   *libol.TcpClient
 
-	writeChan chan []byte
-	maxSize   int
-	alias     string
-	user      *models.User
-	network   *models.Network
-	routes    map[string]*models.Route
-	allowed   bool
+	writeChan   chan []byte
+	maxSize     int
+	alias       string
+	user        *models.User
+	network     *models.Network
+	routes      map[string]*models.Route
+	allowed     bool
+	initialized bool
 }
 
 func NewTcpWorker(client *libol.TcpClient, c *config.Point) (t *TcpWorker) {
 	t = &TcpWorker{
-		Client:    client,
-		writeChan: make(chan []byte, 1024*10),
-		maxSize:   c.IfMtu,
-		user:      models.NewUser(c.Name(), c.Password()),
-		network:   models.NewNetwork(c.Tenant(), c.IfAddr),
-		routes:    make(map[string]*models.Route, 64),
-		allowed:   c.Allowed,
+		Client:      client,
+		writeChan:   make(chan []byte, 1024*10),
+		maxSize:     c.IfMtu,
+		user:        models.NewUser(c.Name(), c.Password()),
+		network:     models.NewNetwork(c.Tenant(), c.IfAddr),
+		routes:      make(map[string]*models.Route, 64),
+		allowed:     c.Allowed,
+		initialized: false,
 	}
 	t.user.Alias = c.Alias
 
@@ -56,6 +58,8 @@ func (t *TcpWorker) Initialize() {
 		return
 	}
 
+	libol.Info("TcpWorker.Initialize")
+	t.initialized = true
 	t.Client.SetMaxSize(t.maxSize)
 	t.Client.Listener = libol.TcpClientListener{
 		OnConnected: func(client *libol.TcpClient) error {
@@ -71,7 +75,9 @@ func (t *TcpWorker) Initialize() {
 }
 
 func (t *TcpWorker) Start() {
-	t.Initialize()
+	if !t.initialized {
+		t.Initialize()
+	}
 	t.Connect()
 
 	go t.Read()
@@ -291,24 +297,28 @@ type TapWorker struct {
 	EthSrcAddr []byte
 	EthSrcIp   []byte
 
-	lock      sync.RWMutex
-	writeChan chan []byte
-	devCfg    *water.Config
-	pointCfg  *config.Point
+	lock        sync.RWMutex
+	writeChan   chan []byte
+	devCfg      *water.Config
+	pointCfg    *config.Point
+	initialized bool
 }
 
 func NewTapWorker(devCfg *water.Config, c *config.Point) (a *TapWorker) {
 	a = &TapWorker{
-		Device:    nil,
-		devCfg:    devCfg,
-		pointCfg:  c,
-		writeChan: make(chan []byte, 1024*10),
+		Device:      nil,
+		devCfg:      devCfg,
+		pointCfg:    c,
+		writeChan:   make(chan []byte, 1024*10),
+		initialized: false,
 	}
 
 	return
 }
 
 func (a *TapWorker) Initialize() {
+	a.initialized = true
+	libol.Info("TapWorker.Initialize")
 	a.Open()
 	a.DoTun()
 }
@@ -515,7 +525,9 @@ func (a *TapWorker) Close() {
 }
 
 func (a *TapWorker) Start() {
-	a.Initialize()
+	if !a.initialized {
+		a.Initialize()
+	}
 
 	go a.Read()
 	go a.Loop()
@@ -538,30 +550,35 @@ type Worker struct {
 	IfAddr   string
 	Listener WorkerListener
 
-	tcpWorker *TcpWorker
-	tapWorker *TapWorker
-	config    *config.Point
-	uuid      string
-	network   *models.Network
+	tcpWorker   *TcpWorker
+	tapWorker   *TapWorker
+	config      *config.Point
+	uuid        string
+	network     *models.Network
+	initialized bool
 }
 
 func NewWorker(config *config.Point) (p *Worker) {
 	p = &Worker{
-		IfAddr: config.IfAddr,
-		config: config,
+		IfAddr:      config.IfAddr,
+		config:      config,
+		initialized: false,
 	}
 
 	return
 }
 
 func (p *Worker) Initialize() {
+	var conf *water.Config
+	var tlsConf *tls.Config
+
 	if p.config == nil {
 		return
 	}
 
-	var conf *water.Config
-	var tlsConf *tls.Config
+	libol.Info("Worker.Initialize")
 
+	p.initialized = true
 	if p.config.Tls {
 		tlsConf = &tls.Config{InsecureSkipVerify: true}
 	}
@@ -573,16 +590,10 @@ func (p *Worker) Initialize() {
 	} else {
 		conf = &water.Config{DeviceType: water.TAP}
 	}
+
+	// register listener
 	p.tapWorker = NewTapWorker(conf, p.config)
-}
 
-func (p *Worker) Start() {
-	libol.Debug("Worker.Start linux.")
-	if p.tapWorker != nil || p.tcpWorker != nil {
-		return
-	}
-
-	p.Initialize()
 	p.tcpWorker.SetUUID(p.UUID())
 	p.tcpWorker.Listener = TcpWorkerListener{
 		OnClose:   p.OnClose,
@@ -590,9 +601,19 @@ func (p *Worker) Start() {
 		OnIpAddr:  p.OnIpAddr,
 		ReadAt:    p.tapWorker.DoWrite,
 	}
+	p.tcpWorker.Initialize()
+
 	p.tapWorker.Listener = TapWorkerListener{
 		OnOpen: p.Listener.OnTap,
 		ReadAt: p.tcpWorker.DoWrite,
+	}
+	p.tapWorker.Initialize()
+}
+
+func (p *Worker) Start() {
+	libol.Debug("Worker.Start linux.")
+	if !p.initialized {
+		p.Initialize()
 	}
 	p.tapWorker.Start()
 	p.tcpWorker.Start()

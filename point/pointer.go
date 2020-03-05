@@ -18,9 +18,10 @@ type Pointer interface {
 }
 
 type MixPoint struct {
-	uuid   string
-	worker Worker
-	config *config.Point
+	uuid       string
+	worker     Worker
+	config     *config.Point
+	initialize bool
 }
 
 func NewMixPoint(config *config.Point) MixPoint {
@@ -29,19 +30,24 @@ func NewMixPoint(config *config.Point) MixPoint {
 			IfAddr: config.IfAddr,
 			config: config,
 		},
-		config: config,
+		config:     config,
+		initialize: false,
 	}
 	return p
 }
 
 func (p *MixPoint) Initialize() {
-	p.worker.SetUUID(p.UUID())
+	libol.Info("MixPoint.Initialize")
+	p.initialize = true
 
+	p.worker.SetUUID(p.UUID())
 	p.worker.Listener.AddAddr = nil
 	p.worker.Listener.DelAddr = nil
 	p.worker.Listener.AddRoutes = nil
 	p.worker.Listener.DelRoutes = nil
 	p.worker.Listener.OnTap = nil
+
+	p.worker.Initialize()
 }
 
 func (p *MixPoint) UUID() string {
