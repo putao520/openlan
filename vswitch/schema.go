@@ -27,11 +27,11 @@ type WorkerSchema struct {
 	Alias  string `json:"alias"`
 }
 
-func NewWorkerSchema(w *Worker) WorkerSchema {
+func NewWorkerSchema(sw VSwitcher) WorkerSchema {
 	return WorkerSchema{
-		UUID:   w.UUID(),
-		Uptime: w.UpTime(),
-		Alias:  w.Alias,
+		UUID:   sw.UUID(),
+		Uptime: sw.UpTime(),
+		Alias:  sw.Alias(),
 	}
 }
 

@@ -14,13 +14,13 @@ import (
 type Neighbors struct {
 	lock      sync.RWMutex
 	neighbors map[string]*models.Neighbor
-	worker    Worker
+	master    Master
 }
 
-func NewNeighbors(w Worker, c *config.VSwitch) (e *Neighbors) {
+func NewNeighbors(m Master, c config.VSwitch) (e *Neighbors) {
 	e = &Neighbors{
 		neighbors: make(map[string]*models.Neighbor, 1024*10),
-		worker:    w,
+		master:    m,
 	}
 	return
 }

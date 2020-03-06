@@ -19,7 +19,7 @@ import (
 )
 
 type Http struct {
-	worker     *Worker
+	switcher   VSwitcher
 	listen     string
 	adminToken string
 	adminFile  string
@@ -30,9 +30,9 @@ type Http struct {
 	router     *mux.Router
 }
 
-func NewHttp(worker *Worker, c *config.VSwitch) (h *Http) {
+func NewHttp(switcher VSwitcher, c config.VSwitch) (h *Http) {
 	h = &Http{
-		worker:     worker,
+		switcher:   switcher,
 		listen:     c.HttpListen,
 		adminToken: c.Token,
 		adminFile:  c.TokenFile,
@@ -227,7 +227,7 @@ func (h *Http) PubFile(w http.ResponseWriter, r *http.Request) {
 
 func (h *Http) getIndex(body *IndexSchema) *IndexSchema {
 	body.Version = NewVersionSchema()
-	body.Worker = NewWorkerSchema(h.worker)
+	body.Worker = NewWorkerSchema(h.switcher)
 
 	pointList := make([]*models.Point, 0, 128)
 	for p := range service.Point.List() {
@@ -429,7 +429,7 @@ func (h *Http) AddLink(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c.Default()
-	h.worker.AddLink(c)
+	h.switcher.AddLink(c.Tenant(), c)
 	h.ResponseMsg(w, 0, "")
 }
 
@@ -437,7 +437,7 @@ func (h *Http) DelLink(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	libol.Info("DelLink %s", vars["id"])
 
-	h.worker.DelLink(vars["id"])
+	h.switcher.DelLink("", vars["id"])
 
 	h.ResponseMsg(w, 0, "")
 }

@@ -9,17 +9,15 @@ import (
 )
 
 type PointAuth struct {
-	Success int
-	Failed  int
+	success int
+	failed  int
 
-	ifMtu  int
-	worker Worker
+	master Master
 }
 
-func NewPointAuth(w Worker, c *config.VSwitch) (p *PointAuth) {
+func NewPointAuth(m Master, c config.VSwitch) (p *PointAuth) {
 	p = &PointAuth{
-		ifMtu:  c.IfMtu,
-		worker: w,
+		master: m,
 	}
 	return
 }
@@ -76,7 +74,7 @@ func (p *PointAuth) handleLogin(client *libol.TcpClient, data string) error {
 	nowUser := service.User.Get(name)
 	if nowUser != nil {
 		if nowUser.Password == user.Password {
-			p.Success++
+			p.success++
 			client.SetStatus(libol.CL_AUEHED)
 			libol.Info("PointAuth.handleLogin: %s auth", client.Addr)
 			p.onAuth(client, user)
@@ -84,7 +82,7 @@ func (p *PointAuth) handleLogin(client *libol.TcpClient, data string) error {
 		}
 	}
 
-	p.Failed++
+	p.failed++
 	client.SetStatus(libol.CL_UNAUTH)
 	return libol.NewErr("Auth failed.")
 }
@@ -94,12 +92,11 @@ func (p *PointAuth) onAuth(client *libol.TcpClient, user *models.User) error {
 		return libol.NewErr("not auth.")
 	}
 
-	libol.Info("PointAuth.onAuth: %s", client.Addr)
-	dev, err := p.worker.NewTap()
+	libol.Info("PointAuth.onAuth: %s", client)
+	dev, err := p.master.NewTap(user.Tenant())
 	if err != nil {
 		return err
 	}
-
 	m := models.NewPoint(client, dev)
 	m.Alias = user.Alias
 	m.UUID = user.UUID
@@ -107,7 +104,11 @@ func (p *PointAuth) onAuth(client *libol.TcpClient, user *models.User) error {
 		m.UUID = user.Alias
 	}
 	service.Point.Add(m)
-	go p.worker.ReadTap(dev, client.WriteMsg)
+	go p.master.ReadTap(dev, client.WriteMsg)
 
 	return nil
+}
+
+func (p *PointAuth) Stats() (success, failed int) {
+	return p.success, p.failed
 }

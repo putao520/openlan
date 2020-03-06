@@ -1,6 +1,7 @@
 package network
 
 type Bridger interface {
+	Type() string
 	Name() string
 	SetName(value string)
 	Open(addr string)
@@ -9,4 +10,5 @@ type Bridger interface {
 	DelSlave(dev Taper) error
 	Input(m *Framer) error
 	SetTimeout(value int)
+	Mtu() int
 }

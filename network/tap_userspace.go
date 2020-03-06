@@ -13,19 +13,27 @@ type UserSpaceTap struct {
 	writeQ chan []byte
 	readQ  chan []byte
 	bridge Bridger
+	tenant string
+	mtu    int
 }
 
-func NewUserSpaceTap(isTap bool, name string) (*UserSpaceTap, error) {
+func NewUserSpaceTap(isTap bool, tenant, name string) (*UserSpaceTap, error) {
 	if name == "" {
 		name = Tapers.GenName()
 	}
 	tap := &UserSpaceTap{
-		isTap: isTap,
-		name:  name,
+		tenant: tenant,
+		isTap:  isTap,
+		name:   name,
+		mtu:    1514,
 	}
 	Tapers.Add(tap)
 
 	return tap, nil
+}
+
+func (t *UserSpaceTap) Tenant() string {
+	return t.tenant
 }
 
 func (t *UserSpaceTap) IsTun() bool {
@@ -152,4 +160,12 @@ func (t *UserSpaceTap) Up() {
 
 func (t *UserSpaceTap) String() string {
 	return t.name
+}
+
+func (t *UserSpaceTap) Mtu() int {
+	return t.mtu
+}
+
+func (t *UserSpaceTap) SetMtu(mtu int) {
+	t.mtu = mtu
 }

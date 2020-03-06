@@ -12,9 +12,11 @@ type KernelTap struct {
 	name   string
 	device *water.Interface
 	bridge Bridger
+	tenant string
+	mtu    int
 }
 
-func NewKernelTap(isTap bool, name string) (*KernelTap, error) {
+func NewKernelTap(isTap bool, tenant, name string) (*KernelTap, error) {
 	deviceType := water.DeviceType(water.TUN)
 	if isTap {
 		deviceType = water.TAP
@@ -24,14 +26,20 @@ func NewKernelTap(isTap bool, name string) (*KernelTap, error) {
 		return nil, err
 	}
 	tap := &KernelTap{
+		tenant: tenant,
 		device: device,
 		name:   device.Name(),
 		isTap:  isTap,
+		mtu:    1514,
 	}
 
 	Tapers.Add(tap)
 
 	return tap, nil
+}
+
+func (t *KernelTap) Tenant() string {
+	return t.tenant
 }
 
 func (t *KernelTap) IsTun() bool {
@@ -125,4 +133,12 @@ func (t *KernelTap) Up() {
 
 func (t *KernelTap) String() string {
 	return t.name
+}
+
+func (t *KernelTap) Mtu() int {
+	return t.mtu
+}
+
+func (t *KernelTap) SetMtu(mtu int) {
+	t.mtu = mtu
 }

@@ -102,7 +102,6 @@ func (c *Point) Right() {
 		if len(values) > 1 {
 			c.password = values[1]
 		}
-
 		values = strings.Split(c.name, "@")
 		if len(values) > 1 {
 			c.tenant = values[1]

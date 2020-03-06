@@ -354,9 +354,9 @@ func (a *TapWorker) Open() {
 	var err error
 	var dev network.Taper
 	if a.devCfg.DeviceType == water.TAP {
-		dev, err = network.NewKernelTap(true, "")
+		dev, err = network.NewKernelTap(true, a.pointCfg.Tenant(), "")
 	} else {
-		dev, err = network.NewKernelTap(false, "")
+		dev, err = network.NewKernelTap(false, a.pointCfg.Tenant(), "")
 	}
 	if err != nil {
 		libol.Error("TapWorker.Open %s", err)

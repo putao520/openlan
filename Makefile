@@ -13,33 +13,33 @@ linux: linux/point linux/vswitch
 
 
 linux/point:
-	go build -mod=vendor -ldflags "$(LDFLAGS)" -o resource/point.linux.x86_64 main/point_linux.go
+	go build -mod=vendor -ldflags "$(LDFLAGS)" -o point.linux.x86_64 main/point_linux.go
 
 
 linux/vswitch:
-	go build -mod=vendor -ldflags "$(LDFLAGS)" -o resource/vswitch.linux.x86_64 main/vswitch.go
+	go build -mod=vendor -ldflags "$(LDFLAGS)" -o vswitch.linux.x86_64 main/vswitch.go
 
 
 linux/rpm:
 	./packaging/auto.sh
 	rpmbuild -ba packaging/openlan-point.spec
 	rpmbuild -ba packaging/openlan-vswitch.spec
-	cp -rvf ~/rpmbuild/RPMS/x86_64/openlan-*.rpm resource
+	cp -rvf ~/rpmbuild/RPMS/x86_64/openlan-*.rpm .
 
 
 windows:
-	go build -mod=vendor -o resource/point.windows.x86_64.exe main/point_windows.go
-	go build -mod=vendor -o resource/vswitch.windows.x86_64.exe main/vswitch.go
+	go build -mod=vendor -o point.windows.x86_64.exe main/point_windows.go
+	go build -mod=vendor -o vswitch.windows.x86_64.exe main/vswitch.go
 
 
 
 windows/zip:
 	rm -rf $(WIN_DIR) && mkdir -p $(WIN_DIR)
 	cp -rvf resource/point.json $(WIN_DIR)
-	cp -rvf resource/point.windows.x86_64.exe $(WIN_DIR)
-	cp -rvf resource/vswitch.windows.x86_64.exe $(WIN_DIR)
-	rm -rf resource/$(WIN_DIR).zip
-	zip -r resource/$(WIN_DIR).zip $(WIN_DIR)
+	cp -rvf point.windows.x86_64.exe $(WIN_DIR)
+	cp -rvf vswitch.windows.x86_64.exe $(WIN_DIR)
+	rm -rf $(WIN_DIR).zip
+	zip -r $(WIN_DIR).zip $(WIN_DIR)
 
 
 osx: darwin
@@ -47,8 +47,8 @@ osx: darwin
 
 
 darwin:
-	go build -mod=vendor -ldflags "$(LDFLAGS)" -o resource/point.darwin.x86_64 main/point_darwin.go
-	go build -mod=vendor -ldflags "$(LDFLAGS)" -o resource/vswitch.darwin.x86_64 main/vswitch.go
+	go build -mod=vendor -ldflags "$(LDFLAGS)" -o point.darwin.x86_64 main/point_darwin.go
+	go build -mod=vendor -ldflags "$(LDFLAGS)" -o vswitch.darwin.x86_64 main/vswitch.go
 
 
 docker:

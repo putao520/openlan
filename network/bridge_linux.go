@@ -123,6 +123,10 @@ func (b *LinuxBridge) DelSlave(dev Taper) error {
 	return nil
 }
 
+func (b *LinuxBridge) Type() string {
+	return "linux"
+}
+
 func (b *LinuxBridge) Name() string {
 	return b.name
 }
@@ -137,4 +141,8 @@ func (b *LinuxBridge) Input(m *Framer) error {
 
 func (b *LinuxBridge) SetTimeout(value int) {
 	//TODO
+}
+
+func (b *LinuxBridge) Mtu() int {
+	return b.mtu
 }

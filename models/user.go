@@ -1,6 +1,9 @@
 package models
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type User struct {
 	Alias    string `json:"alias"`
@@ -20,4 +23,12 @@ func NewUser(name string, password string) (this *User) {
 
 func (u *User) String() string {
 	return fmt.Sprintf("%s, %s, %s, %s", u.UUID, u.Name, u.Password, u.Token)
+}
+
+func (u *User) Tenant() string {
+	values := strings.Split(u.Name, "@")
+	if len(values) > 1 {
+		return values[1]
+	}
+	return "default"
 }

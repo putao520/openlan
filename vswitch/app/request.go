@@ -9,12 +9,12 @@ import (
 )
 
 type WithRequest struct {
-	worker Worker
+	master Master
 }
 
-func NewWithRequest(w Worker, c *config.VSwitch) (r *WithRequest) {
+func NewWithRequest(m Master, c config.VSwitch) (r *WithRequest) {
 	r = &WithRequest{
-		worker: w,
+		master: m,
 	}
 	return
 }
@@ -52,7 +52,6 @@ func (r *WithRequest) OnIpAddr(client *libol.TcpClient, data string) {
 
 	if net.IfAddr == "" {
 		FinNet := service.Network.Get(net.Tenant)
-
 		libol.Info("WithRequest.OnIpAddr: find %s", FinNet)
 		ipStr, netmask := service.Network.GetFreeAddr(client, FinNet)
 		if ipStr == "" {
@@ -60,7 +59,6 @@ func (r *WithRequest) OnIpAddr(client *libol.TcpClient, data string) {
 			client.WriteResp("ipaddr", "no free address")
 			return
 		}
-
 		respNet := &models.Network{
 			Tenant:  FinNet.Tenant,
 			IfAddr:  ipStr,

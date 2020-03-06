@@ -43,7 +43,7 @@ func NewVirtualBridge(name string, mtu int) *VirtualBridge {
 func (b *VirtualBridge) Open(addr string) {
 	libol.Info("VirtualBridge.Open %s", addr)
 	if addr != "" {
-		tap, err := NewKernelTap(true, "")
+		tap, err := NewKernelTap(true, "default", "")
 		if err != nil {
 			libol.Error("VirtualBridge.Open new kernel %s", err)
 		} else {
@@ -99,6 +99,10 @@ func (b *VirtualBridge) DelSlave(dev Taper) error {
 	libol.Info("VirtualBridge.DelSlave: %s %s", dev.Name(), b.name)
 
 	return nil
+}
+
+func (b *VirtualBridge) Type() string {
+	return "virtual"
 }
 
 func (b *VirtualBridge) Name() string {
@@ -266,4 +270,8 @@ func (b *VirtualBridge) Unicast(m *Framer) bool {
 	}
 
 	return false
+}
+
+func (b *VirtualBridge) Mtu() int {
+	return b.mtu
 }

@@ -15,16 +15,16 @@ type Online struct {
 	lock     sync.RWMutex
 	lines    map[string]*models.Line
 	lineList *list.List
-	worker   Worker
+	master   Master
 }
 
-func NewOnline(w Worker, c *config.VSwitch) (o *Online) {
+func NewOnline(m Master, c config.VSwitch) (o *Online) {
 	max := 64
 	o = &Online{
 		max:      max,
 		lines:    make(map[string]*models.Line, max),
 		lineList: list.New(),
-		worker:   w,
+		master:   m,
 	}
 	return
 }

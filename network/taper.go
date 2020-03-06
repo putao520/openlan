@@ -15,13 +15,16 @@ type Taper interface {
 	Close() error
 	Slave(br Bridger)
 	Up()
+	Tenant() string
+	Mtu() int
+	SetMtu(mtu int)
 }
 
-func NewTaper(tap, name string, isTap bool) (Taper, error) {
+func NewTaper(tap, name, tenant string, isTap bool) (Taper, error) {
 	if tap == "linux" {
-		return NewKernelTap(isTap, name)
+		return NewKernelTap(isTap, tenant, name)
 	}
-	return NewUserSpaceTap(isTap, name)
+	return NewUserSpaceTap(isTap, tenant, name)
 }
 
 type tapers struct {
