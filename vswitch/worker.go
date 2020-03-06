@@ -58,22 +58,22 @@ func (w *Worker) LoadLinks() {
 	}
 }
 
-func (w *Worker) ReadClient(client *libol.TcpClient, data []byte) error {
+func (w *Worker) ReadClient(client *libol.TcpClient, data []byte) (error, bool) {
 	libol.Debug("Worker.OnRead: %s % x", client.Addr, data)
 
 	point := service.Point.Get(client.Addr)
 	if point == nil {
-		return libol.NewErr("Point not found.")
+		return libol.NewErr("Point not found."), false
 	}
 	dev := point.Device
 	if point == nil || dev == nil {
-		return libol.NewErr("Tap devices is nil")
+		return libol.NewErr("Tap devices is nil"), true
 	}
 	if _, err := dev.Write(data); err != nil {
 		libol.NewErr("Worker.OnRead: %s", err)
-		return err
+		return err, true
 	}
-	return nil
+	return nil, true
 }
 
 func (w *Worker) Start(v VSwitcher) {

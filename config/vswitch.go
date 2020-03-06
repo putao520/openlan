@@ -61,8 +61,8 @@ func NewVSwitch() (c VSwitch) {
 	c = VSwitch{
 		LogFile: VSwitchDefault.LogFile,
 	}
-	flag.IntVar(&c.Verbose, "log.level", VSwitchDefault.Verbose, "logger level")
-	flag.StringVar(&c.ConfDir, "conf.dir", VSwitchDefault.ConfDir, "The directory configuration on.")
+	flag.IntVar(&c.Verbose, "log:level", VSwitchDefault.Verbose, "logger level")
+	flag.StringVar(&c.ConfDir, "conf:dir", VSwitchDefault.ConfDir, "The directory configuration on.")
 	flag.Parse()
 	c.SaveFile = fmt.Sprintf("%s/vswitch.json", c.ConfDir)
 	if err := c.Load(); err != nil {
@@ -108,6 +108,9 @@ func (c *VSwitch) Default() {
 		c.Bridge[k].Password = fmt.Sprintf("%s/password/%s.json", c.ConfDir, tenant)
 		if c.Bridge[k].Bridger == "" {
 			c.Bridge[k].Bridger = BridgeDefault.Bridger
+		}
+		if c.Bridge[k].IfMtu == 0 {
+			c.Bridge[k].IfMtu = BridgeDefault.IfMtu
 		}
 	}
 }

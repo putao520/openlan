@@ -112,9 +112,20 @@ func (v *VSwitch) OnClient(client *libol.TcpClient) error {
 
 func (v *VSwitch) ReadClient(client *libol.TcpClient, data []byte) error {
 	libol.Debug("VSwitch.ReadClient: %s % x", client.Addr, data)
+	if err := v.OnHook(client, data); err != nil {
+		libol.Debug("VSwitch.OnRead: %s dropping by %s", client.Addr, err)
+		if client.Status() != libol.CL_AUEHED {
+			v.server.Sts.DrpCount++
+		}
+		return nil
+	}
 	for _, w := range v.worker {
-		if err := w.ReadClient(client, data); err != nil {
-			libol.Warn("VSwitch.ReadClient %s", err)
+		err, ok := w.ReadClient(client, data)
+		if ok {
+			if err != nil {
+				libol.Warn("VSwitch.ReadClient %s", err)
+			}
+			break
 		}
 	}
 	return nil
@@ -252,7 +263,7 @@ func (v *VSwitch) ReadTap(dev network.Taper, readAt func(p []byte) error) {
 			libol.Error("VSwitch.ReadTap: %s", err)
 			break
 		}
-		libol.Debug("VSwitch.ReadTap: % x\n", data[:20])
+		libol.Debug("VSwitch.ReadTap: % x\n", data)
 		if err := readAt(data[:n]); err != nil {
 			libol.Error("VSwitch.ReadTap: do-recv %s %s", dev.Name(), err)
 			break
