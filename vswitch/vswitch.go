@@ -32,14 +32,15 @@ type VSwitch struct {
 	Conf config.VSwitch
 	Apps Apps
 
-	hooks   []Hook
-	http    *Http
-	server  *libol.TcpServer
-	bridge  map[string]network.Bridger
-	worker  map[string]*Worker
-	lock    sync.RWMutex
-	uuid    string
-	newTime int64
+	hooks      []Hook
+	http       *Http
+	server     *libol.TcpServer
+	bridge     map[string]network.Bridger
+	worker     map[string]*Worker
+	lock       sync.RWMutex
+	uuid       string
+	newTime    int64
+	initialize bool
 }
 
 func NewVSwitch(c config.VSwitch) *VSwitch {
@@ -54,20 +55,21 @@ func NewVSwitch(c config.VSwitch) *VSwitch {
 	}
 
 	v := VSwitch{
-		Conf:    c,
-		worker:  make(map[string]*Worker, 32),
-		bridge:  make(map[string]network.Bridger, 32),
-		server:  libol.NewTcpServer(c.TcpListen, tlsConf),
-		newTime: time.Now().Unix(),
+		Conf:       c,
+		worker:     make(map[string]*Worker, 32),
+		bridge:     make(map[string]network.Bridger, 32),
+		server:     libol.NewTcpServer(c.TcpListen, tlsConf),
+		newTime:    time.Now().Unix(),
+		initialize: false,
 	}
 	return &v
 }
 
 func (v *VSwitch) Initialize() {
+	v.initialize = true
 	if v.Conf.HttpListen != "" {
 		v.http = NewHttp(v, v.Conf)
 	}
-
 	for _, brCfg := range v.Conf.Bridge {
 		tenant := brCfg.Tenant
 		v.worker[tenant] = NewWorker(brCfg)
@@ -84,12 +86,8 @@ func (v *VSwitch) Initialize() {
 	v.hooks = append(v.hooks, v.Apps.Neighbor.OnFrame)
 	v.hooks = append(v.hooks, v.Apps.Request.OnFrame)
 	v.hooks = append(v.hooks, v.Apps.OnLines.OnFrame)
-	//v.ShowHook()
-}
-
-func (v *VSwitch) ShowHook() {
 	for i, h := range v.hooks {
-		libol.Debug("Worker.showHook k:%d,func:%p,%s", i, h, libol.FunName(h))
+		libol.Debug("Worker.showHook k: %d, func: %p,%s", i, h, libol.FunName(h))
 	}
 }
 
@@ -103,7 +101,6 @@ func (v *VSwitch) OnHook(client *libol.TcpClient, data []byte) error {
 			}
 		}
 	}
-
 	return nil
 }
 
@@ -136,11 +133,11 @@ func (v *VSwitch) Start() error {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
-	if v.bridge != nil || v.http != nil {
-		return libol.NewErr("already running")
+	libol.Debug("VSwitch.Start")
+	if !v.initialize {
+		v.Initialize()
 	}
 
-	v.Initialize()
 	go v.server.Accept()
 	call := libol.TcpServerListener{
 		OnClient: v.OnClient,
@@ -152,7 +149,7 @@ func (v *VSwitch) Start() error {
 		w.Start(v)
 	}
 	for _, brCfg := range v.Conf.Bridge {
-		if br, ok := v.bridge[brCfg.BrName]; ok {
+		if br, ok := v.bridge[brCfg.Tenant]; ok {
 			br.Open(brCfg.IfAddr)
 		}
 	}
@@ -166,6 +163,7 @@ func (v *VSwitch) Stop() error {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
+	libol.Debug("VSwitch.Stop")
 	if v.bridge == nil {
 		return libol.NewErr("already closed")
 	}

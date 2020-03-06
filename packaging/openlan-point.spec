@@ -1,5 +1,5 @@
 Name: openlan-point
-Version: 4.2
+Version: 4.3.14
 Release: 1%{?dist}
 Summary: OpenLan's Project Software
 Group: Applications/Communications
@@ -20,7 +20,7 @@ cd %_source_dir && make linux/point
 %install
 
 mkdir -p %{buildroot}/usr/bin
-cp %_source_dir/resource/point.linux.x86_64 %{buildroot}/usr/bin/point
+cp %_source_dir/point.linux.x86_64 %{buildroot}/usr/bin/point
 
 mkdir -p %{buildroot}/etc/sysconfig
 cp %_source_dir/resource/point.cfg %{buildroot}/etc/sysconfig

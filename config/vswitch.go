@@ -25,7 +25,7 @@ type VSwitch struct {
 	HttpDir    string   `json:"http.dir"`
 	HttpListen string   `json:"http.addr"`
 	Token      string   `json:"admin.token"`
-	ConfDir    string   `json:"conf.dir"`
+	ConfDir    string   `json:"-"`
 	TokenFile  string   `json:"-"`
 	SaveFile   string   `json:"-"`
 	LogFile    string   `json:"log.file"`
@@ -51,6 +51,7 @@ var VSwitchDefault = VSwitch{
 }
 
 var BridgeDefault = Bridge{
+	Tenant:  "default",
 	BrName:  "",
 	Bridger: "linux",
 	IfMtu:   1518,
@@ -60,8 +61,8 @@ func NewVSwitch() (c VSwitch) {
 	c = VSwitch{
 		LogFile: VSwitchDefault.LogFile,
 	}
-	flag.IntVar(&c.Verbose, "log:level", VSwitchDefault.Verbose, "logger level")
-	flag.StringVar(&c.ConfDir, "conf:dir", VSwitchDefault.ConfDir, "The directory configuration on.")
+	flag.IntVar(&c.Verbose, "log.level", VSwitchDefault.Verbose, "logger level")
+	flag.StringVar(&c.ConfDir, "conf.dir", VSwitchDefault.ConfDir, "The directory configuration on.")
 	flag.Parse()
 	c.SaveFile = fmt.Sprintf("%s/vswitch.json", c.ConfDir)
 	if err := c.Load(); err != nil {
@@ -72,13 +73,8 @@ func NewVSwitch() (c VSwitch) {
 	libol.Debug(" %s", c)
 	libol.Init(c.LogFile, c.Verbose)
 	c.Save(fmt.Sprintf("%s.cur", c.SaveFile))
-	str, err := libol.Marshal(c, false)
-	if err != nil {
-		libol.Error("NewVSwitch.json error: %s", err)
-	}
-	libol.Debug("NewVSwitch.json: %s", str)
-
-	return
+	libol.Debug("NewVSwitch.json: %v", c)
+	return c
 }
 
 func (c *VSwitch) Right() {
@@ -102,13 +98,17 @@ func (c *VSwitch) Default() {
 		c.Bridge = make([]Bridge, 1)
 		c.Bridge[0] = BridgeDefault
 	}
-	for _, br := range c.Bridge {
-		if br.BrName == "" {
-			br.BrName = "br-" + br.Tenant
+	for k := range c.Bridge {
+		tenant := c.Bridge[k].Tenant
+		if c.Bridge[k].BrName == "" {
+			c.Bridge[k].BrName = "br-" + tenant
 		}
-		br.Alias = c.Alias
-		br.Network = fmt.Sprintf("%s/network-%s.json", c.ConfDir, br.Tenant)
-		br.Password = fmt.Sprintf("%s/password-%s.json", c.ConfDir, br.Tenant)
+		c.Bridge[k].Alias = c.Alias
+		c.Bridge[k].Network = fmt.Sprintf("%s/network/%s.json", c.ConfDir, tenant)
+		c.Bridge[k].Password = fmt.Sprintf("%s/password/%s.json", c.ConfDir, tenant)
+		if c.Bridge[k].Bridger == "" {
+			c.Bridge[k].Bridger = BridgeDefault.Bridger
+		}
 	}
 }
 

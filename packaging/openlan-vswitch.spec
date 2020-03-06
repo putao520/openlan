@@ -1,5 +1,5 @@
 Name: openlan-vswitch
-Version: 4.2.14
+Version: 4.3.14
 Release: 1%{?dist}
 Summary: OpenLan's Project Software
 Group: Applications/Communications
@@ -22,11 +22,10 @@ virtualenv %_venv
 
 %install
 mkdir -p %{buildroot}/usr/bin
-cp %_source_dir/resource/vswitch.linux.x86_64 %{buildroot}/usr/bin/vswitch
+cp %_source_dir/vswitch.linux.x86_64 %{buildroot}/usr/bin/vswitch
 
 mkdir -p %{buildroot}/etc/vswitch
 cp %_source_dir/resource/vswitch.json %{buildroot}/etc/vswitch/vswitch.json.example
-cp %_source_dir/resource/network.json %{buildroot}/etc/vswitch/network.json.example
 mkdir -p %{buildroot}/etc/sysconfig
 cp %_source_dir/resource/vswitch.cfg %{buildroot}/etc/sysconfig
 
@@ -37,9 +36,11 @@ mkdir -p %{buildroot}/var/openlan
 cp -R %_source_dir/resource/ca %{buildroot}/var/openlan
 cp -R %_source_dir/vswitch/public %{buildroot}/var/openlan
 
-cat > %{buildroot}/etc/vswitch/password.example << EOF
-hi@tenant:hi@123$
-EOF
+mkdir -p %{buildroot}/etc/vswitch/network
+cp %_source_dir/resource/network.json %{buildroot}/etc/vswitch/network/default.json.example
+mkdir -p %{buildroot}/etc/vswitch/password
+cp %_source_dir/resource/password.json %{buildroot}/etc/vswitch/password/default.json.example
+
 
 mkdir -p %{buildroot}/opt/openlan-utils
 cp -R /opt/openlan-utils/env %{buildroot}/opt/openlan-utils

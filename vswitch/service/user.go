@@ -1,11 +1,8 @@
 package service
 
 import (
-	"bufio"
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
-	"os"
-	"strings"
 )
 
 type _user struct {
@@ -20,30 +17,21 @@ func (w *_user) Init(size int) {
 	w.users = libol.NewSafeStrMap(size)
 }
 
-func (w *_user) Load(path string) error {
-	file, err := os.Open(path)
-	if err != nil {
+func (w *_user) Load(tenant, path string) error {
+	users := make([]*models.User, 32)
+	if err := libol.UnmarshalLoad(&users, path); err != nil {
+		libol.Error("_user.load: %s", err)
 		return err
 	}
-
-	defer file.Close()
-	reader := bufio.NewReader(file)
-	for {
-		line, err := reader.ReadString('\n')
-		if err != nil {
-			break
-		}
-
-		values := strings.Split(line, ":")
-		if len(values) == 2 {
-			_user := models.NewUser(values[0], strings.TrimSpace(values[1]))
-			w.Add(_user)
-		}
+	for _, user := range users {
+		user.Name = user.Name + "@" + tenant
+		w.Add(user)
 	}
 	return nil
 }
 
 func (w *_user) Add(user *models.User) {
+	libol.Debug("_user.Add %v", *user)
 	name := user.Name
 	if name == "" {
 		name = user.Token
@@ -53,6 +41,7 @@ func (w *_user) Add(user *models.User) {
 }
 
 func (w *_user) Del(name string) {
+	libol.Debug("_user.Add %s", name)
 	w.users.Del(name)
 }
 

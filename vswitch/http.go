@@ -149,7 +149,6 @@ func (h *Http) Start() error {
 	h.Initialize()
 
 	libol.Info("Http.Start %s", h.listen)
-
 	if h.keyFile == "" || h.crtFile == "" {
 		if err := h.server.ListenAndServe(); err != nil {
 			libol.Error("Http.Start on %s: %s", h.listen, err)

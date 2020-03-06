@@ -58,7 +58,7 @@ func (t *TcpServer) Listen() (err error) {
 	if t.TlsConf != nil {
 		schema = "tls"
 	}
-	Info("TcpServer.Start %s//%s", schema, t.Addr)
+	Info("TcpServer.Start %s://%s", schema, t.Addr)
 
 	if t.TlsConf != nil {
 		t.listener, err = tls.Listen("tcp", t.Addr, t.TlsConf)

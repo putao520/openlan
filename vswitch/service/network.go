@@ -19,26 +19,24 @@ var Network = _network{
 	clientUsed: libol.NewSafeStrMap(1024),
 }
 
-func (w *_network) Load(path string) error {
-	nets := make([]*models.Network, 32)
-
-	if err := libol.UnmarshalLoad(&nets, path); err != nil {
+func (w *_network) Load(tenant, path string) error {
+	net := &models.Network{}
+	if err := libol.UnmarshalLoad(net, path); err != nil {
 		libol.Error("_network.load: %s", err)
 		return err
 	}
-
-	for _, net := range nets {
-		w.Add(net)
-	}
-
+	net.Tenant = tenant
+	w.Add(net)
 	return nil
 }
 
 func (w *_network) Add(n *models.Network) {
+	libol.Debug("_network.Add %v", *n)
 	w.networks.Set(n.Tenant, n)
 }
 
 func (w *_network) Del(name string) {
+	libol.Debug("_network.Del %s", name)
 	w.networks.Del(name)
 }
 

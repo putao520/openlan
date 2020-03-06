@@ -17,7 +17,6 @@ type Worker struct {
 	startTime   int64
 	linksLock   sync.RWMutex
 	links       map[string]*point.Point
-	brName      string
 	uuid        string
 	initialized bool
 }
@@ -38,8 +37,8 @@ func NewWorker(c config.Bridge) *Worker {
 func (w *Worker) Initialize() {
 	w.initialized = true
 
-	service.User.Load(w.Conf.Password)
-	service.Network.Load(w.Conf.Network)
+	service.User.Load(w.Conf.Tenant, w.Conf.Password)
+	service.Network.Load(w.Conf.Tenant, w.Conf.Network)
 }
 
 func (w *Worker) ID() string {
@@ -57,10 +56,6 @@ func (w *Worker) LoadLinks() {
 			w.AddLink(lc)
 		}
 	}
-}
-
-func (w *Worker) BrName() string {
-	return w.brName
 }
 
 func (w *Worker) ReadClient(client *libol.TcpClient, data []byte) error {
@@ -82,6 +77,7 @@ func (w *Worker) ReadClient(client *libol.TcpClient, data []byte) error {
 }
 
 func (w *Worker) Start(v VSwitcher) {
+	libol.Info("Worker.Start %s", w.Conf.Tenant)
 	if !w.initialized {
 		w.Initialize()
 	}
@@ -91,7 +87,7 @@ func (w *Worker) Start(v VSwitcher) {
 }
 
 func (w *Worker) Stop() {
-	libol.Info("Worker.Close")
+	libol.Info("Worker.Close %s", w.Conf.Tenant)
 	for _, p := range w.links {
 		p.Stop()
 	}
@@ -107,7 +103,7 @@ func (w *Worker) UpTime() int64 {
 
 func (w *Worker) AddLink(c *config.Point) {
 	c.Alias = w.Alias
-	c.BrName = w.BrName() //Reset bridge name.
+	c.BrName = w.Conf.BrName //Reset bridge name.
 	c.Allowed = false
 
 	go func() {
