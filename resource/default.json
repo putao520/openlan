@@ -1,0 +1,16 @@
+{
+  "tenant": "default",
+  "if.addr": "192.168.4.40/24", "if.br": "br-default",
+  "ip.addr": "192.168.100.253", "netmask": "255.255.255.0",
+  "ipRange": 4,
+  "routes": [
+    { "prefix": "192.168.4.0/24", "nexthop": "192.168.100.1" }
+  ],
+  "links": [
+    { "vs.addr": "openlan.3cm.us", "vs.auth": "admin@yunex:yunex@123", "vs.tls": true }
+  ],
+  "password": [
+    { "name": "hi", "password": "123456" },
+    { "name": "hei", "password": "123456" }
+  ]
+}

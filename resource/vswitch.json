@@ -1,8 +1,12 @@
 {
-  "vs.addr": "0.0.0.0:10002",
-  "http.dir": "/var/openlan/public",
-  "http.addr": ":10000",
   "log.file": "/var/log/vswitch.log",
-  "crt.dir": "/var/openlan/ca",
-  "links": []
+  "http.dir": "/var/openlan/public", "crt.dir": "/var/openlan/ca",
+  "bridge": [
+    {
+      "tenant": "default", "if.addr": "192.168.4.40/24",
+      "links": [
+        { "vs.addr": "openlan.3cm.us", "vs.auth": "admin@yunex:yunex@123", "vs.tls": true }
+      ]
+    }
+  ]
 }
