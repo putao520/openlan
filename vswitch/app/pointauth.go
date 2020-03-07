@@ -103,6 +103,7 @@ func (p *PointAuth) onAuth(client *libol.TcpClient, user *models.User) error {
 	if m.UUID == "" {
 		m.UUID = user.Alias
 	}
+	client.SetPrivate(m)
 	service.Point.Add(m)
 	go p.master.ReadTap(dev, client.WriteMsg)
 

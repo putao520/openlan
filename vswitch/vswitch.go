@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/network"
 	"github.com/danieldin95/openlan-go/vswitch/app"
 	"github.com/danieldin95/openlan-go/vswitch/service"
@@ -119,16 +120,21 @@ func (v *VSwitch) ReadClient(client *libol.TcpClient, data []byte) error {
 		}
 		return nil
 	}
-	for _, w := range v.worker {
-		err, ok := w.ReadClient(client, data)
-		if ok {
-			if err != nil {
-				libol.Warn("VSwitch.ReadClient %s", err)
-			}
-			break
+
+	private := client.Private()
+	if private != nil {
+		point := private.(*models.Point)
+		dev := point.Device
+		if point == nil || dev == nil {
+			return libol.NewErr("Tap devices is nil")
 		}
+		if _, err := dev.Write(data); err != nil {
+			libol.NewErr("Worker.OnRead: %s", err)
+			return err
+		}
+		return nil
 	}
-	return nil
+	return libol.NewErr("%s Point not found.", client)
 }
 
 func (v *VSwitch) OnClose(client *libol.TcpClient) error {
@@ -179,7 +185,7 @@ func (v *VSwitch) Stop() error {
 		return libol.NewErr("already closed")
 	}
 	for _, brCfg := range v.Conf.Bridge {
-		if br, ok := v.bridge[brCfg.BrName]; ok {
+		if br, ok := v.bridge[brCfg.Tenant]; ok {
 			br.Close()
 			delete(v.bridge, brCfg.BrName)
 		}
@@ -208,6 +214,8 @@ func (v *VSwitch) Server() *libol.TcpServer {
 }
 
 func (v *VSwitch) NewTap(tenant string) (network.Taper, error) {
+	v.lock.RLock()
+	defer v.lock.RUnlock()
 	libol.Debug("Worker.NewTap")
 
 	br, ok := v.bridge[tenant]

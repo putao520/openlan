@@ -185,6 +185,7 @@ type TcpClient struct {
 	TlsConf  *tls.Config
 	Sts      TcpClientSts
 	Listener TcpClientListener
+	private  interface{}
 
 	conn    net.Conn
 	maxSize int
@@ -269,6 +270,7 @@ func (t *TcpClient) Close() {
 		Info("TcpClient.Close %s", t.Addr)
 		t.conn.Close()
 		t.conn = nil
+		t.private = nil
 		t.lock.Unlock()
 
 		if t.Listener.OnClose != nil {
@@ -427,6 +429,18 @@ func (t *TcpClient) String() string {
 func (t *TcpClient) Terminal() {
 	t.SetStatus(CL_TERMINAL)
 	t.Close()
+}
+
+func (t *TcpClient) Private() interface{} {
+	t.lock.RLock()
+	defer t.lock.RUnlock()
+	return t.private
+}
+
+func (t *TcpClient) SetPrivate(v interface{}) {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+	t.private = v
 }
 
 func (t *TcpClient) Status() uint8 {
