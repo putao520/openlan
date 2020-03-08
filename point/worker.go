@@ -43,12 +43,13 @@ func NewTcpWorker(client *libol.TcpClient, c *config.Point) (t *TcpWorker) {
 		writeChan:   make(chan []byte, 1024*10),
 		maxSize:     c.IfMtu,
 		user:        models.NewUser(c.Name(), c.Password()),
-		network:     models.NewNetwork(c.Tenant(), c.IfAddr),
+		network:     models.NewNetwork(c.Tenant, c.IfAddr),
 		routes:      make(map[string]*models.Route, 64),
 		allowed:     c.Allowed,
 		initialized: false,
 	}
 	t.user.Alias = c.Alias
+	t.user.Tenant = c.Tenant
 
 	return
 }
@@ -354,9 +355,9 @@ func (a *TapWorker) Open() {
 	var err error
 	var dev network.Taper
 	if a.devCfg.DeviceType == water.TAP {
-		dev, err = network.NewKernelTap(true, a.pointCfg.Tenant(), "")
+		dev, err = network.NewKernelTap(true, a.pointCfg.Tenant, "")
 	} else {
-		dev, err = network.NewKernelTap(false, a.pointCfg.Tenant(), "")
+		dev, err = network.NewKernelTap(false, a.pointCfg.Tenant, "")
 	}
 	if err != nil {
 		libol.Error("TapWorker.Open %s", err)

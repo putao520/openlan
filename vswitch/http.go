@@ -428,7 +428,7 @@ func (h *Http) AddLink(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c.Default()
-	h.switcher.AddLink(c.Tenant(), c)
+	h.switcher.AddLink(c.Tenant, c)
 	h.ResponseMsg(w, 0, "")
 }
 

@@ -8,6 +8,7 @@ import (
 type Point struct {
 	UUID   string           `json:"uuid"`
 	Alias  string           `json:"alias"`
+	Tenant string           `json:"Tenant"`
 	Server string           `json:"server"`
 	Uptime int64            `json:"uptime"`
 	Status string           `json:"status"`

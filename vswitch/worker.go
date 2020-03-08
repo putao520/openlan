@@ -87,6 +87,7 @@ func (w *Worker) AddLink(c *config.Point) {
 	c.Alias = w.Alias
 	c.BrName = w.Conf.BrName //Reset bridge name.
 	c.Allowed = false
+	c.Tenant = w.Conf.Tenant
 
 	go func() {
 		p := point.NewPoint(c)

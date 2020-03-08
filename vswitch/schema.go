@@ -38,6 +38,7 @@ func NewWorkerSchema(sw VSwitcher) WorkerSchema {
 type PointSchema struct {
 	Uptime  int64  `json:"uptime"`
 	UUID    string `json:"uuid"`
+	Tenant  string `json:"tenant"`
 	Alias   string `json:"alias"`
 	Address string `json:"server"`
 	IpAddr  string `json:"address"`
@@ -60,6 +61,7 @@ func NewPointSchema(p *models.Point) PointSchema {
 		TxBytes: client.Sts.TxOkay,
 		ErrPkt:  client.Sts.TxError,
 		State:   client.State(),
+		Tenant:  p.Tenant,
 	}
 }
 
@@ -67,6 +69,7 @@ type LinkSchema struct {
 	Uptime  int64  `json:"uptime"`
 	UUID    string `json:"uuid"`
 	Alias   string `json:"alias"`
+	Tenant  string `json:"tenant"`
 	Address string `json:"server"`
 	IpAddr  string `json:"address"`
 	Device  string `json:"device"`
@@ -85,6 +88,7 @@ func NewLinkSchema(p *models.Point) LinkSchema {
 		Address: client.Addr,
 		State:   client.State(),
 		IpAddr:  strings.Split(client.Addr, ":")[0],
+		Tenant:  p.Tenant,
 	}
 }
 

@@ -6,6 +6,7 @@ import (
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/vswitch/service"
+	"strings"
 )
 
 type PointAuth struct {
@@ -68,6 +69,16 @@ func (p *PointAuth) handleLogin(client *libol.TcpClient, data string) error {
 	}
 
 	name := user.Name
+	if name != "" && user.Tenant != "" { // reset username if haven't tenant.
+		if !strings.Contains(name, "@") {
+			name = name + "@" + user.Tenant
+		}
+	}
+	if user.Tenant == "" { // reset tenant by username if tenant is ''.
+		if strings.Contains(name, "@") {
+			user.Tenant = strings.SplitN(name, "@", 2)[1]
+		}
+	}
 	if user.Token != "" {
 		name = user.Token
 	}
@@ -93,13 +104,14 @@ func (p *PointAuth) onAuth(client *libol.TcpClient, user *models.User) error {
 	}
 
 	libol.Info("PointAuth.onAuth: %s", client)
-	dev, err := p.master.NewTap(user.Tenant())
+	dev, err := p.master.NewTap(user.Tenant)
 	if err != nil {
 		return err
 	}
 	m := models.NewPoint(client, dev)
 	m.Alias = user.Alias
 	m.UUID = user.UUID
+	m.Tenant = user.Tenant
 	if m.UUID == "" {
 		m.UUID = user.Alias
 	}

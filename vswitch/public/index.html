@@ -127,11 +127,11 @@
                 <tr>
                     <th>UUID</th>
                     <th>UpTime</th>
+                    <th>Tenant</th>
                     <th>Alias</th>
                     <th>Address</th>
                     <th>Device</th>
-                    <th>Receipt</th>
-                    <th>Transmit</th>
+                    <th>r/t|Traffic</th>
                     <th>State</th>
                 </tr>
                 </thead>
@@ -140,11 +140,11 @@
                 <tr>
                     <td>{{ .UUID }}</td>
                     <td>{{ prettyTime .Uptime }}</td>
+                    <td>{{ .Tenant }}</td>
                     <td>{{ .Alias }}</td>
                     <td>{{ .Address }}</td>
                     <td>{{ .Device }}</td>
-                    <td>{{ prettyBytes .RxBytes }}</td>
-                    <td>{{ prettyBytes .TxBytes }}</td>
+                    <td>{{ prettyBytes .RxBytes }}/{{ prettyBytes .TxBytes }}</td>
                     <td><span class="{{ .State }}">{{ .State }}</span></td>
                 </tr>
                 {{ end }}
@@ -164,6 +164,7 @@
                 <tr>
                     <th>UUID</th>
                     <th>UpTime</th>
+                    <th>Tenant</th>
                     <th>Device</th>
                     <th>Address</th>
                     <th>State</th>
@@ -174,6 +175,7 @@
                     <tr>
                         <td>{{ .UUID }}</td>
                         <td>{{ prettyTime .Uptime }}</td>
+                        <td>{{ .Tenant }}</td>
                         <td>{{ .Device }}</td>
                         <td><a href="https://{{ .IpAddr }}:10000">{{ .Address }}</a></td>
                         <td><span class="{{ .State }}">{{ .State }}</span></td>
