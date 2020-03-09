@@ -11,7 +11,6 @@ import (
 type Point struct {
 	MixPoint
 	BrName string
-	Tenant string
 
 	addr   string
 	routes []*models.Route
@@ -23,7 +22,6 @@ func NewPoint(config *config.Point) *Point {
 	p := Point{
 		BrName:   config.BrName,
 		MixPoint: NewMixPoint(config),
-		Tenant:   config.Tenant,
 	}
 	return &p
 }
