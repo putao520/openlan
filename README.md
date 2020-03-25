@@ -105,10 +105,11 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
 
 ### 运行Point
 
-    [root@localhost openlan-go]# cat /etc/point.json
+    [root@localhost openlan-go]# cat /etc/point/point.json
     {
       "vs.addr": "www.openlan.xx",
       "vs.auth": "xx:xx@xx",
+      "vs.tls": true,
       "if.addr": "192.168.1.21/24",
       "log.file": "/var/log/point.log"
     }
