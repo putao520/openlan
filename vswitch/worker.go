@@ -37,8 +37,8 @@ func NewWorker(c config.Bridge) *Worker {
 func (w *Worker) Initialize() {
 	w.initialized = true
 
-	service.User.Load(w.Conf.Tenant, w.Conf.Password)
-	service.Network.Load(w.Conf.Tenant, w.Conf.Network)
+	_ = service.User.Load(w.Conf.Tenant, w.Conf.Password)
+	_ = service.Network.Load(w.Conf.Tenant, w.Conf.Network)
 }
 
 func (w *Worker) ID() string {

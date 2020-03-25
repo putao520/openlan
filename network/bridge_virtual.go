@@ -119,7 +119,7 @@ func (b *VirtualBridge) SetTimeout(value int) {
 
 func (b *VirtualBridge) Forward(m *Framer) error {
 	if is := b.Unicast(m); !is {
-		b.Flood(m)
+		_ = b.Flood(m)
 	}
 	return nil
 }
@@ -159,7 +159,7 @@ func (b *VirtualBridge) Start() {
 				return
 			case t := <-b.ticker.C:
 				libol.Debug("VirtualBridge.Expire Tick at %s", t)
-				b.Expire()
+				_ = b.Expire()
 			}
 		}
 	}()

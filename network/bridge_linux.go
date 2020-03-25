@@ -37,7 +37,7 @@ func (b *LinuxBridge) Open(addr string) {
 			return
 		}
 		dev, err = netlink.LinkByName(b.name)
-		if br == nil {
+		if dev == nil {
 			return
 		}
 	}

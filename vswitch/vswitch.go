@@ -129,7 +129,7 @@ func (v *VSwitch) ReadClient(client *libol.TcpClient, data []byte) error {
 			return libol.NewErr("Tap devices is nil")
 		}
 		if _, err := dev.Write(data); err != nil {
-			libol.NewErr("Worker.OnRead: %s", err)
+			libol.Error("Worker.OnRead: %s", err)
 			return err
 		}
 		return nil
@@ -186,7 +186,7 @@ func (v *VSwitch) Stop() error {
 	}
 	for _, brCfg := range v.Conf.Bridge {
 		if br, ok := v.bridge[brCfg.Tenant]; ok {
-			br.Close()
+			_ = br.Close()
 			delete(v.bridge, brCfg.BrName)
 		}
 	}
@@ -230,7 +230,7 @@ func (v *VSwitch) NewTap(tenant string) (network.Taper, error) {
 	mtu := br.Mtu()
 	dev.SetMtu(mtu)
 	dev.Up()
-	br.AddSlave(dev)
+	_ = br.AddSlave(dev)
 	libol.Info("Worker.NewTap %s on %s", dev.Name(), tenant)
 	return dev, nil
 }
@@ -240,7 +240,7 @@ func (v *VSwitch) FreeTap(dev network.Taper) error {
 	if !ok {
 		return libol.NewErr("Not found bridge %s", dev.Tenant())
 	}
-	br.DelSlave(dev)
+	_ = br.DelSlave(dev)
 	libol.Info("Worker.FreeTap %s", dev.Name())
 	return nil
 }

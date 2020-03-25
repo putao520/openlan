@@ -32,7 +32,7 @@ func (w *_network) Load(tenant, path string) error {
 
 func (w *_network) Add(n *models.Network) {
 	libol.Debug("_network.Add %v", *n)
-	w.networks.Set(n.Tenant, n)
+	_ = w.networks.Set(n.Tenant, n)
 }
 
 func (w *_network) Del(name string) {
@@ -91,8 +91,8 @@ func (w *_network) GetFreeAddr(client *libol.TcpClient, n *models.Network) (ip s
 	}
 
 	if ipStr != "" {
-		w.usedAddr.Set(ipStr, client.Addr)
-		w.clientUsed.Set(client.Addr, ipStr)
+		_ = w.usedAddr.Set(ipStr, client.Addr)
+		_ = w.clientUsed.Set(client.Addr, ipStr)
 	}
 
 	return ipStr, netmask

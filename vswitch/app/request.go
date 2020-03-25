@@ -47,7 +47,8 @@ func (r *WithRequest) OnIpAddr(client *libol.TcpClient, data string) {
 
 	net := models.NewNetwork("", "")
 	if err := json.Unmarshal([]byte(data), net); err != nil {
-		libol.NewErr("WithRequest.OnIpAddr: Invalid json data.")
+		libol.Error("WithRequest.OnIpAddr: Invalid json data.")
+		return
 	}
 
 	if net.IfAddr == "" {
@@ -56,7 +57,7 @@ func (r *WithRequest) OnIpAddr(client *libol.TcpClient, data string) {
 		ipStr, netmask := service.Network.GetFreeAddr(client, FinNet)
 		if ipStr == "" {
 			libol.Error("WithRequest.OnIpAddr: no free address")
-			client.WriteResp("ipaddr", "no free address")
+			_ = client.WriteResp("ipaddr", "no free address")
 			return
 		}
 		respNet := &models.Network{
@@ -69,7 +70,7 @@ func (r *WithRequest) OnIpAddr(client *libol.TcpClient, data string) {
 		}
 		libol.Info("WithRequest.OnIpAddr: resp %s", respNet)
 		if respStr, err := json.Marshal(respNet); err == nil {
-			client.WriteResp("ipaddr", string(respStr))
+			_ = client.WriteResp("ipaddr", string(respStr))
 		}
 	}
 }

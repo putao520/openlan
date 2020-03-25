@@ -109,7 +109,7 @@ func (t *UserSpaceTap) Deliver() {
 		}
 
 		m := &Framer{Data: data, Source: t}
-		t.bridge.Input(m)
+		_ = t.bridge.Input(m)
 	}
 }
 
@@ -125,7 +125,7 @@ func (t *UserSpaceTap) Close() error {
 	close(t.writeQ)
 	Tapers.Del(t.name)
 	if t.bridge != nil {
-		t.bridge.DelSlave(t)
+		_ = t.bridge.DelSlave(t)
 		t.bridge = nil
 	}
 	t.readQ = nil

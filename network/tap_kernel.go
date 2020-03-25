@@ -97,7 +97,7 @@ func (t *KernelTap) Close() error {
 
 	Tapers.Del(t.name)
 	if t.bridge != nil {
-		t.bridge.DelSlave(t)
+		_ = t.bridge.DelSlave(t)
 		t.bridge = nil
 	}
 	err := t.device.Close()

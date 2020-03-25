@@ -18,7 +18,7 @@ func (p *_point) Init(size int) {
 }
 
 func (p *_point) Add(m *models.Point) {
-	p.clients.Set(m.Client.Addr, m)
+	_ = p.clients.Set(m.Client.Addr, m)
 }
 
 func (p *_point) Get(addr string) *models.Point {
@@ -33,7 +33,7 @@ func (p *_point) Get(addr string) *models.Point {
 func (p *_point) Del(addr string) {
 	if v := p.clients.Get(addr); v != nil {
 		m := v.(*models.Point)
-		m.Device.Close()
+		_ = m.Device.Close()
 		p.clients.Del(addr)
 	}
 }

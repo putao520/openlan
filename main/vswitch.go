@@ -15,7 +15,7 @@ func main() {
 
 	s.CallBefore()
 	vs := vswitch.NewVSwitch(c)
-	vs.Start()
+	_ = vs.Start()
 	s.CallAfter()
 
 	x := make(chan os.Signal)
@@ -26,6 +26,6 @@ func main() {
 
 	<-x
 	s.CallExit()
-	vs.Stop()
+	_ = vs.Stop()
 	fmt.Println("Done!")
 }

@@ -18,7 +18,7 @@ func (p *_online) Init(size int) {
 }
 
 func (p *_online) Add(m *models.Line) {
-	p.lines.Set(m.String(), m)
+	_ = p.lines.Set(m.String(), m)
 }
 
 func (p *_online) Update(m *models.Line) *models.Line {

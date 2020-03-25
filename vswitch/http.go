@@ -57,14 +57,14 @@ func (h *Http) Initialize() {
 	}
 
 	if h.adminToken == "" {
-		h.LoadToken()
+		_ = h.LoadToken()
 	}
 
 	if h.adminToken == "" {
 		h.adminToken = libol.GenToken(64)
 	}
 
-	h.SaveToken()
+	_ = h.SaveToken()
 	h.LoadRouter()
 }
 
@@ -217,11 +217,11 @@ func (h *Http) PubFile(w http.ResponseWriter, r *http.Request) {
 	realpath := h.getFile(r.URL.Path)
 	contents, err := ioutil.ReadFile(realpath)
 	if err != nil {
-		fmt.Fprintf(w, "404")
+		_, _ = fmt.Fprintf(w, "404")
 		return
 	}
 
-	fmt.Fprintf(w, "%s\n", contents)
+	_, _ = fmt.Fprintf(w, "%s\n", contents)
 }
 
 func (h *Http) getIndex(body *IndexSchema) *IndexSchema {
@@ -294,11 +294,11 @@ func (h *Http) ParseFiles(w http.ResponseWriter, name string, data interface{}) 
 		"prettyBytes": libol.PrettyBytes,
 	}).ParseFiles(name)
 	if err != nil {
-		fmt.Fprintf(w, "template.ParseFiles %s", err)
+		_, _ = fmt.Fprintf(w, "template.ParseFiles %s", err)
 		return err
 	}
 	if err := tmpl.Execute(w, data); err != nil {
-		fmt.Fprintf(w, "template.ParseFiles %s", err)
+		_, _ = fmt.Fprintf(w, "template.ParseFiles %s", err)
 		return err
 	}
 	return nil

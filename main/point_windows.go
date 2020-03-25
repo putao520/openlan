@@ -24,7 +24,7 @@ func main() {
 	go func() {
 		for {
 			input := ""
-			if fmt.Scanln(&input); input == "quit" {
+			if _, _ = fmt.Scanln(&input); input == "quit" {
 				fmt.Printf("press `CTRL+C` to exit...\n")
 				break
 			}

@@ -114,7 +114,7 @@ func (t *TcpServer) Loop(call TcpServerListener) {
 			Debug("TcpServer.addClient %s", client.Addr)
 			t.clients[client] = true
 			if call.OnClient != nil {
-				call.OnClient(client)
+				_ = call.OnClient(client)
 				if call.ReadAt != nil {
 					go t.Read(client, call.ReadAt)
 				}
@@ -124,7 +124,7 @@ func (t *TcpServer) Loop(call TcpServerListener) {
 				Debug("TcpServer.delClient %s", client.Addr)
 				t.Sts.ClsCount++
 				if call.OnClose != nil {
-					call.OnClose(client)
+					_ = call.OnClose(client)
 				}
 				client.Close()
 				delete(t.clients, client)
@@ -254,7 +254,7 @@ func (t *TcpClient) Connect() (err error) {
 		t.status = CL_CONNECTED
 		t.lock.Unlock()
 		if t.Listener.OnConnected != nil {
-			t.Listener.OnConnected(t)
+			_ = t.Listener.OnConnected(t)
 		}
 	}
 
@@ -274,7 +274,7 @@ func (t *TcpClient) Close() {
 		t.lock.Unlock()
 
 		if t.Listener.OnClose != nil {
-			t.Listener.OnClose(t)
+			_ = t.Listener.OnClose(t)
 		}
 	} else {
 		t.lock.Unlock()

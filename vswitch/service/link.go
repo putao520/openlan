@@ -30,7 +30,7 @@ func (p *_link) Add(m *point.Point) {
 		IfName: m.IfName(),
 		UUID:   m.UUID(),
 	}
-	p.links.Set(m.Addr(), link)
+	_ = p.links.Set(m.Addr(), link)
 }
 
 func (p *_link) Get(key string) *models.Point {

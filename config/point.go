@@ -82,7 +82,7 @@ func NewPoint() (c *Point) {
 	c.Default()
 
 	libol.Init(c.LogFile, c.Verbose)
-	c.Save(fmt.Sprintf("%s.cur", c.SaveFile))
+	_ = c.Save(fmt.Sprintf("%s.cur", c.SaveFile))
 
 	str, err := libol.Marshal(c, false)
 	if err != nil {

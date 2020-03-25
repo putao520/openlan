@@ -53,7 +53,7 @@ func (e *Neighbors) OnFrame(client *libol.TcpClient, frame *libol.FrameMessage) 
 	if arp.IsIP4() {
 		if arp.OpCode == libol.ARP_REQUEST ||
 			arp.OpCode == libol.ARP_REPLY {
-			n := models.NewNeighbor(net.HardwareAddr(arp.SHwAddr), net.IP(arp.SIpAddr), client)
+			n := models.NewNeighbor(arp.SHwAddr, arp.SIpAddr, client)
 			e.AddNeighbor(n)
 		}
 	}

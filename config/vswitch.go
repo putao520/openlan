@@ -14,7 +14,7 @@ type Bridge struct {
 	IfAddr   string   `json:"if.addr"`
 	BrName   string   `json:"if.br"`
 	Links    []*Point `json:"links"`
-	Bridger  string   `json："bridger"`
+	Bridger  string   `json:"bridger"`
 	Password string   `json:"-"`
 	Network  string   `json:"-"`
 }
@@ -72,7 +72,7 @@ func NewVSwitch() (c VSwitch) {
 	c.Default()
 	libol.Debug(" %s", c)
 	libol.Init(c.LogFile, c.Verbose)
-	c.Save(fmt.Sprintf("%s.cur", c.SaveFile))
+	_ = c.Save(fmt.Sprintf("%s.cur", c.SaveFile))
 	libol.Debug("NewVSwitch.json: %v", c)
 	return c
 }

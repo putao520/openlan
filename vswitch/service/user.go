@@ -37,7 +37,7 @@ func (w *_user) Add(user *models.User) {
 		name = user.Token
 	}
 	w.users.Del(name)
-	w.users.Set(name, user)
+	_ = w.users.Set(name, user)
 }
 
 func (w *_user) Del(name string) {

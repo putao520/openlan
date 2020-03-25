@@ -68,7 +68,7 @@ func (t *TcpWorker) Initialize() {
 		},
 		OnClose: func(client *libol.TcpClient) error {
 			if t.Listener.OnClose != nil {
-				t.Listener.OnClose(t)
+				_ = t.Listener.OnClose(t)
 			}
 			return nil
 		},
@@ -79,7 +79,7 @@ func (t *TcpWorker) Start() {
 	if !t.initialized {
 		t.Initialize()
 	}
-	t.Connect()
+	_ = t.Connect()
 
 	go t.Read()
 	go t.Loop()
@@ -159,10 +159,10 @@ func (t *TcpWorker) onInstruct(data []byte) error {
 		if resp[:4] == "okay" {
 			t.Client.SetStatus(libol.CL_AUEHED)
 			if t.Listener.OnSuccess != nil {
-				t.Listener.OnSuccess(t)
+				_ = t.Listener.OnSuccess(t)
 			}
 			if t.allowed {
-				t.TryNetwork(t.Client)
+				_ = t.TryNetwork(t.Client)
 			}
 			libol.Info("TcpWorker.onInstruct.login: success")
 		} else {
@@ -181,12 +181,12 @@ func (t *TcpWorker) onInstruct(data []byte) error {
 	if action == "ipad:" {
 		net := models.Network{}
 		if err := json.Unmarshal([]byte(resp), &net); err != nil {
-			libol.NewErr("TcpWorker.onInstruct.ipaddr: Invalid json data.")
+			return libol.NewErr("TcpWorker.onInstruct: Invalid json data.")
 		}
 
 		libol.Debug("TcpWorker.onInstruct.ipaddr: %s", resp)
 		if t.Listener.OnIpAddr != nil {
-			t.Listener.OnIpAddr(t, &net)
+			_ = t.Listener.OnIpAddr(t, &net)
 		}
 
 	}
@@ -205,7 +205,7 @@ func (t *TcpWorker) Read() {
 
 		if !t.Client.IsOk() {
 			time.Sleep(30 * time.Second) // sleep 30s and release cpu.
-			t.Connect()
+			_ = t.Connect()
 			continue
 		}
 
@@ -221,9 +221,9 @@ func (t *TcpWorker) Read() {
 		if n > 0 {
 			frame := data[:n]
 			if libol.IsControl(frame) {
-				t.onInstruct(frame)
+				_ = t.onInstruct(frame)
 			} else if t.Listener.ReadAt != nil {
-				t.Listener.ReadAt(frame)
+				_ = t.Listener.ReadAt(frame)
 			}
 		}
 	}
@@ -336,11 +336,11 @@ func (a *TapWorker) DoTun() {
 		a.EthSrcAddr = libol.GenEthAddr(6)
 	} else {
 		if hw, err := net.ParseMAC(a.pointCfg.IfEthSrc); err == nil {
-			a.EthSrcAddr = []byte(hw)
+			a.EthSrcAddr = hw
 		}
 	}
 	if hw, err := net.ParseMAC(a.pointCfg.IfEthDst); err == nil {
-		a.EthDstAddr = []byte(hw)
+		a.EthDstAddr = hw
 	}
 	libol.Info("NewTapWorker src: %x, dst: %x", a.EthSrcAddr, a.EthDstAddr)
 
@@ -348,7 +348,7 @@ func (a *TapWorker) DoTun() {
 
 func (a *TapWorker) Open() {
 	if a.Device != nil {
-		a.Device.Close()
+		_ = a.Device.Close()
 		time.Sleep(5 * time.Second) // sleep 5s and release cpu.
 	}
 
@@ -367,7 +367,7 @@ func (a *TapWorker) Open() {
 	libol.Info("TapWorker.Open %s", dev.Name())
 	a.Device = dev
 	if a.Listener.OnOpen != nil {
-		a.Listener.OnOpen(a)
+		_ = a.Listener.OnOpen(a)
 	}
 }
 
@@ -405,11 +405,11 @@ func (a *TapWorker) Read() {
 			buffer = append(buffer, data[0:n]...)
 			n += eth.Len
 			if a.Listener.ReadAt != nil {
-				a.Listener.ReadAt(buffer[:n])
+				_ = a.Listener.ReadAt(buffer[:n])
 			}
 		} else {
 			if a.Listener.ReadAt != nil {
-				a.Listener.ReadAt(data[:n])
+				_ = a.Listener.ReadAt(data[:n])
 			}
 		}
 	}
@@ -464,7 +464,7 @@ func (a *TapWorker) onArp(data []byte) bool {
 
 		libol.Info("TapWorker.onArp %x.", buffer)
 		if a.Listener.ReadAt != nil {
-			a.Listener.ReadAt(buffer)
+			_ = a.Listener.ReadAt(buffer)
 		}
 		return true
 	}
@@ -520,7 +520,7 @@ func (a *TapWorker) Close() {
 		if a.Listener.OnClose != nil {
 			a.Listener.OnClose(a)
 		}
-		a.Device.Close()
+		_ = a.Device.Close()
 		a.Device = nil
 	}
 }
@@ -692,10 +692,10 @@ func (p *Worker) OnIpAddr(w *TcpWorker, n *models.Network) error {
 	ipStr := fmt.Sprintf("%s/%d", n.IfAddr, prefix)
 
 	if p.Listener.AddAddr != nil {
-		p.Listener.AddAddr(ipStr)
+		_ = p.Listener.AddAddr(ipStr)
 	}
 	if p.Listener.AddRoutes != nil {
-		p.Listener.AddRoutes(n.Routes)
+		_ = p.Listener.AddRoutes(n.Routes)
 	}
 	p.network = n
 
@@ -708,12 +708,12 @@ func (p *Worker) FreeIpAddr() {
 	}
 
 	if p.Listener.DelRoutes != nil {
-		p.Listener.DelRoutes(p.network.Routes)
+		_ = p.Listener.DelRoutes(p.network.Routes)
 	}
 	if p.Listener.DelAddr != nil {
 		prefix := libol.Netmask2Len(p.network.Netmask)
 		ipStr := fmt.Sprintf("%s/%d", p.network.IfAddr, prefix)
-		p.Listener.DelAddr(ipStr)
+		_ = p.Listener.DelAddr(ipStr)
 	}
 	p.network = nil
 }
@@ -728,7 +728,7 @@ func (p *Worker) OnSuccess(w *TcpWorker) error {
 	libol.Info("Worker.OnSuccess")
 
 	if p.Listener.AddAddr != nil {
-		p.Listener.AddAddr(p.IfAddr)
+		_ = p.Listener.AddAddr(p.IfAddr)
 	}
 
 	return nil

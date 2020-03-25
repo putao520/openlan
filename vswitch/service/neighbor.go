@@ -19,7 +19,7 @@ func (p *_neighbor) Init(size int) {
 
 func (p *_neighbor) Add(m *models.Neighbor) {
 	p.neighbors.Del(m.IpAddr.String())
-	p.neighbors.Set(m.IpAddr.String(), m)
+	_ = p.neighbors.Set(m.IpAddr.String(), m)
 }
 
 func (p *_neighbor) Update(m *models.Neighbor) *models.Neighbor {

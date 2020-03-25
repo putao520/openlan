@@ -18,6 +18,7 @@ type Pointer interface {
 }
 
 type MixPoint struct {
+	Tenant     string
 	uuid       string
 	worker     Worker
 	config     *config.Point
@@ -26,6 +27,7 @@ type MixPoint struct {
 
 func NewMixPoint(config *config.Point) MixPoint {
 	p := MixPoint{
+		Tenant: config.Tenant,
 		worker: Worker{
 			IfAddr: config.IfAddr,
 			config: config,
