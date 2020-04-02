@@ -105,6 +105,7 @@ func (c *Point) Right() {
 		}
 		values = strings.Split(c.name, "@")
 		if len(values) > 1 {
+			c.name = values[0]
 			c.Tenant = values[1]
 		}
 	}
