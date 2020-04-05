@@ -25,22 +25,6 @@ func main() {
 	signal.Notify(x, os.Interrupt, syscall.SIGINT)  //CTL+C
 	signal.Notify(x, os.Interrupt, syscall.SIGABRT) //Exit
 
-	go func() {
-		for {
-			input := ""
-			if _, _ = fmt.Scanln(&input); input == "quit" {
-				fmt.Printf("press `CTRL+C` to exit...\n")
-				break
-			}
-			if input == "s" || input == "state" {
-				fmt.Printf("UUID  : %s\n", p.UUID())
-				fmt.Printf("State : %s\n", p.State())
-				fmt.Printf("Uptime: %d\n", p.UpTime())
-				fmt.Printf("Device: %s\n", p.IfName())
-			}
-		}
-	}()
-
 	<-x
 	s.CallExit()
 	p.Stop()
