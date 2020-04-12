@@ -16,7 +16,7 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
                                                 |
                                              Wifi(DNAT)
                                                 |
-                       ------------------------------------------------------
+                       ----------------------Internet-------------------------
                        ^                        ^                           ^
                        |                        |                           |
                      分支1                    分支2                        分支3     
@@ -44,10 +44,10 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
                 192.168.1.11/24           192.168.1.12/24             192.168.1.13/24
 
  
-# 接入点（Point）
+# 客户端接入（Point）
 接入点工作在用户侧，每个接入点通过接入vSwitch可以实现节点间的互联互通。目前接入点已经稳定工作在Windows及Linux系统下，MacOS还存在问题。 
 
-# 虚拟交换（vSwitch）
+# 服务端虚拟交换（vSwitch）
 每个接入虚拟交换的Point就像工作在一个物理的交换机下的主机，多个虚拟交换之间通过Link可以实现Point的跨区域互通。虚拟交换需要安装在Linux的发布系统中，例如：CentOS或者Ubuntu。
 
 ## 在Windows系统中
@@ -56,87 +56,106 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
 下载资源 [tap-windows-9](https://github.com/danieldin95/openlan-go/releases/download/tap-windows-9/tap-windows-9.21.2.exe), 然后点击安装它。
 
 ### 最后配置接入认证
-
+  使用notepad++新建一个文件：
+  
     {
-     "vs.addr": "www.openlan.xx",
-     "vs.auth": "xx:xx@xx",
-     "if.addr": "192.168.1.11/24",
-     "vs.tls": true
+      "tenant": "default",
+      "vs.addr": "www.openlan.xx",
+      "vs.auth": "hi:123456",
+      "if.addr": "192.168.1.11/24",
+      "vs.tls": true
     }
    
  把它保存在文件`point.json`中，并与程序`point.windows.x86_64.exe`在同一个目录下。 点击执行`point.windwos.x86_64.exe`。
 
  *说明*
  
-      vs.addr    虚拟交换的地址或者域名
-      vs.auth    接入虚拟交换的认证信息，如：password:user@domain
-      if.addr    配置本地虚拟网卡地址
-      vs.tls     是否启用TLS加密信道
+    vs.addr    虚拟交换的地址或者域名
+    vs.auth    接入虚拟交换的认证信息，如：user:password
+    if.addr    配置本地虚拟网卡地址
+    vs.tls     是否启用TLS加密信道
 
 
 ## 在Linux系统中
-### 安装OpenLan并运行vSwitch
+### 安装VSwitch并运行
 
-    [root@localhost openlan-go]# ./install.sh
-    [root@localhost openlan-go]# 
-    [root@localhost openlan-go]# cat /etc/vswitch/vswitch.json
+    [root@office ~]# wget https://github.com/danieldin95/openlan-go/releases/download/v4.3.14/openlan-vswitch-4.3.14-1.el7.x86_64.rpm
+    [root@office ~]# yum install ./openlan-vswitch-4.3.14-1.el7.x86_64.rpm
+    [root@office ~]# cat /etc/vswitch/vswitch.json
     {
-      "if.addr": "192.168.1.10/24",
-      "links": [
-        {
-          "vs.addr": "aa.openlan.xx",
-          "vs.auth": "xx:xx@xx",
-          "vs.tls": true
-        }
-      ],
       "crt.dir": "/var/openlan/ca",
       "log.file": "/var/log/vswitch.log",
-      "http.dir": "/var/openlan/public"
+      "http.dir": "/var/openlan/public",
+      "bridge": [
+        {
+            "tenant": "default",
+            "if.addr": "192.168.1.11/24"
+        },
+      ]
     }
-    [root@localhost openlan-go]# systemctl enable vswitch
-    [root@localhost openlan-go]# systemctl start vswitch
 
  *说明*
  
-      if.addr    配置本地网桥的地址
-      links      配置虚拟交换与其他虚拟交换之间链路
-      crt.dir    存放信道加密证书的目录
-      log.file   配置日志输出文件
+    if.addr    配置本地网桥的地址
+    crt.dir    存放信道加密证书的目录
+    log.file   配置日志输出文件
+    bridge     配置租户的网桥，实现网络隔离
 
-### 运行Point
+  配置租户的认证信息
+  
+    [root@office ~]# cat /etc/vswitch/password/default.json
+    [
+      { "name": "hi", "password": "123456" },
+      { "name": "hei", "password": "123456" }
+    ]
+  
+  使能服务并启动
+  
+    [root@office ~]# systemctl enable vswitch
+    [root@office ~]# systemctl start vswitch
+    
+### 安装Point并运行
 
-    [root@localhost openlan-go]# cat /etc/point/point.json
+    [root@home ~]# wget https://github.com/danieldin95/openlan-go/releases/download/v4.3.14/openlan-point-4.3.14-1.el7.x86_64.rpm
+    [root@home ~]# yum install ./openlan-point-4.3.14-1.el7.x86_64.rpm
+    [root@home ~]# cat /etc/point/point.json
     {
+      "tenant": "default",
       "vs.addr": "www.openlan.xx",
-      "vs.auth": "xx:xx@xx",
+      "vs.auth": "hi:123456",
       "vs.tls": true,
       "if.addr": "192.168.1.21/24",
       "log.file": "/var/log/point.log"
     }
-    [root@localhost openlan-go]# systemctl enable point
-    [root@localhost openlan-go]# systemctl start point
-    [root@localhost openlan-go]# ping 192.168.1.11
     
-
+  使能服务并启动
+    
+    [root@home ~]# systemctl enable point
+    [root@home ~]# systemctl start point
+  
+  测试网络
+  
+    [root@home ~]# ping 192.168.1.11
+    
 # 从源码编译它
 
-    go get -u -v github.com/danieldin95/openlan-go  
+    [root@localhost ~]# go get -u -v github.com/danieldin95/openlan-go  
 
 ## 在Linux系统中
 
     [root@localhost openlan-go]# make
 
-## 在Windwos系统中
+## 在Windows系统中
     
     L:\openlan-go> go build -o ./resource/point.windows.x86_64.exe main/point_windows.go
 
 # 欢迎捐赠
 
-<img src="https://raw.githubusercontent.com/danieldin95/openlan-go/master/resource/donation.jpg" width="46%">
-
 欢迎使用支付宝手扫描上面的二维码，对该项目进行捐赠。
 
-欢迎关注
+<img src="https://raw.githubusercontent.com/danieldin95/openlan-go/master/resource/donation.jpg" width="46%">
+
+## 欢迎关注
 
 微信号: DanielDin
 

@@ -12,7 +12,7 @@ The OpenLAN project help you to build a local area network via the Internet.
                                                 |   
                                               Wifi(DNAT)
                                                 |
-                       ------------------------------------------------------
+                       ----------------------Internet-------------------------
                        ^                        ^                           ^
                        |                        |                           |
                    Branch 1                 Branch 2                     Branch 3    
@@ -39,64 +39,91 @@ The OpenLAN project help you to build a local area network via the Internet.
                  192.168.1.11/24           192.168.1.12/24              192.168.1.13/24
                   
 
-# Point
-The point is endpoint to access OpenLan vswitch, and all points behind the same vswitch can visit each other like local area network. 
+# What's Point? 
+The point is endpoint to access OpenLAN vSwitch, and all points behind the same vSwitch can visit each other like local area network. 
 
 ## on Windows
 ### Firstly, Install tap-windows6
 
 Download [tap-windows-9](https://github.com/danieldin95/openlan-go/releases/download/tap-windows-9/tap-windows-9.21.2.exe), then install it. 
 
-### Finally, Configure Access Authentication
+### Finally, Configure access authentication
+
+   New a file by notepad++
 
     {
-     "vs.addr": "www.openlan.xx",
-     "vs.auth": "xx:xx@xx",
-     "if.addr": "192.168.1.11/24",
-     "vs.tls": true
+      "tenant": "default",
+      "vs.addr": "www.openlan.xx",
+      "vs.auth": "hi:123456",
+      "if.addr": "192.168.1.11/24",
+      "vs.tls": true
     }
    
    Save to file `point.json` with same directory of  `point.windows.x86_64.exe`. Click right on `point.windwos.x86_64.exe`, and Run as Administrator.
 
 ## on Linux
-### Install OpenLan and Start vSwitch on Linux
+### Install vSwitch and start it.
 
-    [root@localhost openlan-go]# ./install.sh
-    [root@localhost openlan-go]# 
-    [root@localhost openlan-go]# cat /etc/vswitch/vswitch.json
+    [root@office ~]# wget https://github.com/danieldin95/openlan-go/releases/download/v4.3.14/openlan-vswitch-4.3.14-1.el7.x86_64.rpm
+    [root@office ~]# yum install ./openlan-vswitch-4.3.14-1.el7.x86_64.rpm
+    [root@office ~]# cat /etc/vswitch/vswitch.json
     {
-      "if.addr": "192.168.1.10/24",
-      "links": [
-        {
-          "vs.addr": "aa.openlan.xx",
-          "vs.auth": "xx:xx@xx",
-          "vs.tls": true
-        }
-      ],
       "crt.dir": "/var/openlan/ca",
       "log.file": "/var/log/vswitch.log",
-      "http.dir": "/var/openlan/public"
+      "http.dir": "/var/openlan/public",
+      "bridge": [
+        {
+            "tenant": "default",
+            "if.addr": "192.168.1.11/24"
+        }
+      ]
     }
-    [root@localhost openlan-go]# systemctl enable vswitch
-    [root@localhost openlan-go]# systemctl start vswitch
+    
+  *Note*
+ 
+    if.addr    Configure address of bridge
+    crt.dir    The directory saved cert
 
-### Start Point on Linux
+  Configure tenant's authentication
+  
+    [root@office ~]# cat /etc/vswitch/password/default.json
+    [
+      { "name": "hi", "password": "123456" },
+      { "name": "hei", "password": "123456" }
+    ]
+    
+  Enable system service and start
+    
+    [root@office ~]# systemctl enable vswitch
+    [root@office ~]# systemctl start vswitch
 
-    [root@localhost openlan-go]# cat /etc/point.json
+
+### Install Point and start it.
+
+    [root@home ~]# wget https://github.com/danieldin95/openlan-go/releases/download/v4.3.14/openlan-point-4.3.14-1.el7.x86_64.rpm
+    [root@home ~]# yum install ./openlan-point-4.3.14-1.el7.x86_64.rpm
+    [root@home ~]# cat /etc/point/point.json
     {
+      "tenant": "default",
       "vs.addr": "www.openlan.xx",
-      "vs.auth": "xx:xx@xx",
-      "if.addr": "192.168.1.20/24",
+      "vs.auth": "hi:123456",
+      "vs.tls": true,
+      "if.addr": "192.168.1.21/24",
       "log.file": "/var/log/point.log"
     }
-    [root@localhost openlan-go]# systemctl enable point
-    [root@localhost openlan-go]# systemctl start point
-    [root@localhost openlan-go]# ping 192.168.1.11
     
+  Enable system service and start
+    
+    [root@home ~]# systemctl enable point
+    [root@home ~]# systemctl start point
+    
+  Testing network by pint
+  
+    [root@home ~]# ping 192.168.1.11
 
-# Building from Source
+# Building from source
 
-    go get -u -v github.com/danieldin95/openlan-go  
+    [root@localhost ~]# go get -u -v github.com/danieldin95/openlan-go  
 
 ## on Linux
 
