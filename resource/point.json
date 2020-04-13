@@ -1,4 +1,5 @@
 {
+  "network": "default",
   "vs.addr": "openlan.net",
   "vs.auth": "hi:hi@123$",
   "vs.tls": true,

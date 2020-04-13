@@ -27,7 +27,7 @@ type MixPoint struct {
 
 func NewMixPoint(config *config.Point) MixPoint {
 	p := MixPoint{
-		Tenant: config.Tenant,
+		Tenant: config.Network,
 		worker: Worker{
 			IfAddr: config.IfAddr,
 			config: config,

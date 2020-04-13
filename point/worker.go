@@ -45,13 +45,13 @@ func NewTcpWorker(client *libol.TcpClient, c *config.Point) (t *TcpWorker) {
 		writeChan:   make(chan []byte, 1024*10),
 		maxSize:     c.IfMtu,
 		user:        models.NewUser(c.Name(), c.Password()),
-		network:     models.NewNetwork(c.Tenant, c.IfAddr),
+		network:     models.NewNetwork(c.Network, c.IfAddr),
 		routes:      make(map[string]*models.Route, 64),
 		allowed:     c.Allowed,
 		initialized: false,
 	}
 	t.user.Alias = c.Alias
-	t.user.Tenant = c.Tenant
+	t.user.Tenant = c.Network
 
 	return
 }
@@ -316,9 +316,9 @@ func (n *Neighbors) Expire() {
 	libol.Debug("Neighbors.Expire delete %d", len(deletes))
 	//execute delete.
 	for _, d := range deletes {
-		if _, ok := n.neighbors[d]; ok {
+		if l, ok := n.neighbors[d]; ok {
 			delete(n.neighbors, d)
-			libol.Info("Neighbors.Expire: delete %s", d)
+			libol.Info("Neighbors.Expire: delete %x", l.HwAddr)
 		}
 	}
 }
@@ -434,22 +434,9 @@ func (a *TapWorker) DoTun() {
 	} else {
 		libol.Info("NewTapWorker srcIp: % x", a.EthSrcIp)
 	}
-	if a.pointCfg.IfEthSrc == "" {
-		a.EthSrcAddr = libol.GenEthAddr(6)
-	} else {
-		if hw, err := net.ParseMAC(a.pointCfg.IfEthSrc); err == nil {
-			a.EthSrcAddr = hw
-		}
-	}
-	if a.pointCfg.IfEthDst == "" {
-		a.EthDstAddr = libol.BROADED
-	} else {
-		if hw, err := net.ParseMAC(a.pointCfg.IfEthDst); err == nil {
-			a.EthDstAddr = hw
-		}
-	}
+	a.EthSrcAddr = libol.GenEthAddr(6)
+	a.EthDstAddr = libol.BROADED
 	libol.Info("NewTapWorker src: %x, dst: %x", a.EthSrcAddr, a.EthDstAddr)
-
 }
 
 func (a *TapWorker) Open() {
@@ -461,16 +448,16 @@ func (a *TapWorker) Open() {
 	var err error
 	var dev network.Taper
 	if a.devCfg.DeviceType == water.TAP {
-		dev, err = network.NewKernelTap(true, a.pointCfg.Tenant, "")
+		dev, err = network.NewKernelTap(true, a.pointCfg.Network, "")
 	} else {
-		dev, err = network.NewKernelTap(false, a.pointCfg.Tenant, "")
+		dev, err = network.NewKernelTap(false, a.pointCfg.Network, "")
 	}
 	if err != nil {
 		libol.Error("TapWorker.Open %s", err)
 		return
 	}
 
-	libol.Info("TapWorker.Open %s", dev.Name())
+	libol.Info("TapWorker.Open >>>>%s<<<<", dev.Name())
 	a.Device = dev
 	if a.Listener.OnOpen != nil {
 		_ = a.Listener.OnOpen(a)

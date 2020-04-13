@@ -19,12 +19,10 @@ type Point struct {
 	IfAddr   string `json:"if.addr"`
 	BrName   string `json:"if.br"`
 	IfTun    bool   `json:"if.tun"`
-	IfEthSrc string `json:"if.eth.src"`
-	IfEthDst string `json:"if.eth.dst"`
 	LogFile  string `json:"log.file"`
 	Verbose  int    `json:"log.level"`
 	Script   string `json:"script"`
-	Tenant   string `json:"tenant"`
+	Network  string `json:"network"`
 
 	SaveFile string `json:"-"`
 	name     string
@@ -41,7 +39,7 @@ var PointDefault = Point{
 	IfTun:    false,
 	BrName:   "",
 	SaveFile: "point.json",
-	Tenant:   "",
+	Network:  "",
 	name:     "",
 	password: "",
 	LogFile:  "point.error",
@@ -58,7 +56,7 @@ func NewPoint() (c *Point) {
 		PointDefault.IfTun = true
 	}
 	flag.StringVar(&c.Alias, "alias", PointDefault.Alias, "the alias for this point")
-	flag.StringVar(&c.Tenant, "tenant", PointDefault.Tenant, "the tenant login to")
+	flag.StringVar(&c.Network, "network", PointDefault.Network, "the network login to")
 	flag.StringVar(&c.Addr, "vs:addr", PointDefault.Addr, "the server connect to")
 	flag.StringVar(&c.Auth, "vs:auth", PointDefault.Auth, "the auth login to")
 	flag.BoolVar(&c.Tls, "vs:tls", PointDefault.Tls, "enable TLS to decrypt")
@@ -102,7 +100,7 @@ func (c *Point) Right() {
 		values = strings.Split(c.name, "@")
 		if len(values) > 1 {
 			c.name = values[0]
-			c.Tenant = values[1]
+			c.Network = values[1]
 		}
 	}
 	RightAddr(&c.Addr, 10002)
@@ -124,8 +122,8 @@ func (c *Point) Default() {
 	if c.IfAddr == "" {
 		c.IfAddr = PointDefault.IfAddr
 	}
-	if c.Tenant == "" {
-		c.Tenant = PointDefault.Tenant
+	if c.Network == "" {
+		c.Network = PointDefault.Network
 	}
 }
 
