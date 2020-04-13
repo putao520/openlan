@@ -45,7 +45,7 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
 
  
 # 客户端接入（Point）
-接入点工作在用户侧，每个接入点通过接入vSwitch可以实现节点间的互联互通。目前接入点已经稳定工作在Windows及Linux系统下，MacOS还存在问题。 
+接入点工作在用户侧，每个接入点通过接入vSwitch可以实现节点间的互联互通。目前接入点已经稳定工作在Linux、Windows及MacOS系统下。 
 
 # 服务端虚拟交换（vSwitch）
 每个接入虚拟交换的Point就像工作在一个物理的交换机下的主机，多个虚拟交换之间通过Link可以实现Point的跨区域互通。虚拟交换需要安装在Linux的发布系统中，例如：CentOS或者Ubuntu。
@@ -59,14 +59,14 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
   使用notepad++新建一个文件：
   
     {
-      "tenant": "default",
+      "network": "default",
       "vs.addr": "www.openlan.xx",
       "vs.auth": "hi:123456",
-      "if.addr": "192.168.1.11/24",
+      "if.addr": "192.168.1.20/24",
       "vs.tls": true
     }
    
- 把它保存在文件`point.json`中，并与程序`point.windows.x86_64.exe`在同一个目录下。 点击执行`point.windwos.x86_64.exe`。
+ 把它保存在文件`point.json`中，并与程序`point.windows.x86_64.exe`在同一个目录下。 点击执行`point.windows.x86_64.exe`。
 
  *说明*
  
@@ -79,8 +79,8 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
 ## 在Linux系统中
 ### 安装VSwitch并运行
 
-    [root@office ~]# wget https://github.com/danieldin95/openlan-go/releases/download/v4.3.14/openlan-vswitch-4.3.14-1.el7.x86_64.rpm
-    [root@office ~]# yum install ./openlan-vswitch-4.3.14-1.el7.x86_64.rpm
+    [root@office ~]# wget https://github.com/danieldin95/openlan-go/releases/download/v4.3.16/openlan-vswitch-4.3.16-1.el7.x86_64.rpm
+    [root@office ~]# yum install ./openlan-vswitch-4.3.16-1.el7.x86_64.rpm
     [root@office ~]# cat /etc/vswitch/vswitch.json
     {
       "crt.dir": "/var/openlan/ca",
@@ -88,8 +88,8 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
       "http.dir": "/var/openlan/public",
       "bridge": [
         {
-            "tenant": "default",
-            "if.addr": "192.168.1.11/24"
+            "network": "default",
+            "if.addr": "192.168.1.10/24"
         },
       ]
     }
@@ -101,7 +101,7 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
     log.file   配置日志输出文件
     bridge     配置租户的网桥，实现网络隔离
 
-  配置租户的认证信息
+  配置租户网络的认证信息
   
     [root@office ~]# cat /etc/vswitch/password/default.json
     [
@@ -116,14 +116,14 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
     
 ### 安装Point并运行
 
-    [root@home ~]# wget https://github.com/danieldin95/openlan-go/releases/download/v4.3.14/openlan-point-4.3.14-1.el7.x86_64.rpm
-    [root@home ~]# yum install ./openlan-point-4.3.14-1.el7.x86_64.rpm
+    [root@home ~]# wget https://github.com/danieldin95/openlan-go/releases/download/v4.3.16/openlan-point-4.3.16-1.el7.x86_64.rpm
+    [root@home ~]# yum install ./openlan-point-4.3.16-1.el7.x86_64.rpm
     [root@home ~]# cat /etc/point/point.json
     {
-      "tenant": "default",
+      "network": "default",
+      "vs.tls": true,
       "vs.addr": "www.openlan.xx",
       "vs.auth": "hi:123456",
-      "vs.tls": true,
       "if.addr": "192.168.1.21/24",
       "log.file": "/var/log/point.log"
     }
@@ -135,16 +135,66 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
   
   测试网络
   
-    [root@home ~]# ping 192.168.1.11
+    [root@home ~]# ping 192.168.1.20
+
+## 在MacOS系统中
+
+  在终端中运行Point
+
+    admindeMac:~ admin$ cat ./point.json
+    {
+      "network": "default",
+      "vs.addr": "www.openlan.xx",
+      "vs.auth": "hi:123456",
+      "vs.tls": true,
+      "if.addr": "192.168.1.22/24",
+      "if.tun": true
+    }
+    admindeMac:~ admin$ 
+    admindeMac:~ admin$ sudo ./point.darwin.x86_64
     
+  重新打开一个终端，并配置地址
+  
+    admindeMac:~ admin$ sudo ifconfig utun1 192.168.1.22 192.168.1.10
+ 
+  测试网络
+   
+    admindeMac:~ admin$ ping 192.168.1.10
+
+  *说明*
+  
+     由于MacOS不支持tap设备，所以必须要配置点到点的地址，其中ifconfig的第一个地址为本地地址，第二个为远端地址。
+     本地地址需要与Point启动时if:addr一致。如果需要与同一网络下所有主机通信，可以手动配置路由.
+       
+  添加子网路由：
+  
+    admindeMac:~ admin$ sudo route add -net 192.168.1.0/24 192.168.1.10
+    
+  测试与同网段其他主机的连通性
+
+    admindeMac:~ admin$ ping 192.168.1.20
+    admindeMac:~ admin$ ping 192.168.1.21
+ 
 # 从源码编译它
 
     [root@localhost ~]# go get -u -v github.com/danieldin95/openlan-go  
 
 ## 在Linux系统中
 
-    [root@localhost openlan-go]# make
+   只编译程序
+    
+    [root@localhost openlan-go]# make all
+   
+   编译并打包
+   
+    [root@localhost openlan-go]# make all/pkg
 
+   单独编译
+   
+    [root@localhost openlan-go]# make linux
+    [root@localhost openlan-go]# make windows
+    [root@localhost openlan-go]# make darwin
+    
 ## 在Windows系统中
     
     L:\openlan-go> go build -o ./resource/point.windows.x86_64.exe main/point_windows.go
