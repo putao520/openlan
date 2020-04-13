@@ -1,7 +1,9 @@
 package point
 
 import (
+	"bytes"
 	"crypto/tls"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"github.com/danieldin95/openlan-go/config"
@@ -284,6 +286,95 @@ func (t *TcpWorker) SetUUID(v string) {
 	t.user.UUID = v
 }
 
+type Neighbor struct {
+	HwAddr  []byte
+	IpAddr  []byte
+	Uptime  int64
+	Newtime int64
+}
+
+type Neighbors struct {
+	lock      sync.RWMutex
+	neighbors map[uint32]*Neighbor
+	done     chan bool
+	ticker   *time.Ticker
+	timeout  int64
+}
+
+func (n *Neighbors) Expire() {
+	deletes := make([]uint32, 0, 1024)
+
+	n.lock.Lock()
+	defer n.lock.Unlock()
+	//collect need deleted.
+	for index, learn := range n.neighbors {
+		now := time.Now().Unix()
+		if now-learn.Uptime > n.timeout {
+			deletes = append(deletes, index)
+		}
+	}
+	libol.Debug("Neighbors.Expire delete %d", len(deletes))
+	//execute delete.
+	for _, d := range deletes {
+		if _, ok := n.neighbors[d]; ok {
+			delete(n.neighbors, d)
+			libol.Info("Neighbors.Expire: delete %s", d)
+		}
+	}
+}
+
+func (n *Neighbors) Start() {
+	for {
+		select {
+		case <-n.done:
+			return
+		case t := <-n.ticker.C:
+			libol.Debug("VirtualBridge.Expire Tick at %s", t)
+			n.Expire()
+		}
+	}
+}
+
+func (n *Neighbors) Stop() {
+	n.ticker.Stop()
+	n.done <- true
+}
+
+func (n *Neighbors) Add(h *Neighbor) {
+	if h == nil {
+		return
+	}
+	n.lock.Lock()
+	defer n.lock.Unlock()
+	k := binary.BigEndian.Uint32(h.IpAddr)
+	if l, ok := n.neighbors[k]; ok {
+		l.Uptime = h.Uptime
+		l.HwAddr = h.HwAddr
+	} else {
+		n.neighbors[k] = h
+	}
+}
+
+func (n *Neighbors) Get(d uint32) *Neighbor {
+	n.lock.RLock()
+	defer n.lock.RUnlock()
+	if l, ok := n.neighbors[d]; ok {
+		return l
+	}
+	return nil
+}
+
+func (n *Neighbors) GetByBytes(d []byte) *Neighbor {
+	n.lock.RLock()
+	defer n.lock.RUnlock()
+
+	k := binary.BigEndian.Uint32(d)
+	if l, ok := n.neighbors[k]; ok {
+		return l
+	}
+	return nil
+}
+
 type TapWorkerListener struct {
 	OnOpen  func(w *TapWorker) error
 	OnClose func(w *TapWorker)
@@ -297,6 +388,7 @@ type TapWorker struct {
 	EthDstAddr []byte
 	EthSrcAddr []byte
 	EthSrcIp   []byte
+	Neighbors  Neighbors
 
 	lock        sync.RWMutex
 	writeChan   chan []byte
@@ -308,6 +400,12 @@ type TapWorker struct {
 func NewTapWorker(devCfg *water.Config, c *config.Point) (a *TapWorker) {
 	a = &TapWorker{
 		Device:      nil,
+		Neighbors: 	Neighbors{
+			neighbors: make(map[uint32]*Neighbor, 1024),
+			done:      make(chan bool),
+			ticker:    time.NewTicker(5 * time.Second),
+			timeout:   5 * 60,
+		},
 		devCfg:      devCfg,
 		pointCfg:    c,
 		writeChan:   make(chan []byte, 1024*10),
@@ -329,9 +427,13 @@ func (a *TapWorker) DoTun() {
 		return
 	}
 
-	a.EthSrcIp = net.ParseIP(a.pointCfg.IfAddr).To4()
-	libol.Info("NewTapWorker srcIp: % x", a.EthSrcIp)
-
+	ifAddr := strings.SplitN(a.pointCfg.IfAddr, "/", 2)[0]
+	a.EthSrcIp = net.ParseIP(ifAddr).To4()
+	if a.EthSrcIp == nil {
+		libol.Error("NewTapWorker srcIp: is nil")
+	} else {
+		libol.Info("NewTapWorker srcIp: % x", a.EthSrcIp)
+	}
 	if a.pointCfg.IfEthSrc == "" {
 		a.EthSrcAddr = libol.GenEthAddr(6)
 	} else {
@@ -339,8 +441,12 @@ func (a *TapWorker) DoTun() {
 			a.EthSrcAddr = hw
 		}
 	}
-	if hw, err := net.ParseMAC(a.pointCfg.IfEthDst); err == nil {
-		a.EthDstAddr = hw
+	if a.pointCfg.IfEthDst == "" {
+		a.EthDstAddr = libol.BROADED
+	} else {
+		if hw, err := net.ParseMAC(a.pointCfg.IfEthDst); err == nil {
+			a.EthDstAddr = hw
+		}
 	}
 	libol.Info("NewTapWorker src: %x, dst: %x", a.EthSrcAddr, a.EthDstAddr)
 
@@ -371,12 +477,35 @@ func (a *TapWorker) Open() {
 	}
 }
 
-func (a *TapWorker) NewEth(t uint16) *libol.Ether {
+func (a *TapWorker) NewEth(t uint16, dst []byte) *libol.Ether {
 	eth := libol.NewEther(t)
-	eth.Dst = a.EthDstAddr
+	if dst == nil {
+		eth.Dst = a.EthDstAddr
+	} else {
+		eth.Dst = dst
+	}
 	eth.Src = a.EthSrcAddr
-
 	return eth
+}
+
+func (a *TapWorker) onMiss(dest []byte) {
+	eth := a.NewEth(libol.ETHPARP, libol.BROADED)
+
+	reply := libol.NewArp()
+	reply.OpCode = libol.ARP_REQUEST
+	reply.SIpAddr = a.EthSrcIp
+	reply.TIpAddr = dest
+	reply.SHwAddr = a.EthSrcAddr
+	reply.THwAddr = libol.ZEROED
+
+	buffer := make([]byte, 0, a.pointCfg.IfMtu)
+	buffer = append(buffer, eth.Encode()...)
+	buffer = append(buffer, reply.Encode()...)
+
+	libol.Info("TapWorker.onMiss %x.", buffer)
+	if a.Listener.ReadAt != nil {
+		_ = a.Listener.ReadAt(buffer)
+	}
 }
 
 func (a *TapWorker) Read() {
@@ -398,8 +527,17 @@ func (a *TapWorker) Read() {
 
 		libol.Debug("TapWorker.Read: %x", data[:n])
 		if a.Device.IsTun() {
-			eth := a.NewEth(libol.ETHPIP4)
-
+			iph, err := libol.NewIpv4FromFrame(data)
+			if err != nil {
+				libol.Error("TapWorker.Read: %s", err)
+				continue
+			}
+			neb := a.Neighbors.GetByBytes(iph.Destination)
+			if neb == nil {
+				a.onMiss(iph.Destination)
+				continue
+			}
+			eth := a.NewEth(libol.ETHPIP4, neb.HwAddr)
 			buffer := make([]byte, 0, a.pointCfg.IfMtu)
 			buffer = append(buffer, eth.Encode()...)
 			buffer = append(buffer, data[0:n]...)
@@ -433,7 +571,6 @@ func (a *TapWorker) onArp(data []byte) bool {
 		libol.Warn("TapWorker.onArp %s", err)
 		return false
 	}
-
 	if !eth.IsArp() {
 		return false
 	}
@@ -443,32 +580,45 @@ func (a *TapWorker) onArp(data []byte) bool {
 		libol.Error("TapWorker.onArp %s.", err)
 		return false
 	}
-
 	if arp.IsIP4() {
-		if arp.OpCode != libol.ARP_REQUEST {
-			return false
+		if !bytes.Equal(eth.Src, arp.SHwAddr) {
+			libol.Error("TapWorker.onArp: eth.dst != arp.SHw % x.", arp.SIpAddr)
+			return true
 		}
+		switch arp.OpCode {
+		case libol.ARP_REQUEST:
+			if bytes.Equal(arp.TIpAddr, a.EthSrcIp) {
+				eth := a.NewEth(libol.ETHPARP, arp.SHwAddr)
+				reply := libol.NewArp()
+				reply.OpCode = libol.ARP_REPLY
+				reply.SIpAddr = a.EthSrcIp
+				reply.TIpAddr = arp.SIpAddr
+				reply.SHwAddr = a.EthSrcAddr
+				reply.THwAddr = arp.SHwAddr
+				buffer := make([]byte, 0, a.pointCfg.IfMtu)
+				buffer = append(buffer, eth.Encode()...)
+				buffer = append(buffer, reply.Encode()...)
 
-		eth := a.NewEth(libol.ETHPARP)
-
-		reply := libol.NewArp()
-		reply.OpCode = libol.ARP_REPLY
-		reply.SIpAddr = a.EthSrcIp
-		reply.TIpAddr = arp.SIpAddr
-		reply.SHwAddr = a.EthSrcAddr
-		reply.THwAddr = arp.SHwAddr
-
-		buffer := make([]byte, 0, a.pointCfg.IfMtu)
-		buffer = append(buffer, eth.Encode()...)
-		buffer = append(buffer, reply.Encode()...)
-
-		libol.Info("TapWorker.onArp %x.", buffer)
-		if a.Listener.ReadAt != nil {
-			_ = a.Listener.ReadAt(buffer)
+				libol.Info("TapWorker.onArp reply %x.", buffer)
+				if a.Listener.ReadAt != nil {
+					_ = a.Listener.ReadAt(buffer)
+				}
+			}
+		case libol.ARP_REPLY:
+			if bytes.Equal(arp.THwAddr, a.EthSrcAddr) {
+				a.Neighbors.Add(&Neighbor{
+					HwAddr: arp.SHwAddr,
+					IpAddr: arp.SIpAddr,
+					Newtime: time.Now().Unix(),
+					Uptime: time.Now().Unix(),
+				})
+			}
+			libol.Info("TapWorker.onArp % x on % x.", arp.SHwAddr, arp.SIpAddr)
+		default:
+			libol.Warn("TapWorker.onArp: not op %x.", arp.OpCode)
 		}
-		return true
 	}
-	return false
+	return true
 }
 
 func (a *TapWorker) Loop() {
@@ -484,7 +634,7 @@ func (a *TapWorker) Loop() {
 		if a.Device.IsTun() {
 			//Proxy arp request.
 			if a.onArp(w) {
-				libol.Info("TapWorker.Loop: Arp proxy.")
+				libol.Debug("TapWorker.Loop: Arp proxy.")
 				continue
 			}
 
@@ -493,12 +643,11 @@ func (a *TapWorker) Loop() {
 				libol.Error("TapWorker.Loop: %s", err)
 				continue
 			}
-			if eth.IsVlan() {
-				w = w[18:]
-			} else if eth.IsIP4() {
+			if eth.IsIP4() {
 				w = w[14:]
-			} else { // default is Ethernet is 14 bytes.
-				w = w[14:]
+			} else {
+				libol.Debug("TapWorker.Loop: not IPv4 %x", eth.Type)
+				continue
 			}
 		}
 
@@ -532,9 +681,11 @@ func (a *TapWorker) Start() {
 
 	go a.Read()
 	go a.Loop()
+	go a.Neighbors.Start()
 }
 
 func (a *TapWorker) Stop() {
+	a.Neighbors.Stop()
 	close(a.writeChan)
 	a.Close()
 }

@@ -73,7 +73,7 @@ docker:
 	# docker run -d --privileged openlan-point:latest
 	# docker run -d  -p 10000:10000 -p 10002:10002 openlan-vswitch:latest
 
-## ut test
+## unit test
 test:
 	go test -v -mod=vendor -bench=. github.com/danieldin95/openlan-go/point
 	go test -v -mod=vendor -bench=. github.com/danieldin95/openlan-go/libol

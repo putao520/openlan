@@ -44,8 +44,6 @@ var PointDefault = Point{
 	Tenant:   "",
 	name:     "",
 	password: "",
-	IfEthDst: "2e:4b:f0:b7:6d:ba",
-	IfEthSrc: "",
 	LogFile:  "point.error",
 	Script:   fmt.Sprintf("point.%s.cmd", runtime.GOOS),
 	Allowed:  true,
@@ -69,8 +67,6 @@ func NewPoint() (c *Point) {
 	flag.StringVar(&c.IfAddr, "if:addr", PointDefault.IfAddr, "the interface address")
 	flag.StringVar(&c.BrName, "if:br", PointDefault.BrName, "the bridge name")
 	flag.BoolVar(&c.IfTun, "if:tun", PointDefault.IfTun, "using tun device as interface, otherwise tap")
-	flag.StringVar(&c.IfEthDst, "if:eth:dst", PointDefault.IfEthDst, "ethernet destination for tun device")
-	flag.StringVar(&c.IfEthSrc, "if:eth:src", PointDefault.IfEthSrc, "ethernet source for tun device")
 	flag.StringVar(&c.SaveFile, "conf", PointDefault.SaveFile, "the configuration file")
 	flag.StringVar(&c.Script, "script", PointDefault.Script, "call script you assigned")
 	flag.BoolVar(&c.Allowed, "vs:allowed", PointDefault.Allowed, "allowed network configuration from vs")

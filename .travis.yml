@@ -1,25 +1,13 @@
 language: go
+os: linux
+sudo: require
 
 env:
-  global:
-    - GO111MODULE=on
+  - GO111MODULE=on
 
-go: 
+go:
   - 1.12.9
 
-os:
-  - linux
-  - osx
-  - windows
-
-before_install:
-  - echo ""
-
 script:
-  - |
-    if [[ "$TRAVIS_OS_NAME" != "windows" ]]; then
-      make "$TRAVIS_OS_NAME"
-    else
-      go build -o ./resource/point.windows.x86_64.exe main/point_windows.go
-      go build -mod=vendor -o ./resource/vswitch.windows.x86_64.exe main/vswitch.go
-    fi
+  - make
+
