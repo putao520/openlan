@@ -65,7 +65,7 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
       "if.addr": "192.168.1.20/24",
       "vs.tls": true
     }
-   
+
  把它保存在文件`point.json`中，并与程序`point.windows.x86_64.exe`在同一个目录下。 点击执行`point.windows.x86_64.exe`。
 
  *说明*
@@ -75,9 +75,8 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
     if.addr    配置本地虚拟网卡地址
     vs.tls     是否启用TLS加密信道
 
-
 ## 在Linux系统中
-### 安装VSwitch并运行
+### 安装vSwitch并运行
 
     [root@office ~]# wget https://github.com/danieldin95/openlan-go/releases/download/v4.3.16/openlan-vswitch-4.3.16-1.el7.x86_64.rpm
     [root@office ~]# yum install ./openlan-vswitch-4.3.16-1.el7.x86_64.rpm
@@ -95,25 +94,25 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
     }
 
  *说明*
- 
+
     if.addr    配置本地网桥的地址
+    bridge     配置租户的网桥，实现网络隔离
     crt.dir    存放信道加密证书的目录
     log.file   配置日志输出文件
-    bridge     配置租户的网桥，实现网络隔离
 
   配置租户网络的认证信息
-  
+
     [root@office ~]# cat /etc/vswitch/password/default.json
     [
       { "name": "hi", "password": "123456" },
       { "name": "hei", "password": "123456" }
     ]
-  
+
   使能服务并启动
-  
+
     [root@office ~]# systemctl enable vswitch
     [root@office ~]# systemctl start vswitch
-    
+
 ### 安装Point并运行
 
     [root@home ~]# wget https://github.com/danieldin95/openlan-go/releases/download/v4.3.16/openlan-point-4.3.16-1.el7.x86_64.rpm
@@ -127,7 +126,7 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
       "if.addr": "192.168.1.21/24",
       "log.file": "/var/log/point.log"
     }
-    
+
   使能服务并启动
     
     [root@home ~]# systemctl enable point
@@ -152,24 +151,24 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
     }
     admindeMac:~ admin$ 
     admindeMac:~ admin$ sudo ./point.darwin.x86_64
-    
+
   重新打开一个终端，并配置地址
-  
+
     admindeMac:~ admin$ sudo ifconfig utun1 192.168.1.22 192.168.1.10
- 
+
   测试网络
-   
+
     admindeMac:~ admin$ ping 192.168.1.10
 
   *说明*
-  
+
      由于MacOS不支持tap设备，所以必须要配置点到点的地址，其中ifconfig的第一个地址为本地地址，第二个为远端地址。
      本地地址需要与Point启动时if:addr一致。如果需要与同一网络下所有主机通信，可以手动配置路由.
-       
+
   添加子网路由：
-  
-    admindeMac:~ admin$ sudo route add -net 192.168.1.0/24 192.168.1.10
-    
+
+    admindeMac:~ admin$ sudo route add -net 192.168.1.0/24 -iface utun1
+
   测试与同网段其他主机的连通性
 
     admindeMac:~ admin$ ping 192.168.1.20
