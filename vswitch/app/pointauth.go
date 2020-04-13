@@ -69,19 +69,20 @@ func (p *PointAuth) handleLogin(client *libol.TcpClient, data string) error {
 	}
 
 	name := user.Name
-	if name != "" && user.Tenant != "" { // reset username if haven't tenant.
+	if name != "" && user.Network != "" { // reset username if haven't tenant.
 		if !strings.Contains(name, "@") {
-			name = name + "@" + user.Tenant
+			name = name + "@" + user.Network
 		}
 	}
-	if user.Tenant == "" { // reset tenant by username if tenant is ''.
+	if user.Network == "" { // reset tenant by username if tenant is ''.
 		if strings.Contains(name, "@") {
-			user.Tenant = strings.SplitN(name, "@", 2)[1]
+			user.Network = strings.SplitN(name, "@", 2)[1]
 		}
 	}
 	if user.Token != "" {
 		name = user.Token
 	}
+	libol.Debug("PointAuth.handleLogin: %s", name)
 	nowUser := service.User.Get(name)
 	if nowUser != nil {
 		if nowUser.Password == user.Password {
@@ -104,14 +105,14 @@ func (p *PointAuth) onAuth(client *libol.TcpClient, user *models.User) error {
 	}
 
 	libol.Info("PointAuth.onAuth: %s", client)
-	dev, err := p.master.NewTap(user.Tenant)
+	dev, err := p.master.NewTap(user.Network)
 	if err != nil {
 		return err
 	}
 	m := models.NewPoint(client, dev)
 	m.Alias = user.Alias
 	m.UUID = user.UUID
-	m.Tenant = user.Tenant
+	m.Tenant = user.Network
 	if m.UUID == "" {
 		m.UUID = user.Alias
 	}

@@ -68,13 +68,12 @@ func NewPoint() (c *Point) {
 	flag.StringVar(&c.SaveFile, "conf", PointDefault.SaveFile, "the configuration file")
 	flag.StringVar(&c.Script, "script", PointDefault.Script, "call script you assigned")
 	flag.BoolVar(&c.Allowed, "vs:allowed", PointDefault.Allowed, "allowed network configuration from vs")
-
 	flag.Parse()
+
 	if err := c.Load(); err != nil {
 		libol.Error("NewPoint.load %s", err)
 	}
 	c.Default()
-
 	libol.Init(c.LogFile, c.Verbose)
 	_ = c.Save(fmt.Sprintf("%s.cur", c.SaveFile))
 

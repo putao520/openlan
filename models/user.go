@@ -7,7 +7,7 @@ import (
 type User struct {
 	Alias    string `json:"alias"`
 	Name     string `json:"name"`
-	Tenant   string `json:"tenant"`
+	Network  string `json:"network"`
 	Token    string `json:"token"`
 	Password string `json:"password"`
 	UUID     string `json:"uuid"`

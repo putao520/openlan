@@ -51,7 +51,7 @@ func NewTcpWorker(client *libol.TcpClient, c *config.Point) (t *TcpWorker) {
 		initialized: false,
 	}
 	t.user.Alias = c.Alias
-	t.user.Tenant = c.Network
+	t.user.Network = c.Network
 
 	return
 }
@@ -457,7 +457,7 @@ func (a *TapWorker) Open() {
 		return
 	}
 
-	libol.Info("TapWorker.Open >>>>%s<<<<", dev.Name())
+	libol.Info("TapWorker.Open >>>> %s <<<<", dev.Name())
 	a.Device = dev
 	if a.Listener.OnOpen != nil {
 		_ = a.Listener.OnOpen(a)

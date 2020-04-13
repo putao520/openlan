@@ -37,8 +37,8 @@ func NewWorker(c config.Bridge) *Worker {
 func (w *Worker) Initialize() {
 	w.initialized = true
 
-	_ = service.User.Load(w.Conf.Tenant, w.Conf.Password)
-	_ = service.Network.Load(w.Conf.Tenant, w.Conf.Network)
+	_ = service.User.Load(w.Conf.Name, w.Conf.Password)
+	_ = service.Network.Load(w.Conf.Name, w.Conf.Network)
 }
 
 func (w *Worker) ID() string {
@@ -59,7 +59,7 @@ func (w *Worker) LoadLinks() {
 }
 
 func (w *Worker) Start(v VSwitcher) {
-	libol.Info("Worker.Start %s", w.Conf.Tenant)
+	libol.Info("Worker.Start %s", w.Conf.Name)
 	if !w.initialized {
 		w.Initialize()
 	}
@@ -69,7 +69,7 @@ func (w *Worker) Start(v VSwitcher) {
 }
 
 func (w *Worker) Stop() {
-	libol.Info("Worker.Close %s", w.Conf.Tenant)
+	libol.Info("Worker.Close %s", w.Conf.Name)
 	for _, p := range w.links {
 		p.Stop()
 	}
@@ -87,7 +87,7 @@ func (w *Worker) AddLink(c *config.Point) {
 	c.Alias = w.Alias
 	c.BrName = w.Conf.BrName //Reset bridge name.
 	c.Allowed = false
-	c.Network = w.Conf.Tenant
+	c.Network = w.Conf.Name
 
 	go func() {
 		p := point.NewPoint(c)

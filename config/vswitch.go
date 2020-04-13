@@ -9,7 +9,7 @@ import (
 
 type Bridge struct {
 	Alias    string   `json:"-"`
-	Tenant   string   `json:"tenant"`
+	Name     string   `json:"network"`
 	IfMtu    int      `json:"if.mtu"`
 	IfAddr   string   `json:"if.addr"`
 	BrName   string   `json:"if.br"`
@@ -51,7 +51,7 @@ var VSwitchDefault = VSwitch{
 }
 
 var BridgeDefault = Bridge{
-	Tenant:  "default",
+	Name:    "default",
 	BrName:  "",
 	Bridger: "linux",
 	IfMtu:   1518,
@@ -63,12 +63,13 @@ func NewVSwitch() (c VSwitch) {
 	}
 	flag.IntVar(&c.Verbose, "log:level", VSwitchDefault.Verbose, "logger level")
 	flag.StringVar(&c.ConfDir, "conf:dir", VSwitchDefault.ConfDir, "The directory configuration on.")
+	flag.StringVar(&c.Script, "script", VSwitchDefault.Script, "call script you assigned")
 	flag.Parse()
+
 	c.SaveFile = fmt.Sprintf("%s/vswitch.json", c.ConfDir)
 	if err := c.Load(); err != nil {
 		libol.Error("NewVSwitch.load %s", err)
 	}
-
 	c.Default()
 	libol.Debug(" %s", c)
 	libol.Init(c.LogFile, c.Verbose)
@@ -99,13 +100,13 @@ func (c *VSwitch) Default() {
 		c.Bridge[0] = BridgeDefault
 	}
 	for k := range c.Bridge {
-		tenant := c.Bridge[k].Tenant
+		name := c.Bridge[k].Name
 		if c.Bridge[k].BrName == "" {
-			c.Bridge[k].BrName = "br-" + tenant
+			c.Bridge[k].BrName = "br-" + name
 		}
 		c.Bridge[k].Alias = c.Alias
-		c.Bridge[k].Network = fmt.Sprintf("%s/network/%s.json", c.ConfDir, tenant)
-		c.Bridge[k].Password = fmt.Sprintf("%s/password/%s.json", c.ConfDir, tenant)
+		c.Bridge[k].Network = fmt.Sprintf("%s/network/%s.json", c.ConfDir, name)
+		c.Bridge[k].Password = fmt.Sprintf("%s/password/%s.json", c.ConfDir, name)
 		if c.Bridge[k].Bridger == "" {
 			c.Bridge[k].Bridger = BridgeDefault.Bridger
 		}

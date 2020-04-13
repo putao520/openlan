@@ -72,7 +72,7 @@ func (v *VSwitch) Initialize() {
 		v.http = NewHttp(v, v.Conf)
 	}
 	for _, brCfg := range v.Conf.Bridge {
-		tenant := brCfg.Tenant
+		tenant := brCfg.Name
 		v.worker[tenant] = NewWorker(brCfg)
 		v.bridge[tenant] = network.NewBridger(brCfg.Bridger, brCfg.BrName, brCfg.IfMtu)
 	}
@@ -166,7 +166,7 @@ func (v *VSwitch) Start() error {
 		w.Start(v)
 	}
 	for _, brCfg := range v.Conf.Bridge {
-		if br, ok := v.bridge[brCfg.Tenant]; ok {
+		if br, ok := v.bridge[brCfg.Name]; ok {
 			br.Open(brCfg.IfAddr)
 		}
 	}
@@ -185,7 +185,7 @@ func (v *VSwitch) Stop() error {
 		return libol.NewErr("already closed")
 	}
 	for _, brCfg := range v.Conf.Bridge {
-		if br, ok := v.bridge[brCfg.Tenant]; ok {
+		if br, ok := v.bridge[brCfg.Name]; ok {
 			_ = br.Close()
 			delete(v.bridge, brCfg.BrName)
 		}
