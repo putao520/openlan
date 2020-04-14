@@ -55,7 +55,7 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
 
 下载资源 [tap-windows-9](https://github.com/danieldin95/openlan-go/releases/download/tap-windows-9/tap-windows-9.21.2.exe), 然后点击安装它。
 
-### 最后配置接入认证
+### 然后配置接入认证
   使用notepad++新建一个文件：
 
     {
@@ -66,7 +66,23 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
       "vs.tls": true
     }
 
- 把它保存在文件`point.json`中，并与程序`point.windows.x86_64.exe`在同一个目录下。 点击执行`point.windows.x86_64.exe`。
+ 把它保存在文件`point.json`中，并与程序`point.windows.x86_64.exe`在同一个目录下。 
+
+### 点击Point程序执行
+
+  在打开的console终端中看到`login: success`字样，代表登录成功。如下：
+  
+    2020/04/15 00:19:19 INFO Config: version is 4.3.16
+    2020/04/15 00:19:19 INFO Config: built on 2020-04-14T07:40:42-0400
+    2020/04/15 00:19:19 INFO Config: commit at 1562b95686c195959ae4b8dca43094bf2b034710
+    2020/04/15 00:19:19 INFO Point.Start Windows.
+    2020/04/15 00:19:19 INFO TapWorker.Open >>>> Ethernet 2 <<<<
+    2020/04/15 00:19:19 INFO TcpClient.Connect tls://www.openlan.xx:10002
+    2020/04/15 00:19:19 INFO TapWorker.Read
+    2020/04/15 00:19:19 INFO TapWorker.Loop
+    2020/04/15 00:19:19 INFO TcpWorker.Read true
+    2020/04/15 00:19:19 INFO Worker.OnSuccess
+    2020/04/15 00:19:19 INFO TcpWorker.onInstruct.login: success
 
  *说明*
  
@@ -75,7 +91,7 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
     if.addr    配置本地虚拟网卡地址
     vs.tls     是否启用TLS加密信道
 
-### Windows添加新的Tap设备  
+### 添加新的Tap设备  
   打开设备管理器
   
     Control Panel\Hardware and Sound\Device Manager
@@ -214,7 +230,7 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
 
 # 欢迎捐赠
 
-欢迎使用支付宝手扫描上面的二维码，对该项目进行捐赠。
+欢迎使用支付宝手扫描下面的二维码，对该项目进行捐赠。
 
 <img src="https://raw.githubusercontent.com/danieldin95/openlan-go/master/resource/donation.jpg" width="46%">
 
