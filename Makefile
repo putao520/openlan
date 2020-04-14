@@ -27,10 +27,10 @@ linux/vswitch:
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o vswitch.linux.x86_64 main/vswitch.go
 
 linux/rpm:
-	./packaging/auto.sh
+	@./packaging/auto.sh
 	rpmbuild -ba packaging/openlan-point.spec
 	rpmbuild -ba packaging/openlan-vswitch.spec
-	cp -rvf ~/rpmbuild/RPMS/x86_64/openlan-*.rpm .
+	@cp -rvf ~/rpmbuild/RPMS/x86_64/openlan-*.rpm .
 
 ## cross build for windows
 WIN_DIR = "openlan-windows-"$$(cat VERSION)
@@ -38,25 +38,25 @@ WIN_DIR = "openlan-windows-"$$(cat VERSION)
 windows: windows/point windows/vswitch
 
 windows/point:
-	mkdir -p point.windows.x86_64
-	cp -rvf main/point_windows.* point.windows.x86_64
+	@mkdir -p point.windows.x86_64
+	@cp -rf main/point_windows.* point.windows.x86_64
 	GOOS=windows GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" ./point.windows.x86_64
-	rm -rf point.windows.x86_64
+	@rm -rf point.windows.x86_64
 
 windows/vswitch:
 	GOOS=windows GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o vswitch.windows.x86_64.exe main/vswitch.go
 
 windows/zip: windows
-	rm -rf $(WIN_DIR) && mkdir -p $(WIN_DIR)
-	cp -rvf packaging/resource/point.json $(WIN_DIR)
-	cp -rvf point.windows.x86_64.exe $(WIN_DIR)
-	cp -rvf vswitch.windows.x86_64.exe $(WIN_DIR)
-	rm -rf $(WIN_DIR).zip
+	@rm -rf $(WIN_DIR) && mkdir -p $(WIN_DIR)
+	@cp -rvf packaging/resource/point.json $(WIN_DIR)
+	@cp -rvf point.windows.x86_64.exe $(WIN_DIR)
+	@cp -rvf vswitch.windows.x86_64.exe $(WIN_DIR)
+	@rm -rf $(WIN_DIR).zip
 	zip -r $(WIN_DIR).zip $(WIN_DIR)
-	rm -rf $(WIN_DIR)
+	@rm -rf $(WIN_DIR)
 
 windows/syso:
-	rsrc -manifest main/point_windows.manifest -o main/point_windows.syso
+	rsrc -manifest main/point_windows.manifest -ico vswitch/public/favicon.ico  -o main/point_windows.syso
 
 ## cross build for osx
 
@@ -69,13 +69,13 @@ darwin:
 	GOOS=darwin GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o vswitch.darwin.x86_64 main/vswitch.go
 
 darwin/zip: darwin
-	rm -rf $(DARWIN_DIR) && mkdir -p $(DARWIN_DIR)
-	cp -rvf packaging/resource/point.json $(DARWIN_DIR)
-	cp -rvf point.darwin.x86_64 $(DARWIN_DIR)
-	cp -rvf vswitch.darwin.x86_64 $(DARWIN_DIR)
+	@rm -rf $(DARWIN_DIR) && mkdir -p $(DARWIN_DIR)
+	@cp -rvf packaging/resource/point.json $(DARWIN_DIR)
+	@cp -rvf point.darwin.x86_64 $(DARWIN_DIR)
+	@cp -rvf vswitch.darwin.x86_64 $(DARWIN_DIR)
 	rm -rf $(DARWIN_DIR).zip
-	zip -r $(DARWIN_DIR).zip $(DARWIN_DIR)
-	rm -rf $(DARWIN_DIR)
+	@zip -r $(DARWIN_DIR).zip $(DARWIN_DIR)
+	@rm -rf $(DARWIN_DIR)
 
 ## docker images
 docker:

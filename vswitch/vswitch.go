@@ -222,7 +222,7 @@ func (v *VSwitch) NewTap(tenant string) (network.Taper, error) {
 	if !ok {
 		return nil, libol.NewErr("Not found bridge %s", tenant)
 	}
-	dev, err := network.NewTaper(br.Type(), "", tenant, true)
+	dev, err := network.NewTaper(br.Type(), tenant, network.TapConfig{Type: network.TAP})
 	if err != nil {
 		libol.Error("Worker.NewTap: %s", err)
 		return nil, err

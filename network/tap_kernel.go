@@ -8,28 +8,24 @@ import (
 
 type KernelTap struct {
 	lock   sync.RWMutex
-	isTap  bool
-	name   string
 	device *water.Interface
 	bridge Bridger
 	tenant string
+	name   string
+	cfg    TapConfig
 	mtu    int
 }
 
-func NewKernelTap(isTap bool, tenant, name string) (*KernelTap, error) {
-	deviceType := water.DeviceType(water.TUN)
-	if isTap {
-		deviceType = water.TAP
-	}
-	device, err := water.New(water.Config{DeviceType: deviceType})
+func NewKernelTap(tenant string, c TapConfig) (*KernelTap, error) {
+	device, err := WaterNew(c)
 	if err != nil {
-		return nil, err
+		return  nil, err
 	}
 	tap := &KernelTap{
 		tenant: tenant,
 		device: device,
 		name:   device.Name(),
-		isTap:  isTap,
+		cfg:    c,
 		mtu:    1514,
 	}
 
@@ -43,11 +39,11 @@ func (t *KernelTap) Tenant() string {
 }
 
 func (t *KernelTap) IsTun() bool {
-	return !t.isTap
+	return t.cfg.Type == TUN
 }
 
 func (t *KernelTap) IsTap() bool {
-	return t.isTap
+	return t.cfg.Type == TAP
 }
 
 func (t *KernelTap) Name() string {
@@ -117,11 +113,7 @@ func (t *KernelTap) Up() {
 	defer t.lock.Unlock()
 
 	if t.device == nil {
-		deviceType := water.DeviceType(water.TUN)
-		if t.IsTap() {
-			deviceType = water.TAP
-		}
-		device, err := water.New(water.Config{DeviceType: deviceType})
+		device, err := WaterNew(t.cfg)
 		if err != nil {
 			libol.Error("KernelTap.Up %s", err)
 			return

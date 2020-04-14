@@ -10,7 +10,6 @@ import (
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/network"
-	"github.com/songgao/water"
 	"net"
 	"strings"
 	"sync"
@@ -392,12 +391,12 @@ type TapWorker struct {
 
 	lock        sync.RWMutex
 	writeChan   chan []byte
-	devCfg      *water.Config
+	devCfg      network.TapConfig
 	pointCfg    *config.Point
 	initialized bool
 }
 
-func NewTapWorker(devCfg *water.Config, c *config.Point) (a *TapWorker) {
+func NewTapWorker(devCfg network.TapConfig, c *config.Point) (a *TapWorker) {
 	a = &TapWorker{
 		Device:      nil,
 		Neighbors: 	Neighbors{
@@ -450,18 +449,11 @@ func (a *TapWorker) Open() {
 		time.Sleep(5 * time.Second) // sleep 5s and release cpu.
 	}
 
-	var err error
-	var dev network.Taper
-	if a.devCfg.DeviceType == water.TAP {
-		dev, err = network.NewKernelTap(true, a.pointCfg.Network, "")
-	} else {
-		dev, err = network.NewKernelTap(false, a.pointCfg.Network, "")
-	}
+	dev, err := network.NewKernelTap(a.pointCfg.Network, a.devCfg)
 	if err != nil {
 		libol.Error("TapWorker.Open %s", err)
 		return
 	}
-
 	libol.Info("TapWorker.Open >>>> %s <<<<", dev.Name())
 	a.Device = dev
 	if a.Listener.OnOpen != nil {
@@ -713,7 +705,7 @@ func NewWorker(config *config.Point) (p *Worker) {
 }
 
 func (p *Worker) Initialize() {
-	var conf *water.Config
+	var conf network.TapConfig
 	var tlsConf *tls.Config
 
 	if p.config == nil {
@@ -730,9 +722,17 @@ func (p *Worker) Initialize() {
 	p.tcpWorker = NewTcpWorker(client, p.config)
 
 	if p.config.IfTun {
-		conf = &water.Config{DeviceType: water.TUN}
+		conf = network.TapConfig{
+			Type: network.TUN,
+			Name: p.config.IfName,
+			Network: p.config.IfAddr,
+		}
 	} else {
-		conf = &water.Config{DeviceType: water.TAP}
+		conf = network.TapConfig{
+			Type: network.TAP,
+			Name: p.config.IfName,
+			Network: p.config.IfAddr,
+		}
 	}
 
 	// register listener

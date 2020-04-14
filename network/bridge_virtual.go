@@ -43,7 +43,7 @@ func NewVirtualBridge(name string, mtu int) *VirtualBridge {
 func (b *VirtualBridge) Open(addr string) {
 	libol.Info("VirtualBridge.Open %s", addr)
 	if addr != "" {
-		tap, err := NewKernelTap(true, "default", "")
+		tap, err := NewKernelTap("default", TapConfig{Type: TAP})
 		if err != nil {
 			libol.Error("VirtualBridge.Open new kernel %s", err)
 		} else {

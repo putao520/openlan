@@ -20,11 +20,11 @@ type Taper interface {
 	SetMtu(mtu int)
 }
 
-func NewTaper(tap, name, tenant string, isTap bool) (Taper, error) {
+func NewTaper(tap, tenant string, c TapConfig) (Taper, error) {
 	if tap == "linux" {
-		return NewKernelTap(isTap, tenant, name)
+		return NewKernelTap(tenant, c)
 	}
-	return NewUserSpaceTap(isTap, tenant, name)
+	return NewUserSpaceTap(tenant, c)
 }
 
 type tapers struct {
@@ -77,3 +77,15 @@ func (t *tapers) Del(name string) {
 }
 
 var Tapers = &tapers{}
+
+const (
+	_ = iota
+	TUN
+	TAP
+)
+
+type TapConfig struct {
+	Type    int
+	Network string
+	Name    string
+}

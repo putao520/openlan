@@ -15,6 +15,7 @@ type Point struct {
 	Auth     string `json:"vs.auth"`
 	Tls      bool   `json:"vs.tls"`
 	Allowed  bool   `json:"vs.allowed"`
+	IfName   string `json:"if.name"`
 	IfMtu    int    `json:"if.mtu"`
 	IfAddr   string `json:"if.addr"`
 	BrName   string `json:"if.br"`
@@ -59,6 +60,7 @@ func NewPoint() (c *Point) {
 	flag.BoolVar(&c.Tls, "vs:tls", PointDefault.Tls, "enable TLS to decrypt")
 	flag.IntVar(&c.Verbose, "log:level", PointDefault.Verbose, "logger level")
 	flag.StringVar(&c.LogFile, "log:file", PointDefault.LogFile, "logger file")
+	flag.StringVar(&c.IfName, "if:name", PointDefault.IfAddr, "the interface name when has multiple device.")
 	flag.StringVar(&c.IfAddr, "if:addr", PointDefault.IfAddr, "the interface address")
 	flag.StringVar(&c.BrName, "if:br", PointDefault.BrName, "the bridge name")
 	flag.BoolVar(&c.IfTun, "if:tun", PointDefault.IfTun, "using tun device as interface, otherwise tap")

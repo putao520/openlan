@@ -7,24 +7,23 @@ import (
 
 type UserSpaceTap struct {
 	lock   sync.RWMutex
-	closed bool
-	isTap  bool
-	name   string
 	writeQ chan []byte
 	readQ  chan []byte
 	bridge Bridger
 	tenant string
+	closed bool
+	cfg    TapConfig
+	name   string
 	mtu    int
 }
 
-func NewUserSpaceTap(isTap bool, tenant, name string) (*UserSpaceTap, error) {
-	if name == "" {
-		name = Tapers.GenName()
+func NewUserSpaceTap(tenant string, c TapConfig) (*UserSpaceTap, error) {
+	if c.Name == "" {
+		c.Name = Tapers.GenName()
 	}
 	tap := &UserSpaceTap{
 		tenant: tenant,
-		isTap:  isTap,
-		name:   name,
+		name:   c.Name,
 		mtu:    1514,
 	}
 	Tapers.Add(tap)
@@ -37,11 +36,11 @@ func (t *UserSpaceTap) Tenant() string {
 }
 
 func (t *UserSpaceTap) IsTun() bool {
-	return !t.isTap
+	return t.cfg.Type == TUN
 }
 
 func (t *UserSpaceTap) IsTap() bool {
-	return t.isTap
+	return t.cfg.Type == TAP
 }
 
 func (t *UserSpaceTap) Name() string {
