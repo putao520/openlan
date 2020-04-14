@@ -35,8 +35,14 @@ linux/rpm:
 ## cross build for windows
 WIN_DIR = "openlan-windows-"$$(cat VERSION)
 
-windows:
-	GOOS=windows GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o point.windows.x86_64.exe main/point_windows.go
+windows: windows/point windows/vswitch
+
+windows/point:
+	mkdir -p point.windows.x86_64
+	cp -rvf main/point_windows.* point.windows.x86_64
+	GOOS=windows GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" ./point.windows.x86_64
+
+windows/vswitch:
 	GOOS=windows GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o vswitch.windows.x86_64.exe main/vswitch.go
 
 windows/zip: windows
@@ -46,6 +52,9 @@ windows/zip: windows
 	cp -rvf vswitch.windows.x86_64.exe $(WIN_DIR)
 	rm -rf $(WIN_DIR).zip
 	zip -r $(WIN_DIR).zip $(WIN_DIR)
+
+windows/syso:
+	rsrc -manifest main/point_windows.manifest -o main/point_windows.syso
 
 ## cross build for osx
 

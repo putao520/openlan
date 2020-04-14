@@ -32,7 +32,7 @@ type Point struct {
 var PointDefault = Point{
 	Alias:    "",
 	Addr:     "openlan.net",
-	Auth:     "hi:hi@123$",
+	Auth:     "hi:123456",
 	Verbose:  libol.INFO,
 	IfMtu:    1518,
 	IfAddr:   "",
@@ -42,7 +42,7 @@ var PointDefault = Point{
 	Network:  "",
 	name:     "",
 	password: "",
-	LogFile:  "point.error",
+	LogFile:  "point.log",
 	Script:   fmt.Sprintf("point.%s.cmd", runtime.GOOS),
 	Allowed:  true,
 }
@@ -52,9 +52,6 @@ func NewPoint() (c *Point) {
 		LogFile: PointDefault.LogFile,
 	}
 
-	if runtime.GOOS == "darwin" {
-		PointDefault.IfTun = true
-	}
 	flag.StringVar(&c.Alias, "alias", PointDefault.Alias, "the alias for this point")
 	flag.StringVar(&c.Network, "network", PointDefault.Network, "the network login to")
 	flag.StringVar(&c.Addr, "vs:addr", PointDefault.Addr, "the server connect to")

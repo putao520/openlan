@@ -3,6 +3,7 @@ module github.com/danieldin95/openlan-go
 go 1.12
 
 require (
+	github.com/akavel/rsrc v0.8.0 // indirect
 	github.com/gorilla/mux v1.7.3
 	github.com/songgao/water v0.0.0-20190725173103-fd331bda3f4b
 	github.com/stretchr/testify v1.4.0
