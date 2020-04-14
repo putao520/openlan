@@ -20,13 +20,13 @@ class Client(object):
     def request(self, url, method, data=""):
         url = "https://{}/api/{}".format(self.addr, url)
         if self.debug:
-            print "{} {} {}".format(method, url, data)
+            print("{} {} {}".format(method, url, data))
 
         resp = requests.request(method, url,
                                 json=data, verify=False,
                                 auth=(self.token, ''))
         if self.debug:
-            print "RESPONSE {}".format(resp.text)
+            print("RESPONSE {}".format(resp.text))
 
         if not resp.ok:
             resp.raise_for_status()
@@ -40,10 +40,10 @@ if __name__ == '__main__':
 
     c = Client(addr, token)
     resp = c.request("user", "GET")
-    print json.dumps(resp.json(), indent=4)
+    print(json.dumps(resp.json(), indent=4))
 
     resp = c.request("link", "GET")
-    print json.dumps(resp.json(), indent=4)
+    print(json.dumps(resp.json(), indent=4))
 
     resp = c.request("neighbor", "GET")
-    print json.dumps(resp.json(), indent=4)
+    print(json.dumps(resp.json(), indent=4))

@@ -20,15 +20,15 @@ func (p *_link) Init(size int) {
 
 func (p *_link) Add(m *point.Point) {
 	link := &models.Point{
-		Alias:  "",
-		Tenant: m.Tenant,
-		Server: m.Addr(),
-		Uptime: m.UpTime(),
-		Status: m.State(),
-		Client: m.Client(),
-		Device: m.Device(),
-		IfName: m.IfName(),
-		UUID:   m.UUID(),
+		Alias:   "",
+		Network: m.Tenant,
+		Server:  m.Addr(),
+		Uptime:  m.UpTime(),
+		Status:  m.State(),
+		Client:  m.Client(),
+		Device:  m.Device(),
+		IfName:  m.IfName(),
+		UUID:    m.UUID(),
 	}
 	_ = p.links.Set(m.Addr(), link)
 }

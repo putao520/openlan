@@ -112,7 +112,7 @@ func (p *PointAuth) onAuth(client *libol.TcpClient, user *models.User) error {
 	m := models.NewPoint(client, dev)
 	m.Alias = user.Alias
 	m.UUID = user.UUID
-	m.Tenant = user.Network
+	m.Network = user.Network
 	if m.UUID == "" {
 		m.UUID = user.Alias
 	}

@@ -20,7 +20,7 @@ func (u *Route) String() string {
 }
 
 type Network struct {
-	Tenant  string   `json:"tenant"`
+	Name    string   `json:"name"`
 	IfAddr  string   `json:"ifAddr"`
 	IpAddr  string   `json:"ipAddr"`
 	IpRange int      `json:"ipRange"`
@@ -30,7 +30,7 @@ type Network struct {
 
 func NewNetwork(name string, ifAddr string) (this *Network) {
 	this = &Network{
-		Tenant: name,
+		Name:   name,
 		IfAddr: ifAddr,
 	}
 	return
@@ -38,7 +38,7 @@ func NewNetwork(name string, ifAddr string) (this *Network) {
 
 func (u *Network) String() string {
 	return fmt.Sprintf("%s, %s, %s, %d, %s, %s",
-		u.Tenant, u.IfAddr, u.IpAddr, u.IpRange, u.Netmask, u.Routes)
+		u.Name, u.IfAddr, u.IpAddr, u.IpRange, u.Netmask, u.Routes)
 }
 
 func (u *Network) ParseIP(s string) {

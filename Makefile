@@ -41,7 +41,7 @@ windows:
 
 windows/zip: windows
 	rm -rf $(WIN_DIR) && mkdir -p $(WIN_DIR)
-	cp -rvf resource/point.json $(WIN_DIR)
+	cp -rvf packaging/resource/point.json $(WIN_DIR)
 	cp -rvf point.windows.x86_64.exe $(WIN_DIR)
 	cp -rvf vswitch.windows.x86_64.exe $(WIN_DIR)
 	rm -rf $(WIN_DIR).zip
@@ -59,7 +59,7 @@ darwin:
 
 darwin/zip: darwin
 	rm -rf $(DARWIN_DIR) && mkdir -p $(DARWIN_DIR)
-	cp -rvf resource/point.json $(DARWIN_DIR)
+	cp -rvf packaging/resource/point.json $(DARWIN_DIR)
 	cp -rvf point.darwin.x86_64 $(DARWIN_DIR)
 	cp -rvf vswitch.darwin.x86_64 $(DARWIN_DIR)
 	rm -rf $(DARWIN_DIR).zip

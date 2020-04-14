@@ -127,7 +127,7 @@
                 <tr>
                     <th>UUID</th>
                     <th>UpTime</th>
-                    <th>Tenant</th>
+                    <th>Network</th>
                     <th>Alias</th>
                     <th>Address</th>
                     <th>Device</th>
@@ -140,7 +140,7 @@
                 <tr>
                     <td>{{ .UUID }}</td>
                     <td>{{ prettyTime .Uptime }}</td>
-                    <td>{{ .Tenant }}</td>
+                    <td>{{ .Network }}</td>
                     <td>{{ .Alias }}</td>
                     <td>{{ .Address }}</td>
                     <td>{{ .Device }}</td>
@@ -164,7 +164,7 @@
                 <tr>
                     <th>UUID</th>
                     <th>UpTime</th>
-                    <th>Tenant</th>
+                    <th>Network</th>
                     <th>Device</th>
                     <th>Address</th>
                     <th>State</th>
@@ -175,7 +175,7 @@
                     <tr>
                         <td>{{ .UUID }}</td>
                         <td>{{ prettyTime .Uptime }}</td>
-                        <td>{{ .Tenant }}</td>
+                        <td>{{ .Network }}</td>
                         <td>{{ .Device }}</td>
                         <td><a href="https://{{ .IpAddr }}:10000">{{ .Address }}</a></td>
                         <td><span class="{{ .State }}">{{ .State }}</span></td>

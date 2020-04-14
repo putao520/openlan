@@ -52,7 +52,7 @@ func (r *WithRequest) OnIpAddr(client *libol.TcpClient, data string) {
 	}
 
 	if net.IfAddr == "" {
-		FinNet := service.Network.Get(net.Tenant)
+		FinNet := service.Network.Get(net.Name)
 		libol.Info("WithRequest.OnIpAddr: find %s", FinNet)
 		ipStr, netmask := service.Network.GetFreeAddr(client, FinNet)
 		if ipStr == "" {
@@ -61,7 +61,7 @@ func (r *WithRequest) OnIpAddr(client *libol.TcpClient, data string) {
 			return
 		}
 		respNet := &models.Network{
-			Tenant:  FinNet.Tenant,
+			Name:    FinNet.Name,
 			IfAddr:  ipStr,
 			IpAddr:  ipStr,
 			IpRange: 1,

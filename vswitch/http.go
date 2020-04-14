@@ -192,7 +192,7 @@ func (h *Http) ResponseJson(w http.ResponseWriter, v interface{}) {
 	str, err := json.Marshal(v)
 	if err == nil {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(str)
+		_, _ = w.Write(str)
 	} else {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

@@ -38,7 +38,7 @@ func NewWorkerSchema(sw VSwitcher) WorkerSchema {
 type PointSchema struct {
 	Uptime  int64  `json:"uptime"`
 	UUID    string `json:"uuid"`
-	Tenant  string `json:"tenant"`
+	Network string `json:"network"`
 	Alias   string `json:"alias"`
 	Address string `json:"server"`
 	IpAddr  string `json:"address"`
@@ -61,7 +61,7 @@ func NewPointSchema(p *models.Point) PointSchema {
 		TxBytes: client.Sts.TxOkay,
 		ErrPkt:  client.Sts.TxError,
 		State:   client.State(),
-		Tenant:  p.Tenant,
+		Network: p.Network,
 	}
 }
 
@@ -69,7 +69,7 @@ type LinkSchema struct {
 	Uptime  int64  `json:"uptime"`
 	UUID    string `json:"uuid"`
 	Alias   string `json:"alias"`
-	Tenant  string `json:"tenant"`
+	Network string `json:"network"`
 	Address string `json:"server"`
 	IpAddr  string `json:"address"`
 	Device  string `json:"device"`
@@ -88,7 +88,7 @@ func NewLinkSchema(p *models.Point) LinkSchema {
 		Address: client.Addr,
 		State:   client.State(),
 		IpAddr:  strings.Split(client.Addr, ":")[0],
-		Tenant:  p.Tenant,
+		Network: p.Network,
 	}
 }
 
@@ -176,7 +176,7 @@ type RouteSchema struct {
 }
 
 type NetworkSchema struct {
-	Tenant  string        `json:"tenant"`
+	Name    string        `json:"name"`
 	IfAddr  string        `json:"ifAddr"`
 	IpAddr  string        `json:"ipAddr"`
 	IpRange int           `json:"ipRange"`
@@ -196,7 +196,7 @@ func NewNetworkSchema(n *models.Network) NetworkSchema {
 		}
 	}
 	return NetworkSchema{
-		Tenant:  n.Tenant,
+		Name:    n.Name,
 		IfAddr:  n.IfAddr,
 		IpAddr:  n.IpAddr,
 		IpRange: n.IpRange,
