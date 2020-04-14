@@ -103,6 +103,9 @@ func (c *Point) Right() {
 		}
 	}
 	RightAddr(&c.Addr, 10002)
+	if runtime.GOOS == "darwin" {
+		c.IfTun = true
+	}
 }
 
 func (c *Point) Default() {

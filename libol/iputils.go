@@ -42,19 +42,24 @@ func IpLinkDown(name string) ([]byte, error) {
 	}
 }
 
-func IpAddrAdd(name, addr string) ([]byte, error) {
+func IpAddrAdd(name, addr string, opts...string) ([]byte, error) {
 	switch runtime.GOOS {
 	case "linux":
-		args := []string{
+		args := append([]string{
 			"addr", "add", addr, "dev", name,
-		}
+		}, opts...)
 		return exec.Command("/usr/sbin/ip", args...).CombinedOutput()
 	case "windows":
-		args := []string{
+		args := append([]string{
 			"interface", "ipv4", "add", "address",
 			"name=" + name, "address=" + addr, "store=active",
-		}
+		}, opts...)
 		return exec.Command("netsh", args...).CombinedOutput()
+	case "darwin":
+		args := append([]string{
+			name, addr,
+		}, opts...)
+		return exec.Command("/sbin/ifconfig", args...).CombinedOutput()
 	default:
 		return nil, NewErr("IpAddrAdd %s not support", runtime.GOOS)
 	}
@@ -74,6 +79,11 @@ func IpAddrDel(name, addr string) ([]byte, error) {
 			"name=" + name, "address=" + ipAddr, "store=active",
 		}
 		return exec.Command("netsh", args...).CombinedOutput()
+	case "darwin":
+		args := []string{
+			name, addr, "delete",
+		}
+		return exec.Command("/sbin/ifconfig", args...).CombinedOutput()
 	default:
 		return nil, NewErr("IpAddrDel %s not support", runtime.GOOS)
 	}
@@ -106,7 +116,7 @@ func IpAddrShow(name string) []string {
 	}
 }
 
-func IpRouteAdd(name, prefix, nexthop string) ([]byte, error) {
+func IpRouteAdd(name, prefix, nexthop string, opts ...string) ([]byte, error) {
 	switch runtime.GOOS {
 	case "linux":
 		args := []string{
@@ -120,12 +130,17 @@ func IpRouteAdd(name, prefix, nexthop string) ([]byte, error) {
 			"store=active",
 		}
 		return exec.Command("netsh", args...).CombinedOutput()
+	case "darwin":
+		args := append([]string{
+			"add", "-net", prefix, nexthop,
+		}, opts...)
+		return exec.Command("/sbin/route", args...).CombinedOutput()
 	default:
 		return nil, NewErr("IpRouteAdd %s not support", runtime.GOOS)
 	}
 }
 
-func IpRouteDel(name, prefix, nexthop string) ([]byte, error) {
+func IpRouteDel(name, prefix, nexthop string, opts ...string) ([]byte, error) {
 	switch runtime.GOOS {
 	case "linux":
 		args := []string{
@@ -139,6 +154,11 @@ func IpRouteDel(name, prefix, nexthop string) ([]byte, error) {
 			"store=active",
 		}
 		return exec.Command("netsh", args...).CombinedOutput()
+	case "darwin":
+		args := append([]string{
+			"delete", "-net", prefix, nexthop,
+		}, opts...)
+		return exec.Command("/sbin/route", args...).CombinedOutput()
 	default:
 		return nil, NewErr("IpRouteDel %s not support", runtime.GOOS)
 	}

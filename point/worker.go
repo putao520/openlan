@@ -422,21 +422,26 @@ func (a *TapWorker) Initialize() {
 	a.DoTun()
 }
 
+func (a *TapWorker) EthSrc(addr string) {
+	ifAddr := strings.SplitN(addr, "/", 2)[0]
+	a.EthSrcIp = net.ParseIP(ifAddr).To4()
+	if a.EthSrcIp == nil {
+		libol.Error("TapWorker.EthSrc srcIp: is nil")
+		a.EthSrcIp = []byte{0x00, 0x00, 0x00, 0x00}
+	} else {
+		libol.Info("TapWorker.EthSrc srcIp: % x", a.EthSrcIp)
+	}
+}
+
 func (a *TapWorker) DoTun() {
 	if a.Device == nil || !a.Device.IsTun() {
 		return
 	}
 
-	ifAddr := strings.SplitN(a.pointCfg.IfAddr, "/", 2)[0]
-	a.EthSrcIp = net.ParseIP(ifAddr).To4()
-	if a.EthSrcIp == nil {
-		libol.Error("NewTapWorker srcIp: is nil")
-	} else {
-		libol.Info("NewTapWorker srcIp: % x", a.EthSrcIp)
-	}
+	a.EthSrc(a.pointCfg.IfAddr)
 	a.EthSrcAddr = libol.GenEthAddr(6)
 	a.EthDstAddr = libol.BROADED
-	libol.Info("NewTapWorker src: %x, dst: %x", a.EthSrcAddr, a.EthDstAddr)
+	libol.Info("TapWorker.DoTun src: %x, dst: %x", a.EthSrcAddr, a.EthDstAddr)
 }
 
 func (a *TapWorker) Open() {
@@ -829,6 +834,7 @@ func (p *Worker) OnIpAddr(w *TcpWorker, n *models.Network) error {
 	prefix := libol.Netmask2Len(n.Netmask)
 	ipStr := fmt.Sprintf("%s/%d", n.IfAddr, prefix)
 
+	p.tapWorker.EthSrc(ipStr)
 	if p.Listener.AddAddr != nil {
 		_ = p.Listener.AddAddr(ipStr)
 	}
