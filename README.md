@@ -57,7 +57,7 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
 
 ### 最后配置接入认证
   使用notepad++新建一个文件：
-  
+
     {
       "network": "default",
       "vs.addr": "www.openlan.xx",
@@ -74,6 +74,25 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
     vs.auth    接入虚拟交换的认证信息，如：user:password
     if.addr    配置本地虚拟网卡地址
     vs.tls     是否启用TLS加密信道
+
+### Windows添加新的Tap设备  
+  打开设备管理器
+  
+    Control Panel\Hardware and Sound\Device Manager
+
+  添加新的网卡
+
+    1. 选择Network adapter；
+    2. 点击Action选择Add legacy hardware；
+    3. 找到Tap-Windows-9添加即可；
+    4. 回到Control Panel\Network and Internet\Network Connections；
+    5. 为新增的网卡重命名，如 Ethernet 3。
+  
+  启用新的网卡
+  
+    1. 使用notepad++打开point.json；
+    2. 配置if.name为网卡名称，如：Ethernet 3。
+    3. 运行point程序即可。
 
 ## 在Linux系统中
 ### 安装vSwitch并运行
