@@ -146,15 +146,10 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
       "vs.addr": "www.openlan.xx",
       "vs.auth": "hi:123456",
       "vs.tls": true,
-      "if.addr": "192.168.1.22/24",
-      "if.tun": true
+      "if.addr": "192.168.1.22/192.168.1.10"
     }
     admindeMac:~ admin$ 
     admindeMac:~ admin$ sudo ./point.darwin.x86_64
-
-  重新打开一个终端，并配置地址
-
-    admindeMac:~ admin$ sudo ifconfig utun1 192.168.1.22 192.168.1.10
 
   测试网络
 
@@ -162,8 +157,8 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
 
   *说明*
 
-     由于MacOS不支持tap设备，所以必须要配置点到点的地址，其中ifconfig的第一个地址为本地地址，第二个为远端地址。
-     本地地址需要与Point启动时if:addr一致。如果需要与同一网络下所有主机通信，可以手动配置路由.
+     由于MacOS不支持tap设备，所以必须要配置点到点的地址，其中if.addr的第一个地址为本地地址，第二个为远端地址。
+     如果需要与同一网络下所有主机通信，可以手动配置路由.
 
   添加子网路由：
 
