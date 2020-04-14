@@ -41,6 +41,7 @@ windows/point:
 	mkdir -p point.windows.x86_64
 	cp -rvf main/point_windows.* point.windows.x86_64
 	GOOS=windows GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" ./point.windows.x86_64
+	rm -rf point.windows.x86_64
 
 windows/vswitch:
 	GOOS=windows GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o vswitch.windows.x86_64.exe main/vswitch.go
@@ -52,6 +53,7 @@ windows/zip: windows
 	cp -rvf vswitch.windows.x86_64.exe $(WIN_DIR)
 	rm -rf $(WIN_DIR).zip
 	zip -r $(WIN_DIR).zip $(WIN_DIR)
+	rm -rf $(WIN_DIR)
 
 windows/syso:
 	rsrc -manifest main/point_windows.manifest -o main/point_windows.syso
@@ -73,6 +75,7 @@ darwin/zip: darwin
 	cp -rvf vswitch.darwin.x86_64 $(DARWIN_DIR)
 	rm -rf $(DARWIN_DIR).zip
 	zip -r $(DARWIN_DIR).zip $(DARWIN_DIR)
+	rm -rf $(DARWIN_DIR)
 
 ## docker images
 docker:

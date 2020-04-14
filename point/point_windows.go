@@ -29,6 +29,7 @@ func (p *Point) Initialize() {
 	p.worker.Listener.DelAddr = p.DelAddr
 	p.worker.Listener.AddRoutes = p.AddRoutes
 	p.worker.Listener.DelRoutes = p.DelRoutes
+	p.worker.Listener.OnTap = p.OnTap
 	p.MixPoint.Initialize()
 }
 
@@ -43,6 +44,18 @@ func (p *Point) Start() {
 func (p *Point) Stop() {
 	defer libol.Catch("Point.Stop")
 	p.worker.Stop()
+}
+
+func (p *Point) OnTap(w *TapWorker) error {
+	// clean routes previous
+	routes := make([]*models.Route, 0, 32)
+	if err := libol.UnmarshalLoad(&routes, ".routes.json"); err == nil {
+		for _, route := range routes {
+			_, _ = libol.IpRouteDel(p.IfName(), route.Prefix, route.Nexthop)
+			libol.Info("Point.OnTap: clear previous %s via %s", route.Prefix, route.Nexthop)
+		}
+	}
+	return nil
 }
 
 func (p *Point) AddAddr(ipStr string) error {
@@ -86,6 +99,7 @@ func (p *Point) AddRoutes(routes []*models.Route) error {
 		return nil
 	}
 
+	_ = libol.MarshalSave(routes, ".routes.json", true)
 	for _, route := range routes {
 		out, err := libol.IpRouteAdd(p.IfName(), route.Prefix, route.Nexthop)
 		if err != nil {
