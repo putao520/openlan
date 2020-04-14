@@ -12,9 +12,9 @@ func WaterNew(c TapConfig) (*water.Interface, error) {
 	cfg := water.Config{DeviceType: deviceType}
 	if c.Name != "" {
 		cfg.PlatformSpecificParams = water.PlatformSpecificParams{
-			ComponentID: "tap0901",
+			ComponentID:   "tap0901",
 			InterfaceName: c.Name,
-			Network:     c.Network,
+			Network:       c.Network,
 		}
 	}
 	return water.New(cfg)

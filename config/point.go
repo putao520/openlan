@@ -10,20 +10,20 @@ import (
 )
 
 type Point struct {
-	Alias    string `json:"alias"`
-	Addr     string `json:"vs.addr"`
-	Auth     string `json:"vs.auth"`
-	Tls      bool   `json:"vs.tls"`
-	Allowed  bool   `json:"vs.allowed"`
-	IfName   string `json:"if.name"`
-	IfMtu    int    `json:"if.mtu"`
-	IfAddr   string `json:"if.addr"`
-	BrName   string `json:"if.br"`
-	IfTun    bool   `json:"if.tun"`
-	LogFile  string `json:"log.file"`
-	Verbose  int    `json:"log.level"`
-	Script   string `json:"script"`
-	Network  string `json:"network"`
+	Alias   string `json:"alias"`
+	Addr    string `json:"vs.addr"`
+	Auth    string `json:"vs.auth"`
+	Tls     bool   `json:"vs.tls"`
+	Allowed bool   `json:"vs.allowed"`
+	IfName  string `json:"if.name"`
+	IfMtu   int    `json:"if.mtu"`
+	IfAddr  string `json:"if.addr"`
+	BrName  string `json:"if.br"`
+	IfTun   bool   `json:"if.tun"`
+	LogFile string `json:"log.file"`
+	Verbose int    `json:"log.level"`
+	Script  string `json:"script"`
+	Network string `json:"network"`
 
 	SaveFile string `json:"-"`
 	name     string

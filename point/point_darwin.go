@@ -44,7 +44,6 @@ func (p *Point) Stop() {
 	p.worker.Stop()
 }
 
-
 func (p *Point) AddAddr(ipStr string) error {
 	if ipStr == "" {
 		return nil

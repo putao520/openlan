@@ -19,7 +19,7 @@ type KernelTap struct {
 func NewKernelTap(tenant string, c TapConfig) (*KernelTap, error) {
 	device, err := WaterNew(c)
 	if err != nil {
-		return  nil, err
+		return nil, err
 	}
 	tap := &KernelTap{
 		tenant: tenant,

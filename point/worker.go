@@ -295,9 +295,9 @@ type Neighbor struct {
 type Neighbors struct {
 	lock      sync.RWMutex
 	neighbors map[uint32]*Neighbor
-	done     chan bool
-	ticker   *time.Ticker
-	timeout  int64
+	done      chan bool
+	ticker    *time.Ticker
+	timeout   int64
 }
 
 func (n *Neighbors) Expire() {
@@ -398,8 +398,8 @@ type TapWorker struct {
 
 func NewTapWorker(devCfg network.TapConfig, c *config.Point) (a *TapWorker) {
 	a = &TapWorker{
-		Device:      nil,
-		Neighbors: 	Neighbors{
+		Device: nil,
+		Neighbors: Neighbors{
 			neighbors: make(map[uint32]*Neighbor, 1024),
 			done:      make(chan bool),
 			ticker:    time.NewTicker(5 * time.Second),
@@ -591,10 +591,10 @@ func (a *TapWorker) onArp(data []byte) bool {
 		case libol.ARP_REPLY:
 			if bytes.Equal(arp.THwAddr, a.EthSrcAddr) {
 				a.Neighbors.Add(&Neighbor{
-					HwAddr: arp.SHwAddr,
-					IpAddr: arp.SIpAddr,
+					HwAddr:  arp.SHwAddr,
+					IpAddr:  arp.SIpAddr,
 					Newtime: time.Now().Unix(),
-					Uptime: time.Now().Unix(),
+					Uptime:  time.Now().Unix(),
 				})
 			}
 			libol.Info("TapWorker.onArp % x on % x.", arp.SHwAddr, arp.SIpAddr)
@@ -723,14 +723,14 @@ func (p *Worker) Initialize() {
 
 	if p.config.IfTun {
 		conf = network.TapConfig{
-			Type: network.TUN,
-			Name: p.config.IfName,
+			Type:    network.TUN,
+			Name:    p.config.IfName,
 			Network: p.config.IfAddr,
 		}
 	} else {
 		conf = network.TapConfig{
-			Type: network.TAP,
-			Name: p.config.IfName,
+			Type:    network.TAP,
+			Name:    p.config.IfName,
 			Network: p.config.IfAddr,
 		}
 	}
