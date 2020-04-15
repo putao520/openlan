@@ -56,7 +56,7 @@ windows/zip: windows
 	@rm -rf $(WIN_DIR)
 
 windows/syso:
-	rsrc -manifest main/point_windows.manifest -ico vswitch/public/favicon.ico  -o main/point_windows.syso
+	rsrc -manifest main/point_windows.manifest -ico vswitch/public/openlan-point.ico  -o main/point_windows.syso
 
 ## cross build for osx
 
