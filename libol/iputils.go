@@ -42,7 +42,7 @@ func IpLinkDown(name string) ([]byte, error) {
 	}
 }
 
-func IpAddrAdd(name, addr string, opts...string) ([]byte, error) {
+func IpAddrAdd(name, addr string, opts ...string) ([]byte, error) {
 	switch runtime.GOOS {
 	case "linux":
 		args := append([]string{

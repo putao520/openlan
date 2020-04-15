@@ -271,7 +271,7 @@ func (v *VSwitch) ReadTap(dev network.Taper, readAt func(p []byte) error) {
 			libol.Error("VSwitch.ReadTap: %s", err)
 			break
 		}
-		libol.Debug("VSwitch.ReadTap: % x\n", data)
+		libol.Log("VSwitch.ReadTap: % x\n", data)
 		if err := readAt(data[:n]); err != nil {
 			libol.Error("VSwitch.ReadTap: do-recv %s %s", dev.Name(), err)
 			break

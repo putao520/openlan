@@ -10,13 +10,26 @@ import (
 )
 
 const (
-	PRINT = 0x00
-	DEUBG = 0x01
-	INFO  = 0x02
-	WARN  = 0x03
-	ERROR = 0x04
-	FATAL = 0xff
+	PRINT = 00
+	LOG   = 01
+	DEBUG = 10
+	CMD   = 11
+	INFO  = 20
+	WARN  = 30
+	ERROR = 40
+	FATAL = 99
 )
+
+var levels = map[int]string{
+	PRINT: "PRINT",
+	LOG:   "LOG",
+	DEBUG: "DEBUG",
+	CMD:   "CMD",
+	INFO:  "INFO",
+	WARN:  "WARN",
+	ERROR: "ERROR",
+	FATAL: "FATAL",
+}
 
 type Logger struct {
 	Level    int
@@ -27,54 +40,24 @@ type Logger struct {
 	errors *list.List
 }
 
-func (l *Logger) Debug(format string, v ...interface{}) {
-	if DEUBG >= l.Level {
-		log.Printf(fmt.Sprintf("DEBUG %s", format), v...)
+func (l *Logger) Write(level int, format string, v ...interface{}) {
+	str, ok := levels[level]
+	if !ok {
+		str = "NiL"
+	}
+	if level >= l.Level {
+		log.Printf(fmt.Sprintf("%s %s", str, format), v...)
+	}
+	if level >= INFO {
+		l.Save(fmt.Sprintf("%s %s", str, format), v...)
 	}
 }
 
-func (l *Logger) Info(format string, v ...interface{}) {
-	if INFO >= l.Level {
-		log.Printf(fmt.Sprintf("INFO %s", format), v...)
-	}
-	l.SaveError(fmt.Sprintf("INFO %s", format), v...)
-}
-
-func (l *Logger) Warn(format string, v ...interface{}) {
-	if WARN >= l.Level {
-		log.Printf(fmt.Sprintf("WARN %s", format), v...)
-	}
-
-	l.SaveError(fmt.Sprintf("WARN %s", format), v...)
-}
-
-func (l *Logger) Error(format string, v ...interface{}) {
-	if ERROR >= l.Level {
-		log.Printf(fmt.Sprintf("ERROR %s", format), v...)
-	}
-	l.SaveError(fmt.Sprintf("ERROR %s", format), v...)
-}
-
-func (l *Logger) Fatal(format string, v ...interface{}) {
-	if FATAL >= l.Level {
-		log.Printf(fmt.Sprintf("FATAL %s", format), v...)
-	}
-
-	l.SaveError(fmt.Sprintf("FATAL %s", format), v...)
-}
-
-func (l *Logger) Print(format string, v ...interface{}) {
-	if PRINT >= l.Level {
-		log.Printf(fmt.Sprintf("PRINT %s", format), v...)
-	}
-}
-
-func (l *Logger) SaveError(format string, v ...interface{}) {
+func (l *Logger) Save(format string, v ...interface{}) {
 	m := fmt.Sprintf(format, v...)
 	if l.FileLog != nil {
 		l.FileLog.Println(m)
 	}
-
 	l.lock.Lock()
 	defer l.lock.Unlock()
 	if l.errors.Len() >= 1024 {
@@ -85,39 +68,51 @@ func (l *Logger) SaveError(format string, v ...interface{}) {
 	l.errors.PushBack(m)
 }
 
-var Log = Logger{
+var logger = Logger{
 	Level:    INFO,
 	FileName: ".log.error",
 	errors:   list.New(),
 }
 
-func Error(format string, v ...interface{}) {
-	Log.Error(format, v...)
+func Print(format string, v ...interface{}) {
+	logger.Write(PRINT, format, v...)
+}
+
+func Log(format string, v ...interface{}) {
+	logger.Write(LOG, format, v...)
 }
 
 func Debug(format string, v ...interface{}) {
-	Log.Debug(format, v...)
+	logger.Write(DEBUG, format, v...)
+}
+
+func Cmd(format string, v ...interface{}) {
+	logger.Write(CMD, format, v...)
 }
 
 func Info(format string, v ...interface{}) {
-	Log.Info(format, v...)
+	logger.Write(INFO, format, v...)
 }
 
 func Warn(format string, v ...interface{}) {
-	Log.Warn(format, v...)
+	logger.Write(WARN, format, v...)
+}
+
+func Error(format string, v ...interface{}) {
+	logger.Write(ERROR, format, v...)
 }
 
 func Fatal(format string, v ...interface{}) {
-	Log.Fatal(format, v...)
+	logger.Write(FATAL, format, v...)
 }
 
 func Init(file string, level int) {
 	SetLog(level)
-	Log.FileName = file
-	if Log.FileName != "" {
-		logFile, err := os.Create(Log.FileName)
+	logger.FileName = file
+	if logger.FileName != "" {
+		logFile, err := os.Create(logger.FileName)
 		if err == nil {
-			Log.FileLog = log.New(logFile, "", log.LstdFlags)
+			logger.FileLog = log.New(logFile, "", log.LstdFlags)
 		} else {
 			Warn("logger.Init: %s", err)
 		}
@@ -125,7 +120,7 @@ func Init(file string, level int) {
 }
 
 func SetLog(level int) {
-	Log.Level = level
+	logger.Level = level
 }
 
 func Close() {
@@ -134,7 +129,7 @@ func Close() {
 
 func Catch(name string) {
 	if err := recover(); err != nil {
-		Fatal("%s Panic: ===%s===", name, err)
-		Fatal("%s Stack: ===%s===", name, debug.Stack())
+		Fatal("%s Panic: >>> %s <<<", name, err)
+		Fatal("%s Stack: >>> %s <<<", name, debug.Stack())
 	}
 }

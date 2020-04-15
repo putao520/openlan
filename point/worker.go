@@ -127,7 +127,7 @@ func (t *TcpWorker) TryLogin(client *libol.TcpClient) error {
 		return err
 	}
 
-	libol.Info("TcpWorker.TryLogin: %s", body)
+	libol.Cmd("TcpWorker.TryLogin: %s", body)
 	if err := client.WriteReq("login", string(body)); err != nil {
 		return err
 	}
@@ -141,7 +141,7 @@ func (t *TcpWorker) TryNetwork(client *libol.TcpClient) error {
 		return err
 	}
 
-	libol.Info("TcpWorker.TryNetwork: %s", body)
+	libol.Cmd("TcpWorker.TryNetwork: %s", body)
 	if err := client.WriteReq("ipaddr", string(body)); err != nil {
 		return err
 	}
@@ -156,7 +156,7 @@ func (t *TcpWorker) onInstruct(data []byte) error {
 
 	action, resp := m.CmdAndParams()
 	if action == "logi:" {
-		libol.Debug("TcpWorker.onInstruct.login: %s", resp)
+		libol.Cmd("TcpWorker.onInstruct.login: %s", resp)
 		if resp[:4] == "okay" {
 			t.Client.SetStatus(libol.CL_AUEHED)
 			if t.Listener.OnSuccess != nil {
@@ -180,14 +180,14 @@ func (t *TcpWorker) onInstruct(data []byte) error {
 	}
 
 	if action == "ipad:" {
-		net := models.Network{}
-		if err := json.Unmarshal([]byte(resp), &net); err != nil {
+		n := models.Network{}
+		if err := json.Unmarshal([]byte(resp), &n); err != nil {
 			return libol.NewErr("TcpWorker.onInstruct: Invalid json data.")
 		}
 
-		libol.Debug("TcpWorker.onInstruct.ipaddr: %s", resp)
+		libol.Cmd("TcpWorker.onInstruct: ipaddr %s", resp)
 		if t.Listener.OnIpAddr != nil {
-			_ = t.Listener.OnIpAddr(t, &net)
+			_ = t.Listener.OnIpAddr(t, &n)
 		}
 
 	}
@@ -218,7 +218,7 @@ func (t *TcpWorker) Read() {
 			continue
 		}
 
-		libol.Debug("TcpWorker.Read: %x", data[:n])
+		libol.Log("TcpWorker.Read: %x", data[:n])
 		if n > 0 {
 			frame := data[:n]
 			if libol.IsControl(frame) {
@@ -234,7 +234,7 @@ func (t *TcpWorker) Read() {
 }
 
 func (t *TcpWorker) DoWrite(data []byte) error {
-	libol.Debug("TcpWorker.DoWrite: %x", data)
+	libol.Log("TcpWorker.DoWrite: %x", data)
 
 	t.writeChan <- data
 
@@ -509,7 +509,7 @@ func (a *TapWorker) Read() {
 			continue
 		}
 
-		libol.Debug("TapWorker.Read: %x", data[:n])
+		libol.Log("TapWorker.Read: %x", data[:n])
 		if a.Device.IsTun() {
 			iph, err := libol.NewIpv4FromFrame(data)
 			if err != nil {
@@ -541,7 +541,7 @@ func (a *TapWorker) Read() {
 }
 
 func (a *TapWorker) DoWrite(data []byte) error {
-	libol.Debug("TapWorker.DoWrite: %x", data)
+	libol.Log("TapWorker.DoWrite: %x", data)
 
 	a.writeChan <- data
 
@@ -695,13 +695,11 @@ type Worker struct {
 }
 
 func NewWorker(config *config.Point) (p *Worker) {
-	p = &Worker{
+	return &Worker{
 		IfAddr:      config.IfAddr,
 		config:      config,
 		initialized: false,
 	}
-
-	return
 }
 
 func (p *Worker) Initialize() {

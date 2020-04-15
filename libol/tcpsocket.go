@@ -80,7 +80,7 @@ func (t *TcpServer) Listen() (err error) {
 
 func (t *TcpServer) Close() {
 	if t.listener != nil {
-		t.listener.Close()
+		_ = t.listener.Close()
 		Info("TcpServer.Close: %s", t.Addr)
 		t.listener = nil
 	}
@@ -134,7 +134,7 @@ func (t *TcpServer) Loop(call TcpServerListener) {
 }
 
 func (t *TcpServer) Read(client *TcpClient, ReadAt func(client *TcpClient, p []byte) error) {
-	Debug("TcpServer.Read: %s", client.Addr)
+	Log("TcpServer.Read: %s", client.Addr)
 	for {
 		data := make([]byte, 4096)
 		length, err := client.ReadMsg(data)
@@ -147,8 +147,8 @@ func (t *TcpServer) Read(client *TcpClient, ReadAt func(client *TcpClient, p []b
 			continue
 		}
 		t.Sts.RxCount++
-		Debug("TcpServer.Read: length: %d ", length)
-		Debug("TcpServer.Read: data  : %x", data[:length])
+		Log("TcpServer.Read: length: %d ", length)
+		Log("TcpServer.Read: data  : %x", data[:length])
 		if err := ReadAt(client, data[:length]); err != nil {
 			Error("TcpServer.Read: do-write %s", err)
 			break
@@ -235,7 +235,7 @@ func (t *TcpClient) Connect() (err error) {
 		schema = "tls"
 	}
 	if t.conn != nil {
-		t.conn.Close()
+		_ = t.conn.Close()
 		t.conn = nil
 	}
 	Info("TcpClient.Connect %s://%s", schema, t.Addr)
@@ -268,7 +268,7 @@ func (t *TcpClient) Close() {
 			t.status = CL_CLOSED
 		}
 		Info("TcpClient.Close %s", t.Addr)
-		t.conn.Close()
+		_ = t.conn.Close()
 		t.conn = nil
 		t.private = nil
 		t.lock.Unlock()
@@ -282,7 +282,7 @@ func (t *TcpClient) Close() {
 }
 
 func (t *TcpClient) ReadFull(buffer []byte) error {
-	Debug("TcpClient.ReadFull %d", len(buffer))
+	Log("TcpClient.ReadFull %d", len(buffer))
 
 	offset := 0
 	left := len(buffer)
@@ -297,7 +297,7 @@ func (t *TcpClient) ReadFull(buffer []byte) error {
 		left -= n
 	}
 
-	Debug("TcpClient.ReadFull Data: %x", buffer)
+	Log("TcpClient.ReadFull Data: %x", buffer)
 	return nil
 }
 
@@ -306,12 +306,12 @@ func (t *TcpClient) WriteFull(buffer []byte) error {
 	size := len(buffer)
 	left := size - offset
 
-	Debug("TcpClient.WriteFull %d", size)
-	Debug("TcpClient.WriteFull Data: %x", buffer)
+	Log("TcpClient.WriteFull %d", size)
+	Log("TcpClient.WriteFull Data: %x", buffer)
 
 	for left > 0 {
 		tmp := buffer[offset:]
-		Debug("TcpClient.WriteFull tmp %d", len(tmp))
+		Log("TcpClient.WriteFull tmp %d", len(tmp))
 		n, err := t.conn.Write(tmp)
 		if err != nil {
 			return err
@@ -344,7 +344,7 @@ func (t *TcpClient) WriteMsg(data []byte) error {
 }
 
 func (t *TcpClient) ReadMsg(data []byte) (int, error) {
-	Debug("TcpClient.ReadMsg %s", t)
+	Log("TcpClient.ReadMsg %s", t)
 
 	if !t.IsOk() {
 		return -1, NewErr("%s: not okay", t)
@@ -379,7 +379,7 @@ func (t *TcpClient) ReadMsg(data []byte) (int, error) {
 func (t *TcpClient) WriteReq(action string, body string) error {
 	m := NewControlMessage(action, "= ", body)
 	data := m.Encode()
-	Debug("TcpClient.WriteReq %d %s", len(data), data[6:])
+	Log("TcpClient.WriteReq %d %s", len(data), data[6:])
 
 	if err := t.WriteMsg(data); err != nil {
 		return err
@@ -390,7 +390,7 @@ func (t *TcpClient) WriteReq(action string, body string) error {
 func (t *TcpClient) WriteResp(action string, body string) error {
 	m := NewControlMessage(action, ": ", body)
 	data := m.Encode()
-	Debug("TcpClient.WriteResp %d %s", len(data), data[6:])
+	Log("TcpClient.WriteResp %d %s", len(data), data[6:])
 
 	if err := t.WriteMsg(data); err != nil {
 		return err
