@@ -4,14 +4,16 @@ type Category struct {
 	Name string `json:"name"`
 }
 
-//{
-//"name": "YunStack",
-//"value": 1,
-//"symbolSize": 20,
-//"category": 0,
-//"id": 0,
-//"label": {"show":  true
-//}
+// {
+//   "name": "YunStack",
+//    "value": 1,
+//    "symbolSize": 20,
+//    "category": 0,
+//    "id": 0,
+//    "label": {
+//      "show":  true
+//    }
+// }
 
 type Label struct {
 	Show bool `json:"show"`

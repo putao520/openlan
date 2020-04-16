@@ -9,7 +9,7 @@ URL: https://github.com/danieldin95/openlan-go
 BuildRequires: go
 Requires: iproute
 
-%define _source_dir ${RPM_SOURCE_DIR}/openlan-%{version}
+%define _source_dir ${RPM_SOURCE_DIR}/openlan-go-%{version}
 
 %description
 OpenLan's Project Point Software

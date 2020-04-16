@@ -18,7 +18,10 @@ all: linux windows darwin
 all/pkg: linux/rpm windows/zip darwin/zip
 
 ## linux platform
-linux: linux/point linux/vswitch
+linux: linux/point linux/vswitch linux/ctl
+
+linux/ctl:
+	cd controller && make linux
 
 linux/point:
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o point.linux.x86_64 ./main/point_linux
@@ -28,6 +31,7 @@ linux/vswitch:
 
 linux/rpm:
 	@./packaging/auto.sh
+	rpmbuild -ba packaging/openlan-ctl.spec
 	rpmbuild -ba packaging/openlan-point.spec
 	rpmbuild -ba packaging/openlan-vswitch.spec
 	@cp -rvf ~/rpmbuild/RPMS/x86_64/openlan-*.rpm .

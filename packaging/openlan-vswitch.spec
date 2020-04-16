@@ -9,7 +9,7 @@ BuildRequires: go
 Requires: net-tools
 
 %define _venv /opt/openlan-utils/env
-%define _source_dir ${RPM_SOURCE_DIR}/openlan-%{version}
+%define _source_dir ${RPM_SOURCE_DIR}/openlan-go-%{version}
 
 %description
 OpenLan's Project Software
