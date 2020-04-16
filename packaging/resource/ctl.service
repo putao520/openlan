@@ -1,13 +1,13 @@
 [Unit]
-Description=OpenLAN Server daemon
+Description=OpenLAN Controller daemon
 After=network.target
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-EnvironmentFile=/etc/sysconfig/openlan-serve.cfg
-ExecStart=/bin/bash -c '/usr/bin/openlan-serve $OPTIONS &'
-ExecStop=/usr/bin/kill `/usr/sbin/pidof openlan-serve`
+EnvironmentFile=/etc/sysconfig/openlan-ctl.cfg
+ExecStart=/bin/bash -c '/usr/bin/openlan-ctl $OPTIONS &'
+ExecStop=/usr/bin/kill `/usr/sbin/pidof openlan-ctl`
 
 [Install]
 WantedBy=multi-user.target
