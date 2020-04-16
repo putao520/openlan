@@ -47,7 +47,7 @@ func NewTcpServer(listen string, config *tls.Config) (t *TcpServer) {
 	}
 
 	if err := t.Listen(); err != nil {
-		Debug("NewTcpServer %s", err)
+		Debug("NewTcpServer: %s", err)
 	}
 
 	return
@@ -58,7 +58,7 @@ func (t *TcpServer) Listen() (err error) {
 	if t.TlsConf != nil {
 		schema = "tls"
 	}
-	Info("TcpServer.Start %s://%s", schema, t.Addr)
+	Info("TcpServer.Start: %s://%s", schema, t.Addr)
 
 	if t.TlsConf != nil {
 		t.listener, err = tls.Listen("tcp", t.Addr, t.TlsConf)
@@ -111,7 +111,7 @@ func (t *TcpServer) Loop(call TcpServerListener) {
 	for {
 		select {
 		case client := <-t.onClients:
-			Debug("TcpServer.addClient %s", client.Addr)
+			Debug("TcpServer.addClient: %s", client.Addr)
 			t.clients[client] = true
 			if call.OnClient != nil {
 				_ = call.OnClient(client)
@@ -121,7 +121,7 @@ func (t *TcpServer) Loop(call TcpServerListener) {
 			}
 		case client := <-t.offClients:
 			if ok := t.clients[client]; ok {
-				Debug("TcpServer.delClient %s", client.Addr)
+				Debug("TcpServer.delClient: %s", client.Addr)
 				t.Sts.ClsCount++
 				if call.OnClose != nil {
 					_ = call.OnClose(client)
@@ -238,7 +238,7 @@ func (t *TcpClient) Connect() (err error) {
 		_ = t.conn.Close()
 		t.conn = nil
 	}
-	Info("TcpClient.Connect %s://%s", schema, t.Addr)
+	Info("TcpClient.Connect: %s://%s", schema, t.Addr)
 	t.status = CL_CONNECTING
 	t.lock.Unlock()
 
@@ -267,7 +267,7 @@ func (t *TcpClient) Close() {
 		if t.status != CL_TERMINAL {
 			t.status = CL_CLOSED
 		}
-		Info("TcpClient.Close %s", t.Addr)
+		Info("TcpClient.Close: %s", t.Addr)
 		_ = t.conn.Close()
 		t.conn = nil
 		t.private = nil
@@ -282,7 +282,7 @@ func (t *TcpClient) Close() {
 }
 
 func (t *TcpClient) ReadFull(buffer []byte) error {
-	Log("TcpClient.ReadFull %d", len(buffer))
+	Log("TcpClient.ReadFull: %d", len(buffer))
 
 	offset := 0
 	left := len(buffer)
@@ -297,7 +297,7 @@ func (t *TcpClient) ReadFull(buffer []byte) error {
 		left -= n
 	}
 
-	Log("TcpClient.ReadFull Data: %x", buffer)
+	Log("TcpClient.ReadFull: Data %x", buffer)
 	return nil
 }
 
@@ -306,12 +306,12 @@ func (t *TcpClient) WriteFull(buffer []byte) error {
 	size := len(buffer)
 	left := size - offset
 
-	Log("TcpClient.WriteFull %d", size)
-	Log("TcpClient.WriteFull Data: %x", buffer)
+	Log("TcpClient.WriteFull: %d", size)
+	Log("TcpClient.WriteFull: Data %x", buffer)
 
 	for left > 0 {
 		tmp := buffer[offset:]
-		Log("TcpClient.WriteFull tmp %d", len(tmp))
+		Log("TcpClient.WriteFull: tmp %d", len(tmp))
 		n, err := t.conn.Write(tmp)
 		if err != nil {
 			return err
@@ -344,7 +344,7 @@ func (t *TcpClient) WriteMsg(data []byte) error {
 }
 
 func (t *TcpClient) ReadMsg(data []byte) (int, error) {
-	Log("TcpClient.ReadMsg %s", t)
+	Log("TcpClient.ReadMsg: %s", t)
 
 	if !t.IsOk() {
 		return -1, NewErr("%s: not okay", t)
@@ -379,7 +379,7 @@ func (t *TcpClient) ReadMsg(data []byte) (int, error) {
 func (t *TcpClient) WriteReq(action string, body string) error {
 	m := NewControlMessage(action, "= ", body)
 	data := m.Encode()
-	Log("TcpClient.WriteReq %d %s", len(data), data[6:])
+	Log("TcpClient.WriteReq: %d %s", len(data), data[6:])
 
 	if err := t.WriteMsg(data); err != nil {
 		return err
@@ -390,7 +390,7 @@ func (t *TcpClient) WriteReq(action string, body string) error {
 func (t *TcpClient) WriteResp(action string, body string) error {
 	m := NewControlMessage(action, ": ", body)
 	data := m.Encode()
-	Log("TcpClient.WriteResp %d %s", len(data), data[6:])
+	Log("TcpClient.WriteResp: %d %s", len(data), data[6:])
 
 	if err := t.WriteMsg(data); err != nil {
 		return err

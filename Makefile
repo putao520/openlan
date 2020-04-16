@@ -21,10 +21,10 @@ all/pkg: linux/rpm windows/zip darwin/zip
 linux: linux/point linux/vswitch
 
 linux/point:
-	go build -mod=vendor -ldflags "$(LDFLAGS)" -o point.linux.x86_64 main/point_linux.go
+	go build -mod=vendor -ldflags "$(LDFLAGS)" -o point.linux.x86_64 ./main/point_linux
 
 linux/vswitch:
-	go build -mod=vendor -ldflags "$(LDFLAGS)" -o vswitch.linux.x86_64 main/vswitch.go
+	go build -mod=vendor -ldflags "$(LDFLAGS)" -o vswitch.linux.x86_64 ./main/vswitch.go
 
 linux/rpm:
 	@./packaging/auto.sh
@@ -38,13 +38,10 @@ WIN_DIR = "openlan-windows-"$$(cat VERSION)
 windows: windows/point windows/vswitch
 
 windows/point:
-	@mkdir -p point.windows.x86_64
-	@cp -rf main/point_windows.* point.windows.x86_64
-	GOOS=windows GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" ./point.windows.x86_64
-	@rm -rf point.windows.x86_64
+	GOOS=windows GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o point.windows.x86_64.exe ./main/point_windows
 
 windows/vswitch:
-	GOOS=windows GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o vswitch.windows.x86_64.exe main/vswitch.go
+	GOOS=windows GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o vswitch.windows.x86_64.exe ./main/vswitch.go
 
 windows/zip: windows
 	@rm -rf $(WIN_DIR) && mkdir -p $(WIN_DIR)
@@ -56,7 +53,7 @@ windows/zip: windows
 	@rm -rf $(WIN_DIR)
 
 windows/syso:
-	rsrc -manifest main/point_windows.manifest -ico vswitch/public/openlan-point.ico  -o main/point_windows.syso
+	rsrc -manifest main/point_windows/main.manifest -ico main/point_windows/main.ico  -o main/point_windows/main.syso
 
 ## cross build for osx
 
@@ -65,8 +62,8 @@ DARWIN_DIR = "openlan-darwin-"$$(cat VERSION)
 osx: darwin
 
 darwin:
-	GOOS=darwin GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o point.darwin.x86_64 main/point_darwin.go
-	GOOS=darwin GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o vswitch.darwin.x86_64 main/vswitch.go
+	GOOS=darwin GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o point.darwin.x86_64 ./main/point_darwin
+	GOOS=darwin GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o vswitch.darwin.x86_64 ./main/vswitch.go
 
 darwin/zip: darwin
 	@rm -rf $(DARWIN_DIR) && mkdir -p $(DARWIN_DIR)

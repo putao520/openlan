@@ -196,7 +196,7 @@ func (t *TcpWorker) onInstruct(data []byte) error {
 }
 
 func (t *TcpWorker) Read() {
-	libol.Info("TcpWorker.Read %t", t.Client.IsOk())
+	libol.Info("TcpWorker.Read: %s", t.Client.State())
 	defer libol.Catch("TcpWorker.Read")
 
 	for {
@@ -230,7 +230,7 @@ func (t *TcpWorker) Read() {
 	}
 
 	t.Close()
-	libol.Info("TcpWorker.Read exit")
+	libol.Info("TcpWorker.Read: exit")
 }
 
 func (t *TcpWorker) DoWrite(data []byte) error {
@@ -262,7 +262,7 @@ func (t *TcpWorker) Loop() {
 	}
 
 	t.Close()
-	libol.Info("TcpWorker.Loop exit")
+	libol.Info("TcpWorker.Loop: exit")
 }
 
 func (t *TcpWorker) Auth() (string, string) {
@@ -328,7 +328,7 @@ func (n *Neighbors) Start() {
 		case <-n.done:
 			return
 		case t := <-n.ticker.C:
-			libol.Debug("VirtualBridge.Expire Tick at %s", t)
+			libol.Debug("VirtualBridge.Expire: tick at %s", t)
 			n.Expire()
 		}
 	}
@@ -425,10 +425,10 @@ func (a *TapWorker) EthSrc(addr string) {
 	ifAddr := strings.SplitN(addr, "/", 2)[0]
 	a.EthSrcIp = net.ParseIP(ifAddr).To4()
 	if a.EthSrcIp == nil {
-		libol.Error("TapWorker.EthSrc srcIp: is nil")
+		libol.Error("TapWorker.EthSrc: srcIp is nil")
 		a.EthSrcIp = []byte{0x00, 0x00, 0x00, 0x00}
 	} else {
-		libol.Info("TapWorker.EthSrc srcIp: % x", a.EthSrcIp)
+		libol.Info("TapWorker.EthSrc: srcIp % x", a.EthSrcIp)
 	}
 }
 
@@ -440,7 +440,7 @@ func (a *TapWorker) DoTun() {
 	a.EthSrc(a.pointCfg.IfAddr)
 	a.EthSrcAddr = libol.GenEthAddr(6)
 	a.EthDstAddr = libol.BROADED
-	libol.Info("TapWorker.DoTun src: %x, dst: %x", a.EthSrcAddr, a.EthDstAddr)
+	libol.Info("TapWorker.DoTun: src %x, dst %x", a.EthSrcAddr, a.EthDstAddr)
 }
 
 func (a *TapWorker) Open() {
@@ -451,10 +451,10 @@ func (a *TapWorker) Open() {
 
 	dev, err := network.NewKernelTap(a.pointCfg.Network, a.devCfg)
 	if err != nil {
-		libol.Error("TapWorker.Open %s", err)
+		libol.Error("TapWorker.Open: %s", err)
 		return
 	}
-	libol.Info("TapWorker.Open >>>> %s <<<<", dev.Name())
+	libol.Info("TapWorker.Open: >>>> %s <<<<", dev.Name())
 	a.Device = dev
 	if a.Listener.OnOpen != nil {
 		_ = a.Listener.OnOpen(a)
@@ -486,7 +486,7 @@ func (a *TapWorker) onMiss(dest []byte) {
 	buffer = append(buffer, eth.Encode()...)
 	buffer = append(buffer, reply.Encode()...)
 
-	libol.Info("TapWorker.onMiss %x.", buffer)
+	libol.Info("TapWorker.onMiss: %x.", buffer)
 	if a.Listener.ReadAt != nil {
 		_ = a.Listener.ReadAt(buffer)
 	}
@@ -537,7 +537,7 @@ func (a *TapWorker) Read() {
 	}
 
 	a.Close()
-	libol.Info("TapWorker.Read exit")
+	libol.Info("TapWorker.Read: exit")
 }
 
 func (a *TapWorker) DoWrite(data []byte) error {
@@ -552,7 +552,7 @@ func (a *TapWorker) onArp(data []byte) bool {
 	libol.Debug("TapWorker.onArp")
 	eth, err := libol.NewEtherFromFrame(data)
 	if err != nil {
-		libol.Warn("TapWorker.onArp %s", err)
+		libol.Warn("TapWorker.onArp: %s", err)
 		return false
 	}
 	if !eth.IsArp() {
@@ -561,7 +561,7 @@ func (a *TapWorker) onArp(data []byte) bool {
 
 	arp, err := libol.NewArpFromFrame(data[eth.Len:])
 	if err != nil {
-		libol.Error("TapWorker.onArp %s.", err)
+		libol.Error("TapWorker.onArp: %s.", err)
 		return false
 	}
 	if arp.IsIP4() {
@@ -583,7 +583,7 @@ func (a *TapWorker) onArp(data []byte) bool {
 				buffer = append(buffer, eth.Encode()...)
 				buffer = append(buffer, reply.Encode()...)
 
-				libol.Info("TapWorker.onArp reply %x.", buffer)
+				libol.Info("TapWorker.onArp: reply %x.", buffer)
 				if a.Listener.ReadAt != nil {
 					_ = a.Listener.ReadAt(buffer)
 				}
@@ -597,7 +597,7 @@ func (a *TapWorker) onArp(data []byte) bool {
 					Uptime:  time.Now().Unix(),
 				})
 			}
-			libol.Info("TapWorker.onArp % x on % x.", arp.SHwAddr, arp.SIpAddr)
+			libol.Info("TapWorker.onArp: % x on % x.", arp.SHwAddr, arp.SIpAddr)
 		default:
 			libol.Warn("TapWorker.onArp: not op %x.", arp.OpCode)
 		}
@@ -641,7 +641,7 @@ func (a *TapWorker) Loop() {
 	}
 
 	a.Close()
-	libol.Info("TapWorker.Loop exit")
+	libol.Info("TapWorker.Loop: exit")
 }
 
 func (a *TapWorker) Close() {

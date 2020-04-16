@@ -34,7 +34,7 @@ func (p *Point) Initialize() {
 }
 
 func (p *Point) Start() {
-	libol.Info("Point.Start Windows.")
+	libol.Info("Point.Start: Windows.")
 	if !p.initialize {
 		p.Initialize()
 	}
@@ -52,7 +52,7 @@ func (p *Point) OnTap(w *TapWorker) error {
 	if err := libol.UnmarshalLoad(&routes, ".routes.json"); err == nil {
 		for _, route := range routes {
 			_, _ = libol.IpRouteDel(p.IfName(), route.Prefix, route.Nexthop)
-			libol.Info("Point.OnTap: clear previous %s via %s", route.Prefix, route.Nexthop)
+			libol.Info("Point.OnTap: clear %s via %s", route.Prefix, route.Nexthop)
 		}
 	}
 	return nil
@@ -106,7 +106,7 @@ func (p *Point) AddRoutes(routes []*models.Route) error {
 			libol.Error("Point.AddRoutes: %s, %s", err, out)
 			continue
 		}
-		libol.Info("Point.AddRoutes: %s via %s", route.Prefix, route.Nexthop)
+		libol.Info("Point.AddRoutes: route %s via %s", route.Prefix, route.Nexthop)
 	}
 
 	p.routes = routes
@@ -120,7 +120,7 @@ func (p *Point) DelRoutes(routes []*models.Route) error {
 			libol.Error("Point.DelRoutes: %s, %s", err, out)
 			continue
 		}
-		libol.Info("Point.DelRoutes: %s via %s", route.Prefix, route.Nexthop)
+		libol.Info("Point.DelRoutes: route %s via %s", route.Prefix, route.Nexthop)
 	}
 
 	p.routes = nil

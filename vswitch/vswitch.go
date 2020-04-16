@@ -88,14 +88,14 @@ func (v *VSwitch) Initialize() {
 	v.hooks = append(v.hooks, v.Apps.Request.OnFrame)
 	v.hooks = append(v.hooks, v.Apps.OnLines.OnFrame)
 	for i, h := range v.hooks {
-		libol.Debug("Worker.showHook k: %d, func: %p,%s", i, h, libol.FunName(h))
+		libol.Debug("Worker.showHook: k %d, func %p, %s", i, h, libol.FunName(h))
 	}
 }
 
 func (v *VSwitch) OnHook(client *libol.TcpClient, data []byte) error {
 	frame := libol.NewFrameMessage(data)
 	for _, h := range v.hooks {
-		libol.Debug("Worker.onHook h:%p", h)
+		libol.Debug("Worker.onHook: h %p", h)
 		if h != nil {
 			if err := h(client, frame); err != nil {
 				return err
@@ -231,7 +231,7 @@ func (v *VSwitch) NewTap(tenant string) (network.Taper, error) {
 	dev.SetMtu(mtu)
 	dev.Up()
 	_ = br.AddSlave(dev)
-	libol.Info("Worker.NewTap %s on %s", dev.Name(), tenant)
+	libol.Info("Worker.NewTap: %s on %s", dev.Name(), tenant)
 	return dev, nil
 }
 
@@ -241,7 +241,7 @@ func (v *VSwitch) FreeTap(dev network.Taper) error {
 		return libol.NewErr("Not found bridge %s", dev.Tenant())
 	}
 	_ = br.DelSlave(dev)
-	libol.Info("Worker.FreeTap %s", dev.Name())
+	libol.Info("Worker.FreeTap: %s", dev.Name())
 	return nil
 }
 

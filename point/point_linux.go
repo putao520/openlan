@@ -36,7 +36,7 @@ func (p *Point) Initialize() {
 }
 
 func (p *Point) Start() {
-	libol.Info("Point.Start linux.")
+	libol.Info("Point.Start: linux.")
 	if !p.initialize {
 		p.Initialize()
 	}
@@ -171,7 +171,7 @@ func (p *Point) AddRoutes(routes []*models.Route) error {
 			libol.Error("Point.AddRoute: %s", err)
 			continue
 		}
-		libol.Info("Point.OnIpAddr.route: %s via %s", route.Prefix, route.Nexthop)
+		libol.Info("Point.AddRoutes: route %s via %s", route.Prefix, route.Nexthop)
 	}
 
 	p.routes = routes
@@ -196,7 +196,7 @@ func (p *Point) DelRoutes(routes []*models.Route) error {
 			libol.Error("Point.DelRoute: %s", err)
 			continue
 		}
-		libol.Info("Point.DelRoutes.route: %s via %s", route.Prefix, route.Nexthop)
+		libol.Info("Point.DelRoutes: route %s via %s", route.Prefix, route.Nexthop)
 	}
 
 	p.routes = nil

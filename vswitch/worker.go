@@ -59,7 +59,7 @@ func (w *Worker) LoadLinks() {
 }
 
 func (w *Worker) Start(v VSwitcher) {
-	libol.Info("Worker.Start %s", w.Conf.Name)
+	libol.Info("Worker.Start: %s", w.Conf.Name)
 	if !w.initialized {
 		w.Initialize()
 	}
@@ -69,7 +69,7 @@ func (w *Worker) Start(v VSwitcher) {
 }
 
 func (w *Worker) Stop() {
-	libol.Info("Worker.Close %s", w.Conf.Name)
+	libol.Info("Worker.Close: %s", w.Conf.Name)
 	for _, p := range w.links {
 		p.Stop()
 	}

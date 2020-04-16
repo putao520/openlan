@@ -32,7 +32,7 @@ func (p *Point) Initialize() {
 }
 
 func (p *Point) Start() {
-	libol.Info("Point.Start Darwin.")
+	libol.Info("Point.Start: Darwin.")
 	if !p.initialize {
 		p.Initialize()
 	}
@@ -86,7 +86,7 @@ func (p *Point) AddRoutes(routes []*models.Route) error {
 			libol.Error("Point.AddRoutes: %s, %s", err, out)
 			continue
 		}
-		libol.Info("Point.AddRoutes: %s via %s", route.Prefix, route.Nexthop)
+		libol.Info("Point.AddRoutes: route %s via %s", route.Prefix, route.Nexthop)
 	}
 
 	p.routes = routes
@@ -100,7 +100,7 @@ func (p *Point) DelRoutes(routes []*models.Route) error {
 			libol.Error("Point.DelRoutes: %s, %s", err, out)
 			continue
 		}
-		libol.Info("Point.DelRoutes: %s via %s", route.Prefix, route.Nexthop)
+		libol.Info("Point.DelRoutes: route %s via %s", route.Prefix, route.Nexthop)
 	}
 
 	p.routes = nil
