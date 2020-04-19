@@ -232,7 +232,7 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
 
 欢迎使用支付宝手扫描下面的二维码，对该项目进行捐赠。
 
-<img src="https://raw.githubusercontent.com/danieldin95/openlan-go/master/resource/donation.jpg" width="46%">
+<img src="https://raw.githubusercontent.com/danieldin95/openlan-go/master/packaging/resource/donation.jpg" width="46%">
 
 ## 欢迎关注
 
