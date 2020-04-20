@@ -3,6 +3,7 @@ package ctl
 import (
 	"github.com/danieldin95/lightstar/libstar"
 	"github.com/danieldin95/openlan-go/controller/schema"
+	"github.com/danieldin95/openlan-go/libol"
 	"sync"
 	"time"
 )
@@ -27,10 +28,13 @@ func (v *VSwitch) Init() {
 	if v.Ticker == nil {
 		v.Ticker = time.NewTicker(5 * time.Second)
 	}
+	if v.Done == nil {
+		v.Done = make(chan bool)
+	}
 }
 
 func (v *VSwitch) Once() error {
-	libstar.Debug("VSwitch.Once %s", v)
+	libol.Debug("VSwitch.Once %s", v)
 	// point
 	client := libstar.HttpClient{
 		Url:  v.Service.Url + "/api/point",
@@ -43,7 +47,7 @@ func (v *VSwitch) Once() error {
 	if err := libstar.GetJSON(resp.Body, &v.Points); err != nil {
 		return err
 	}
-	libstar.Debug("VSwitch.Once %s", v.Points)
+	libol.Debug("VSwitch.Once %s", v.Points)
 
 	// link
 	client = libstar.HttpClient{
@@ -57,7 +61,7 @@ func (v *VSwitch) Once() error {
 	if err := libstar.GetJSON(resp.Body, &v.Links); err != nil {
 		return err
 	}
-	libstar.Debug("VSwitch.Once %s", v.Links)
+	libol.Debug("VSwitch.Once %s", v.Links)
 
 	// neighbor
 	client = libstar.HttpClient{
@@ -71,14 +75,14 @@ func (v *VSwitch) Once() error {
 	if err := libstar.GetJSON(resp.Body, &v.Neighbors); err != nil {
 		return err
 	}
-	libstar.Debug("VSwitch.Once %s", v.Neighbors)
+	libol.Debug("VSwitch.Once %s", v.Neighbors)
 	v.State = ""
 
 	return nil
 }
 
 func (v *VSwitch) Start() {
-	libstar.Info("VSwitch.Start %s", v)
+	libol.Info("VSwitch.Start %s", v)
 	go func() {
 		for {
 			select {
@@ -88,7 +92,7 @@ func (v *VSwitch) Start() {
 				if err := v.Once(); err != nil {
 					if v.State != err.Error() {
 						v.State = err.Error()
-						libstar.Error("VSwitch.Ticker %s %s", v, err)
+						libol.Error("VSwitch.Ticker %s %s", v, err)
 					}
 				}
 			}
@@ -97,7 +101,7 @@ func (v *VSwitch) Start() {
 }
 
 func (v *VSwitch) Stop() {
-	libstar.Info("VSwitch.Stop %s", v)
+	libol.Info("VSwitch.Stop %s", v)
 	v.Done <- true
 }
 

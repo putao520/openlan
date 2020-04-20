@@ -3,9 +3,9 @@ package api
 import (
 	"encoding/base64"
 	"encoding/json"
-	"github.com/danieldin95/lightstar/libstar"
 	"github.com/danieldin95/openlan-go/controller/schema"
 	"github.com/danieldin95/openlan-go/controller/storage"
+	"github.com/danieldin95/openlan-go/libol"
 	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"
@@ -75,7 +75,7 @@ func GetAuth(req *http.Request) (name, pass string, ok bool) {
 
 func GetUser(req *http.Request) (schema.User, bool) {
 	name, _, _ := GetAuth(req)
-	libstar.Debug("GetUser %s", name)
+	libol.Debug("GetUser %s", name)
 	return storage.Storager.Users.Get(name)
 }
 

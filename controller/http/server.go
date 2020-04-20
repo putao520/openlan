@@ -2,9 +2,10 @@ package http
 
 import (
 	"context"
-	"github.com/danieldin95/lightstar/libstar"
 	"github.com/danieldin95/openlan-go/controller/http/api"
+	"github.com/danieldin95/openlan-go/controller/http/olan"
 	"github.com/danieldin95/openlan-go/controller/storage"
+	"github.com/danieldin95/openlan-go/libol"
 	"github.com/gorilla/mux"
 	"net/http"
 	"net/url"
@@ -40,15 +41,18 @@ func (h *Server) LoadRouter() {
 	router := h.Router()
 	router.Use(h.Middleware)
 
-	// Api router
+	// API router
 	api.VSwitch{}.Router(router)
 	api.User{}.Router(router)
 	api.Point{}.Router(router)
 	api.Link{}.Router(router)
 	api.Graph{}.Router(router)
 	api.Message{}.Router(router)
-	// static files
+	// Static files
 	Dist{h.pubDir}.Router(router)
+	// OpenLAN message
+	olan.Ctrl{}.Router(router)
+	olan.UpCall{}.Router(router)
 }
 
 func (h *Server) SetCert(keyFile, crtFile string) {
@@ -69,7 +73,7 @@ func (h *Server) Initialize() {
 
 func (h *Server) IsAuth(w http.ResponseWriter, r *http.Request) bool {
 	name, pass, _ := api.GetAuth(r)
-	libstar.Print("Server.IsAuth %s:%s", name, pass)
+	libol.Print("Server.IsAuth %s:%s", name, pass)
 
 	user, ok := storage.Storager.Users.Get(name)
 	if !ok || user.Password != pass {
@@ -80,13 +84,14 @@ func (h *Server) IsAuth(w http.ResponseWriter, r *http.Request) bool {
 
 func (h *Server) LogRequest(r *http.Request) {
 	if !strings.HasPrefix(r.URL.Path, "/api") || r.Method == "GET" {
+		libol.Debug("Server.Middleware %s %s", r.RemoteAddr, r.Method)
 		return
 	}
 	path := r.URL.Path
 	if q, _ := url.QueryUnescape(r.URL.RawQuery); q != "" {
 		path += "?" + q
 	}
-	libstar.Info("Server.Middleware %s %s %s", r.RemoteAddr, r.Method, path)
+	libol.Info("Server.Middleware %s %s %s", r.RemoteAddr, r.Method, path)
 }
 
 func (h *Server) Middleware(next http.Handler) http.Handler {
@@ -104,15 +109,15 @@ func (h *Server) Middleware(next http.Handler) http.Handler {
 func (h *Server) Start() error {
 	h.Initialize()
 	if h.keyFile == "" || h.crtFile == "" {
-		libstar.Info("Server.Start http://%s", h.listen)
+		libol.Info("Server.Start http://%s", h.listen)
 		if err := h.server.ListenAndServe(); err != nil {
-			libstar.Error("Server.Start on %s: %s", h.listen, err)
+			libol.Error("Server.Start on %s: %s", h.listen, err)
 			return err
 		}
 	} else {
-		libstar.Info("Server.Start https://%s", h.listen)
+		libol.Info("Server.Start https://%s", h.listen)
 		if err := h.server.ListenAndServeTLS(h.crtFile, h.keyFile); err != nil {
-			libstar.Error("Server.Start on %s: %s", h.listen, err)
+			libol.Error("Server.Start on %s: %s", h.listen, err)
 			return err
 		}
 	}
@@ -120,8 +125,8 @@ func (h *Server) Start() error {
 }
 
 func (h *Server) Shutdown() {
-	libstar.Info("Server.Shutdown %s", h.listen)
+	libol.Info("Server.Shutdown %s", h.listen)
 	if err := h.server.Shutdown(context.Background()); err != nil {
-		libstar.Error("Server.Shutdown %v", err)
+		libol.Error("Server.Shutdown %v", err)
 	}
 }

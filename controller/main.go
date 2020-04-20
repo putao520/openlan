@@ -6,6 +6,7 @@ import (
 	"github.com/danieldin95/openlan-go/controller/ctl"
 	"github.com/danieldin95/openlan-go/controller/http"
 	"github.com/danieldin95/openlan-go/controller/storage"
+	"github.com/danieldin95/openlan-go/libol"
 	"os"
 )
 
@@ -24,7 +25,7 @@ var cfg = Config{
 	ConfDir:   "/etc/openlan/ctl",
 	Listen:    "0.0.0.0:10088",
 	LogFile:   "/var/log/openlan-ctl.log",
-	Verbose:   2,
+	Verbose:   20,
 }
 
 func main() {
@@ -35,7 +36,7 @@ func main() {
 	flag.StringVar(&cfg.ConfDir, "conf", cfg.ConfDir, "the directory configuration on")
 	flag.Parse()
 
-	libstar.Init(cfg.LogFile, cfg.Verbose)
+	libol.Init(cfg.LogFile, cfg.Verbose)
 	storage.Storager.Load(cfg.ConfDir)
 	ctl.CTL.Load(&storage.Storager)
 
@@ -44,6 +45,5 @@ func main() {
 		h.SetCert(cfg.CrtDir+"/private.key", cfg.CrtDir+"/crt.pem")
 	}
 	go h.Start()
-
 	libstar.Wait()
 }
