@@ -21,13 +21,15 @@ func (cn *Conn) Close() {
 	libol.Info("Conn.Close %s", cn)
 	cn.Lock.Lock()
 	defer cn.Lock.Unlock()
-	if cn.Conn != nil {
-		cn.Conn.Close()
-		cn.Conn = nil
-		if cn.Wait != nil {
-			cn.Wait.Done()
-		}
+	if cn.Conn == nil {
+		return
 	}
+	if cn.Wait != nil {
+		cn.Wait.Done()
+	}
+	cn.Conn.Close()
+	cn.Conn = nil
+	cn.SendQ = nil
 }
 
 func (cn *Conn) Open() {
@@ -110,7 +112,11 @@ func (cn *Conn) Stop() {
 }
 
 func (cn *Conn) Send(m Message) {
-	cn.SendQ <- m
+	cn.Lock.RLock()
+	defer cn.Lock.RUnlock()
+	if cn.SendQ != nil {
+		cn.SendQ <- m
+	}
 }
 
 func (cn *Conn) SendWait(m Message) error {

@@ -41,5 +41,6 @@ func TestCtl_Conn_Open(t *testing.T) {
 	}
 	time.Sleep(5 * time.Second)
 	conn.Stop()
+	conn.Send(Message{Type: "hello", Data: "from client"})
 	time.Sleep(5 * time.Second)
 }

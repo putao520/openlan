@@ -26,7 +26,7 @@ func (m *Message) Decode() (string, string) {
 
 func (m *Message) String() string {
 	if m.Raw == "" {
-		return fmt.Sprintf("%s %s", m.Type, m.Data)
+		return fmt.Sprintf("%s: %s", m.Type, m.Data)
 	}
 	return m.Raw
 }
