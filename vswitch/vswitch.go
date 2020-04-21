@@ -7,6 +7,7 @@ import (
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/network"
 	"github.com/danieldin95/openlan-go/vswitch/app"
+	"github.com/danieldin95/openlan-go/vswitch/ctrls"
 	"github.com/danieldin95/openlan-go/vswitch/service"
 	"sync"
 	"time"
@@ -81,6 +82,12 @@ func (v *VSwitch) Initialize() {
 	v.hooks = append(v.hooks, v.Apps.OnLines.OnFrame)
 	for i, h := range v.hooks {
 		libol.Debug("Worker.showHook: k %d, func %p, %s", i, h, libol.FunName(h))
+	}
+
+	// Controller
+	ctrls.Load(v.Conf.ConfDir + "/ctrl.json")
+	if ctrls.Ctrl.Name == "" {
+		ctrls.Ctrl.Name = v.Conf.Alias
 	}
 }
 
@@ -165,6 +172,8 @@ func (v *VSwitch) Start() error {
 	if v.http != nil {
 		go v.http.Start()
 	}
+	go ctrls.Start()
+
 	return nil
 }
 
@@ -173,6 +182,7 @@ func (v *VSwitch) Stop() error {
 	defer v.lock.Unlock()
 
 	libol.Debug("VSwitch.Stop")
+	ctrls.Stop()
 	if v.bridge == nil {
 		return libol.NewErr("already closed")
 	}

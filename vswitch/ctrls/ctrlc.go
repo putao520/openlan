@@ -5,31 +5,37 @@ import (
 	"github.com/danieldin95/openlan-go/controller/ctl"
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/vswitch/service"
+	"time"
 )
 
 type CtrlC struct {
-	Url   string
-	ID    string
-	Token string
-	Conn  *ctl.Conn
+	Url      string `json:"url"`
+	Name     string `json:"name"`
+	Password string `json:"password"`
+	Conn     *ctl.Conn
 }
 
 func (cc *CtrlC) Register() {
 	// Listen change and update.
 	_ = service.Point.Listen.Add("ctlc", &Point{cc})
 	_ = service.Neighbor.Listen.Add("ctlc", &Neighbor{cc})
+}
 
+func (cc *CtrlC) Handle() {
 	// Handle command
-	cc.Conn.Listener("point", &Point{cc})
-	cc.Conn.Listener("neighbor", &Neighbor{cc})
+	if cc.Conn != nil {
+		cc.Conn.Listener("point", &Point{cc})
+		cc.Conn.Listener("neighbor", &Neighbor{cc})
+	}
 }
 
 func (cc *CtrlC) Open() error {
+	libol.Debug("CtrlC.Open %s %s", cc.Url, cc.Password)
 	ws := &libol.WsClient{
 		Auth: libstar.Auth{
 			Type:     "basic",
-			Username: cc.ID,
-			Password: cc.Token,
+			Username: cc.Name,
+			Password: cc.Password,
 		},
 		Url: cc.Url,
 	}
@@ -40,16 +46,26 @@ func (cc *CtrlC) Open() error {
 	}
 	cc.Conn = &ctl.Conn{
 		Conn: to,
+		Wait: libstar.NewWaitOne(1),
 	}
 	return nil
 }
 
 func (cc *CtrlC) Start() {
 	cc.Register()
-	if cc.Conn != nil {
+	for {
+		_ = cc.Open()
+		if cc.Conn == nil {
+			time.Sleep(15 * time.Second)
+			continue
+		}
+		cc.Handle()
+		// Start it
 		cc.Conn.Open()
 		cc.Conn.Start()
-		cc.Conn.Send(ctl.Message{Resource: "hello", Data: "from server"})
+		// Wait until it stopped.
+		cc.Wait()
+		cc.Conn = nil
 	}
 }
 
@@ -65,4 +81,29 @@ func (cc *CtrlC) Send(m ctl.Message) {
 	}
 }
 
+func (cc *CtrlC) Wait() {
+	if cc.Conn != nil {
+		cc.Conn.Wait.Wait()
+	}
+}
+
 var Ctrl = &CtrlC{}
+
+func Load(path string) {
+	if err := libol.UnmarshalLoad(Ctrl, path); err != nil {
+		libol.Error("ctrls.Load: %s", err)
+		return
+	}
+}
+
+func Start() {
+	if Ctrl.Url != "" {
+		Ctrl.Start()
+	}
+}
+
+func Stop() {
+	Ctrl.Stop()
+}
+
+

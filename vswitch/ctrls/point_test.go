@@ -11,9 +11,9 @@ import (
 func TestCtl_Point(t *testing.T) {
 	libol.SetLog(libol.STACK)
 	cc := &CtrlC{
-		Url:   "http://localhost:10088/ctrl",
-		ID:    "admin",
-		Token: "123",
+		Url:      "http://localhost:10088/ctrl",
+		Name:     "admin",
+		Password: "123",
 	}
 	err := cc.Open()
 	if err != nil {

@@ -3,7 +3,6 @@ package storage
 import (
 	"github.com/danieldin95/lightstar/libstar"
 	"github.com/danieldin95/openlan-go/controller/schema"
-	"github.com/danieldin95/openlan-go/libol"
 	"sync"
 )
 
@@ -38,13 +37,6 @@ func (v *VSwitch) Load(file string) error {
 		if value.Name == "" {
 			value.Name = name
 		}
-		if value.Token == "" {
-			value.Token = libol.GenToken(64)
-		}
-		Storager.Users.Add(&schema.User{
-			Name:     value.Name,
-			Password: value.Token,
-		})
 		value.Init()
 	}
 	return nil

@@ -29,9 +29,9 @@ func (h Ctrl) Add(w http.ResponseWriter, r *http.Request) {
 	}
 	ctrls.Ctrl.Stop()
 	ctrls.Ctrl = &ctrls.CtrlC{
-		Url:   conf.Url,
-		ID:    h.Switcher.Alias(),
-		Token: conf.Token,
+		Url:      conf.Url,
+		Name:     h.Switcher.Alias(),
+		Password: conf.Token,
 	}
 	err := ctrls.Ctrl.Open()
 	if err != nil {
