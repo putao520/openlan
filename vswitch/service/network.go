@@ -8,15 +8,15 @@ import (
 )
 
 type _network struct {
-	networks   *libol.SafeStrMap
-	usedAddr   *libol.SafeStrMap
-	clientUsed *libol.SafeStrMap
+	Networks   *libol.SafeStrMap
+	UsedAddr   *libol.SafeStrMap
+	ClientUsed *libol.SafeStrMap
 }
 
 var Network = _network{
-	networks:   libol.NewSafeStrMap(1024),
-	usedAddr:   libol.NewSafeStrMap(1024),
-	clientUsed: libol.NewSafeStrMap(1024),
+	Networks:   libol.NewSafeStrMap(1024),
+	UsedAddr:   libol.NewSafeStrMap(1024),
+	ClientUsed: libol.NewSafeStrMap(1024),
 }
 
 func (w *_network) Load(name, path string) error {
@@ -32,16 +32,16 @@ func (w *_network) Load(name, path string) error {
 
 func (w *_network) Add(n *models.Network) {
 	libol.Debug("_network.Add %v", *n)
-	_ = w.networks.Set(n.Name, n)
+	_ = w.Networks.Set(n.Name, n)
 }
 
 func (w *_network) Del(name string) {
 	libol.Debug("_network.Del %s", name)
-	w.networks.Del(name)
+	w.Networks.Del(name)
 }
 
 func (w *_network) Get(name string) *models.Network {
-	if v := w.networks.Get(name); v != nil {
+	if v := w.Networks.Get(name); v != nil {
 		return v.(*models.Network)
 	}
 	return nil
@@ -53,7 +53,7 @@ func (w *_network) List() <-chan *models.Network {
 	c := make(chan *models.Network, 128)
 
 	go func() {
-		w.networks.Iter(func(k string, v interface{}) {
+		w.Networks.Iter(func(k string, v interface{}) {
 			c <- v.(*models.Network)
 		})
 		c <- nil //Finish channel by nil.
@@ -82,7 +82,7 @@ func (w *_network) GetFreeAddr(client *libol.TcpClient, n *models.Network) (ip s
 		binary.BigEndian.PutUint32(tmp[:4], start)
 
 		tmpStr := net.IP(tmp).String()
-		if _, ok := w.usedAddr.GetEx(tmpStr); !ok {
+		if _, ok := w.UsedAddr.GetEx(tmpStr); !ok {
 			ipStr = tmpStr
 			break
 		}
@@ -91,17 +91,17 @@ func (w *_network) GetFreeAddr(client *libol.TcpClient, n *models.Network) (ip s
 	}
 
 	if ipStr != "" {
-		_ = w.usedAddr.Set(ipStr, client.Addr)
-		_ = w.clientUsed.Set(client.Addr, ipStr)
+		_ = w.UsedAddr.Set(ipStr, client.Addr)
+		_ = w.ClientUsed.Set(client.Addr, ipStr)
 	}
 
 	return ipStr, netmask
 }
 
 func (w *_network) FreeAddr(client *libol.TcpClient) {
-	if v := w.clientUsed.Get(client.Addr); v != nil {
+	if v := w.ClientUsed.Get(client.Addr); v != nil {
 		ipStr := v.(string)
-		w.clientUsed.Del(client.Addr)
-		w.usedAddr.Del(ipStr)
+		w.ClientUsed.Del(client.Addr)
+		w.UsedAddr.Del(ipStr)
 	}
 }

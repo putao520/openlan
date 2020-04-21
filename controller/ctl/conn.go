@@ -4,9 +4,12 @@ import (
 	"github.com/danieldin95/lightstar/libstar"
 	"github.com/danieldin95/openlan-go/libol"
 	"golang.org/x/net/websocket"
+	"strings"
 	"sync"
 	"time"
 )
+
+type Listener func(id string, m Message) error
 
 type Conn struct {
 	Lock   sync.RWMutex
@@ -15,10 +18,40 @@ type Conn struct {
 	Ticker *time.Ticker
 	Done   chan bool
 	SendQ  chan Message
+	Listen map[string]Listener
+	Id     string
+}
+
+func (cn *Conn) Listener(name string, call Listener) {
+	cn.Lock.Lock()
+	defer cn.Lock.Unlock()
+	if cn.Listen == nil {
+		cn.Listen = make(map[string]Listener, 1024)
+	}
+	cn.Listen[strings.ToUpper(name)] = call
+}
+
+func (cn *Conn) Open() {
+	libol.Stack("Conn.Open %s", cn)
+	cn.Lock.Lock()
+	defer cn.Lock.Unlock()
+
+	if cn.Ticker == nil {
+		cn.Ticker = time.NewTicker(5 * time.Second)
+	}
+	if cn.SendQ == nil {
+		cn.SendQ = make(chan Message, 1024)
+	}
+	if cn.Done == nil {
+		cn.Done = make(chan bool)
+	}
+	if cn.Listen == nil {
+		cn.Listen = make(map[string]Listener, 1024)
+	}
 }
 
 func (cn *Conn) Close() {
-	libol.Info("Conn.Close %s", cn)
+	libol.Stack("Conn.Close %s", cn)
 	cn.Lock.Lock()
 	defer cn.Lock.Unlock()
 	if cn.Conn == nil {
@@ -32,20 +65,17 @@ func (cn *Conn) Close() {
 	cn.SendQ = nil
 }
 
-func (cn *Conn) Open() {
-	libol.Info("Conn.Open %s", cn)
+func (cn *Conn) dispatch(m Message) error {
 	cn.Lock.Lock()
 	defer cn.Lock.Unlock()
 
-	if cn.Ticker == nil {
-		cn.Ticker = time.NewTicker(5 * time.Second)
+	libol.Cmd("Conn.dispatch %s %s", cn.Id, &m)
+	if fun, ok := cn.Listen[m.Resource]; ok {
+		return fun(cn.Id, m)
+	} else {
+		libol.Warn("conn.dispatch notSupport %s", m.Resource)
 	}
-	if cn.SendQ == nil {
-		cn.SendQ = make(chan Message, 1024)
-	}
-	if cn.Done == nil {
-		cn.Done = make(chan bool)
-	}
+	return nil
 }
 
 func (cn *Conn) once() error {
@@ -55,14 +85,12 @@ func (cn *Conn) once() error {
 }
 
 func (cn *Conn) loop() {
-	libol.Info("Conn.Loop %s", cn)
+	libol.Stack("Conn.Loop %s", cn)
 	defer cn.Close()
 	for {
 		select {
 		case m := <-cn.SendQ:
-			cn.Lock.RLock()
 			cn.write(m)
-			cn.Lock.RUnlock()
 		case <-cn.Done:
 			libol.Debug("Conn.Loop %s Done", cn)
 			return
@@ -76,6 +104,9 @@ func (cn *Conn) loop() {
 }
 
 func (cn *Conn) write(m Message) {
+	cn.Lock.Lock()
+	defer cn.Lock.Unlock()
+
 	if err := Codec.Send(cn.Conn, &m); err != nil {
 		libol.Error("Conn.Send %s", err)
 		cn.Stop()
@@ -83,29 +114,30 @@ func (cn *Conn) write(m Message) {
 }
 
 func (cn *Conn) read() {
-	libol.Info("Conn.Read %s", cn)
+	libol.Stack("Conn.Read %s", cn)
 	for {
-		m := &Message{}
+		m := Message{}
 		if cn.Conn != nil {
-			err := Codec.Receive(cn.Conn, m)
+			err := Codec.Receive(cn.Conn, &m)
 			if err != nil {
 				libol.Error("Conn.Read %s", err)
 				break
 			}
+			libol.Cmd("Conn.Read %s", &m)
+			_ = cn.dispatch(m)
 		}
-		libol.Cmd("Conn.Read %s", m)
 	}
 	cn.Stop()
 }
 
 func (cn *Conn) Start() {
-	libol.Info("Conn.Start %s", cn)
+	libol.Stack("Conn.Start %s", cn)
 	go cn.loop()
 	go cn.read()
 }
 
 func (cn *Conn) Stop() {
-	libol.Info("Conn.Stop %s", cn)
+	libol.Stack("Conn.Stop %s", cn)
 	if cn.Done != nil {
 		cn.Done <- true
 	}

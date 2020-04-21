@@ -6,23 +6,23 @@ import (
 )
 
 type _online struct {
-	lines *libol.SafeStrMap
+	Lines *libol.SafeStrMap
 }
 
 var Online = _online{
-	lines: libol.NewSafeStrMap(1024),
+	Lines: libol.NewSafeStrMap(1024),
 }
 
 func (p *_online) Init(size int) {
-	p.lines = libol.NewSafeStrMap(size)
+	p.Lines = libol.NewSafeStrMap(size)
 }
 
 func (p *_online) Add(m *models.Line) {
-	_ = p.lines.Set(m.String(), m)
+	_ = p.Lines.Set(m.String(), m)
 }
 
 func (p *_online) Update(m *models.Line) *models.Line {
-	if v := p.lines.Get(m.String()); v != nil {
+	if v := p.Lines.Get(m.String()); v != nil {
 		l := v.(*models.Line)
 		l.HitTime = m.HitTime
 	}
@@ -30,14 +30,14 @@ func (p *_online) Update(m *models.Line) *models.Line {
 }
 
 func (p *_online) Get(key string) *models.Line {
-	if v := p.lines.Get(key); v != nil {
+	if v := p.Lines.Get(key); v != nil {
 		return v.(*models.Line)
 	}
 	return nil
 }
 
 func (p *_online) Del(key string) {
-	p.lines.Del(key)
+	p.Lines.Del(key)
 }
 
 func (p *_online) List() <-chan *models.Line {
@@ -45,7 +45,7 @@ func (p *_online) List() <-chan *models.Line {
 
 	go func() {
 
-		p.lines.Iter(func(k string, v interface{}) {
+		p.Lines.Iter(func(k string, v interface{}) {
 			c <- v.(*models.Line)
 		})
 		c <- nil //Finish channel by nil.

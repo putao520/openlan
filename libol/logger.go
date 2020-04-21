@@ -12,6 +12,7 @@ import (
 const (
 	PRINT = 00
 	LOG   = 01
+	STACK = 9
 	DEBUG = 10
 	CMD   = 11
 	INFO  = 20
@@ -24,6 +25,7 @@ var levels = map[int]string{
 	PRINT: "PRINT",
 	LOG:   "LOG",
 	DEBUG: "DEBUG",
+	STACK: "STACK",
 	CMD:   "CMD",
 	INFO:  "INFO",
 	WARN:  "WARN",
@@ -80,6 +82,10 @@ func Print(format string, v ...interface{}) {
 
 func Log(format string, v ...interface{}) {
 	logger.Write(LOG, format, v...)
+}
+
+func Stack(format string, v ...interface{}) {
+	logger.Write(STACK, format, v...)
 }
 
 func Debug(format string, v ...interface{}) {

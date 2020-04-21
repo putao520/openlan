@@ -34,7 +34,7 @@ func (v *VSwitch) Init() {
 }
 
 func (v *VSwitch) Once() error {
-	libol.Debug("VSwitch.Once %s", v)
+	libol.Log("VSwitch.Once %s", v)
 	// point
 	client := libstar.HttpClient{
 		Url:  v.Service.Url + "/api/point",
@@ -47,7 +47,7 @@ func (v *VSwitch) Once() error {
 	if err := libstar.GetJSON(resp.Body, &v.Points); err != nil {
 		return err
 	}
-	libol.Debug("VSwitch.Once %s", v.Points)
+	libol.Log("VSwitch.Once %s", v.Points)
 
 	// link
 	client = libstar.HttpClient{
@@ -61,7 +61,7 @@ func (v *VSwitch) Once() error {
 	if err := libstar.GetJSON(resp.Body, &v.Links); err != nil {
 		return err
 	}
-	libol.Debug("VSwitch.Once %s", v.Links)
+	libol.Log("VSwitch.Once %s", v.Links)
 
 	// neighbor
 	client = libstar.HttpClient{
@@ -75,7 +75,7 @@ func (v *VSwitch) Once() error {
 	if err := libstar.GetJSON(resp.Body, &v.Neighbors); err != nil {
 		return err
 	}
-	libol.Debug("VSwitch.Once %s", v.Neighbors)
+	libol.Log("VSwitch.Once %s", v.Neighbors)
 	v.State = ""
 
 	return nil

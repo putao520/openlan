@@ -7,26 +7,30 @@ import (
 )
 
 type Message struct {
-	Raw  string
-	Type string
-	Data string
+	Raw      string
+	Action   string
+	Resource string
+	Data     string
 }
 
 func (m *Message) Encode() string {
-	return fmt.Sprintf("%s %s", m.Type, m.Data)
+	return fmt.Sprintf("%s %s %s", strings.ToUpper(m.Action), strings.ToUpper(m.Resource), m.Data)
 }
 
-func (m *Message) Decode() (string, string) {
-	if strings.Contains(m.Raw, " ") {
-		values := strings.SplitN(m.Raw, " ", 2)
-		return values[0], values[1]
+func (m *Message) Decode() (string, string, string) {
+	values := strings.SplitN(m.Raw, " ", 3)
+	if len(values) == 3 {
+		return values[0], values[1], values[2]
+	} else if len(values) == 2 {
+		return values[0], values[1], ""
+	} else {
+		return values[0], "", ""
 	}
-	return m.Raw, ""
 }
 
 func (m *Message) String() string {
 	if m.Raw == "" {
-		return fmt.Sprintf("%s: %s", m.Type, m.Data)
+		return fmt.Sprintf("%s %s %s", m.Action, m.Resource, m.Data)
 	}
 	return m.Raw
 }
@@ -43,7 +47,7 @@ func unmarshal(msg []byte, payloadType byte, v interface{}) (err error) {
 		m := &Message{
 			Raw: string(msg),
 		}
-		data.Type, data.Data = m.Decode()
+		data.Action, data.Resource, data.Data = m.Decode()
 		return nil
 	}
 	return websocket.ErrNotSupported

@@ -7,15 +7,19 @@ import (
 )
 
 type _link struct {
-	links *libol.SafeStrMap
+	Links  *libol.SafeStrMap
+	Listen Listen
 }
 
 var Link = _link{
-	links: libol.NewSafeStrMap(1024),
+	Links: libol.NewSafeStrMap(1024),
+	Listen: Listen{
+		listener: libol.NewSafeStrMap(32),
+	},
 }
 
 func (p *_link) Init(size int) {
-	p.links = libol.NewSafeStrMap(size)
+	p.Links = libol.NewSafeStrMap(size)
 }
 
 func (p *_link) Add(m *point.Point) {
@@ -30,11 +34,12 @@ func (p *_link) Add(m *point.Point) {
 		IfName:  m.IfName(),
 		UUID:    m.UUID(),
 	}
-	_ = p.links.Set(m.Addr(), link)
+	_ = p.Links.Set(m.Addr(), link)
+	_ = p.Listen.AddV(m.Addr(), link)
 }
 
 func (p *_link) Get(key string) *models.Point {
-	ret := p.links.Get(key)
+	ret := p.Links.Get(key)
 	if ret != nil {
 		v := ret.(*models.Point)
 		v.Update()
@@ -44,13 +49,14 @@ func (p *_link) Get(key string) *models.Point {
 }
 
 func (p *_link) Del(key string) {
-	p.links.Del(key)
+	p.Links.Del(key)
+	p.Listen.DelV(key)
 }
 
 func (p *_link) List() <-chan *models.Point {
 	c := make(chan *models.Point, 128)
 	go func() {
-		p.links.Iter(func(k string, v interface{}) {
+		p.Links.Iter(func(k string, v interface{}) {
 			m := v.(*models.Point)
 			m.Update()
 			c <- m
