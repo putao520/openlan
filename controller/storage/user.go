@@ -3,6 +3,7 @@ package storage
 import (
 	"github.com/danieldin95/lightstar/libstar"
 	"github.com/danieldin95/openlan-go/controller/schema"
+	"github.com/danieldin95/openlan-go/libol"
 	"sync"
 )
 
@@ -39,6 +40,15 @@ func (u *Users) Load(file string) error {
 		}
 	}
 	return nil
+}
+
+func (u *Users) Add(v *schema.User) {
+	libol.Debug("Users.Add %s", v)
+	if v != nil {
+		u.Lock.Lock()
+		defer u.Lock.Unlock()
+		u.Users[v.Name] = v
+	}
 }
 
 func (u *Users) Get(name string) (schema.User, bool) {

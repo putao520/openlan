@@ -7,10 +7,14 @@ import (
 
 type _neighbor struct {
 	Neighbors *libol.SafeStrMap
+	Listen    Listen
 }
 
 var Neighbor = _neighbor{
 	Neighbors: libol.NewSafeStrMap(1024),
+	Listen: Listen{
+		listener: libol.NewSafeStrMap(32),
+	},
 }
 
 func (p *_neighbor) Init(size int) {
@@ -18,7 +22,11 @@ func (p *_neighbor) Init(size int) {
 }
 
 func (p *_neighbor) Add(m *models.Neighbor) {
-	p.Neighbors.Del(m.IpAddr.String())
+	if v := p.Neighbors.Get(m.IpAddr.String()); v != nil {
+		p.Neighbors.Del(m.IpAddr.String())
+	} else {
+		_ = p.Listen.AddV(m.IpAddr.String(), m)
+	}
 	_ = p.Neighbors.Set(m.IpAddr.String(), m)
 }
 
@@ -40,6 +48,7 @@ func (p *_neighbor) Get(key string) *models.Neighbor {
 
 func (p *_neighbor) Del(key string) {
 	p.Neighbors.Del(key)
+	p.Listen.DelV(key)
 }
 
 func (p *_neighbor) List() <-chan *models.Neighbor {

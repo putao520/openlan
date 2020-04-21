@@ -4,6 +4,7 @@ import (
 	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/point"
+	"github.com/danieldin95/openlan-go/vswitch/schema"
 	"github.com/danieldin95/openlan-go/vswitch/service"
 	"sync"
 	"time"
@@ -58,7 +59,7 @@ func (w *Worker) LoadLinks() {
 	}
 }
 
-func (w *Worker) Start(v VSwitcher) {
+func (w *Worker) Start(v schema.VSwitcher) {
 	libol.Info("Worker.Start: %s", w.Conf.Name)
 	if !w.initialized {
 		w.Initialize()

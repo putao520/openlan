@@ -26,7 +26,7 @@ func NewNeighbors(m Master, c config.VSwitch) (e *Neighbors) {
 }
 
 func (e *Neighbors) OnFrame(client *libol.TcpClient, frame *libol.FrameMessage) error {
-	libol.Debug("Neighbors.OnFrame %s.", frame)
+	libol.Log("Neighbors.OnFrame %s.", frame)
 	if frame.IsControl() {
 		return nil
 	}
@@ -37,7 +37,7 @@ func (e *Neighbors) OnFrame(client *libol.TcpClient, frame *libol.FrameMessage) 
 		libol.Warn("Neighbors.OnFrame %s", err)
 		return err
 	}
-	libol.Debug("Neighbors.OnFrame 0x%04x", eth.Type)
+	libol.Log("Neighbors.OnFrame 0x%04x", eth.Type)
 	if !eth.IsArp() {
 		if eth.IsVlan() {
 			//TODO
@@ -66,13 +66,13 @@ func (e *Neighbors) AddNeighbor(neb *models.Neighbor) {
 	defer e.lock.Unlock()
 
 	if n, ok := e.neighbors[neb.IpAddr.String()]; ok {
-		libol.Debug("Neighbors.AddNeighbor: update %s.", neb)
+		libol.Log("Neighbors.AddNeighbor: update %s.", neb)
 		n.IpAddr = neb.IpAddr
 		n.Client = neb.Client
 		n.HitTime = time.Now().Unix()
 		service.Neighbor.Update(neb)
 	} else {
-		libol.Info("Neighbors.AddNeighbor: new %s.", neb)
+		libol.Log("Neighbors.AddNeighbor: new %s.", neb)
 		e.neighbors[neb.IpAddr.String()] = neb
 		service.Neighbor.Add(neb)
 	}

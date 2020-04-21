@@ -30,7 +30,7 @@ func NewOnline(m Master, c config.VSwitch) (o *Online) {
 }
 
 func (o *Online) OnFrame(client *libol.TcpClient, frame *libol.FrameMessage) error {
-	libol.Debug("Online.OnFrame %s.", frame)
+	libol.Log("Online.OnFrame %s.", frame)
 	if frame.IsControl() {
 		return nil
 	}
@@ -86,8 +86,8 @@ func (o *Online) AddLine(line *models.Line) {
 	o.lock.Lock()
 	defer o.lock.Unlock()
 
-	libol.Debug("Online.AddLine %s", line)
-	libol.Debug("Online.AddLine %d", o.lineList.Len())
+	libol.Log("Online.AddLine %s", line)
+	libol.Log("Online.AddLine %d", o.lineList.Len())
 	find, ok := o.lines[line.String()]
 	if !ok {
 		if o.lineList.Len() >= o.max {

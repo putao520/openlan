@@ -14,7 +14,13 @@ type Message struct {
 }
 
 func (m *Message) Encode() string {
-	return fmt.Sprintf("%s %s %s", strings.ToUpper(m.Action), strings.ToUpper(m.Resource), m.Data)
+	if m.Action == "" {
+		m.Action = "GET"
+	} else {
+		m.Action = strings.ToUpper(m.Action)
+	}
+	m.Resource = strings.ToUpper(m.Resource)
+	return fmt.Sprintf("%s %s %s", m.Action, m.Resource, m.Data)
 }
 
 func (m *Message) Decode() (string, string, string) {

@@ -13,7 +13,7 @@ type Ctrl struct {
 }
 
 func (w Ctrl) Router(router *mux.Router) {
-	router.Handle("/olan/ctrl", websocket.Handler(w.Handle))
+	router.Handle("/ctrl", websocket.Handler(w.Handle))
 }
 
 func (w Ctrl) Handle(ws *websocket.Conn) {

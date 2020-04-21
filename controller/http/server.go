@@ -52,7 +52,6 @@ func (h *Server) LoadRouter() {
 	Dist{h.pubDir}.Router(router)
 	// OpenLAN message
 	olan.Ctrl{}.Router(router)
-	olan.UpCall{}.Router(router)
 }
 
 func (h *Server) SetCert(keyFile, crtFile string) {

@@ -8,21 +8,30 @@ import (
 )
 
 type CtrlC struct {
-	Conn *ctl.Conn
+	Url   string
+	ID    string
+	Token string
+	Conn  *ctl.Conn
 }
 
 func (cc *CtrlC) Register() {
+	// Listen change and update.
 	_ = service.Point.Listen.Add("ctlc", &Point{cc})
+	_ = service.Neighbor.Listen.Add("ctlc", &Neighbor{cc})
+
+	// Handle command
+	cc.Conn.Listener("point", &Point{cc})
+	cc.Conn.Listener("neighbor", &Neighbor{cc})
 }
 
-func (cc *CtrlC) Open(url, uuid, token string) error {
+func (cc *CtrlC) Open() error {
 	ws := &libol.WsClient{
 		Auth: libstar.Auth{
 			Type:     "basic",
-			Username: uuid,
-			Password: token,
+			Username: cc.ID,
+			Password: cc.Token,
 		},
-		Url: url,
+		Url: cc.Url,
 	}
 	ws.Initialize()
 	to, err := ws.Dial()
@@ -55,3 +64,5 @@ func (cc *CtrlC) Send(m ctl.Message) {
 		cc.Conn.Send(m)
 	}
 }
+
+var Ctrl = &CtrlC{}

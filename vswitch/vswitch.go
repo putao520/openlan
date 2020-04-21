@@ -12,14 +12,6 @@ import (
 	"time"
 )
 
-type VSwitcher interface {
-	UUID() string
-	UpTime() int64
-	Alias() string
-	AddLink(tenant string, c *config.Point)
-	DelLink(tenant, addr string)
-}
-
 type Apps struct {
 	Auth     *app.PointAuth
 	Request  *app.WithRequest
@@ -95,7 +87,7 @@ func (v *VSwitch) Initialize() {
 func (v *VSwitch) OnHook(client *libol.TcpClient, data []byte) error {
 	frame := libol.NewFrameMessage(data)
 	for _, h := range v.hooks {
-		libol.Debug("Worker.onHook: h %p", h)
+		libol.Log("Worker.onHook: h %p", h)
 		if h != nil {
 			if err := h(client, frame); err != nil {
 				return err
@@ -112,7 +104,7 @@ func (v *VSwitch) OnClient(client *libol.TcpClient) error {
 }
 
 func (v *VSwitch) ReadClient(client *libol.TcpClient, data []byte) error {
-	libol.Debug("VSwitch.ReadClient: %s % x", client.Addr, data)
+	libol.Log("VSwitch.ReadClient: %s % x", client.Addr, data)
 	if err := v.OnHook(client, data); err != nil {
 		libol.Debug("VSwitch.OnRead: %s dropping by %s", client.Addr, err)
 		if client.Status() != libol.CL_AUEHED {

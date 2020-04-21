@@ -10,8 +10,12 @@ import (
 
 func TestCtl_Point(t *testing.T) {
 	libol.SetLog(libol.STACK)
-	cc := &CtrlC{}
-	err := cc.Open("http://localhost:10088/olan/upcall", "admin", "123")
+	cc := &CtrlC{
+		Url:   "http://localhost:10088/ctrl",
+		ID:    "admin",
+		Token: "123",
+	}
+	err := cc.Open()
 	if err != nil {
 		t.Error(err)
 		return
@@ -29,4 +33,5 @@ func TestCtl_Point(t *testing.T) {
 	service.Point.Del(point.Client.Addr)
 	time.Sleep(5 * time.Second)
 	cc.Stop()
+	time.Sleep(5 * time.Second)
 }

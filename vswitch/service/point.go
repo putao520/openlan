@@ -51,9 +51,10 @@ func (p *_point) List() <-chan *models.Point {
 
 	go func() {
 		p.Clients.Iter(func(k string, v interface{}) {
-			m := v.(*models.Point)
-			m.Update()
-			c <- m
+			if m, ok := v.(*models.Point); ok {
+				m.Update()
+				c <- m
+			}
 		})
 		c <- nil //Finish channel by nil.
 	}()

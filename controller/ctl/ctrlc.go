@@ -1,20 +1,16 @@
 package ctl
 
-import "github.com/danieldin95/openlan-go/libol"
-
 type CtrlC struct {
 	Conn *Conn
 }
 
 func (cc *CtrlC) Register() {
 	if cc.Conn != nil {
-		cc.Conn.Listener("hello", cc.Hello)
+		cc.Conn.Listener("hello", &Hello{cc})
+		cc.Conn.Listener("point", &Point{cc})
+		cc.Conn.Listener("link", &Link{cc})
+		cc.Conn.Listener("neighbor", &Neighbor{cc})
 	}
-}
-
-func (cc *CtrlC) Hello(id string, m Message) error {
-	libol.Cmd("CtrlC.Hello %s", m.Data)
-	return nil
 }
 
 func (cc *CtrlC) Start() {
@@ -22,8 +18,11 @@ func (cc *CtrlC) Start() {
 	if cc.Conn != nil {
 		cc.Conn.Open()
 		cc.Conn.Start()
-		// hello firstly
-		cc.Conn.Send(Message{Resource: "hello", Data: "from server"})
+		// Get all include point, link and etc.
+		cc.Conn.Send(Message{Resource: "point"})
+		cc.Conn.Send(Message{Resource: "link"})
+		cc.Conn.Send(Message{Resource: "neighbor"})
+		cc.Conn.Send(Message{Resource: "online"})
 	}
 }
 

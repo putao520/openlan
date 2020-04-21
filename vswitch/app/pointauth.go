@@ -24,7 +24,7 @@ func NewPointAuth(m Master, c config.VSwitch) (p *PointAuth) {
 }
 
 func (p *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.FrameMessage) error {
-	libol.Debug("PointAuth.OnFrame %s.", frame)
+	libol.Log("PointAuth.OnFrame %s.", frame)
 
 	if frame.IsControl() {
 		action, params := frame.CmdAndParams()

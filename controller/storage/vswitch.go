@@ -41,6 +41,10 @@ func (v *VSwitch) Load(file string) error {
 		if value.Token == "" {
 			value.Token = libol.GenToken(64)
 		}
+		Storager.Users.Add(&schema.User{
+			Name:     value.Name,
+			Password: value.Token,
+		})
 		value.Init()
 	}
 	return nil

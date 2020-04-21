@@ -20,7 +20,7 @@ func NewWithRequest(m Master, c config.VSwitch) (r *WithRequest) {
 }
 
 func (r *WithRequest) OnFrame(client *libol.TcpClient, frame *libol.FrameMessage) error {
-	libol.Debug("WithRequest.OnFrame %s.", frame)
+	libol.Log("WithRequest.OnFrame %s.", frame)
 	if frame.IsControl() {
 		action, body := frame.CmdAndParams()
 		libol.Debug("WithRequest.OnFrame: %s %s", action, body)

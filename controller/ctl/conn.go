@@ -9,8 +9,6 @@ import (
 	"time"
 )
 
-type Listener func(id string, m Message) error
-
 type Conn struct {
 	Lock   sync.RWMutex
 	Conn   *websocket.Conn
@@ -18,17 +16,16 @@ type Conn struct {
 	Ticker *time.Ticker
 	Done   chan bool
 	SendQ  chan Message
-	Listen map[string]Listener
+	RecvQ  chan Message
+	Listen *libol.SafeStrMap
 	Id     string
 }
 
 func (cn *Conn) Listener(name string, call Listener) {
-	cn.Lock.Lock()
-	defer cn.Lock.Unlock()
 	if cn.Listen == nil {
-		cn.Listen = make(map[string]Listener, 1024)
+		cn.Listen = libol.NewSafeStrMap(32)
 	}
-	cn.Listen[strings.ToUpper(name)] = call
+	_ = cn.Listen.Set(strings.ToUpper(name), call)
 }
 
 func (cn *Conn) Open() {
@@ -42,11 +39,14 @@ func (cn *Conn) Open() {
 	if cn.SendQ == nil {
 		cn.SendQ = make(chan Message, 1024)
 	}
+	if cn.RecvQ == nil {
+		cn.RecvQ = make(chan Message, 1024)
+	}
 	if cn.Done == nil {
-		cn.Done = make(chan bool)
+		cn.Done = make(chan bool, 2)
 	}
 	if cn.Listen == nil {
-		cn.Listen = make(map[string]Listener, 1024)
+		cn.Listen = libol.NewSafeStrMap(32)
 	}
 }
 
@@ -63,15 +63,26 @@ func (cn *Conn) Close() {
 	cn.Conn.Close()
 	cn.Conn = nil
 	cn.SendQ = nil
+	cn.RecvQ = nil
 }
 
 func (cn *Conn) dispatch(m Message) error {
-	cn.Lock.Lock()
-	defer cn.Lock.Unlock()
-
+	value := cn.Listen.Get(m.Resource)
 	libol.Cmd("Conn.dispatch %s %s", cn.Id, &m)
-	if fun, ok := cn.Listen[m.Resource]; ok {
-		return fun(cn.Id, m)
+	if value != nil {
+		if call, ok := value.(Listener); ok {
+			switch m.Action {
+			case "GET":
+				return call.GetCtl(cn.Id, m.Data)
+			case "ADD":
+				return call.AddCtl(cn.Id, m.Data)
+			case "DEL":
+				return call.DelCtl(cn.Id, m.Data)
+			case "MOD":
+				return call.ModCtl(cn.Id, m.Data)
+			}
+		}
+		libol.Error("Conn.dispatch unknown %s", m.Resource)
 	} else {
 		libol.Warn("conn.dispatch notSupport %s", m.Resource)
 	}
@@ -86,11 +97,16 @@ func (cn *Conn) once() error {
 
 func (cn *Conn) loop() {
 	libol.Stack("Conn.Loop %s", cn)
-	defer cn.Close()
+	defer func() {
+		cn.Close()
+		libol.Stack("Conn.loop exit")
+	}()
 	for {
 		select {
 		case m := <-cn.SendQ:
 			cn.write(m)
+		case m := <-cn.RecvQ:
+			_ = cn.dispatch(m)
 		case <-cn.Done:
 			libol.Debug("Conn.Loop %s Done", cn)
 			return
@@ -114,20 +130,21 @@ func (cn *Conn) write(m Message) {
 }
 
 func (cn *Conn) read() {
-	libol.Stack("Conn.Read %s", cn)
+	libol.Stack("Conn.read %s", cn)
 	for {
 		m := Message{}
 		if cn.Conn != nil {
 			err := Codec.Receive(cn.Conn, &m)
 			if err != nil {
-				libol.Error("Conn.Read %s", err)
+				libol.Error("Conn.read %s", err)
 				break
 			}
 			libol.Cmd("Conn.Read %s", &m)
-			_ = cn.dispatch(m)
+			cn.RecvQ <- m
 		}
 	}
 	cn.Stop()
+	libol.Stack("Conn.read exit")
 }
 
 func (cn *Conn) Start() {

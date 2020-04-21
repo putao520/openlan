@@ -29,7 +29,7 @@ func (v *VSwitch) Init() {
 		v.Ticker = time.NewTicker(5 * time.Second)
 	}
 	if v.Done == nil {
-		v.Done = make(chan bool)
+		v.Done = make(chan bool, 2)
 	}
 }
 

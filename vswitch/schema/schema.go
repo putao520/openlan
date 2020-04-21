@@ -1,4 +1,4 @@
-package vswitch
+package schema
 
 import (
 	"github.com/danieldin95/openlan-go/config"
@@ -7,35 +7,35 @@ import (
 	"strings"
 )
 
-type VersionSchema struct {
+type Version struct {
 	Version string `json:"version"`
 	Date    string `json:"date"`
 	Commit  string `json:"commit"`
 }
 
-func NewVersionSchema() VersionSchema {
-	return VersionSchema{
+func NewVersion() Version {
+	return Version{
 		Version: config.Version,
 		Date:    config.Date,
 		Commit:  config.Commit,
 	}
 }
 
-type WorkerSchema struct {
+type Worker struct {
 	Uptime int64  `json:"uptime"`
 	UUID   string `json:"uuid"`
 	Alias  string `json:"alias"`
 }
 
-func NewWorkerSchema(sw VSwitcher) WorkerSchema {
-	return WorkerSchema{
+func NewWorker(sw VSwitcher) Worker {
+	return Worker{
 		UUID:   sw.UUID(),
 		Uptime: sw.UpTime(),
 		Alias:  sw.Alias(),
 	}
 }
 
-type PointSchema struct {
+type Point struct {
 	Uptime  int64  `json:"uptime"`
 	UUID    string `json:"uuid"`
 	Network string `json:"network"`
@@ -49,9 +49,9 @@ type PointSchema struct {
 	State   string `json:"state"`
 }
 
-func NewPointSchema(p *models.Point) PointSchema {
+func NewPoint(p *models.Point) Point {
 	client, dev := p.Client, p.Device
-	return PointSchema{
+	return Point{
 		Uptime:  p.Uptime,
 		UUID:    p.UUID,
 		Alias:   p.Alias,
@@ -65,7 +65,7 @@ func NewPointSchema(p *models.Point) PointSchema {
 	}
 }
 
-type LinkSchema struct {
+type Link struct {
 	Uptime  int64  `json:"uptime"`
 	UUID    string `json:"uuid"`
 	Alias   string `json:"alias"`
@@ -79,9 +79,9 @@ type LinkSchema struct {
 	State   string `json:"state"`
 }
 
-func NewLinkSchema(p *models.Point) LinkSchema {
+func NewLink(p *models.Point) Link {
 	client, dev := p.Client, p.Device
-	return LinkSchema{
+	return Link{
 		UUID:    p.UUID,
 		Uptime:  client.UpTime(),
 		Device:  dev.Name(),
@@ -92,11 +92,11 @@ func NewLinkSchema(p *models.Point) LinkSchema {
 	}
 }
 
-type LinkConfigSchema struct {
+type LinkConfig struct {
 	config.Point
 }
 
-type NeighborSchema struct {
+type Neighbor struct {
 	Uptime int64  `json:"uptime"`
 	UUID   string `json:"uuid"`
 	HwAddr string `json:"ethernet"`
@@ -104,8 +104,8 @@ type NeighborSchema struct {
 	Client string `json:"client"`
 }
 
-func NewNeighborSchema(n *models.Neighbor) NeighborSchema {
-	return NeighborSchema{
+func NewNeighbor(n *models.Neighbor) Neighbor {
+	return Neighbor{
 		Uptime: n.UpTime(),
 		HwAddr: n.HwAddr.String(),
 		IpAddr: n.IpAddr.String(),
@@ -113,7 +113,7 @@ func NewNeighborSchema(n *models.Neighbor) NeighborSchema {
 	}
 }
 
-type OnLineSchema struct {
+type OnLine struct {
 	Uptime     int64  `json:"uptime"`
 	EthType    uint16 `json:"ethType"`
 	IpSource   string `json:"ipSource"`
@@ -123,8 +123,8 @@ type OnLineSchema struct {
 	PortDest   uint16 `json:"portDestination"`
 }
 
-func NewOnLineSchema(l *models.Line) OnLineSchema {
-	return OnLineSchema{
+func NewOnLine(l *models.Line) OnLine {
+	return OnLine{
 		Uptime:     l.UpTime(),
 		EthType:    l.EthType,
 		IpSource:   l.IpSource.String(),
@@ -135,25 +135,25 @@ func NewOnLineSchema(l *models.Line) OnLineSchema {
 	}
 }
 
-type IndexSchema struct {
-	Version   VersionSchema    `json:"version"`
-	Worker    WorkerSchema     `json:"worker"`
-	Points    []PointSchema    `json:"points"`
-	Links     []LinkSchema     `json:"links"`
-	Neighbors []NeighborSchema `json:"neighbors"`
-	OnLines   []OnLineSchema   `json:"online"`
-	Network   []NetworkSchema  `json:"network"`
+type Index struct {
+	Version   Version    `json:"version"`
+	Worker    Worker     `json:"worker"`
+	Points    []Point    `json:"points"`
+	Links     []Link     `json:"links"`
+	Neighbors []Neighbor `json:"neighbors"`
+	OnLines   []OnLine   `json:"online"`
+	Network   []Network  `json:"network"`
 }
 
-type UserSchema struct {
+type User struct {
 	Name     string `json:"name"`
 	Password string `json:"password"`
 	Token    string `json:"token"`
 	Alias    string `json:"alias"`
 }
 
-func NewUserSchema(u *models.User) UserSchema {
-	return UserSchema{
+func NewUser(u *models.User) User {
+	return User{
 		Name:     u.Name,
 		Password: u.Password,
 		Token:    u.Token,
@@ -161,7 +161,7 @@ func NewUserSchema(u *models.User) UserSchema {
 	}
 }
 
-func (user *UserSchema) ToModel() *models.User {
+func (user *User) ToModel() *models.User {
 	return &models.User{
 		Alias:    user.Alias,
 		Token:    user.Token,
@@ -170,32 +170,32 @@ func (user *UserSchema) ToModel() *models.User {
 	}
 }
 
-type RouteSchema struct {
+type Route struct {
 	Prefix  string `json:"prefix"`
 	Nexthop string `json:"nexthop"`
 }
 
-type NetworkSchema struct {
-	Name    string        `json:"name"`
-	IfAddr  string        `json:"ifAddr"`
-	IpAddr  string        `json:"ipAddr"`
-	IpRange int           `json:"ipRange"`
-	Netmask string        `json:"netmask"`
-	Routes  []RouteSchema `json:"routes"`
+type Network struct {
+	Name    string  `json:"name"`
+	IfAddr  string  `json:"ifAddr"`
+	IpAddr  string  `json:"ipAddr"`
+	IpRange int     `json:"ipRange"`
+	Netmask string  `json:"netmask"`
+	Routes  []Route `json:"routes"`
 }
 
-func NewNetworkSchema(n *models.Network) NetworkSchema {
-	routes := make([]RouteSchema, 0, 32)
+func NewNetwork(n *models.Network) Network {
+	routes := make([]Route, 0, 32)
 	if len(n.Routes) != 0 {
 		for _, route := range routes {
 			routes = append(routes,
-				RouteSchema{
+				Route{
 					Nexthop: route.Nexthop,
 					Prefix:  route.Prefix,
 				})
 		}
 	}
-	return NetworkSchema{
+	return Network{
 		Name:    n.Name,
 		IfAddr:  n.IfAddr,
 		IpAddr:  n.IpAddr,
@@ -203,4 +203,9 @@ func NewNetworkSchema(n *models.Network) NetworkSchema {
 		Netmask: n.Netmask,
 		Routes:  routes,
 	}
+}
+
+type Ctrl struct {
+	Url   string `json:"url"`
+	Token string `json:"token"`
 }
