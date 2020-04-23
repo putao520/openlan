@@ -106,7 +106,9 @@ func (cn *Conn) loop() {
 		case m := <-cn.SendQ:
 			cn.write(m)
 		case m := <-cn.RecvQ:
-			_ = cn.dispatch(m)
+			if err := cn.dispatch(m); err != nil {
+				libol.Error("Conn.Loop %s", err)
+			}
 		case <-cn.Done:
 			libol.Debug("Conn.Loop %s Done", cn)
 			return

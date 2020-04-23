@@ -42,14 +42,12 @@ func (h *Server) LoadRouter() {
 	router := h.Router()
 	router.Use(h.Middleware)
 
-	// API router
+	// API legacy
 	api.VSwitch{}.Router(router)
 	api.User{}.Router(router)
-	apiv1.Point{}.Router(router)
-	api.Link{}.Router(router)
+	api.Point{}.Router(router)
 	api.Graph{}.Router(router)
 	api.Message{}.Router(router)
-
 	// API V1
 	apiv1.Point{}.Router(router)
 	apiv1.Switch{}.Router(router)
