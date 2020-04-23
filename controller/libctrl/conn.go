@@ -13,6 +13,7 @@ type ConnOner struct {
 	Close  func(con *Conn)
 	Open   func(con *Conn)
 	CmdCtl func(con *Conn, m Message)
+	Ticker func(con *Conn)
 }
 
 type Conn struct {
@@ -131,6 +132,9 @@ func (cn *Conn) loop() {
 			if err := cn.once(); err != nil {
 				libol.Error("Conn.Loop %s", err)
 				return
+			}
+			if cn.Oner.Ticker != nil {
+				cn.Oner.Ticker(cn)
 			}
 		}
 	}

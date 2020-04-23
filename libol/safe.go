@@ -120,16 +120,31 @@ func (sm *SafeStrMap) Len() int {
 	return len(sm.data)
 }
 
-func (sm *SafeStrMap) Set(k string, v interface{}) error {
-	sm.lock.Lock()
-	defer sm.lock.Unlock()
-
+func (sm *SafeStrMap) add(k string, v interface{}) error {
 	if sm.size != 0 && len(sm.data) >= sm.size {
 		return NewErr("SageMap.Set already full")
 	}
 	if _, ok := sm.data[k]; !ok {
 		sm.data[k] = v
 	}
+	return nil
+}
+
+func (sm *SafeStrMap) Set(k string, v interface{}) error {
+	sm.lock.Lock()
+	defer sm.lock.Unlock()
+
+	return sm.add(k, v)
+}
+
+func (sm *SafeStrMap) Mod(k string, v interface{}) error {
+	sm.lock.Lock()
+	defer sm.lock.Unlock()
+
+	if _, ok := sm.data[k]; !ok {
+		return sm.add(k, v)
+	}
+	sm.data[k] = v
 	return nil
 }
 

@@ -19,7 +19,7 @@ func (h *Switch) AddCtl(id string, m libctrl.Message) error {
 		return err
 	}
 	p.Address = h.cc.Conn.Address()
-	_ = Storager.Switch.Set(p.Alias, &p)
+	_ = Storager.Switch.Mod(p.Alias, &p)
 	return nil
 }
 

@@ -21,7 +21,7 @@ func (h *Point) AddCtl(id string, m libctrl.Message) error {
 	if p.Switch == "" {
 		p.Switch = id
 	}
-	_ = Storager.Point.Set(p.Address, &p)
+	_ = Storager.Point.Mod(p.Address, &p)
 	return nil
 }
 

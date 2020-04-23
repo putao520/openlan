@@ -21,7 +21,7 @@ func (h *Neighbor) AddCtl(id string, m libctrl.Message) error {
 	if p.Switch == "" {
 		p.Switch = id
 	}
-	_ = Storager.Neighbor.Set(p.IpAddr, &p)
+	_ = Storager.Neighbor.Mod(p.IpAddr, &p)
 	return nil
 }
 

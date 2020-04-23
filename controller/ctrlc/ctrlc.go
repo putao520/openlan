@@ -19,7 +19,7 @@ func (cc *CtrlC) register() {
 	cc.Conn.Oner.Close = func(con *libctrl.Conn) {
 		// Clear points.
 		ds := make([]string, 0, 32)
-		Storager.Point.Iter(func(k string, v interface{}){
+		Storager.Point.Iter(func(k string, v interface{}) {
 			if p, ok := v.(*schema.Point); ok {
 				if p.Switch == cc.Conn.Id {
 					ds = append(ds, k)
@@ -34,6 +34,13 @@ func (cc *CtrlC) register() {
 	}
 	cc.Conn.Oner.Open = func(con *libctrl.Conn) {
 		// Get all include point, link and etc.
+		con.Send(libctrl.Message{Resource: "switch"})
+		con.Send(libctrl.Message{Resource: "point"})
+		con.Send(libctrl.Message{Resource: "link"})
+		con.Send(libctrl.Message{Resource: "neighbor"})
+		con.Send(libctrl.Message{Resource: "online"})
+	}
+	cc.Conn.Oner.Ticker = func(con *libctrl.Conn) {
 		con.Send(libctrl.Message{Resource: "switch"})
 		con.Send(libctrl.Message{Resource: "point"})
 		con.Send(libctrl.Message{Resource: "link"})
