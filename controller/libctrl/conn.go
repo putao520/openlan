@@ -9,6 +9,12 @@ import (
 	"time"
 )
 
+type ConnOner struct {
+	Close  func(con *Conn)
+	Open   func(con *Conn)
+	CmdCtl func(con *Conn, m Message)
+}
+
 type Conn struct {
 	Lock   sync.RWMutex
 	Conn   *websocket.Conn
@@ -19,6 +25,7 @@ type Conn struct {
 	RecvQ  chan Message
 	Listen *libol.SafeStrMap
 	Id     string
+	Oner   ConnOner
 }
 
 func (cn *Conn) Listener(name string, call Listener) {
@@ -31,8 +38,6 @@ func (cn *Conn) Listener(name string, call Listener) {
 func (cn *Conn) Open() {
 	libol.Stack("Conn.Open %s", cn)
 	cn.Lock.Lock()
-	defer cn.Lock.Unlock()
-
 	if cn.Ticker == nil {
 		cn.Ticker = time.NewTicker(5 * time.Second)
 	}
@@ -48,10 +53,17 @@ func (cn *Conn) Open() {
 	if cn.Listen == nil {
 		cn.Listen = libol.NewSafeStrMap(32)
 	}
+	cn.Lock.Unlock()
+	if cn.Oner.Open != nil {
+		cn.Oner.Open(cn)
+	}
 }
 
 func (cn *Conn) Close() {
 	libol.Stack("Conn.Close %s", cn)
+	if cn.Oner.Close != nil {
+		cn.Oner.Close(cn)
+	}
 	cn.Lock.Lock()
 	defer cn.Lock.Unlock()
 	if cn.Conn == nil {
@@ -67,8 +79,11 @@ func (cn *Conn) Close() {
 }
 
 func (cn *Conn) dispatch(m Message) error {
-	value := cn.Listen.Get(m.Resource)
 	libol.Cmd("Conn.dispatch %s %s", cn.Id, &m)
+	if cn.Oner.CmdCtl != nil {
+		cn.Oner.CmdCtl(cn, m)
+	}
+	value := cn.Listen.Get(m.Resource)
 	if value != nil {
 		if call, ok := value.(Listener); ok {
 			switch m.Action {
