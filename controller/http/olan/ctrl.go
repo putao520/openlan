@@ -30,7 +30,7 @@ func (w Ctrl) Handle(ws *websocket.Conn) {
 		libol.Error("Ctrl.Handle user notFound")
 		return
 	}
-	libol.Info("Ctrl.Handle new %s", id)
+	libol.Info("Ctrl.Handle accept %s", id)
 	cc := ctrlc.CtrlC{
 		Conn: &libctrl.Conn{
 			Id:   id,
@@ -40,5 +40,5 @@ func (w Ctrl) Handle(ws *websocket.Conn) {
 	}
 	cc.Start()
 	cc.Wait()
-	libol.Warn("Ctrl.Handle %s exit", ws.RemoteAddr())
+	libol.Warn("Ctrl.Handle closed %s", id)
 }

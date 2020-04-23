@@ -7,6 +7,7 @@ import (
 	"os"
 	"runtime/debug"
 	"sync"
+	"time"
 )
 
 const (
@@ -21,6 +22,12 @@ const (
 	FATAL = 99
 )
 
+type Message struct {
+	Level   string `json:"level"`
+	Date    string `json:"date"`
+	Message string `json:"message"`
+}
+
 var levels = map[int]string{
 	PRINT: "PRINT",
 	LOG:   "LOG",
@@ -33,16 +40,15 @@ var levels = map[int]string{
 	FATAL: "FATAL",
 }
 
-type Logger struct {
+type _Log struct {
 	Level    int
 	FileName string
 	FileLog  *log.Logger
-
-	lock   sync.Mutex
-	errors *list.List
+	Lock     sync.Mutex
+	Errors   *list.List
 }
 
-func (l *Logger) Write(level int, format string, v ...interface{}) {
+func (l *_Log) Write(level int, format string, v ...interface{}) {
 	str, ok := levels[level]
 	if !ok {
 		str = "NiL"
@@ -51,82 +57,103 @@ func (l *Logger) Write(level int, format string, v ...interface{}) {
 		log.Printf(fmt.Sprintf("%s %s", str, format), v...)
 	}
 	if level >= INFO {
-		l.Save(fmt.Sprintf("%s %s", str, format), v...)
+		l.Save(str, format, v...)
 	}
 }
 
-func (l *Logger) Save(format string, v ...interface{}) {
+func (l *_Log) Save(level string, format string, v ...interface{}) {
 	m := fmt.Sprintf(format, v...)
 	if l.FileLog != nil {
-		l.FileLog.Println(m)
+		l.FileLog.Println(level + " " + m)
 	}
-	l.lock.Lock()
-	defer l.lock.Unlock()
-	if l.errors.Len() >= 1024 {
-		if e := l.errors.Front(); e != nil {
-			l.errors.Remove(e)
+
+	l.Lock.Lock()
+	defer l.Lock.Unlock()
+	if l.Errors.Len() >= 1024 {
+		if e := l.Errors.Back(); e != nil {
+			l.Errors.Remove(e)
 		}
 	}
-	l.errors.PushBack(m)
+	yy, mm, dd := time.Now().Date()
+	hh, mn, se := time.Now().Clock()
+	ele := &Message{
+		Level:   level,
+		Date:    fmt.Sprintf("%d/%02d/%02d %02d:%02d:%02d", yy, mm, dd, hh, mn, se),
+		Message: m,
+	}
+	l.Errors.PushBack(ele)
 }
 
-var logger = Logger{
+func (l *_Log) List() <-chan *Message {
+	c := make(chan *Message, 128)
+	go func() {
+		l.Lock.Lock()
+		defer l.Lock.Unlock()
+		for ele := l.Errors.Back(); ele != nil; ele = ele.Prev() {
+			c <- ele.Value.(*Message)
+		}
+		c <- nil // Finish channel by nil.
+	}()
+	return c
+}
+
+var Logger = _Log{
 	Level:    INFO,
 	FileName: ".log.error",
-	errors:   list.New(),
+	Errors:   list.New(),
 }
 
 func Print(format string, v ...interface{}) {
-	logger.Write(PRINT, format, v...)
+	Logger.Write(PRINT, format, v...)
 }
 
 func Log(format string, v ...interface{}) {
-	logger.Write(LOG, format, v...)
+	Logger.Write(LOG, format, v...)
 }
 
 func Stack(format string, v ...interface{}) {
-	logger.Write(STACK, format, v...)
+	Logger.Write(STACK, format, v...)
 }
 
 func Debug(format string, v ...interface{}) {
-	logger.Write(DEBUG, format, v...)
+	Logger.Write(DEBUG, format, v...)
 }
 
 func Cmd(format string, v ...interface{}) {
-	logger.Write(CMD, format, v...)
+	Logger.Write(CMD, format, v...)
 }
 
 func Info(format string, v ...interface{}) {
-	logger.Write(INFO, format, v...)
+	Logger.Write(INFO, format, v...)
 }
 
 func Warn(format string, v ...interface{}) {
-	logger.Write(WARN, format, v...)
+	Logger.Write(WARN, format, v...)
 }
 
 func Error(format string, v ...interface{}) {
-	logger.Write(ERROR, format, v...)
+	Logger.Write(ERROR, format, v...)
 }
 
 func Fatal(format string, v ...interface{}) {
-	logger.Write(FATAL, format, v...)
+	Logger.Write(FATAL, format, v...)
 }
 
 func Init(file string, level int) {
 	SetLog(level)
-	logger.FileName = file
-	if logger.FileName != "" {
-		logFile, err := os.Create(logger.FileName)
+	Logger.FileName = file
+	if Logger.FileName != "" {
+		logFile, err := os.Create(Logger.FileName)
 		if err == nil {
-			logger.FileLog = log.New(logFile, "", log.LstdFlags)
+			Logger.FileLog = log.New(logFile, "", log.LstdFlags)
 		} else {
-			Warn("logger.Init: %s", err)
+			Warn("Logger.Init: %s", err)
 		}
 	}
 }
 
 func SetLog(level int) {
-	logger.Level = level
+	Logger.Level = level
 }
 
 func Close() {

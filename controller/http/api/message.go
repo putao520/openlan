@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/danieldin95/lightstar/libstar"
+	"github.com/danieldin95/openlan-go/libol"
 	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"
@@ -17,8 +17,8 @@ func (m Message) Router(router *mux.Router) {
 
 func (m Message) GET(w http.ResponseWriter, r *http.Request) {
 	size := GetQueryOne(r, "size")
-	us := make([]libstar.Message, 0, 32)
-	for h := range libstar.Log.List() {
+	us := make([]libol.Message, 0, 32)
+	for h := range libol.Logger.List() {
 		if h == nil {
 			break
 		}
