@@ -192,3 +192,23 @@ func (cn *Conn) String() string {
 	defer cn.Lock.RUnlock()
 	return cn.string()
 }
+
+func (cn *Conn) Host() string {
+	if cn.Conn == nil {
+		return ""
+	}
+	if req := cn.Conn.Request(); req != nil {
+		return req.Host
+	}
+	return ""
+}
+
+func (cn *Conn) Address() string {
+	if cn.Conn == nil {
+		return ""
+	}
+	if req := cn.Conn.Request(); req != nil {
+		return req.RemoteAddr
+	}
+	return ""
+}

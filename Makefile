@@ -49,7 +49,7 @@ windows/vswitch:
 
 windows/zip: windows
 	@rm -rf $(WIN_DIR) && mkdir -p $(WIN_DIR)
-	@cp -rvf packaging/resource/point.json $(WIN_DIR)
+	@cp -rvf packaging/resource/point.json.example $(WIN_DIR)/point.json
 	@cp -rvf openlan-point.exe $(WIN_DIR)
 	@cp -rvf openlan-vswitch.exe $(WIN_DIR)
 	@rm -rf $(WIN_DIR).zip
@@ -71,7 +71,7 @@ darwin:
 
 darwin/zip: darwin
 	@rm -rf $(DARWIN_DIR) && mkdir -p $(DARWIN_DIR)
-	@cp -rvf packaging/resource/point.json $(DARWIN_DIR)
+	@cp -rvf packaging/resource/point.json.example $(DARWIN_DIR)/point.json
 	@cp -rvf openlan-point.darwin $(DARWIN_DIR)
 	@cp -rvf openlan-vswitch.darwin $(DARWIN_DIR)
 	rm -rf $(DARWIN_DIR).zip

@@ -25,6 +25,7 @@ mkdir -p %{buildroot}/usr/bin
 cp %_source_dir/openlan-vswitch %{buildroot}/usr/bin
 
 mkdir -p %{buildroot}/etc/openlan/vswitch
+cp %_source_dir/packaging/resource/ctrl.json.example %{buildroot}/etc/openlan/vswitch
 cp %_source_dir/packaging/resource/vswitch.json.example %{buildroot}/etc/openlan/vswitch
 mkdir -p %{buildroot}/etc/sysconfig/openlan
 cp %_source_dir/packaging/resource/vswitch.cfg %{buildroot}/etc/sysconfig/openlan

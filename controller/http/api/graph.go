@@ -24,8 +24,8 @@ func (g Graph) GET(w http.ResponseWriter, r *http.Request) {
 		Links      []*schema.Link    `json:"links"`
 	}{
 		Categories: []schema.Category{
-			{ Name: "virtual switch" },
-			{ Name: "accessed point" },
+			{Name: "virtual switch"},
+			{Name: "accessed point"},
 		},
 		Nodes: make([]*schema.Node, 0, 32),
 		Links: make([]*schema.Link, 0, 32),
@@ -33,7 +33,7 @@ func (g Graph) GET(w http.ResponseWriter, r *http.Request) {
 
 	i := 0
 	nn := make(map[string]*schema.Node, 32)
-	ctrlc.Storager.Switch.Iter(func(k string, v interface{}){
+	ctrlc.Storager.Switch.Iter(func(k string, v interface{}) {
 		s, ok := v.(*schema1.Switch)
 		if ok {
 			node := &schema.Node{
@@ -47,7 +47,7 @@ func (g Graph) GET(w http.ResponseWriter, r *http.Request) {
 			i += 1
 		}
 	})
-	ctrlc.Storager.Point.Iter(func(k string, v interface{}){
+	ctrlc.Storager.Point.Iter(func(k string, v interface{}) {
 		p, ok := v.(*schema1.Point)
 		if !ok {
 			return

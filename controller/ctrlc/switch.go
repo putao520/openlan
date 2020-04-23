@@ -18,6 +18,7 @@ func (h *Switch) AddCtl(id string, m libctrl.Message) error {
 	if err := json.Unmarshal([]byte(m.Data), &p); err != nil {
 		return err
 	}
+	p.Address = h.cc.Conn.Address()
 	_ = Storager.Switch.Set(p.Alias, &p)
 	return nil
 }
