@@ -13,4 +13,4 @@ LDFLAGS += -X $(PKG).Version=$$(cat ../VERSION)
 all: linux
 
 linux:
-	go build -mod=vendor -ldflags "$(LDFLAGS)" -o controller.linux.x86_64 main.go
+	go build -mod=vendor -ldflags "$(LDFLAGS)" -o openlan-ctrl main.go

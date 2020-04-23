@@ -1,5 +1,5 @@
 Name: openlan-vswitch
-Version: 4.3.16
+Version: 5.0.0
 Release: 1%{?dist}
 Summary: OpenLan's Project Software
 Group: Applications/Communications
@@ -22,24 +22,24 @@ virtualenv %_venv
 
 %install
 mkdir -p %{buildroot}/usr/bin
-cp %_source_dir/vswitch.linux.x86_64 %{buildroot}/usr/bin/vswitch
+cp %_source_dir/openlan-vswitch %{buildroot}/usr/bin
 
-mkdir -p %{buildroot}/etc/vswitch
-cp %_source_dir/packaging/resource/vswitch.json %{buildroot}/etc/vswitch/vswitch.json.example
-mkdir -p %{buildroot}/etc/sysconfig
-cp %_source_dir/packaging/resource/vswitch.cfg %{buildroot}/etc/sysconfig
+mkdir -p %{buildroot}/etc/openlan/vswitch
+cp %_source_dir/packaging/resource/vswitch.json.example %{buildroot}/etc/openlan/vswitch
+mkdir -p %{buildroot}/etc/sysconfig/openlan
+cp %_source_dir/packaging/resource/vswitch.cfg %{buildroot}/etc/sysconfig/openlan
 
 mkdir -p %{buildroot}/usr/lib/systemd/system
-cp %_source_dir/packaging/resource/vswitch.service %{buildroot}/usr/lib/systemd/system
+cp %_source_dir/packaging/resource/openlan-vswitch.service %{buildroot}/usr/lib/systemd/system
 
 mkdir -p %{buildroot}/var/openlan
 cp -R %_source_dir/packaging/resource/ca %{buildroot}/var/openlan
 cp -R %_source_dir/vswitch/public %{buildroot}/var/openlan
 
-mkdir -p %{buildroot}/etc/vswitch/network
-cp %_source_dir/packaging/resource/network.json %{buildroot}/etc/vswitch/network/default.json.example
-mkdir -p %{buildroot}/etc/vswitch/password
-cp %_source_dir/packaging/resource/password.json %{buildroot}/etc/vswitch/password/default.json.example
+mkdir -p %{buildroot}/etc/openlan/vswitch/network
+cp %_source_dir/packaging/resource/network.json.example %{buildroot}/etc/openlan/vswitch/network
+mkdir -p %{buildroot}/etc/openlan/vswitch/password
+cp %_source_dir/packaging/resource/password.json.example %{buildroot}/etc/openlan/vswitch/password
 
 
 mkdir -p %{buildroot}/opt/openlan-utils
@@ -56,7 +56,8 @@ firewall-cmd --reload || :
 
 %files
 %defattr(-,root,root)
-/etc/*
+/etc/sysconfig/*
+/etc/openlan/*
 /usr/bin/*
 /usr/lib/systemd/system/*
 /var/openlan

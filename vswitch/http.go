@@ -196,7 +196,7 @@ func (h *Http) PubFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Http) getIndex(body *schema.Index) *schema.Index {
-	body.Version = config.NewVersionSchema()
+	body.Version = schema.NewVersionSchema()
 	body.Worker = api.NewWorkerSchema(h.switcher)
 
 	pointList := make([]*models.Point, 0, 128)

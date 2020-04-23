@@ -1,0 +1,7 @@
+{
+  "network": "default",
+  "vs.addr": "openlan.net",
+  "vs.auth": "hi:hi@123$",
+  "vs.tls": true,
+  "log.file": "/var/log/point.log"
+}

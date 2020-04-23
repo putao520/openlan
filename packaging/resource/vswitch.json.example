@@ -1,0 +1,14 @@
+{
+  "log.file": "/var/log/vswitch.log",
+  "http.dir": "/var/openlan/public",
+  "crt.dir": "/var/openlan/ca",
+  "bridge": [
+    {
+      "network": "default",
+      "if.addr": "192.168.100.40/24",
+      "links": [
+        { "vs.addr": "openlan.xx", "vs.auth": "admin:12345656", "vs.tls": true }
+      ]
+    }
+  ]
+}

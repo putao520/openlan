@@ -1,0 +1,13 @@
+[Unit]
+Description=OpenLAN Virtual Switch daemon
+After=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+EnvironmentFile=/etc/sysconfig/openlan/vswitch.cfg
+ExecStart=/bin/bash -c '/usr/bin/openlan-vswitch $OPTIONS &'
+ExecStop=/usr/bin/kill `/usr/sbin/pidof openlan-vswitch`
+
+[Install]
+WantedBy=multi-user.target
