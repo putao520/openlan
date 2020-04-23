@@ -9,6 +9,7 @@ import (
 )
 
 type User struct {
+	Api
 }
 
 func (u User) Router(router *mux.Router) {
@@ -27,16 +28,4 @@ func (u User) GET(w http.ResponseWriter, r *http.Request) {
 		return us[i].Name < us[j].Name
 	})
 	ResponseJson(w, us)
-}
-
-func (u User) POST(w http.ResponseWriter, r *http.Request) {
-	ResponseMsg(w, 0, "")
-}
-
-func (u User) PUT(w http.ResponseWriter, r *http.Request) {
-	ResponseMsg(w, 0, "")
-}
-
-func (u User) DELETE(w http.ResponseWriter, r *http.Request) {
-	ResponseMsg(w, 0, "")
 }

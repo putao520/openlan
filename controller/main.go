@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"github.com/danieldin95/lightstar/libstar"
-	"github.com/danieldin95/openlan-go/controller/ctl"
 	"github.com/danieldin95/openlan-go/controller/http"
 	"github.com/danieldin95/openlan-go/controller/storage"
 	"github.com/danieldin95/openlan-go/libol"
@@ -38,7 +37,6 @@ func main() {
 
 	libol.Init(cfg.LogFile, cfg.Verbose)
 	storage.Storager.Load(cfg.ConfDir)
-	ctl.CTL.Load(&storage.Storager)
 
 	h := http.NewServer(cfg.Listen, cfg.StaticDir)
 	if _, err := os.Stat(cfg.CrtDir); !os.IsNotExist(err) {

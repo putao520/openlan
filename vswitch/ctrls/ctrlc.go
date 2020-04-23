@@ -106,5 +106,3 @@ func Start() {
 func Stop() {
 	Ctrl.Stop()
 }
-
-

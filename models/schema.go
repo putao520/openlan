@@ -22,7 +22,6 @@ func NewPointSchema(p *Point) schema.Point {
 	}
 }
 
-
 func NewLinkSchema(p *Point) schema.Link {
 	client, dev := p.Client, p.Device
 	return schema.Link{
@@ -44,7 +43,6 @@ func NewNeighborSchema(n *Neighbor) schema.Neighbor {
 		Client: n.Client.String(),
 	}
 }
-
 
 func NewOnLineSchema(l *Line) schema.OnLine {
 	return schema.OnLine{

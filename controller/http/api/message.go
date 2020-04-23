@@ -8,6 +8,7 @@ import (
 )
 
 type Message struct {
+	Api
 }
 
 func (m Message) Router(router *mux.Router) {

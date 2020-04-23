@@ -2,15 +2,14 @@ package ctl
 
 import (
 	"encoding/json"
-	"github.com/danieldin95/openlan-go/controller/schema"
 	"github.com/danieldin95/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/vswitch/schema"
 )
 
 type Point struct {
 	Listen
 	cc *CtrlC
 }
-
 
 func (h *Point) AddCtl(id string, m Message) error {
 	libol.Cmd("Point.AddCtl %s %s", id, m.Data)
@@ -21,7 +20,7 @@ func (h *Point) AddCtl(id string, m Message) error {
 	if p.Switch == "" {
 		p.Switch = id
 	}
-	_ = Storager.Point.Set(p.Server, &p)
+	_ = Storager.Point.Set(p.Address, &p)
 	return nil
 }
 

@@ -7,7 +7,6 @@ type Neighbor struct {
 	cc *CtrlC
 }
 
-
 func (h *Neighbor) AddCtl(id string, m Message) error {
 	libol.Cmd("Neighbor.AddCtl %s %s", id, m.Data)
 	return nil

@@ -3,12 +3,13 @@ package apiv1
 import (
 	"github.com/danieldin95/openlan-go/controller/ctl"
 	"github.com/danieldin95/openlan-go/controller/http/api"
-	"github.com/danieldin95/openlan-go/controller/schema"
+	"github.com/danieldin95/openlan-go/vswitch/schema"
 	"github.com/gorilla/mux"
 	"net/http"
 )
 
 type Point struct {
+	api.Api
 }
 
 func (p Point) Router(router *mux.Router) {
@@ -34,16 +35,4 @@ func (p Point) GET(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	api.ResponseJson(w, ps)
-}
-
-func (p Point) POST(w http.ResponseWriter, r *http.Request) {
-	api.ResponseMsg(w, 0, "")
-}
-
-func (p Point) PUT(w http.ResponseWriter, r *http.Request) {
-	api.ResponseMsg(w, 0, "")
-}
-
-func (p Point) DELETE(w http.ResponseWriter, r *http.Request) {
-	api.ResponseMsg(w, 0, "")
 }
