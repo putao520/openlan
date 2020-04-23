@@ -5,11 +5,11 @@ import (
 	"github.com/danieldin95/openlan-go/controller/ctl"
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
-	"github.com/danieldin95/openlan-go/vswitch/schema"
 	"github.com/danieldin95/openlan-go/vswitch/service"
 )
 
 type Point struct {
+	ctl.Listen
 	cc *CtrlC
 }
 
@@ -19,7 +19,7 @@ func (p *Point) Add(key string, value interface{}) {
 		return
 	}
 	if obj, ok := value.(*models.Point); ok {
-		data, _ := json.Marshal(schema.NewPoint(obj))
+		data, _ := json.Marshal(models.NewPointSchema(obj))
 		if p.cc != nil {
 			p.cc.Send(ctl.Message{
 				Action:   "add",
@@ -41,8 +41,8 @@ func (p *Point) Del(key string) {
 	}
 }
 
-func (p *Point) GetCtl(id, data string) error {
-	if data == "" {
+func (p *Point) GetCtl(id string, m ctl.Message) error {
+	if m.Data == "" {
 		for u := range service.Point.List() {
 			if u == nil {
 				break
@@ -53,16 +53,4 @@ func (p *Point) GetCtl(id, data string) error {
 		// TODO reply one POINT.
 	}
 	return nil
-}
-
-func (p *Point) AddCtl(id, data string) error {
-	panic("implement me")
-}
-
-func (p *Point) DelCtl(id, data string) error {
-	panic("implement me")
-}
-
-func (p *Point) ModCtl(id, data string) error {
-	panic("implement me")
 }

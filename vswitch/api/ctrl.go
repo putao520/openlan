@@ -8,7 +8,7 @@ import (
 )
 
 type Ctrl struct {
-	Switcher schema.VSwitcher
+	Switcher VSwitcher
 }
 
 func (h Ctrl) Router(router *mux.Router) {

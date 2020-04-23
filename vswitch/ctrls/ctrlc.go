@@ -17,15 +17,16 @@ type CtrlC struct {
 
 func (cc *CtrlC) Register() {
 	// Listen change and update.
-	_ = service.Point.Listen.Add("ctlc", &Point{cc})
-	_ = service.Neighbor.Listen.Add("ctlc", &Neighbor{cc})
+	_ = service.Point.Listen.Add("ctlc", &Point{cc: cc})
+	_ = service.Neighbor.Listen.Add("ctlc", &Neighbor{cc: cc})
 }
 
 func (cc *CtrlC) Handle() {
 	// Handle command
 	if cc.Conn != nil {
-		cc.Conn.Listener("point", &Point{cc})
-		cc.Conn.Listener("neighbor", &Neighbor{cc})
+		cc.Conn.Listener("point", &Point{cc: cc})
+		cc.Conn.Listener("neighbor", &Neighbor{cc: cc})
+		cc.Conn.Listener("online", &OnLine{cc: cc})
 	}
 }
 

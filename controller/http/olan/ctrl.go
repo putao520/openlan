@@ -29,6 +29,7 @@ func (w Ctrl) Handle(ws *websocket.Conn) {
 		libol.Error("Ctrl.Handle user notFound")
 		return
 	}
+	libol.Info("Ctrl.Handle new %s", id)
 	cc := ctl.CtrlC{
 		Conn: &ctl.Conn{
 			Id:   id,

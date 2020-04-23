@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/vswitch/schema"
 	"github.com/danieldin95/openlan-go/vswitch/service"
 	"github.com/gorilla/mux"
@@ -21,7 +22,7 @@ func (h Network) List(w http.ResponseWriter, r *http.Request) {
 		if u == nil {
 			break
 		}
-		nets = append(nets, schema.NewNetwork(u))
+		nets = append(nets, models.NewNetworkSchema(u))
 	}
 	ResponseJson(w, nets)
 }
@@ -30,7 +31,7 @@ func (h Network) Get(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	net := service.Network.Get(vars["id"])
 	if net != nil {
-		ResponseJson(w, schema.NewNetwork(net))
+		ResponseJson(w, models.NewNetworkSchema(net))
 	} else {
 		http.Error(w, vars["id"], http.StatusNotFound)
 	}

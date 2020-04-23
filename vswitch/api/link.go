@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/vswitch/schema"
 	"github.com/danieldin95/openlan-go/vswitch/service"
 	"github.com/gorilla/mux"
@@ -12,7 +13,7 @@ import (
 )
 
 type Link struct {
-	Switcher schema.VSwitcher
+	Switcher VSwitcher
 }
 
 func (h Link) Router(router *mux.Router) {
@@ -28,7 +29,7 @@ func (h Link) List(w http.ResponseWriter, r *http.Request) {
 		if l == nil {
 			break
 		}
-		links = append(links, schema.NewLink(l))
+		links = append(links, models.NewLinkSchema(l))
 	}
 
 	ResponseJson(w, links)
@@ -40,7 +41,7 @@ func (h Link) Get(w http.ResponseWriter, r *http.Request) {
 
 	link := service.Link.Get(vars["id"])
 	if link != nil {
-		ResponseJson(w, schema.NewLink(link))
+		ResponseJson(w, models.NewLinkSchema(link))
 	} else {
 		http.Error(w, vars["id"], http.StatusNotFound)
 	}

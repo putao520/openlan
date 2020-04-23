@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/vswitch/schema"
 	"github.com/danieldin95/openlan-go/vswitch/service"
 	"github.com/gorilla/mux"
@@ -20,7 +21,7 @@ func (h OnLine) List(w http.ResponseWriter, r *http.Request) {
 		if u == nil {
 			break
 		}
-		nets = append(nets, schema.NewOnLine(u))
+		nets = append(nets, models.NewOnLineSchema(u))
 	}
 	ResponseJson(w, nets)
 }

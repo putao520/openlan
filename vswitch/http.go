@@ -20,7 +20,7 @@ import (
 )
 
 type Http struct {
-	switcher   schema.VSwitcher
+	switcher   api.VSwitcher
 	listen     string
 	adminToken string
 	adminFile  string
@@ -31,7 +31,7 @@ type Http struct {
 	router     *mux.Router
 }
 
-func NewHttp(switcher schema.VSwitcher, c config.VSwitch) (h *Http) {
+func NewHttp(switcher api.VSwitcher, c config.VSwitch) (h *Http) {
 	h = &Http{
 		switcher:   switcher,
 		listen:     c.HttpListen,
@@ -196,8 +196,8 @@ func (h *Http) PubFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Http) getIndex(body *schema.Index) *schema.Index {
-	body.Version = schema.NewVersion()
-	body.Worker = schema.NewWorker(h.switcher)
+	body.Version = config.NewVersionSchema()
+	body.Worker = api.NewWorkerSchema(h.switcher)
 
 	pointList := make([]*models.Point, 0, 128)
 	for p := range service.Point.List() {
@@ -210,7 +210,7 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 		return pointList[i].UUID > pointList[j].UUID
 	})
 	for _, p := range pointList {
-		body.Points = append(body.Points, schema.NewPoint(p))
+		body.Points = append(body.Points, models.NewPointSchema(p))
 	}
 
 	neighborList := make([]*models.Neighbor, 0, 128)
@@ -224,7 +224,7 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 		return neighborList[i].IpAddr.String() > neighborList[j].IpAddr.String()
 	})
 	for _, n := range neighborList {
-		body.Neighbors = append(body.Neighbors, schema.NewNeighbor(n))
+		body.Neighbors = append(body.Neighbors, models.NewNeighborSchema(n))
 	}
 
 	linkList := make([]*models.Point, 0, 128)
@@ -238,7 +238,7 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 		return linkList[i].UUID > linkList[j].UUID
 	})
 	for _, p := range linkList {
-		body.Links = append(body.Links, schema.NewLink(p))
+		body.Links = append(body.Links, models.NewLinkSchema(p))
 	}
 
 	lineList := make([]*models.Line, 0, 128)
@@ -252,7 +252,7 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 		return lineList[i].UpTime() < lineList[j].UpTime()
 	})
 	for _, l := range lineList {
-		body.OnLines = append(body.OnLines, schema.NewOnLine(l))
+		body.OnLines = append(body.OnLines, models.NewOnLineSchema(l))
 
 	}
 	return body

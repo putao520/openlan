@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"github.com/danieldin95/openlan-go/controller/http/api"
+	"github.com/danieldin95/openlan-go/controller/http/apiv1"
 	"github.com/danieldin95/openlan-go/controller/http/olan"
 	"github.com/danieldin95/openlan-go/controller/storage"
 	"github.com/danieldin95/openlan-go/libol"
@@ -44,10 +45,13 @@ func (h *Server) LoadRouter() {
 	// API router
 	api.VSwitch{}.Router(router)
 	api.User{}.Router(router)
-	api.Point{}.Router(router)
+	apiv1.Point{}.Router(router)
 	api.Link{}.Router(router)
 	api.Graph{}.Router(router)
 	api.Message{}.Router(router)
+
+	// API V1
+	apiv1.Point{}.Router(router)
 	// Static files
 	Dist{h.pubDir}.Router(router)
 	// OpenLAN message

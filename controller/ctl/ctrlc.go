@@ -6,10 +6,10 @@ type CtrlC struct {
 
 func (cc *CtrlC) Register() {
 	if cc.Conn != nil {
-		cc.Conn.Listener("hello", &Hello{cc})
-		cc.Conn.Listener("point", &Point{cc})
-		cc.Conn.Listener("link", &Link{cc})
-		cc.Conn.Listener("neighbor", &Neighbor{cc})
+		cc.Conn.Listener("hello", &Hello{cc: cc})
+		cc.Conn.Listener("point", &Point{cc: cc})
+		cc.Conn.Listener("link", &Link{cc: cc})
+		cc.Conn.Listener("neighbor", &Neighbor{cc: cc})
 	}
 }
 

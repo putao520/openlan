@@ -73,13 +73,13 @@ func (cn *Conn) dispatch(m Message) error {
 		if call, ok := value.(Listener); ok {
 			switch m.Action {
 			case "GET":
-				return call.GetCtl(cn.Id, m.Data)
+				return call.GetCtl(cn.Id, m)
 			case "ADD":
-				return call.AddCtl(cn.Id, m.Data)
+				return call.AddCtl(cn.Id, m)
 			case "DEL":
-				return call.DelCtl(cn.Id, m.Data)
+				return call.DelCtl(cn.Id, m)
 			case "MOD":
-				return call.ModCtl(cn.Id, m.Data)
+				return call.ModCtl(cn.Id, m)
 			}
 		}
 		libol.Error("Conn.dispatch unknown %s", m.Resource)
@@ -123,6 +123,7 @@ func (cn *Conn) write(m Message) {
 	cn.Lock.Lock()
 	defer cn.Lock.Unlock()
 
+	libol.Cmd("Conn.write %s", m)
 	if err := Codec.Send(cn.Conn, &m); err != nil {
 		libol.Error("Conn.Send %s", err)
 		cn.Stop()

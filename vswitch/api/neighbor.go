@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/vswitch/schema"
 	"github.com/danieldin95/openlan-go/vswitch/service"
 	"github.com/gorilla/mux"
@@ -20,7 +21,7 @@ func (h Neighbor) List(w http.ResponseWriter, r *http.Request) {
 		if n == nil {
 			break
 		}
-		neighbors = append(neighbors, schema.NewNeighbor(n))
+		neighbors = append(neighbors, models.NewNeighborSchema(n))
 	}
 	ResponseJson(w, neighbors)
 }

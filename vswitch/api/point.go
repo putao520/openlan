@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/vswitch/schema"
 	"github.com/danieldin95/openlan-go/vswitch/service"
 	"github.com/gorilla/mux"
@@ -21,7 +22,7 @@ func (h Point) List(w http.ResponseWriter, r *http.Request) {
 		if u == nil {
 			break
 		}
-		points = append(points, schema.NewPoint(u))
+		points = append(points, models.NewPointSchema(u))
 	}
 	ResponseJson(w, points)
 }
@@ -30,7 +31,7 @@ func (h Point) Get(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	point := service.Point.Get(vars["id"])
 	if point != nil {
-		ResponseJson(w, schema.NewPoint(point))
+		ResponseJson(w, models.NewPointSchema(point))
 	} else {
 		http.Error(w, vars["id"], http.StatusNotFound)
 	}

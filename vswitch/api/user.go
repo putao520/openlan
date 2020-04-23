@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"github.com/danieldin95/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/vswitch/schema"
 	"github.com/danieldin95/openlan-go/vswitch/service"
 	"github.com/gorilla/mux"
@@ -26,7 +27,7 @@ func (h User) List(w http.ResponseWriter, r *http.Request) {
 		if u == nil {
 			break
 		}
-		users = append(users, schema.NewUser(u))
+		users = append(users, models.NewUserSchema(u))
 	}
 	ResponseJson(w, users)
 }
@@ -35,7 +36,7 @@ func (h User) Get(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	user := service.User.Get(vars["id"])
 	if user != nil {
-		ResponseJson(w, schema.NewUser(user))
+		ResponseJson(w, models.NewUserSchema(user))
 	} else {
 		http.Error(w, vars["id"], http.StatusNotFound)
 	}
@@ -55,7 +56,7 @@ func (h User) Add(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.User.Add(user.ToModel())
+	service.User.Add(models.SchemaToUserModel(user))
 	ResponseMsg(w, 0, "")
 }
 
