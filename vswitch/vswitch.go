@@ -89,6 +89,7 @@ func (v *VSwitch) Initialize() {
 	if ctrls.Ctrl.Name == "" {
 		ctrls.Ctrl.Name = v.Conf.Alias
 	}
+	ctrls.Ctrl.Switcher = v
 }
 
 func (v *VSwitch) OnHook(client *libol.TcpClient, data []byte) error {
@@ -172,7 +173,7 @@ func (v *VSwitch) Start() error {
 	if v.http != nil {
 		go v.http.Start()
 	}
-	go ctrls.Start()
+	go ctrls.Ctrl.Start()
 
 	return nil
 }
@@ -182,7 +183,7 @@ func (v *VSwitch) Stop() error {
 	defer v.lock.Unlock()
 
 	libol.Debug("VSwitch.Stop")
-	ctrls.Stop()
+	ctrls.Ctrl.Stop()
 	if v.bridge == nil {
 		return libol.NewErr("already closed")
 	}

@@ -1,10 +1,10 @@
 package ctrls
 
 import (
-	"github.com/danieldin95/openlan-go/controller/ctl"
+	"github.com/danieldin95/openlan-go/controller/libctrl"
 )
 
 type OnLine struct {
-	ctl.Listen
+	libctrl.Listen
 	cc *CtrlC
 }

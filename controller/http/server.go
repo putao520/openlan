@@ -52,6 +52,8 @@ func (h *Server) LoadRouter() {
 
 	// API V1
 	apiv1.Point{}.Router(router)
+	apiv1.Switch{}.Router(router)
+	apiv1.Neighbor{}.Router(router)
 	// Static files
 	Dist{h.pubDir}.Router(router)
 	// OpenLAN message
@@ -87,7 +89,7 @@ func (h *Server) IsAuth(w http.ResponseWriter, r *http.Request) bool {
 
 func (h *Server) LogRequest(r *http.Request) {
 	if !strings.HasPrefix(r.URL.Path, "/api") || r.Method == "GET" {
-		libol.Debug("Server.Middleware %s %s", r.RemoteAddr, r.Method)
+		libol.Debug("Server.Middleware %s %s %s", r.RemoteAddr, r.Method, r.URL)
 		return
 	}
 	path := r.URL.Path

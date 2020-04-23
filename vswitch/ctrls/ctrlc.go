@@ -2,7 +2,7 @@ package ctrls
 
 import (
 	"github.com/danieldin95/lightstar/libstar"
-	"github.com/danieldin95/openlan-go/controller/ctl"
+	"github.com/danieldin95/openlan-go/controller/libctrl"
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/vswitch/service"
 	"time"
@@ -12,7 +12,8 @@ type CtrlC struct {
 	Url      string `json:"url"`
 	Name     string `json:"name"`
 	Password string `json:"password"`
-	Conn     *ctl.Conn
+	Conn     *libctrl.Conn
+	Switcher Switcher
 }
 
 func (cc *CtrlC) Register() {
@@ -27,6 +28,7 @@ func (cc *CtrlC) Handle() {
 		cc.Conn.Listener("point", &Point{cc: cc})
 		cc.Conn.Listener("neighbor", &Neighbor{cc: cc})
 		cc.Conn.Listener("online", &OnLine{cc: cc})
+		cc.Conn.Listener("switch", &Switch{cc: cc})
 	}
 }
 
@@ -45,7 +47,7 @@ func (cc *CtrlC) Open() error {
 	if err != nil {
 		return err
 	}
-	cc.Conn = &ctl.Conn{
+	cc.Conn = &libctrl.Conn{
 		Conn: to,
 		Wait: libstar.NewWaitOne(1),
 	}
@@ -53,6 +55,10 @@ func (cc *CtrlC) Open() error {
 }
 
 func (cc *CtrlC) Start() {
+	if Ctrl.Url == "" {
+		libol.Warn("CtrlC.Star Url is nil")
+		return
+	}
 	cc.Register()
 	for {
 		_ = cc.Open()
@@ -76,7 +82,7 @@ func (cc *CtrlC) Stop() {
 	}
 }
 
-func (cc *CtrlC) Send(m ctl.Message) {
+func (cc *CtrlC) Send(m libctrl.Message) {
 	if cc.Conn != nil {
 		cc.Conn.Send(m)
 	}
@@ -95,14 +101,4 @@ func Load(path string) {
 		libol.Error("ctrls.Load: %s", err)
 		return
 	}
-}
-
-func Start() {
-	if Ctrl.Url != "" {
-		Ctrl.Start()
-	}
-}
-
-func Stop() {
-	Ctrl.Stop()
 }

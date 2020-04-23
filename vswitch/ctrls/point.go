@@ -2,14 +2,14 @@ package ctrls
 
 import (
 	"encoding/json"
-	"github.com/danieldin95/openlan-go/controller/ctl"
+	"github.com/danieldin95/openlan-go/controller/libctrl"
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/vswitch/service"
 )
 
 type Point struct {
-	ctl.Listen
+	libctrl.Listen
 	cc *CtrlC
 }
 
@@ -19,12 +19,11 @@ func (p *Point) Add(key string, value interface{}) {
 		return
 	}
 	if obj, ok := value.(*models.Point); ok {
-		data, _ := json.Marshal(models.NewPointSchema(obj))
-		if p.cc != nil {
-			p.cc.Send(ctl.Message{
+		if d, e := json.Marshal(models.NewPointSchema(obj)); e == nil {
+			p.cc.Send(libctrl.Message{
 				Action:   "add",
 				Resource: "point",
-				Data:     string(data),
+				Data:     string(d),
 			})
 		}
 	}
@@ -32,16 +31,14 @@ func (p *Point) Add(key string, value interface{}) {
 
 func (p *Point) Del(key string) {
 	libol.Cmd("Point.Del %s", key)
-	if p.cc != nil {
-		p.cc.Send(ctl.Message{
-			Action:   "del",
-			Resource: "point",
-			Data:     key,
-		})
-	}
+	p.cc.Send(libctrl.Message{
+		Action:   "del",
+		Resource: "point",
+		Data:     key,
+	})
 }
 
-func (p *Point) GetCtl(id string, m ctl.Message) error {
+func (p *Point) GetCtl(id string, m libctrl.Message) error {
 	if m.Data == "" {
 		for u := range service.Point.List() {
 			if u == nil {

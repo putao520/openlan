@@ -1,7 +1,7 @@
 package apiv1
 
 import (
-	"github.com/danieldin95/openlan-go/controller/ctl"
+	"github.com/danieldin95/openlan-go/controller/ctrlc"
 	"github.com/danieldin95/openlan-go/controller/http/api"
 	"github.com/danieldin95/openlan-go/vswitch/schema"
 	"github.com/gorilla/mux"
@@ -21,16 +21,16 @@ func (p Point) GET(w http.ResponseWriter, r *http.Request) {
 	id, _ := api.GetArg(r, "id")
 	ps := make([]schema.Point, 0, 32)
 	if id == "" {
-		ctl.Storager.Point.Iter(func(k string, v interface{}) {
-			if p, ok := v.(*schema.Point); ok {
-				ps = append(ps, *p)
+		ctrlc.Storager.Point.Iter(func(k string, v interface{}) {
+			if t, ok := v.(*schema.Point); ok {
+				ps = append(ps, *t)
 			}
 		})
 	} else {
-		v := ctl.Storager.Point.Get(id)
+		v := ctrlc.Storager.Point.Get(id)
 		if v != nil {
-			if p, ok := v.(*schema.Point); ok {
-				ps = append(ps, *p)
+			if t, ok := v.(*schema.Point); ok {
+				ps = append(ps, *t)
 			}
 		}
 	}

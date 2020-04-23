@@ -2,8 +2,9 @@ package olan
 
 import (
 	"github.com/danieldin95/lightstar/libstar"
-	"github.com/danieldin95/openlan-go/controller/ctl"
+	"github.com/danieldin95/openlan-go/controller/ctrlc"
 	"github.com/danieldin95/openlan-go/controller/http/api"
+	"github.com/danieldin95/openlan-go/controller/libctrl"
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/gorilla/mux"
 	"golang.org/x/net/websocket"
@@ -30,8 +31,8 @@ func (w Ctrl) Handle(ws *websocket.Conn) {
 		return
 	}
 	libol.Info("Ctrl.Handle new %s", id)
-	cc := ctl.CtrlC{
-		Conn: &ctl.Conn{
+	cc := ctrlc.CtrlC{
+		Conn: &libctrl.Conn{
 			Id:   id,
 			Conn: ws,
 			Wait: libstar.NewWaitOne(1),

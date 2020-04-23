@@ -2,14 +2,14 @@ package ctrls
 
 import (
 	"encoding/json"
-	"github.com/danieldin95/openlan-go/controller/ctl"
+	"github.com/danieldin95/openlan-go/controller/libctrl"
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/vswitch/service"
 )
 
 type Neighbor struct {
-	ctl.Listen
+	libctrl.Listen
 	cc *CtrlC
 }
 
@@ -19,12 +19,11 @@ func (p *Neighbor) Add(key string, value interface{}) {
 		return
 	}
 	if n, ok := value.(*models.Neighbor); ok {
-		data, _ := json.Marshal(models.NewNeighborSchema(n))
-		if p.cc != nil {
-			p.cc.Send(ctl.Message{
+		if d, e := json.Marshal(models.NewNeighborSchema(n)); e == nil {
+			p.cc.Send(libctrl.Message{
 				Action:   "add",
 				Resource: "neighbor",
-				Data:     string(data),
+				Data:     string(d),
 			})
 		}
 	}
@@ -32,16 +31,14 @@ func (p *Neighbor) Add(key string, value interface{}) {
 
 func (p *Neighbor) Del(key string) {
 	libol.Cmd("Neighbor.Del %s", key)
-	if p.cc != nil {
-		p.cc.Send(ctl.Message{
-			Action:   "delete",
-			Resource: "neighbor",
-			Data:     key,
-		})
-	}
+	p.cc.Send(libctrl.Message{
+		Action:   "delete",
+		Resource: "neighbor",
+		Data:     key,
+	})
 }
 
-func (p *Neighbor) GetCtl(id string, m ctl.Message) error {
+func (p *Neighbor) GetCtl(id string, m libctrl.Message) error {
 	for u := range service.Neighbor.List() {
 		if u == nil {
 			break

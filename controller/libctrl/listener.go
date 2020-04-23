@@ -1,4 +1,4 @@
-package ctl
+package libctrl
 
 import "github.com/danieldin95/openlan-go/libol"
 
