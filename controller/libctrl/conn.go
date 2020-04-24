@@ -99,8 +99,6 @@ func (cn *Conn) dispatch(m Message) error {
 			}
 		}
 		libol.Error("Conn.dispatch unknown %s", m.Resource)
-	} else {
-		libol.Warn("conn.dispatch notSupport %s", m.Resource)
 	}
 	return nil
 }

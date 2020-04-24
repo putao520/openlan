@@ -1,8 +1,8 @@
 package storage
 
 import (
-	"github.com/danieldin95/lightstar/libstar"
 	"github.com/danieldin95/openlan-go/controller/schema"
+	"github.com/danieldin95/openlan-go/libol"
 )
 
 type Storage struct {
@@ -17,7 +17,7 @@ var Storager = Storage{
 
 func (s *Storage) Load(path string) {
 	if err := s.Users.Load(path + "/auth.json"); err != nil {
-		libstar.Error("Storage.Load.Users %s", err)
+		libol.Error("Storage.Load.Users %s", err)
 	}
-	libstar.Debug("Storage.Load %s", s.Users)
+	libol.Debug("Storage.Load %s", s.Users)
 }

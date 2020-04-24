@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"github.com/danieldin95/lightstar/libstar"
 	"github.com/danieldin95/openlan-go/controller/schema"
 	"github.com/danieldin95/openlan-go/libol"
 	"sync"
@@ -17,7 +16,7 @@ func (u *Users) Save() error {
 	u.Lock.RLock()
 	defer u.Lock.RUnlock()
 
-	if err := libstar.JSON.MarshalSave(&u.Users, u.File, true); err != nil {
+	if err := libol.MarshalSave(&u.Users, u.File, true); err != nil {
 		return err
 	}
 	return nil
@@ -28,7 +27,7 @@ func (u *Users) Load(file string) error {
 	defer u.Lock.Unlock()
 
 	u.File = file
-	if err := libstar.JSON.UnmarshalLoad(&u.Users, file); err != nil {
+	if err := libol.UnmarshalLoad(&u.Users, file); err != nil {
 		return err
 	}
 	for name, value := range u.Users {

@@ -21,6 +21,7 @@ func (u *Route) String() string {
 
 type Network struct {
 	Name    string   `json:"name"`
+	Tenant  string   `json:"tenant,omitempty"`
 	IfAddr  string   `json:"ifAddr"`
 	IpAddr  string   `json:"ipAddr"`
 	IpRange int      `json:"ipRange"`

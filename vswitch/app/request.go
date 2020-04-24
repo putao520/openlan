@@ -45,18 +45,21 @@ func (r *WithRequest) OnNeighbor(client *libol.TcpClient, data string) {
 func (r *WithRequest) OnIpAddr(client *libol.TcpClient, data string) {
 	libol.Info("WithRequest.OnIpAddr: %s from %s", data, client)
 
-	net := models.NewNetwork("", "")
-	if err := json.Unmarshal([]byte(data), net); err != nil {
+	n := models.NewNetwork("", "")
+	if err := json.Unmarshal([]byte(data), n); err != nil {
 		libol.Error("WithRequest.OnIpAddr: Invalid json data.")
 		return
 	}
 
-	if net.IfAddr == "" {
-		FinNet := service.Network.Get(net.Name)
+	if n.Name == "" {
+		n.Name = n.Tenant
+	}
+	if n.IfAddr == "" {
+		FinNet := service.Network.Get(n.Name)
 		libol.Info("WithRequest.OnIpAddr: find %s", FinNet)
 		ipStr, netmask := service.Network.GetFreeAddr(client, FinNet)
 		if ipStr == "" {
-			libol.Error("WithRequest.OnIpAddr: no free address")
+			libol.Error("WithRequest.OnIpAddr: %s no free address", n.Name)
 			_ = client.WriteResp("ipaddr", "no free address")
 			return
 		}
