@@ -52,7 +52,7 @@ func NewVSwitch(c config.VSwitch) *VSwitch {
 		Conf:       c,
 		worker:     make(map[string]*Worker, 32),
 		bridge:     make(map[string]network.Bridger, 32),
-		server:     libol.NewTcpServer(c.TcpListen, tlsConf),
+		server:     libol.NewTcpServer(c.Listen, tlsConf),
 		newTime:    time.Now().Unix(),
 		initialize: false,
 	}
@@ -61,13 +61,14 @@ func NewVSwitch(c config.VSwitch) *VSwitch {
 
 func (v *VSwitch) Initialize() {
 	v.initialize = true
-	if v.Conf.HttpListen != "" {
+	if v.Conf.Http != nil {
 		v.http = NewHttp(v, v.Conf)
 	}
-	for _, brCfg := range v.Conf.Bridge {
-		tenant := brCfg.Name
-		v.worker[tenant] = NewWorker(brCfg)
-		v.bridge[tenant] = network.NewBridger(brCfg.Bridger, brCfg.BrName, brCfg.IfMtu)
+	for _, nCfg := range v.Conf.Network {
+		name := nCfg.Name
+		brCfg := nCfg.Bridge
+		v.worker[name] = NewWorker(*nCfg)
+		v.bridge[name] = network.NewBridger(brCfg.Provider, brCfg.Name, brCfg.Mtu)
 	}
 
 	v.Apps.Auth = app.NewPointAuth(v, v.Conf)
@@ -165,9 +166,10 @@ func (v *VSwitch) Start() error {
 	for _, w := range v.worker {
 		w.Start(v)
 	}
-	for _, brCfg := range v.Conf.Bridge {
-		if br, ok := v.bridge[brCfg.Name]; ok {
-			br.Open(brCfg.IfAddr)
+	for _, nCfg := range v.Conf.Network {
+		if br, ok := v.bridge[nCfg.Name]; ok {
+			brCfg := nCfg.Bridge
+			br.Open(brCfg.Address)
 		}
 	}
 	if v.http != nil {
@@ -187,10 +189,11 @@ func (v *VSwitch) Stop() error {
 	if v.bridge == nil {
 		return libol.NewErr("already closed")
 	}
-	for _, brCfg := range v.Conf.Bridge {
-		if br, ok := v.bridge[brCfg.Name]; ok {
+	for _, nCfg := range v.Conf.Network {
+		if br, ok := v.bridge[nCfg.Name]; ok {
+			brCfg := nCfg.Bridge
 			_ = br.Close()
-			delete(v.bridge, brCfg.BrName)
+			delete(v.bridge, brCfg.Name)
 		}
 	}
 	if v.http != nil {
@@ -280,4 +283,8 @@ func (v *VSwitch) ReadTap(dev network.Taper, readAt func(p []byte) error) {
 			break
 		}
 	}
+}
+
+func (v *VSwitch) Config() *config.VSwitch {
+	return &v.Conf
 }

@@ -19,17 +19,6 @@ var Network = _network{
 	ClientUsed: libol.NewSafeStrMap(1024),
 }
 
-func (w *_network) Load(name, path string) error {
-	n := &models.Network{}
-	if err := libol.UnmarshalLoad(n, path); err != nil {
-		libol.Error("_network.load: %s", err)
-		return err
-	}
-	n.Name = name
-	w.Add(n)
-	return nil
-}
-
 func (w *_network) Add(n *models.Network) {
 	libol.Debug("_network.Add %v", *n)
 	_ = w.Networks.Set(n.Name, n)

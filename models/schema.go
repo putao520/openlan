@@ -75,22 +75,19 @@ func SchemaToUserModel(user *schema.User) *User {
 }
 
 func NewNetworkSchema(n *Network) schema.Network {
-	routes := make([]schema.Route, 0, 32)
-	if len(n.Routes) != 0 {
-		for _, route := range routes {
-			routes = append(routes,
-				schema.Route{
-					Nexthop: route.Nexthop,
-					Prefix:  route.Prefix,
-				})
-		}
-	}
-	return schema.Network{
+	sn := schema.Network{
 		Name:    n.Name,
-		IfAddr:  n.IfAddr,
 		IpAddr:  n.IpAddr,
 		IpRange: n.IpRange,
 		Netmask: n.Netmask,
-		Routes:  routes,
+		Routes:  make([]schema.Route, 0, 32),
 	}
+	for _, route := range n.Routes {
+		sn.Routes = append(sn.Routes,
+			schema.Route{
+				Nexthop: route.Nexthop,
+				Prefix:  route.Prefix,
+			})
+	}
+	return sn
 }

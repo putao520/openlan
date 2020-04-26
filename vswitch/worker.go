@@ -3,6 +3,7 @@ package vswitch
 import (
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/main/config"
+	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/point"
 	"github.com/danieldin95/openlan-go/vswitch/api"
 	"github.com/danieldin95/openlan-go/vswitch/service"
@@ -12,7 +13,7 @@ import (
 
 type Worker struct {
 	Alias string
-	Conf  config.Bridge
+	Conf  config.Network
 
 	newTime     int64
 	startTime   int64
@@ -22,7 +23,7 @@ type Worker struct {
 	initialized bool
 }
 
-func NewWorker(c config.Bridge) *Worker {
+func NewWorker(c config.Network) *Worker {
 	w := Worker{
 		Alias:       c.Alias,
 		Conf:        c,
@@ -38,8 +39,29 @@ func NewWorker(c config.Bridge) *Worker {
 func (w *Worker) Initialize() {
 	w.initialized = true
 
-	_ = service.User.Load(w.Conf.Name, w.Conf.Password)
-	_ = service.Network.Load(w.Conf.Name, w.Conf.Network)
+	for _, pass := range w.Conf.Password {
+		user := models.User{
+			Name:     pass.Username + "@" + w.Conf.Name,
+			Password: pass.Password,
+		}
+		service.User.Add(&user)
+	}
+	if w.Conf.IpSet != nil {
+		met := models.Network{
+			Name:    w.Conf.Name,
+			IpAddr:  w.Conf.IpSet.Range.Start,
+			IpRange: w.Conf.IpSet.Range.Size,
+			Netmask: w.Conf.IpSet.Range.Netmask,
+			Routes:  make([]*models.Route, 0, 2),
+		}
+		for _, rte := range w.Conf.IpSet.Route {
+			met.Routes = append(met.Routes, &models.Route{
+				Prefix:  rte.Prefix,
+				Nexthop: rte.Nexthop,
+			})
+		}
+		service.Network.Add(&met)
+	}
 }
 
 func (w *Worker) ID() string {
@@ -86,10 +108,9 @@ func (w *Worker) UpTime() int64 {
 
 func (w *Worker) AddLink(c *config.Point) {
 	c.Alias = w.Alias
-	c.If.Bridge = w.Conf.BrName //Reset bridge name.
+	c.If.Bridge = w.Conf.Bridge.Name //Reset bridge name.
 	c.Allowed = false
 	c.Network = w.Conf.Name
-
 	go func() {
 		p := point.NewPoint(c)
 		p.Initialize()

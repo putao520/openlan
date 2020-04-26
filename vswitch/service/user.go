@@ -17,19 +17,6 @@ func (w *_user) Init(size int) {
 	w.Users = libol.NewSafeStrMap(size)
 }
 
-func (w *_user) Load(tenant, path string) error {
-	users := make([]*models.User, 32)
-	if err := libol.UnmarshalLoad(&users, path); err != nil {
-		libol.Error("_user.load: %s", err)
-		return err
-	}
-	for _, user := range users {
-		user.Name = user.Name + "@" + tenant
-		w.Add(user)
-	}
-	return nil
-}
-
 func (w *_user) Add(user *models.User) {
 	libol.Debug("_user.Add %v", *user)
 	name := user.Name

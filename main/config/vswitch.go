@@ -4,66 +4,87 @@ import (
 	"flag"
 	"fmt"
 	"github.com/danieldin95/openlan-go/libol"
-	"runtime"
+	"path/filepath"
 )
 
 type Bridge struct {
-	Alias    string   `json:"-"`
-	Name     string   `json:"network"`
-	IfMtu    int      `json:"if.mtu"`
-	IfAddr   string   `json:"if.addr"`
-	BrName   string   `json:"if.br"`
-	Links    []*Point `json:"links"`
-	Bridger  string   `json:"bridger"`
-	Password string   `json:"-"`
-	Network  string   `json:"-"`
+	Name     string `json:"name"`
+	Mtu      int    `json:"mtu"`
+	Address  string `json:"address,omitempty" yaml:"address,omitempty"`
+	Provider string `json:"provider"`
+}
+
+type IpRange struct {
+	Start   string `json:"start"`
+	Size    int    `json:"size"`
+	Netmask string `json:"netmask"`
+}
+
+type IpRoute struct {
+	Prefix  string `json:"prefix"`
+	Nexthop string `json:"nexthop"`
+}
+
+type IpSet struct {
+	Route []IpRoute `json:"routes"`
+	Range IpRange   `json:"range"`
+}
+
+type Password struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type Network struct {
+	Alias    string     `json:"-"`
+	Name     string     `json:"name" yaml:"name"`
+	Bridge   Bridge     `json:"bridge" yaml:"bridge"`
+	Links    []*Point   `json:"links" yaml:"links"`
+	IpSet    *IpSet     `json:"ip,omitempty" yaml:"ip,omitempty"`
+	Password []Password `json:"password"`
+}
+
+func (n *Network) Right() {
+	if n.Bridge.Name == "" {
+		n.Bridge.Name = "br-" + n.Name
+	}
+	if n.Bridge.Provider == "" {
+		n.Bridge.Provider = "linux"
+	}
+	if n.Bridge.Mtu == 0 {
+		n.Bridge.Mtu = 1518
+	}
 }
 
 type VSwitch struct {
-	Alias      string   `json:"alias"`
-	TcpListen  string   `json:"vs.addr"`
-	HttpDir    string   `json:"http.dir"`
-	HttpListen string   `json:"http.addr"`
-	Token      string   `json:"admin.token"`
-	ConfDir    string   `json:"-"`
-	TokenFile  string   `json:"-"`
-	SaveFile   string   `json:"-"`
-	LogFile    string   `json:"log.file"`
-	Verbose    int      `json:"log.level"`
-	CrtDir     string   `json:"crt.dir"`
-	CrtFile    string   `json:"-"`
-	KeyFile    string   `json:"-"`
-	Script     string   `json:"script"`
-	Bridge     []Bridge `json:"bridge"`
+	Alias     string     `json:"alias"`
+	Listen    string     `json:"listen"`
+	Http      *Http      `json:"http,omitempty" yaml:"http,omitempty"`
+	Log       Log        `json:"log" yaml:"log"`
+	CrtDir    string     `json:"cert:dir"`
+	Network   []*Network `json:"network"`
+	CrtFile   string     `json:"-" yaml:"-"`
+	KeyFile   string     `json:"-" yaml:"-"`
+	ConfDir   string     `json:"-" yaml:"-"`
+	TokenFile string     `json:"-" yaml:"-"`
+	SaveFile  string     `json:"-" yaml:"-"`
 }
 
 var vSwitchDef = VSwitch{
-	Alias:      "",
-	Verbose:    libol.INFO,
-	HttpListen: "",
-	TcpListen:  "0.0.0.0:10002",
-	Token:      "",
-	ConfDir:    ".",
-	LogFile:    "vswitch.log",
-	CrtDir:     "",
-	HttpDir:    "public",
-	Script:     fmt.Sprintf("vswitch.%s.cmd", runtime.GOOS),
-}
-
-var BridgeDefault = Bridge{
-	Name:    "default",
-	BrName:  "",
-	Bridger: "linux",
-	IfMtu:   1518,
+	Alias: "",
+	Log: Log{
+		File:    "./openlan-vswitch.log",
+		Verbose: libol.INFO,
+	},
+	Http: &Http{
+		Listen: "0.0.0.0:10000",
+	},
+	Listen: "0.0.0.0:10002",
 }
 
 func NewVSwitch() (c VSwitch) {
-	c = VSwitch{
-		LogFile: vSwitchDef.LogFile,
-	}
-	flag.IntVar(&c.Verbose, "log:level", vSwitchDef.Verbose, "logger level")
-	flag.StringVar(&c.ConfDir, "conf:dir", vSwitchDef.ConfDir, "The directory configuration on.")
-	flag.StringVar(&c.Script, "script", vSwitchDef.Script, "call script you assigned")
+	flag.IntVar(&c.Log.Verbose, "log:level", vSwitchDef.Log.Verbose, "Configure log level")
+	flag.StringVar(&c.ConfDir, "conf:dir", vSwitchDef.ConfDir, "Configure virtual switch directory")
 	flag.Parse()
 
 	c.SaveFile = fmt.Sprintf("%s/vswitch.json", c.ConfDir)
@@ -71,10 +92,8 @@ func NewVSwitch() (c VSwitch) {
 		libol.Error("NewVSwitch.load %s", err)
 	}
 	c.Default()
-	libol.Debug(" %s", c)
-	libol.Init(c.LogFile, c.Verbose)
-	_ = c.Save(fmt.Sprintf("%s.cur", c.SaveFile))
-	libol.Debug("NewVSwitch.json: %v", c)
+	libol.Init(c.Log.File, c.Log.Verbose)
+	libol.Debug("NewVSwitch %v", c)
 	return c
 }
 
@@ -82,8 +101,8 @@ func (c *VSwitch) Right() {
 	if c.Alias == "" {
 		c.Alias = GetAlias()
 	}
-	RightAddr(&c.TcpListen, 10002)
-	RightAddr(&c.HttpListen, 10000)
+	RightAddr(&c.Listen, 10002)
+	RightAddr(&c.Http.Listen, 10000)
 
 	c.TokenFile = fmt.Sprintf("%s/token", c.ConfDir)
 	c.SaveFile = fmt.Sprintf("%s/vswitch.json", c.ConfDir)
@@ -95,47 +114,32 @@ func (c *VSwitch) Right() {
 
 func (c *VSwitch) Default() {
 	c.Right()
-	if c.Bridge == nil {
-		c.Bridge = make([]Bridge, 1)
-		c.Bridge[0] = BridgeDefault
+	if c.Network == nil {
+		c.Network = make([]*Network, 0, 32)
 	}
-	for k := range c.Bridge {
-		name := c.Bridge[k].Name
-		if c.Bridge[k].BrName == "" {
-			c.Bridge[k].BrName = "br-" + name
-		}
-		c.Bridge[k].Alias = c.Alias
-		c.Bridge[k].Network = fmt.Sprintf("%s/network/%s.json", c.ConfDir, name)
-		c.Bridge[k].Password = fmt.Sprintf("%s/password/%s.json", c.ConfDir, name)
-		if c.Bridge[k].Bridger == "" {
-			c.Bridge[k].Bridger = BridgeDefault.Bridger
-		}
-		if c.Bridge[k].IfMtu == 0 {
-			c.Bridge[k].IfMtu = BridgeDefault.IfMtu
-		}
-	}
-}
 
-func (c *VSwitch) Save(file string) error {
-	if file == "" {
-		file = c.SaveFile
+	files, err := filepath.Glob(c.ConfDir + "/network/*.json")
+	if err != nil {
+		libol.Error("VSwitch.Default %s", err)
 	}
-	return libol.MarshalSave(c, file, true)
+	for _, k := range files {
+		n := &Network{
+			Alias: c.Alias,
+		}
+		if err := libol.UnmarshalLoad(n, k); err != nil {
+			libol.Error("VSwitch.Default %s", err)
+			continue
+		}
+		for _, link := range n.Links {
+			link.Default()
+		}
+		n.Right()
+		c.Network = append(c.Network, n)
+	}
 }
 
 func (c *VSwitch) Load() error {
-	if err := libol.UnmarshalLoad(c, c.SaveFile); err != nil {
-		return err
-	}
-	for _, br := range c.Bridge {
-		br.Alias = c.Alias
-		if br.Links != nil {
-			for _, link := range br.Links {
-				link.Default()
-			}
-		}
-	}
-	return nil
+	return libol.UnmarshalLoad(c, c.SaveFile)
 }
 
 func init() {

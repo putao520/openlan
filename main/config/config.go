@@ -9,7 +9,7 @@ import (
 
 type Log struct {
 	File    string `json:"file,omitempty" yaml:"file,omitempty"`
-	Verbose int    `json:"level" yaml:"level"`
+	Verbose int    `json:"level,omitempty" yaml:"level,omitempty"`
 }
 
 type Http struct {

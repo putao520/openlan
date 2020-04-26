@@ -11,6 +11,7 @@ type VSwitcher interface {
 	Alias() string
 	AddLink(tenant string, c *config.Point)
 	DelLink(tenant, addr string)
+	Config() *config.VSwitch
 }
 
 func NewWorkerSchema(sw VSwitcher) schema.Worker {

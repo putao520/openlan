@@ -9,18 +9,18 @@ import (
 )
 
 type Http struct {
-	pointer    Pointer
-	listen     string
-	server     *http.Server
-	crtFile    string
-	keyFile    string
-	pubDir     string
-	router     *mux.Router
+	pointer Pointer
+	listen  string
+	server  *http.Server
+	crtFile string
+	keyFile string
+	pubDir  string
+	router  *mux.Router
 }
 
 func NewHttp(pointer Pointer) (h *Http) {
 	h = &Http{
-		pointer:    pointer,
+		pointer: pointer,
 	}
 	if config := pointer.Config(); config != nil {
 		if config.Http != nil {
@@ -62,7 +62,7 @@ func (h *Http) Router() *mux.Router {
 func (h *Http) LoadRouter() {
 	router := h.Router()
 
-	router.HandleFunc("/uuid", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/current/uuid", func(w http.ResponseWriter, r *http.Request) {
 		format := GetQueryOne(r, "format")
 		if format == "yaml" {
 			ResponseYaml(w, h.pointer.UUID())
@@ -70,11 +70,11 @@ func (h *Http) LoadRouter() {
 			ResponseJson(w, h.pointer.UUID())
 		}
 	})
-	router.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/current/config", func(w http.ResponseWriter, r *http.Request) {
 		format := GetQueryOne(r, "format")
 		if format == "yaml" {
 			ResponseYaml(w, h.pointer.Config())
-		} else{
+		} else {
 			ResponseJson(w, h.pointer.Config())
 		}
 	})

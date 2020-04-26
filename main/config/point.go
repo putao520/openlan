@@ -21,10 +21,10 @@ type Point struct {
 	Username string    `json:"username,omitempty" yaml:"username,omitempty"`
 	Password string    `json:"password,omitempty" yaml:"password,omitempty"`
 	Protocol string    `json:"protocol,omitempty" yaml:"protocol,omitempty"`
-	Allowed  bool      `json:"allowed" yaml:"allowed"`
 	If       Interface `json:"interface" yaml:"interface"`
 	Log      Log       `json:"log" yaml:"log"`
 	Http     *Http     `json:"http,omitempty" yaml:"http,omitempty"`
+	Allowed  bool      `json:"-" yaml:"-"`
 	SaveFile string    `json:"-" yaml:"-"`
 }
 
@@ -51,9 +51,9 @@ var pointDef = Point{
 
 func NewPoint() (c *Point) {
 	c = &Point{
-		Http: &Http{},
+		Http:    &Http{},
+		Allowed: true,
 	}
-
 	flag.StringVar(&c.Alias, "alias", pointDef.Alias, "Alias for this point")
 	flag.StringVar(&c.Network, "network", pointDef.Network, "Network name")
 	flag.StringVar(&c.Addr, "connection", pointDef.Addr, "Virtual switch connect to")
@@ -68,7 +68,6 @@ func NewPoint() (c *Point) {
 	flag.StringVar(&c.If.Provider, "if:provider", pointDef.If.Provider, "Interface provider")
 	flag.StringVar(&c.Http.Listen, "http:listen", pointDef.Http.Listen, "Http listen on")
 	flag.StringVar(&c.SaveFile, "conf", pointDef.SaveFile, "the configuration file")
-	flag.BoolVar(&c.Allowed, "accept", pointDef.Allowed, "Accept configure from virtual switch")
 	flag.Parse()
 
 	if err := c.Load(); err != nil {

@@ -33,13 +33,12 @@ type Http struct {
 
 func NewHttp(switcher api.VSwitcher, c config.VSwitch) (h *Http) {
 	h = &Http{
-		switcher:   switcher,
-		listen:     c.HttpListen,
-		adminToken: c.Token,
-		adminFile:  c.TokenFile,
-		crtFile:    c.CrtFile,
-		keyFile:    c.KeyFile,
-		pubDir:     c.HttpDir,
+		switcher:  switcher,
+		listen:    c.Http.Listen,
+		adminFile: c.TokenFile,
+		crtFile:   c.CrtFile,
+		keyFile:   c.KeyFile,
+		pubDir:    c.Http.Public,
 	}
 
 	return
@@ -112,8 +111,16 @@ func (h *Http) LoadRouter() {
 
 	router.HandleFunc("/", h.IndexHtml)
 	router.HandleFunc("/favicon.ico", h.PubFile)
-	router.HandleFunc("/api/index", h.GetIndex).Methods("GET")
 
+	router.HandleFunc("/api/index", h.GetIndex).Methods("GET")
+	router.HandleFunc("/api/config", func(w http.ResponseWriter, r *http.Request) {
+		format := api.GetQueryOne(r, "format")
+		if format == "yaml" {
+			api.ResponseYaml(w, h.switcher.Config())
+		} else {
+			api.ResponseJson(w, h.switcher.Config())
+		}
+	})
 	api.Link{Switcher: h.switcher}.Router(router)
 	api.User{}.Router(router)
 	api.Neighbor{}.Router(router)
