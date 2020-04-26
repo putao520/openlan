@@ -2,8 +2,8 @@ package vswitch
 
 import (
 	"crypto/tls"
-	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/main/config"
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/network"
 	"github.com/danieldin95/openlan-go/vswitch/app"

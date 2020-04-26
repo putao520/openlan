@@ -3,8 +3,8 @@ package vswitch
 import (
 	"context"
 	"fmt"
-	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/main/config"
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/vswitch/api"
 	"github.com/danieldin95/openlan-go/vswitch/schema"

@@ -2,8 +2,8 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/main/config"
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/vswitch/schema"
 	"github.com/danieldin95/openlan-go/vswitch/service"

@@ -1,0 +1,45 @@
+# Configure virtual switch
+kind: vswitch
+name: my-vs-01.openlan.net
+configure:
+  cert:dir: /var/openlan/ca
+  log:
+    level: 20
+    file: /var/log/openlan-vswitch.log
+  http:
+    public: /var/openlan/public
+    listen: 0.0.0.0:10000
+  listen: 0.0.0.0:10002
+
+# Configure network
+---
+kind: network
+name: default
+configure:
+  bridge:
+    address: 192.168.100.40/24
+    name: br-mgt
+    provider: linux
+  range:
+    start: 192.168.100.41
+    size: 4
+    netmask: 255.255.255.0
+  routes:
+    -
+      prefix: 192.168.200.0/24
+      nexthop: 192.168.100.40
+  links:
+    -
+      protocol: tls
+      connection: my-vs-02.openlan.net
+      username: admin
+      password: 123456
+
+# Configure password
+---
+kind: password
+name: default
+configure:
+  -
+    username: admin
+    password: 123456

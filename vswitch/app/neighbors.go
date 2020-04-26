@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/danieldin95/openlan-go/config"
+	"github.com/danieldin95/openlan-go/main/config"
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/vswitch/service"
 	"net"

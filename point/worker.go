@@ -6,10 +6,11 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/main/config"
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/network"
+	"github.com/danieldin95/openlan-go/point/http"
 	"net"
 	"strings"
 	"sync"
@@ -42,9 +43,9 @@ func NewTcpWorker(client *libol.TcpClient, c *config.Point) (t *TcpWorker) {
 	t = &TcpWorker{
 		Client:      client,
 		writeChan:   make(chan []byte, 1024*10),
-		maxSize:     c.IfMtu,
-		user:        models.NewUser(c.Name(), c.Password()),
-		network:     models.NewNetwork(c.Network, c.IfAddr),
+		maxSize:     c.If.Mtu,
+		user:        models.NewUser(c.Username, c.Password),
+		network:     models.NewNetwork(c.Network, c.If.Address),
 		routes:      make(map[string]*models.Route, 64),
 		allowed:     c.Allowed,
 		initialized: false,
@@ -437,7 +438,7 @@ func (a *TapWorker) DoTun() {
 		return
 	}
 
-	a.EthSrc(a.pointCfg.IfAddr)
+	a.EthSrc(a.pointCfg.If.Address)
 	a.EthSrcAddr = libol.GenEthAddr(6)
 	a.EthDstAddr = libol.BROADED
 	libol.Info("TapWorker.DoTun: src %x, dst %x", a.EthSrcAddr, a.EthDstAddr)
@@ -482,7 +483,7 @@ func (a *TapWorker) onMiss(dest []byte) {
 	reply.SHwAddr = a.EthSrcAddr
 	reply.THwAddr = libol.ZEROED
 
-	buffer := make([]byte, 0, a.pointCfg.IfMtu)
+	buffer := make([]byte, 0, a.pointCfg.If.Mtu)
 	buffer = append(buffer, eth.Encode()...)
 	buffer = append(buffer, reply.Encode()...)
 
@@ -501,7 +502,7 @@ func (a *TapWorker) Read() {
 			break
 		}
 
-		data := make([]byte, a.pointCfg.IfMtu)
+		data := make([]byte, a.pointCfg.If.Mtu)
 		n, err := a.Device.Read(data)
 		if err != nil {
 			libol.Error("TapWorker.Read: %s", err)
@@ -522,7 +523,7 @@ func (a *TapWorker) Read() {
 				continue
 			}
 			eth := a.NewEth(libol.ETHPIP4, neb.HwAddr)
-			buffer := make([]byte, 0, a.pointCfg.IfMtu)
+			buffer := make([]byte, 0, a.pointCfg.If.Mtu)
 			buffer = append(buffer, eth.Encode()...)
 			buffer = append(buffer, data[0:n]...)
 			n += eth.Len
@@ -579,7 +580,7 @@ func (a *TapWorker) onArp(data []byte) bool {
 				reply.TIpAddr = arp.SIpAddr
 				reply.SHwAddr = a.EthSrcAddr
 				reply.THwAddr = arp.SHwAddr
-				buffer := make([]byte, 0, a.pointCfg.IfMtu)
+				buffer := make([]byte, 0, a.pointCfg.If.Mtu)
 				buffer = append(buffer, eth.Encode()...)
 				buffer = append(buffer, reply.Encode()...)
 
@@ -686,6 +687,7 @@ type Worker struct {
 	IfAddr   string
 	Listener WorkerListener
 
+	http        *http.Http
 	tcpWorker   *TcpWorker
 	tapWorker   *TapWorker
 	config      *config.Point
@@ -696,7 +698,7 @@ type Worker struct {
 
 func NewWorker(config *config.Point) (p *Worker) {
 	return &Worker{
-		IfAddr:      config.IfAddr,
+		IfAddr:      config.If.Address,
 		config:      config,
 		initialized: false,
 	}
@@ -713,23 +715,23 @@ func (p *Worker) Initialize() {
 	libol.Info("Worker.Initialize")
 
 	p.initialized = true
-	if p.config.Tls {
+	if p.config.Protocol == "tls" {
 		tlsConf = &tls.Config{InsecureSkipVerify: true}
 	}
 	client := libol.NewTcpClient(p.config.Addr, tlsConf)
 	p.tcpWorker = NewTcpWorker(client, p.config)
 
-	if p.config.IfTun {
+	if p.config.If.Provider == "tun" {
 		conf = network.TapConfig{
 			Type:    network.TUN,
-			Name:    p.config.IfName,
-			Network: p.config.IfAddr,
+			Name:    p.config.If.Name,
+			Network: p.config.If.Address,
 		}
 	} else {
 		conf = network.TapConfig{
 			Type:    network.TAP,
-			Name:    p.config.IfName,
-			Network: p.config.IfAddr,
+			Name:    p.config.If.Name,
+			Network: p.config.If.Address,
 		}
 	}
 
@@ -750,6 +752,10 @@ func (p *Worker) Initialize() {
 		ReadAt: p.tcpWorker.DoWrite,
 	}
 	p.tapWorker.Initialize()
+
+	if p.config.Http != nil {
+		p.http = http.NewHttp(p)
+	}
 }
 
 func (p *Worker) Start() {
@@ -759,6 +765,10 @@ func (p *Worker) Start() {
 	}
 	p.tapWorker.Start()
 	p.tcpWorker.Start()
+
+	if p.http != nil {
+		_ = p.http.Start()
+	}
 }
 
 func (p *Worker) Stop() {
@@ -766,6 +776,9 @@ func (p *Worker) Stop() {
 		return
 	}
 
+	if p.http != nil {
+		p.http.Shutdown()
+	}
 	p.FreeIpAddr()
 	p.tcpWorker.Stop()
 	p.tapWorker.Stop()
@@ -885,4 +898,8 @@ func (p *Worker) UUID() string {
 
 func (p *Worker) SetUUID(v string) {
 	p.uuid = v
+}
+
+func (p *Worker) Config() *config.Point {
+	return p.config
 }

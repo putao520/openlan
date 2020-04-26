@@ -1,8 +1,8 @@
 package point
 
 import (
-	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/main/config"
 	"github.com/danieldin95/openlan-go/network"
 )
 
@@ -29,7 +29,7 @@ func NewMixPoint(config *config.Point) MixPoint {
 	p := MixPoint{
 		Tenant: config.Network,
 		worker: Worker{
-			IfAddr: config.IfAddr,
+			IfAddr: config.If.Address,
 			config: config,
 		},
 		config:     config,

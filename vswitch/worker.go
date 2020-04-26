@@ -1,8 +1,8 @@
 package vswitch
 
 import (
-	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/main/config"
 	"github.com/danieldin95/openlan-go/point"
 	"github.com/danieldin95/openlan-go/vswitch/api"
 	"github.com/danieldin95/openlan-go/vswitch/service"
@@ -86,7 +86,7 @@ func (w *Worker) UpTime() int64 {
 
 func (w *Worker) AddLink(c *config.Point) {
 	c.Alias = w.Alias
-	c.BrName = w.Conf.BrName //Reset bridge name.
+	c.If.Bridge = w.Conf.BrName //Reset bridge name.
 	c.Allowed = false
 	c.Network = w.Conf.Name
 

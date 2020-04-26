@@ -1,8 +1,8 @@
 package point
 
 import (
-	"github.com/danieldin95/openlan-go/config"
 	"github.com/danieldin95/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/main/config"
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/vishvananda/netlink"
 	"net"
@@ -20,7 +20,7 @@ type Point struct {
 
 func NewPoint(config *config.Point) *Point {
 	p := Point{
-		BrName:   config.BrName,
+		BrName:   config.If.Bridge,
 		MixPoint: NewMixPoint(config),
 	}
 	return &p

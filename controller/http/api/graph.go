@@ -38,7 +38,7 @@ func (g Graph) GET(w http.ResponseWriter, r *http.Request) {
 		if ok {
 			node := &schema.Node{
 				Name:       s.Alias,
-				SymbolSize: 20,
+				SymbolSize: 15,
 				Category:   0,
 				Id:         i,
 			}

@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/danieldin95/openlan-go/config"
+	"github.com/danieldin95/openlan-go/main/config"
 	"github.com/danieldin95/openlan-go/vswitch"
 	"os"
 	"os/signal"
@@ -11,12 +11,8 @@ import (
 
 func main() {
 	c := config.NewVSwitch()
-	s := config.NewScript(c.Script)
-
-	s.CallBefore()
 	vs := vswitch.NewVSwitch(c)
 	_ = vs.Start()
-	s.CallAfter()
 
 	x := make(chan os.Signal)
 	signal.Notify(x, os.Interrupt, syscall.SIGTERM)
@@ -25,7 +21,6 @@ func main() {
 	signal.Notify(x, os.Interrupt, syscall.SIGINT)  //CTL+C
 
 	<-x
-	s.CallExit()
 	_ = vs.Stop()
 	fmt.Println("Done!")
 }
