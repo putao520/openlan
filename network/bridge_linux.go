@@ -22,22 +22,23 @@ func NewLinuxBridge(name string, mtu int) *LinuxBridge {
 
 func (b *LinuxBridge) Open(addr string) {
 	var err error
-	var dev netlink.Link
+	var link netlink.Link
 
 	libol.Debug("LinuxBridge.Open: %s", b.name)
 
 	la := netlink.LinkAttrs{TxQLen: -1, Name: b.name}
 	br := &netlink.Bridge{LinkAttrs: la}
 
-	dev, err = netlink.LinkByName(b.name)
-	if dev == nil {
+	link, err = netlink.LinkByName(b.name)
+	if link == nil {
 		err := netlink.LinkAdd(br)
 		if err != nil {
 			libol.Error("LinuxBridge.newBr: %s", err)
 			return
 		}
-		dev, err = netlink.LinkByName(b.name)
-		if dev == nil {
+		link, err = netlink.LinkByName(b.name)
+		if link == nil {
+			libol.Error("LinuxBridge.Open: %s", err)
 			return
 		}
 	}
@@ -46,7 +47,7 @@ func (b *LinuxBridge) Open(addr string) {
 	if err := brCtl.Stp(true); err != nil {
 		libol.Error("LinuxBridge.newBr.Stp: %s", err)
 	}
-	if err = netlink.LinkSetUp(dev); err != nil {
+	if err = netlink.LinkSetUp(link); err != nil {
 		libol.Error("LinuxBridge.newBr: %s", err)
 	}
 
@@ -56,13 +57,13 @@ func (b *LinuxBridge) Open(addr string) {
 		if err != nil {
 			libol.Error("LinuxBridge.newBr.ParseCIDR %s : %s", addr, err)
 		}
-		if err := netlink.AddrAdd(dev, ipAddr); err != nil {
+		if err := netlink.AddrAdd(link, ipAddr); err != nil {
 			libol.Error("LinuxBridge.newBr.SetLinkIp %s : %s", b.name, err)
 		}
 		b.addr = ipAddr
 	}
 
-	b.device = dev
+	b.device = link
 }
 
 func (b *LinuxBridge) Close() error {

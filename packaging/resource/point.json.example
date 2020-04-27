@@ -5,7 +5,6 @@
   "password": "12345",
   "protocol": "tls",
   "log": {
-    "file": "/var/log/openlan-point.log",
-    "level": 20
+    "file": "/var/log/openlan-point.log"
   }
 }

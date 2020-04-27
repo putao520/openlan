@@ -130,11 +130,13 @@ func (c *VSwitch) Default() {
 			libol.Error("VSwitch.Default %s", err)
 			continue
 		}
+		c.Network = append(c.Network, n)
+	}
+	for _, n := range c.Network {
 		for _, link := range n.Links {
 			link.Default()
 		}
 		n.Right()
-		c.Network = append(c.Network, n)
 	}
 }
 

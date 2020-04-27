@@ -98,17 +98,17 @@ func (p *Point) UpBr(name string) *netlink.Bridge {
 
 	la := netlink.LinkAttrs{TxQLen: -1, Name: name}
 	br := &netlink.Bridge{LinkAttrs: la}
-	if link, _ := netlink.LinkByName(name); link == nil {
+	if link, err := netlink.LinkByName(name); link == nil {
+		libol.Warn("Point.UpBr: %s %s", name, err)
 		err := netlink.LinkAdd(br)
 		if err != nil {
-			libol.Error("Point.UpBr.newBr: %s", err)
-			return nil
+			libol.Warn("Point.UpBr.newBr: %s %s", name, err)
 		}
 	}
 
 	link, err := netlink.LinkByName(name)
 	if link == nil {
-		libol.Error("Point.UpBr.newBr: %s", err)
+		libol.Error("Point.UpBr: %s %s", name, err)
 		return nil
 	}
 

@@ -156,6 +156,12 @@ func (v *VSwitch) Start() error {
 		v.Initialize()
 	}
 
+	for _, nCfg := range v.Conf.Network {
+		if br, ok := v.bridge[nCfg.Name]; ok {
+			brCfg := nCfg.Bridge
+			br.Open(brCfg.Address)
+		}
+	}
 	go v.server.Accept()
 	call := libol.TcpServerListener{
 		OnClient: v.OnClient,
@@ -165,12 +171,6 @@ func (v *VSwitch) Start() error {
 	go v.server.Loop(call)
 	for _, w := range v.worker {
 		w.Start(v)
-	}
-	for _, nCfg := range v.Conf.Network {
-		if br, ok := v.bridge[nCfg.Name]; ok {
-			brCfg := nCfg.Bridge
-			br.Open(brCfg.Address)
-		}
 	}
 	if v.http != nil {
 		go v.http.Start()
