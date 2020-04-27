@@ -1,16 +1,14 @@
 # Configure access point
-kind: point
 name: my-pc-01
-configure:
-  log:
-    level: 20
-    file: /var/log/openlan-point.log
-  network: default
-  protocol: tls
-  connection: my-vs-01.openlan.net
-  username: admin
-  password: 123456
-  interface:
-    name: Ethernet 22
-    address: 192.168.10.24/24
-    provider: tap # default is tap, for macOS is tun
+log:
+  level: 20
+  file: /var/log/openlan-point.log
+network: default
+protocol: tls
+connection: my-vs-01.openlan.net
+username: admin
+password: 123456
+interface:
+  name: Ethernet 22
+  address: 192.168.10.24/24
+  provider: tap # default is tap, for macOS is tun

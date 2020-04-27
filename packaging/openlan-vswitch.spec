@@ -37,12 +37,6 @@ mkdir -p %{buildroot}/var/openlan
 cp -R %_source_dir/packaging/resource/ca %{buildroot}/var/openlan
 cp -R %_source_dir/vswitch/public %{buildroot}/var/openlan
 
-mkdir -p %{buildroot}/etc/openlan/vswitch/network
-cp %_source_dir/packaging/resource/network.json.example %{buildroot}/etc/openlan/vswitch/network
-mkdir -p %{buildroot}/etc/openlan/vswitch/password
-cp %_source_dir/packaging/resource/password.json.example %{buildroot}/etc/openlan/vswitch/password
-
-
 mkdir -p %{buildroot}/opt/openlan-utils
 cp -R /opt/openlan-utils/env %{buildroot}/opt/openlan-utils
 

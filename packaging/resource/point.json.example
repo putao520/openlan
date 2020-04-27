@@ -1,7 +1,11 @@
 {
   "network": "default",
-  "vs.addr": "openlan.net",
-  "vs.auth": "hi:hi@123$",
-  "vs.tls": true,
-  "log.file": "/var/log/point.log"
+  "connection": "default.openlan.net",
+  "username": "hi",
+  "password": "12345",
+  "protocol": "tls",
+  "log": {
+    "file": "/var/log/openlan-point.log",
+    "level": 20
+  }
 }

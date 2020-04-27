@@ -1,13 +1,30 @@
 {
-  "log.file": "/var/log/vswitch.log",
-  "http.dir": "/var/openlan/public",
-  "crt.dir": "/var/openlan/ca",
-  "bridge": [
+  "alias": "default.openlan.net",
+  "cert:dir": "/var/openlan/ca",
+  "http": {
+    "public": "/var/openlan/public"
+  },
+  "log": {
+    "file": "/var/log/openlan-vswitch.log"
+  },
+  "network": [
     {
-      "network": "default",
-      "if.addr": "192.168.100.40/24",
-      "links": [
-        { "vs.addr": "openlan.xx", "vs.auth": "admin:12345656", "vs.tls": true }
+      "name": "default",
+      "bridge": {
+        "address": "192.168.100.40/24"
+      },
+      "ip": {
+        "range": {
+          "netmask": "255.255.255.0",
+          "size": 4,
+          "start": "192.168.100.250"
+        }
+      },
+      "password": [
+        {
+          "username": "hi",
+          "password": "12345"
+        }
       ]
     }
   ]
