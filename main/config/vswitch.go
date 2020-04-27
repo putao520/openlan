@@ -137,6 +137,7 @@ func (c *VSwitch) Default() {
 			link.Default()
 		}
 		n.Right()
+		n.Alias = c.Alias
 	}
 }
 
