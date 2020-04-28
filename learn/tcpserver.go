@@ -2,10 +2,14 @@ package main
 
 import (
 	"encoding/binary"
+	"flag"
 	"fmt"
+	"github.com/danieldin95/lightstar/libstar"
 	"github.com/songgao/water"
 	"net"
 )
+
+// 40MB on 1000Mb
 
 func ReadFull(conn net.Conn, buffer []byte) error {
 	offset := 0
@@ -41,8 +45,86 @@ func WriteFull(conn net.Conn, buffer []byte) error {
 	return nil
 }
 
-func main() {
-	listener, err := net.ListenTCP("tcp", &net.TCPAddr{IP: net.ParseIP("192.168.209.141"), Port: 9981})
+func Client(addr string) {
+	srcAddr := &net.TCPAddr{IP: net.IPv4zero, Port: 0}
+	dstAddr, err := net.ResolveTCPAddr("tcp", addr)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	conn, err := net.DialTCP("tcp", srcAddr, dstAddr)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	device, err := water.New(water.Config{DeviceType: water.TAP})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Printf("Local: <%s> \n", device.Name())
+
+	go func() {
+		frameData := make([]byte, 1600+4)
+
+		for {
+			n, err := device.Read(frameData[4:])
+			if err != nil {
+				break
+			}
+			if n == 0 || conn == nil {
+				continue
+			}
+
+			binary.BigEndian.PutUint16(frameData[2:4], uint16(n))
+			//fmt.Printf("<%s> %d\n", device.Name(), n)
+			//fmt.Printf("<%s> % x\n", device.Name(), frameData[:20])
+			err = WriteFull(conn, frameData[:n+4])
+			if err != nil {
+				fmt.Println(err)
+			}
+		}
+	}()
+
+	for {
+		data := make([]byte, 1600+4)
+
+		err := ReadFull(conn, data[:4])
+		if err != nil {
+			fmt.Printf("error during read: %s", err)
+			break
+		}
+
+		size := binary.BigEndian.Uint16(data[2:4])
+		if size == 0 || size > 1600 {
+			continue
+		}
+
+		err = ReadFull(conn, data[4:size+4])
+		if err != nil {
+			fmt.Printf("error during read: %s", err)
+			break
+		}
+
+		_, err = device.Write(data[4 : size+4])
+		if err != nil {
+			fmt.Println(err)
+			break
+		}
+	}
+
+	_ = conn.Close()
+	_ = device.Close()
+}
+
+func Server(addr string) {
+	laddr, err := net.ResolveTCPAddr("tcp", addr)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	listener, err := net.ListenTCP("tcp", laddr)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -106,4 +188,28 @@ func main() {
 			fmt.Println(err)
 		}
 	}
+}
+
+func main() {
+	address := "127.0.0.1:9981"
+	mode := "server"
+	flag.StringVar(&address, "addr", address, "the address listen.")
+	flag.StringVar(&mode, "mode", mode, "client or server.")
+	flag.Parse()
+
+	//f, err := os.Create("tcpserver-cpu.prof")
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//if err := pprof.StartCPUProfile(f); err != nil {
+	//	log.Fatal(err)
+	//}
+	//defer pprof.StopCPUProfile()
+
+	if mode == "server" {
+		go Server(address)
+	} else if mode == "client" {
+		go Client(address)
+	}
+	libstar.Wait()
 }

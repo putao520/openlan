@@ -5,7 +5,10 @@ import (
 	"fmt"
 )
 
-const HSIZE = 0x04
+const (
+	MAXBUF = 4096
+	HSIZE  = 0x04
+)
 
 func GetHeaderLen() int {
 	return HSIZE

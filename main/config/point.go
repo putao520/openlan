@@ -42,7 +42,7 @@ var pointDef = Point{
 		Name:     "",
 	},
 	Http: &Http{
-		Listen: "127.0.0.1:10001",
+		Listen: "0.0.0.0:10001",
 	},
 	SaveFile: "./point.json",
 	Network:  "",

@@ -12,11 +12,11 @@ import (
 	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"
+	"net/http/pprof"
 	"os"
 	"path"
 	"sort"
 	"text/template"
-	"time"
 )
 
 type Http struct {
@@ -48,11 +48,8 @@ func (h *Http) Initialize() {
 	r := h.Router()
 	if h.server == nil {
 		h.server = &http.Server{
-			Addr:         h.listen,
-			WriteTimeout: time.Second * 15,
-			ReadTimeout:  time.Second * 15,
-			IdleTimeout:  time.Second * 60,
-			Handler:      r,
+			Addr:    h.listen,
+			Handler: r,
 		}
 	}
 
@@ -66,6 +63,16 @@ func (h *Http) Initialize() {
 
 	_ = h.SaveToken()
 	h.LoadRouter()
+}
+
+func (h *Http) PProf(r *mux.Router) {
+	if r != nil {
+		r.HandleFunc("/debug/pprof/", pprof.Index)
+		r.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		r.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		r.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	}
 }
 
 func (h *Http) Middleware(next http.Handler) http.Handler {
@@ -109,6 +116,7 @@ func (h *Http) SaveToken() error {
 func (h *Http) LoadRouter() {
 	router := h.Router()
 
+	h.PProf(router)
 	router.HandleFunc("/", h.IndexHtml)
 	router.HandleFunc("/favicon.ico", h.PubFile)
 
@@ -177,13 +185,10 @@ func (h *Http) IsAuth(w http.ResponseWriter, r *http.Request) bool {
 	token, pass, ok := r.BasicAuth()
 	libol.Debug("Http.IsAuth token: %s, pass: %s", token, pass)
 
-	if len(r.URL.Path) < 4 || r.URL.Path[:4] != "/api" {
-		return true
-	}
-	if !ok || token != h.adminToken {
-		w.Header().Set("WWW-Authenticate", "Basic")
-		http.Error(w, "Authorization Required.", http.StatusUnauthorized)
-		return false
+	if len(r.URL.Path) > 4 {
+		if !ok || token != h.adminToken {
+			return false
+		}
 	}
 	return true
 }

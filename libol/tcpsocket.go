@@ -135,8 +135,8 @@ func (t *TcpServer) Loop(call TcpServerListener) {
 
 func (t *TcpServer) Read(client *TcpClient, ReadAt func(client *TcpClient, p []byte) error) {
 	Log("TcpServer.Read: %s", client.Addr)
+	data := make([]byte, MAXBUF)
 	for {
-		data := make([]byte, 4096)
 		length, err := client.ReadMsg(data)
 		if err != nil {
 			Error("TcpServer.Read: %s", err)

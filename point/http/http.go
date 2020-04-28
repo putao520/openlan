@@ -5,7 +5,7 @@ import (
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/gorilla/mux"
 	"net/http"
-	"time"
+	"net/http/pprof"
 )
 
 type Http struct {
@@ -16,6 +16,7 @@ type Http struct {
 	keyFile string
 	pubDir  string
 	router  *mux.Router
+	token   string
 }
 
 func NewHttp(pointer Pointer) (h *Http) {
@@ -35,19 +36,45 @@ func (h *Http) Initialize() {
 	r := h.Router()
 	if h.server == nil {
 		h.server = &http.Server{
-			Addr:         h.listen,
-			WriteTimeout: time.Second * 15,
-			ReadTimeout:  time.Second * 15,
-			IdleTimeout:  time.Second * 60,
-			Handler:      r,
+			Addr:    h.listen,
+			Handler: r,
 		}
 	}
+	h.token = libol.GenToken(64)
+	libol.Info("Http.Initialize: AdminToken: %s", h.token)
 	h.LoadRouter()
+}
+
+func (h *Http) PProf(r *mux.Router) {
+	if r != nil {
+		r.HandleFunc("/debug/pprof/", pprof.Index)
+		r.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		r.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		r.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	}
+}
+
+func (h *Http) IsAuth(w http.ResponseWriter, r *http.Request) bool {
+	token, pass, ok := r.BasicAuth()
+	libol.Debug("Http.IsAuth token: %s, pass: %s", token, pass)
+
+	if !ok || token != h.token {
+		w.Header().Set("WWW-Authenticate", "Basic")
+		http.Error(w, "Authorization Required.", http.StatusUnauthorized)
+		return false
+	}
+	return true
 }
 
 func (h *Http) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		next.ServeHTTP(w, r)
+		if h.IsAuth(w, r) {
+			next.ServeHTTP(w, r)
+		} else {
+			w.Header().Set("WWW-Authenticate", "Basic")
+			http.Error(w, "Authorization Required.", http.StatusUnauthorized)
+		}
 	})
 }
 
@@ -62,6 +89,7 @@ func (h *Http) Router() *mux.Router {
 func (h *Http) LoadRouter() {
 	router := h.Router()
 
+	h.PProf(router)
 	router.HandleFunc("/current/uuid", func(w http.ResponseWriter, r *http.Request) {
 		format := GetQueryOne(r, "format")
 		if format == "yaml" {
