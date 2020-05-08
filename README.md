@@ -1,5 +1,5 @@
 
-简体中文(./README.md) | [English](./README_EN.md)
+简体中文 | [English](./README_EN.md)
 
 # 概述 
 [![Build Status](https://travis-ci.org/danieldin95/openlan-go.svg?branch=master)](https://travis-ci.org/danieldin95/openlan-go)
