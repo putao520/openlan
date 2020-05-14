@@ -35,6 +35,7 @@ func main() {
 	flag.StringVar(&cfg.ConfDir, "conf", cfg.ConfDir, "the directory configuration on")
 	flag.Parse()
 
+	libol.PreNotify()
 	libol.Init(cfg.LogFile, cfg.Verbose)
 	storage.Storager.Load(cfg.ConfDir)
 
@@ -43,5 +44,6 @@ func main() {
 		h.SetCert(cfg.CrtDir+"/private.key", cfg.CrtDir+"/crt.pem")
 	}
 	go h.Start()
+	libol.SdNotify()
 	libstar.Wait()
 }

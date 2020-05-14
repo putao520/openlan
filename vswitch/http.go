@@ -116,10 +116,10 @@ func (h *Http) SaveToken() error {
 func (h *Http) LoadRouter() {
 	router := h.Router()
 
-	h.PProf(router)
 	router.HandleFunc("/", h.IndexHtml)
 	router.HandleFunc("/favicon.ico", h.PubFile)
 
+	h.PProf(router)
 	router.HandleFunc("/api/index", h.GetIndex).Methods("GET")
 	router.HandleFunc("/api/config", func(w http.ResponseWriter, r *http.Request) {
 		format := api.GetQueryOne(r, "format")

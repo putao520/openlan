@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/main/config"
 	"github.com/danieldin95/openlan-go/point"
 	"os"
@@ -14,7 +15,9 @@ import (
 func main() {
 	c := config.NewPoint()
 	p := point.NewPoint(c)
+	libol.PreNotify()
 	p.Start()
+	libol.SdNotify()
 
 	x := make(chan os.Signal)
 	signal.Notify(x, os.Interrupt, syscall.SIGTERM)

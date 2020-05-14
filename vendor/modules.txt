@@ -1,3 +1,5 @@
+# github.com/coreos/go-systemd/v22 v22.0.0
+github.com/coreos/go-systemd/v22/daemon
 # github.com/danieldin95/lightstar v0.0.0-20200401145448-034e11afcf81
 github.com/danieldin95/lightstar/libstar
 # github.com/davecgh/go-spew v1.1.0

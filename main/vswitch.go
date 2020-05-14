@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/main/config"
 	"github.com/danieldin95/openlan-go/vswitch"
 	"os"
@@ -12,8 +13,10 @@ import (
 func main() {
 	c := config.NewVSwitch()
 	vs := vswitch.NewVSwitch(c)
-	_ = vs.Start()
 
+	libol.PreNotify()
+	_ = vs.Start()
+	libol.SdNotify()
 	x := make(chan os.Signal)
 	signal.Notify(x, os.Interrupt, syscall.SIGTERM)
 	signal.Notify(x, os.Interrupt, syscall.SIGKILL)

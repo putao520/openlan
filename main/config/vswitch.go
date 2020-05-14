@@ -102,8 +102,9 @@ func (c *VSwitch) Right() {
 		c.Alias = GetAlias()
 	}
 	RightAddr(&c.Listen, 10002)
-	RightAddr(&c.Http.Listen, 10000)
-
+	if c.Http != nil {
+		RightAddr(&c.Http.Listen, 10000)
+	}
 	c.TokenFile = fmt.Sprintf("%s/token", c.ConfDir)
 	c.SaveFile = fmt.Sprintf("%s/vswitch.json", c.ConfDir)
 	if c.CrtDir != "" {
