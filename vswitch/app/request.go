@@ -30,8 +30,10 @@ func (r *WithRequest) OnFrame(client *libol.TcpClient, frame *libol.FrameMessage
 			r.OnNeighbor(client, body)
 		case "ipad=":
 			r.OnIpAddr(client, body)
+		case "logi=":
+			break
 		default:
-			libol.Error("WithRequest.OnFrame: %s %s", action, body)
+			libol.Warn("WithRequest.OnFrame: %s %s", action, body)
 		}
 	}
 

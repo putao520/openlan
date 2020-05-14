@@ -2,8 +2,8 @@
 
 package libol
 
-func PreNotifySystem() {
+func PreNotify() {
 }
 
-func NotifySystem() {
+func SdNotify() {
 }
