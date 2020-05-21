@@ -12,6 +12,7 @@ The OpenLAN project help you to build a local area network via the Internet.
                                                 |   
                                               Wifi(DNAT)
                                                 |
+                                                |
                        ----------------------Internet-------------------------
                        ^                        ^                           ^
                        |                        |                           |
@@ -26,7 +27,9 @@ The OpenLAN project help you to build a local area network via the Internet.
                          |                                                 |
                        Point ----Wifi----> vSwitch(NanJing) <----Wifi---- Point
                                                 |
+                                                |
                                              Internet 
+                                                |
                                                 |
                                            vSwitch(ShangHai) - 192.168.1.10/24
                                                 |
