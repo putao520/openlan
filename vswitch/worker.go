@@ -49,8 +49,8 @@ func (w *Worker) Initialize() {
 	if w.Conf.IpSet != nil {
 		met := models.Network{
 			Name:    w.Conf.Name,
-			IpAddr:  w.Conf.IpSet.Range.Start,
-			IpRange: w.Conf.IpSet.Range.Size,
+			IpStart: w.Conf.IpSet.Range.Start,
+			IpEnd:   w.Conf.IpSet.Range.End,
 			Netmask: w.Conf.IpSet.Range.Netmask,
 			Routes:  make([]*models.Route, 0, 2),
 		}

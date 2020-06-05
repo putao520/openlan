@@ -36,8 +36,8 @@ func NewHttp(switcher api.VSwitcher, c config.VSwitch) (h *Http) {
 		switcher:  switcher,
 		listen:    c.Http.Listen,
 		adminFile: c.TokenFile,
-		crtFile:   c.CrtFile,
-		keyFile:   c.KeyFile,
+		crtFile:   c.Cert.CrtFile,
+		keyFile:   c.Cert.KeyFile,
 		pubDir:    c.Http.Public,
 	}
 

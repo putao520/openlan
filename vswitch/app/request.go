@@ -68,8 +68,8 @@ func (r *WithRequest) OnIpAddr(client *libol.TcpClient, data string) {
 		respNet := &models.Network{
 			Name:    FinNet.Name,
 			IfAddr:  ipStr,
-			IpAddr:  ipStr,
-			IpRange: 1,
+			IpStart: ipStr,
+			IpEnd:   ipStr,
 			Netmask: netmask,
 			Routes:  FinNet.Routes,
 		}

@@ -1,31 +1,53 @@
 {
-  "alias": "default.openlan.net",
-  "cert:dir": "/var/openlan/ca",
-  "http": {
-    "public": "/var/openlan/public"
-  },
-  "log": {
-    "file": "/var/log/openlan-vswitch.log"
-  },
-  "network": [
-    {
-      "name": "default",
-      "bridge": {
-        "address": "192.168.100.40/24"
-      },
-      "ip": {
-        "range": {
-          "size": 4,
-          "start": "192.168.100.250",
-          "netmask": "255.255.255.0"
-        }
-      },
-      "password": [
+    "alias": "who.openlan.net",
+    "cert": {
+      "dir": "/var/openlan/ca"
+    },
+    "http": {
+        "public": "/var/openlan/public"
+    },
+    "log": {
+        "file": "/var/log/openlan-vswitch.log"
+    },
+    "network": [
         {
-          "username": "hi",
-          "password": "12345"
+            "name": "default",
+            "bridge": {
+                "address": "192.168.100.40/24"
+            },
+            "ip": {
+                "range": {
+                    "start": "192.168.100.250",
+                    "end": "192.168.100.254",
+                    "netmask": "255.255.255.0"
+                },
+                "routes": [
+                    {
+                        "prefix": "192.168.10.0/24",
+                        "nexthop": "192.168.100.40"
+                    }
+                ]
+            },
+            "password": [
+                {
+                    "username": "hi",
+                    "password": "12345"
+                }
+            ]
         }
-      ]
-    }
-  ]
+    ],
+    "firewall": [
+        {
+            "table": "nat",
+            "source": "192.168.10.40",
+            "destination": "192.168.10.0/24",
+            "jump": "SNAT"
+        },
+        {
+            "table": "nat",
+            "source": "192.168.20.40",
+            "output": "eth0",
+            "jump": "MASQUEREADE"
+         }
+    ]
 }

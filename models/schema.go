@@ -77,8 +77,8 @@ func SchemaToUserModel(user *schema.User) *User {
 func NewNetworkSchema(n *Network) schema.Network {
 	sn := schema.Network{
 		Name:    n.Name,
-		IpAddr:  n.IpAddr,
-		IpRange: n.IpRange,
+		IpStart: n.IpStart,
+		IpEnd:   n.IpEnd,
 		Netmask: n.Netmask,
 		Routes:  make([]schema.Route, 0, 32),
 	}

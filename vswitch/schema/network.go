@@ -7,8 +7,8 @@ type Route struct {
 
 type Network struct {
 	Name    string  `json:"name"`
-	IpAddr  string  `json:"ipAddr"`
-	IpRange int     `json:"ipRange"`
+	IpStart string  `json:"ipStart"`
+	IpEnd   string  `json:"ipEnd"`
 	Netmask string  `json:"netmask"`
 	Routes  []Route `json:"routes"`
 }

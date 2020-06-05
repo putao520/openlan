@@ -54,27 +54,20 @@ func NewTcpServer(listen string, config *tls.Config) (t *TcpServer) {
 }
 
 func (t *TcpServer) Listen() (err error) {
-	schema := "tcp"
-	if t.TlsConf != nil {
-		schema = "tls"
-	}
-	Info("TcpServer.Start: %s://%s", schema, t.Addr)
-
 	if t.TlsConf != nil {
 		t.listener, err = tls.Listen("tcp", t.Addr, t.TlsConf)
 		if err != nil {
-			Info("TcpServer.Listen: %s", err)
-			return
+			return err
 		}
+		Info("TcpServer.Listen: tls://%s", t.Addr)
 	} else {
 		t.listener, err = net.Listen("tcp", t.Addr)
 		if err != nil {
-			Info("TcpServer.Listen: %s", err)
 			t.listener = nil
-			return
+			return err
 		}
+		Info("TcpServer.Listen: tcp://%s", t.Addr)
 	}
-
 	return nil
 }
 
@@ -88,8 +81,15 @@ func (t *TcpServer) Close() {
 
 func (t *TcpServer) Accept() {
 	Debug("TcpServer.Accept")
-	if t.listener == nil {
-		Error("TcpServer.Accept: invalid listener")
+
+	for {
+		if t.listener != nil {
+			break
+		}
+		if err := t.Listen(); err != nil {
+			Warn("TcpServer.Accept: %s", err)
+		}
+		time.Sleep(time.Second * 5)
 	}
 
 	defer t.Close()

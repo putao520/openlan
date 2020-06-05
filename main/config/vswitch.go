@@ -16,7 +16,7 @@ type Bridge struct {
 
 type IpRange struct {
 	Start   string `json:"start"`
-	Size    int    `json:"size"`
+	End     string `json:"end"`
 	Netmask string `json:"netmask"`
 }
 
@@ -56,15 +56,19 @@ func (n *Network) Right() {
 	}
 }
 
+type Cert struct {
+	Dir     string `json:"dir"`
+	CrtFile string `json:"crt" yaml:"crt"`
+	KeyFile string `json:"key" yaml:"key"`
+}
+
 type VSwitch struct {
 	Alias     string     `json:"alias"`
 	Listen    string     `json:"listen"`
 	Http      *Http      `json:"http,omitempty" yaml:"http,omitempty"`
 	Log       Log        `json:"log" yaml:"log"`
-	CrtDir    string     `json:"cert:dir"`
+	Cert      Cert       `json:"cert"`
 	Network   []*Network `json:"network"`
-	CrtFile   string     `json:"-" yaml:"-"`
-	KeyFile   string     `json:"-" yaml:"-"`
 	ConfDir   string     `json:"-" yaml:"-"`
 	TokenFile string     `json:"-" yaml:"-"`
 	SaveFile  string     `json:"-" yaml:"-"`
@@ -107,9 +111,9 @@ func (c *VSwitch) Right() {
 	}
 	c.TokenFile = fmt.Sprintf("%s/token", c.ConfDir)
 	c.SaveFile = fmt.Sprintf("%s/vswitch.json", c.ConfDir)
-	if c.CrtDir != "" {
-		c.CrtFile = fmt.Sprintf("%s/crt.pem", c.CrtDir)
-		c.KeyFile = fmt.Sprintf("%s/private.key", c.CrtDir)
+	if c.Cert.Dir != "" {
+		c.Cert.CrtFile = fmt.Sprintf("%s/crt.pem", c.Cert.Dir)
+		c.Cert.KeyFile = fmt.Sprintf("%s/private.key", c.Cert.Dir)
 	}
 }
 

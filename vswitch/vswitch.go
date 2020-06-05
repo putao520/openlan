@@ -40,8 +40,8 @@ type VSwitch struct {
 func NewVSwitch(c config.VSwitch) *VSwitch {
 	var tlsConf *tls.Config
 
-	if c.KeyFile != "" && c.CrtFile != "" {
-		cer, err := tls.LoadX509KeyPair(c.CrtFile, c.KeyFile)
+	if c.Cert.KeyFile != "" && c.Cert.CrtFile != "" {
+		cer, err := tls.LoadX509KeyPair(c.Cert.CrtFile, c.Cert.KeyFile)
 		if err != nil {
 			libol.Error("NewVSwitch: %s", err)
 		}

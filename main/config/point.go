@@ -45,7 +45,7 @@ var pointDef = Point{
 		Listen: "0.0.0.0:10001",
 	},
 	SaveFile: "./point.json",
-	Network:  "",
+	Network:  "default",
 	Allowed:  true,
 }
 
