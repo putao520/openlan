@@ -62,16 +62,30 @@ type Cert struct {
 	KeyFile string `json:"key" yaml:"key"`
 }
 
+type FlowRules struct {
+	Table    string `json:"table"`
+	Chain    string `json:"chain"`
+	Input    string `json:"input"`
+	Source   string `json:"source"`
+	ToSource string `json:"to-source"`
+	Dest     string `json:"destination"`
+	ToDest   string `json:"to-destination"`
+	Output   string `json:"output"`
+	Comment  string `json:"comment"`
+	Jump     string `json:"jump"` // SNAT/RETURN/MASQUERADE
+}
+
 type VSwitch struct {
-	Alias     string     `json:"alias"`
-	Listen    string     `json:"listen"`
-	Http      *Http      `json:"http,omitempty" yaml:"http,omitempty"`
-	Log       Log        `json:"log" yaml:"log"`
-	Cert      Cert       `json:"cert"`
-	Network   []*Network `json:"network"`
-	ConfDir   string     `json:"-" yaml:"-"`
-	TokenFile string     `json:"-" yaml:"-"`
-	SaveFile  string     `json:"-" yaml:"-"`
+	Alias     string      `json:"alias"`
+	Listen    string      `json:"listen"`
+	Http      *Http       `json:"http,omitempty" yaml:"http,omitempty"`
+	Log       Log         `json:"log" yaml:"log"`
+	Cert      Cert        `json:"cert"`
+	Network   []*Network  `json:"network"`
+	FireWall  []FlowRules `json:"firewall"`
+	ConfDir   string      `json:"-" yaml:"-"`
+	TokenFile string      `json:"-" yaml:"-"`
+	SaveFile  string      `json:"-" yaml:"-"`
 }
 
 var vSwitchDef = VSwitch{

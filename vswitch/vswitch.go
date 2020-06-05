@@ -25,6 +25,7 @@ type Hook func(client *libol.TcpClient, frame *libol.FrameMessage) error
 type VSwitch struct {
 	Conf config.VSwitch
 	Apps Apps
+	Fire FireWall
 
 	hooks      []Hook
 	http       *Http
@@ -91,6 +92,23 @@ func (v *VSwitch) Initialize() {
 		ctrls.Ctrl.Name = v.Conf.Alias
 	}
 	ctrls.Ctrl.Switcher = v
+
+	// FireWall
+	v.Fire.Rules = make([]libol.IpFilterRule, 0, 32)
+	for _, rule := range v.Conf.FireWall {
+		v.Fire.Rules = append(v.Fire.Rules, libol.IpFilterRule{
+			Table:    rule.Table,
+			Chain:    rule.Chain,
+			Source:   rule.Source,
+			Dest:     rule.Dest,
+			Jump:     rule.Jump,
+			ToSource: rule.ToSource,
+			ToDest:   rule.ToDest,
+			Comment:  rule.Comment,
+			Input:    rule.Input,
+			Output:   rule.Output,
+		})
+	}
 }
 
 func (v *VSwitch) OnHook(client *libol.TcpClient, data []byte) error {
@@ -177,6 +195,7 @@ func (v *VSwitch) Start() error {
 	}
 	go ctrls.Ctrl.Start()
 
+	v.Fire.Start()
 	return nil
 }
 
@@ -185,6 +204,7 @@ func (v *VSwitch) Stop() error {
 	defer v.lock.Unlock()
 
 	libol.Debug("VSwitch.Stop")
+	v.Fire.Stop()
 	ctrls.Ctrl.Stop()
 	if v.bridge == nil {
 		return libol.NewErr("already closed")

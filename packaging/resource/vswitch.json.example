@@ -39,15 +39,18 @@
     "firewall": [
         {
             "table": "nat",
-            "source": "192.168.10.40",
+            "chain": "POSTROUTING",
+            "source": "192.168.100.0/24",
             "destination": "192.168.10.0/24",
+            "to-source": "192.168.10.40",
             "jump": "SNAT"
         },
         {
             "table": "nat",
-            "source": "192.168.20.40",
+            "chain": "POSTROUTING",
+            "source": "192.168.100.0/24",
             "output": "eth0",
-            "jump": "MASQUEREADE"
-         }
+            "jump": "MASQUERADE"
+        }
     ]
 }
