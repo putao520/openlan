@@ -24,7 +24,6 @@
                 "routes": [
                     {
                         "prefix": "192.168.10.0/24",
-                        "nexthop": "192.168.100.40"
                     }
                 ]
             },
@@ -34,23 +33,6 @@
                     "password": "12345"
                 }
             ]
-        }
-    ],
-    "firewall": [
-        {
-            "table": "nat",
-            "chain": "POSTROUTING",
-            "source": "192.168.100.0/24",
-            "destination": "192.168.10.0/24",
-            "to-source": "192.168.10.40",
-            "jump": "SNAT"
-        },
-        {
-            "table": "nat",
-            "chain": "POSTROUTING",
-            "source": "192.168.100.0/24",
-            "output": "eth0",
-            "jump": "MASQUERADE"
         }
     ]
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/danieldin95/openlan-go/vswitch/app"
 	"github.com/danieldin95/openlan-go/vswitch/ctrls"
 	"github.com/danieldin95/openlan-go/vswitch/service"
+	"strings"
 	"sync"
 	"time"
 )
@@ -50,7 +51,10 @@ func NewVSwitch(c config.VSwitch) *VSwitch {
 	}
 
 	v := VSwitch{
-		Conf:       c,
+		Conf: c,
+		Fire: FireWall{
+			Rules: make([]libol.IpFilterRule, 0, 32),
+		},
 		worker:     make(map[string]*Worker, 32),
 		bridge:     make(map[string]network.Bridger, 32),
 		server:     libol.NewTcpServer(c.Listen, tlsConf),
@@ -68,6 +72,37 @@ func (v *VSwitch) Initialize() {
 	for _, nCfg := range v.Conf.Network {
 		name := nCfg.Name
 		brCfg := nCfg.Bridge
+		ipSet := nCfg.IpSet
+
+		if brCfg.Address != "" && ipSet != nil {
+			source := brCfg.Address
+			ifAddr := strings.SplitN(source, "/", 2)[0]
+			for i, rt := range ipSet.Route {
+				if rt.Nexthop == "" {
+					ipSet.Route[i].Nexthop = ifAddr
+				}
+				rt = ipSet.Route[i]
+				if rt.Nexthop != ifAddr {
+					continue
+				}
+				// MASQUERADE
+				libol.Info("VSwitch.Initialize NAT in [%s, %s]", source, rt.Prefix)
+				v.Fire.Rules = append(v.Fire.Rules, libol.IpFilterRule{
+					Table:  "nat",
+					Chain:  "POSTROUTING",
+					Source: source,
+					Dest:   rt.Prefix,
+					Jump:   "MASQUERADE",
+				})
+				v.Fire.Rules = append(v.Fire.Rules, libol.IpFilterRule{
+					Table:  "nat",
+					Chain:  "POSTROUTING",
+					Dest:   source,
+					Source: rt.Prefix,
+					Jump:   "MASQUERADE",
+				})
+			}
+		}
 		v.worker[name] = NewWorker(*nCfg)
 		v.bridge[name] = network.NewBridger(brCfg.Provider, brCfg.Name, brCfg.Mtu)
 	}
@@ -94,7 +129,6 @@ func (v *VSwitch) Initialize() {
 	ctrls.Ctrl.Switcher = v
 
 	// FireWall
-	v.Fire.Rules = make([]libol.IpFilterRule, 0, 32)
 	for _, rule := range v.Conf.FireWall {
 		v.Fire.Rules = append(v.Fire.Rules, libol.IpFilterRule{
 			Table:    rule.Table,
@@ -109,6 +143,7 @@ func (v *VSwitch) Initialize() {
 			Output:   rule.Output,
 		})
 	}
+	libol.Info("VSwitch.Initialize has %d flow rules", len(v.Fire.Rules))
 }
 
 func (v *VSwitch) OnHook(client *libol.TcpClient, data []byte) error {

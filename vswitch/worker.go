@@ -55,6 +55,10 @@ func (w *Worker) Initialize() {
 			Routes:  make([]*models.Route, 0, 2),
 		}
 		for _, rte := range w.Conf.IpSet.Route {
+			if rte.Nexthop == "" {
+				libol.Warn("Worker.Initialize %s no nexthop", rte.Prefix)
+				continue
+			}
 			met.Routes = append(met.Routes, &models.Route{
 				Prefix:  rte.Prefix,
 				Nexthop: rte.Nexthop,
