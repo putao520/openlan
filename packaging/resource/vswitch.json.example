@@ -1,38 +1,36 @@
 {
-    "alias": "who.openlan.net",
-    "cert": {
-      "dir": "/var/openlan/ca"
-    },
-    "http": {
-        "public": "/var/openlan/public"
-    },
-    "log": {
-        "file": "/var/log/openlan-vswitch.log"
-    },
-    "network": [
+  "alias": "who.openlan.net",
+  "cert": {
+    "dir": "/var/openlan/ca"
+  },
+  "http": {
+    "public": "/var/openlan/public"
+  },
+  "log": {
+    "file": "/var/log/openlan-vswitch.log"
+  },
+  "network": [
+    {
+      "name": "default",
+      "bridge": {
+        "address": "192.168.100.40/24"
+      },
+      "subnet": {
+        "start": "192.168.100.250",
+        "end": "192.168.100.254",
+        "netmask": "255.255.255.0"
+      },
+      "routes": [
         {
-            "name": "default",
-            "bridge": {
-                "address": "192.168.100.40/24"
-            },
-            "ip": {
-                "range": {
-                    "start": "192.168.100.250",
-                    "end": "192.168.100.254",
-                    "netmask": "255.255.255.0"
-                },
-                "routes": [
-                    {
-                        "prefix": "192.168.10.0/24",
-                    }
-                ]
-            },
-            "password": [
-                {
-                    "username": "hi",
-                    "password": "12345"
-                }
-            ]
+          "prefix": "192.168.10.0/24"
         }
-    ]
+      ],
+      "password": [
+        {
+          "username": "hi",
+          "password": "12345"
+        }
+      ]
+    }
+  ]
 }
