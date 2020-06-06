@@ -64,6 +64,31 @@ func NewVSwitch(c config.VSwitch) *VSwitch {
 	return &v
 }
 
+func (v *VSwitch) AddRules(source string, prefix string) {
+	libol.Info("VSwitch.AddRules %s, %s", source, prefix)
+	v.Fire.Rules = append(v.Fire.Rules, libol.IpFilterRule{
+		Table:  "filter",
+		Chain:  "FORWARD",
+		Source: source,
+		Dest:   prefix,
+		Jump:   "ACCEPT",
+	})
+	v.Fire.Rules = append(v.Fire.Rules, libol.IpFilterRule{
+		Table:  "nat",
+		Chain:  "POSTROUTING",
+		Source: source,
+		Dest:   prefix,
+		Jump:   "MASQUERADE",
+	})
+	v.Fire.Rules = append(v.Fire.Rules, libol.IpFilterRule{
+		Table:  "nat",
+		Chain:  "POSTROUTING",
+		Dest:   source,
+		Source: prefix,
+		Jump:   "MASQUERADE",
+	})
+}
+
 func (v *VSwitch) Initialize() {
 	v.initialize = true
 	if v.Conf.Http != nil {
@@ -86,21 +111,7 @@ func (v *VSwitch) Initialize() {
 					continue
 				}
 				// MASQUERADE
-				libol.Info("VSwitch.Initialize NAT in [%s, %s]", source, rt.Prefix)
-				v.Fire.Rules = append(v.Fire.Rules, libol.IpFilterRule{
-					Table:  "nat",
-					Chain:  "POSTROUTING",
-					Source: source,
-					Dest:   rt.Prefix,
-					Jump:   "MASQUERADE",
-				})
-				v.Fire.Rules = append(v.Fire.Rules, libol.IpFilterRule{
-					Table:  "nat",
-					Chain:  "POSTROUTING",
-					Dest:   source,
-					Source: rt.Prefix,
-					Jump:   "MASQUERADE",
-				})
+				v.AddRules(source, rt.Prefix)
 			}
 		}
 		v.worker[name] = NewWorker(*nCfg)
@@ -118,7 +129,7 @@ func (v *VSwitch) Initialize() {
 	v.hooks = append(v.hooks, v.Apps.Request.OnFrame)
 	v.hooks = append(v.hooks, v.Apps.OnLines.OnFrame)
 	for i, h := range v.hooks {
-		libol.Debug("Worker.showHook: k %d, func %p, %s", i, h, libol.FunName(h))
+		libol.Debug("VSwitch.Initialize: k %d, func %p, %s", i, h, libol.FunName(h))
 	}
 
 	// Controller
@@ -143,7 +154,7 @@ func (v *VSwitch) Initialize() {
 			Output:   rule.Output,
 		})
 	}
-	libol.Info("VSwitch.Initialize has %d flow rules", len(v.Fire.Rules))
+	libol.Info("VSwitch.Initialize total %d rules", len(v.Fire.Rules))
 }
 
 func (v *VSwitch) OnHook(client *libol.TcpClient, data []byte) error {
