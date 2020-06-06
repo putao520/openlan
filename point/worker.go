@@ -307,7 +307,7 @@ func (n *Neighbors) Start() {
 		case <-n.done:
 			return
 		case t := <-n.ticker.C:
-			libol.Debug("VirtualBridge.Expire: tick at %s", t)
+			libol.Debug("Neighbors.Expire: tick at %s", t)
 			n.Expire()
 		}
 	}

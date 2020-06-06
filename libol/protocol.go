@@ -28,8 +28,8 @@ type Ether struct {
 func NewEther(t uint16) (e *Ether) {
 	e = &Ether{
 		Type: t,
-		Src:  ZEROED,
-		Dst:  ZEROED,
+		Src:  make([]byte, 6),
+		Dst:  make([]byte, 6),
 		Len:  14,
 	}
 	return
@@ -44,9 +44,7 @@ func NewEtherIP4() (e *Ether) {
 }
 
 func NewEtherFromFrame(frame []byte) (e *Ether, err error) {
-	e = &Ether{
-		Len: 14,
-	}
+	e = NewEther(0)
 	err = e.Decode(frame)
 	return
 }
@@ -56,8 +54,8 @@ func (e *Ether) Decode(frame []byte) error {
 		return NewErr("Ether.Decode too small header: %d", len(frame))
 	}
 
-	e.Dst = frame[:6]
-	e.Src = frame[6:12]
+	copy(e.Dst[:6], frame[:6])
+	copy(e.Src[:6], frame[6:12])
 	e.Type = binary.BigEndian.Uint16(frame[12:14])
 	e.Len = 14
 
@@ -67,8 +65,8 @@ func (e *Ether) Decode(frame []byte) error {
 func (e *Ether) Encode() []byte {
 	buffer := make([]byte, 14)
 
-	copy(buffer[:6], e.Dst)
-	copy(buffer[6:12], e.Src)
+	copy(buffer[:6], e.Dst[:6])
+	copy(buffer[6:12], e.Src[:6])
 	binary.BigEndian.PutUint16(buffer[12:14], e.Type)
 
 	return buffer[:14]
@@ -167,15 +165,17 @@ func NewArp() (a *Arp) {
 		ProLen:  4,
 		OpCode:  ARP_REQUEST,
 		Len:     0,
+		SHwAddr: make([]byte, 6),
+		SIpAddr: make([]byte, 4),
+		THwAddr: make([]byte, 6),
+		TIpAddr: make([]byte, 4),
 	}
 
 	return
 }
 
 func NewArpFromFrame(frame []byte) (a *Arp, err error) {
-	a = &Arp{
-		Len: 0,
-	}
+	a = NewArp()
 	err = a.Decode(frame)
 	return
 }
@@ -191,6 +191,9 @@ func (a *Arp) Decode(frame []byte) error {
 	a.ProCode = binary.BigEndian.Uint16(frame[2:4])
 	a.HrdLen = uint8(frame[4])
 	a.ProLen = uint8(frame[5])
+	if a.HrdLen != 6 || a.ProLen != 4 {
+		return NewErr("Arp.Decode: AddrLen: %d,%s", a.HrdLen, a.ProLen)
+	}
 	a.OpCode = binary.BigEndian.Uint16(frame[6:8])
 
 	p := uint8(8)
@@ -198,14 +201,13 @@ func (a *Arp) Decode(frame []byte) error {
 		return NewErr("Arp.Decode: too small frame: %d", len(frame))
 	}
 
-	a.SHwAddr = frame[p : p+a.HrdLen]
+	copy(a.SHwAddr[:6], frame[p:p+6])
 	p += a.HrdLen
-	a.SIpAddr = frame[p : p+a.ProLen]
+	copy(a.SIpAddr[:4], frame[p:p+4])
 	p += a.ProLen
-
-	a.THwAddr = frame[p : p+a.HrdLen]
+	copy(a.THwAddr[:6], frame[p:p+6])
 	p += a.HrdLen
-	a.TIpAddr = frame[p : p+a.ProLen]
+	copy(a.TIpAddr[:4], frame[p:p+4])
 	p += a.ProLen
 
 	a.Len = int(p)
@@ -323,6 +325,8 @@ func NewIpv4() (i *Ipv4) {
 		HeaderChecksum: 0,
 		Options:        0,
 		Len:            IPV4_LEN,
+		Source:         make([]byte, 4),
+		Destination:    make([]byte, 4),
 	}
 	return
 }
@@ -353,8 +357,8 @@ func (i *Ipv4) Decode(frame []byte) error {
 	if !i.IsIP4() {
 		return NewErr("Ipv4.Decode: not right ipv4 version: 0x%x", i.Version)
 	}
-	i.Source = frame[12:16]
-	i.Destination = frame[16:20]
+	copy(i.Source[:4], frame[12:16])
+	copy(i.Destination[:4], frame[16:20])
 
 	return nil
 }
