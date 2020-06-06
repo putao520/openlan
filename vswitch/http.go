@@ -17,6 +17,7 @@ import (
 	"path"
 	"sort"
 	"text/template"
+	"time"
 )
 
 type Http struct {
@@ -48,8 +49,10 @@ func (h *Http) Initialize() {
 	r := h.Router()
 	if h.server == nil {
 		h.server = &http.Server{
-			Addr:    h.listen,
-			Handler: r,
+			Addr:         h.listen,
+			Handler:      r,
+			ReadTimeout:  2 * time.Second,
+			WriteTimeout: 4 * time.Second,
 		}
 	}
 
