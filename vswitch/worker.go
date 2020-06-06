@@ -46,22 +46,22 @@ func (w *Worker) Initialize() {
 		}
 		service.User.Add(&user)
 	}
-	if w.Conf.IpSet != nil {
+	if w.Conf.Subnet.Netmask != "" {
 		met := models.Network{
 			Name:    w.Conf.Name,
-			IpStart: w.Conf.IpSet.Range.Start,
-			IpEnd:   w.Conf.IpSet.Range.End,
-			Netmask: w.Conf.IpSet.Range.Netmask,
+			IpStart: w.Conf.Subnet.Start,
+			IpEnd:   w.Conf.Subnet.End,
+			Netmask: w.Conf.Subnet.Netmask,
 			Routes:  make([]*models.Route, 0, 2),
 		}
-		for _, rte := range w.Conf.IpSet.Route {
-			if rte.Nexthop == "" {
-				libol.Warn("Worker.Initialize %s no nexthop", rte.Prefix)
+		for _, rt := range w.Conf.Routes {
+			if rt.Nexthop == "" {
+				libol.Warn("Worker.Initialize %s no nexthop", rt.Prefix)
 				continue
 			}
 			met.Routes = append(met.Routes, &models.Route{
-				Prefix:  rte.Prefix,
-				Nexthop: rte.Nexthop,
+				Prefix:  rt.Prefix,
+				Nexthop: rt.Nexthop,
 			})
 		}
 		service.Network.Add(&met)

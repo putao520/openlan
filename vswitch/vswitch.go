@@ -97,16 +97,15 @@ func (v *VSwitch) Initialize() {
 	for _, nCfg := range v.Conf.Network {
 		name := nCfg.Name
 		brCfg := nCfg.Bridge
-		ipSet := nCfg.IpSet
 
-		if brCfg.Address != "" && ipSet != nil {
+		if brCfg.Address != "" {
 			source := brCfg.Address
 			ifAddr := strings.SplitN(source, "/", 2)[0]
-			for i, rt := range ipSet.Route {
+			for i, rt := range nCfg.Routes {
 				if rt.Nexthop == "" {
-					ipSet.Route[i].Nexthop = ifAddr
+					nCfg.Routes[i].Nexthop = ifAddr
 				}
-				rt = ipSet.Route[i]
+				rt = nCfg.Routes[i]
 				if rt.Nexthop != ifAddr {
 					continue
 				}

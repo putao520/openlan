@@ -14,7 +14,7 @@ type Bridge struct {
 	Provider string `json:"provider"`
 }
 
-type IpRange struct {
+type IpSubnet struct {
 	Start   string `json:"start"`
 	End     string `json:"end"`
 	Netmask string `json:"netmask"`
@@ -23,11 +23,6 @@ type IpRange struct {
 type IpRoute struct {
 	Prefix  string `json:"prefix"`
 	Nexthop string `json:"nexthop"`
-}
-
-type IpSet struct {
-	Route []IpRoute `json:"routes"`
-	Range IpRange   `json:"range"`
 }
 
 type Password struct {
@@ -40,7 +35,8 @@ type Network struct {
 	Name     string     `json:"name" yaml:"name"`
 	Bridge   Bridge     `json:"bridge" yaml:"bridge"`
 	Links    []*Point   `json:"links" yaml:"links"`
-	IpSet    *IpSet     `json:"ip,omitempty" yaml:"ip,omitempty"`
+	Routes   []IpRoute  `json:"routes"`
+	Subnet   IpSubnet   `json:"subnet"`
 	Password []Password `json:"password"`
 }
 
