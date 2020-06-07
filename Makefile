@@ -19,12 +19,12 @@ LDFLAGS += -X $(MOD).Version=$(VER)
 
 ## declare directory
 SD = $(shell pwd)
-BD = build
+BD = $(SD)/build
 LD = openlan-$(LSB)-$(VER)
 WD = openlan-Windows-$(VER)
 XD = openlan-Darwin-$(VER)
 
-# all platform
+## all platform
 all: linux windows darwin
 
 pkg: linux/rpm windows/zip darwin/zip
@@ -32,35 +32,34 @@ pkg: linux/rpm windows/zip darwin/zip
 ## prepare environment
 env:
 	@mkdir -p $(BD)
-	@./packaging/auto.sh
 
 ## linux platform
 linux: linux/point linux/vswitch linux/ctrl
 
-linux/ctrl:
+linux/ctrl: env
 	cd controller && make linux
 
-linux/point:
-	go build -mod=vendor -ldflags "$(LDFLAGS)" -o openlan-point ./main/point_linux
+linux/point: env
+	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point ./main/point_linux
 
-linux/vswitch:
-	go build -mod=vendor -ldflags "$(LDFLAGS)" -o openlan-vswitch ./main/vswitch.go
+linux/vswitch: env
+	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-vswitch ./main/vswitch.go
 
 linux/rpm: env
+	@./packaging/spec.sh
 	rpmbuild -ba packaging/openlan-ctrl.spec
 	rpmbuild -ba packaging/openlan-point.spec
 	rpmbuild -ba packaging/openlan-vswitch.spec
 	@cp -rf ~/rpmbuild/RPMS/x86_64/openlan-*.rpm $(BD)
 
 ## cross build for windows
-
 windows: windows/point windows/vswitch
 
-windows/point:
-	GOOS=windows GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o openlan-point.exe ./main/point_windows
+windows/point: env
+	GOOS=windows GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point.exe ./main/point_windows
 
-windows/vswitch:
-	GOOS=windows GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o openlan-vswitch.exe ./main/vswitch.go
+windows/vswitch: env
+	GOOS=windows GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-vswitch.exe ./main/vswitch.go
 
 windows/zip: env windows
 	@pushd $(BD)
@@ -68,8 +67,8 @@ windows/zip: env windows
 	@rm -rf $(WD).zip
 
 	@cp -rvf $(SD)/packaging/resource/point.json.example $(WD)/point.json
-	@cp -rvf $(SD)/openlan-point.exe $(WD)
-	@cp -rvf $(SD)/openlan-vswitch.exe $(WD)
+	@cp -rvf $(BD)/openlan-point.exe $(WD)
+	@cp -rvf $(BD)/openlan-vswitch.exe $(WD)
 
 	zip -r $(WD).zip $(WD) > /dev/null
 	@popd
@@ -78,13 +77,11 @@ windows/syso:
 	rsrc -manifest main/point_windows/main.manifest -ico main/point_windows/main.ico  -o main/point_windows/main.syso
 
 ## cross build for osx
-
-
 osx: darwin
 
-darwin:
-	GOOS=darwin GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o openlan-point.darwin ./main/point_darwin
-	GOOS=darwin GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o openlan-vswitch.darwin ./main/vswitch.go
+darwin: env
+	GOOS=darwin GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point.darwin ./main/point_darwin
+	GOOS=darwin GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-vswitch.darwin ./main/vswitch.go
 
 darwin/zip: env darwin
 	@pushd $(BD)
@@ -92,8 +89,8 @@ darwin/zip: env darwin
 	@rm -rf $(XD).zip
 
 	@cp -rvf $(SD)/packaging/resource/point.json.example $(XD)/point.json
-	@cp -rvf $(SD)/openlan-point.darwin $(XD)
-	@cp -rvf $(SD)/openlan-vswitch.darwin $(XD)
+	@cp -rvf $(BD)/openlan-point.darwin $(XD)
+	@cp -rvf $(BD)/openlan-vswitch.darwin $(XD)
 
 	zip -r $(XD).zip $(XD) > /dev/null
 	popd
