@@ -1,12 +1,12 @@
 Name: openlan-vswitch
-Version: 5.0.0
+Version: 5.1.2
 Release: 1%{?dist}
 Summary: OpenLan's Project Software
 Group: Applications/Communications
 License: Apache 2.0
 URL: https://github.com/danieldin95/openlan-go
 BuildRequires: go
-Requires: net-tools
+Requires: net-tools, iptables, iputils
 
 %define _venv /opt/openlan-utils/env
 %define _source_dir ${RPM_SOURCE_DIR}/openlan-go-%{version}
@@ -22,7 +22,7 @@ virtualenv %_venv
 
 %install
 mkdir -p %{buildroot}/usr/bin
-cp %_source_dir/openlan-vswitch %{buildroot}/usr/bin
+cp %_source_dir/build/openlan-vswitch %{buildroot}/usr/bin
 
 mkdir -p %{buildroot}/etc/openlan/vswitch
 cp %_source_dir/packaging/resource/ctrl.json.example %{buildroot}/etc/openlan/vswitch

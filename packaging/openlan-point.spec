@@ -1,5 +1,5 @@
 Name: openlan-point
-Version: 5.0.0
+Version: 5.1.2
 Release: 1%{?dist}
 Summary: OpenLan's Project Software
 Group: Applications/Communications
@@ -20,7 +20,7 @@ cd %_source_dir && make linux/point
 %install
 
 mkdir -p %{buildroot}/usr/bin
-cp %_source_dir/openlan-point %{buildroot}/usr/bin
+cp %_source_dir/build/openlan-point %{buildroot}/usr/bin
 
 mkdir -p %{buildroot}/etc/sysconfig/openlan
 cp %_source_dir/packaging/resource/point.cfg %{buildroot}/etc/sysconfig/openlan
