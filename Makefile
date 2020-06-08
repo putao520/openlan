@@ -29,6 +29,9 @@ all: linux windows darwin
 
 pkg: linux/rpm windows/zip darwin/zip
 
+clean:
+	rm -rvf ./build
+
 ## prepare environment
 env:
 	@mkdir -p $(BD)

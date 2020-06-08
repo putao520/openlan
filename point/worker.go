@@ -368,13 +368,16 @@ type TapWorkerListener struct {
 	ReadAt   func([]byte) error
 }
 
+type TunEther struct {
+	HwAddr []byte
+	IpAddr []byte
+}
+
 type TapWorker struct {
-	Device   network.Taper
-	Listener TapWorkerListener
-	//for tunnel device.
-	EthSrcAddr []byte
-	EthSrcIp   []byte
-	Neighbors  Neighbors
+	Device    network.Taper
+	Listener  TapWorkerListener
+	Ether     TunEther
+	Neighbors Neighbors
 
 	lock        sync.RWMutex
 	devCfg      network.TapConfig
@@ -406,14 +409,14 @@ func (a *TapWorker) Initialize() {
 	a.DoTun()
 }
 
-func (a *TapWorker) EthSrc(addr string) {
+func (a *TapWorker) SetEther(addr string) {
 	ifAddr := strings.SplitN(addr, "/", 2)[0]
-	a.EthSrcIp = net.ParseIP(ifAddr).To4()
-	if a.EthSrcIp == nil {
-		libol.Error("TapWorker.EthSrc: srcIp is nil")
-		a.EthSrcIp = []byte{0x00, 0x00, 0x00, 0x00}
+	a.Ether.IpAddr = net.ParseIP(ifAddr).To4()
+	if a.Ether.IpAddr == nil {
+		libol.Error("TapWorker.SetEther: srcIp is nil")
+		a.Ether.IpAddr = []byte{0x00, 0x00, 0x00, 0x00}
 	} else {
-		libol.Info("TapWorker.EthSrc: srcIp % x", a.EthSrcIp)
+		libol.Info("TapWorker.SetEther: srcIp % x", a.Ether.IpAddr)
 	}
 }
 
@@ -421,9 +424,9 @@ func (a *TapWorker) DoTun() {
 	if a.Device == nil || !a.Device.IsTun() {
 		return
 	}
-	a.EthSrc(a.pointCfg.If.Address)
-	a.EthSrcAddr = libol.GenEthAddr(6)
-	libol.Info("TapWorker.DoTun: src %x", a.EthSrcAddr)
+	a.SetEther(a.pointCfg.If.Address)
+	a.Ether.HwAddr = libol.GenEthAddr(6)
+	libol.Info("TapWorker.DoTun: src %x", a.Ether.HwAddr)
 }
 
 func (a *TapWorker) Open() {
@@ -447,7 +450,7 @@ func (a *TapWorker) Open() {
 func (a *TapWorker) NewEth(t uint16, dst []byte) *libol.Ether {
 	eth := libol.NewEther(t)
 	eth.Dst = dst
-	eth.Src = a.EthSrcAddr
+	eth.Src = a.Ether.HwAddr
 	return eth
 }
 
@@ -456,9 +459,9 @@ func (a *TapWorker) onMiss(dest []byte) {
 	eth := a.NewEth(libol.ETHPARP, libol.BROADED)
 	reply := libol.NewArp()
 	reply.OpCode = libol.ARP_REQUEST
-	reply.SIpAddr = a.EthSrcIp
+	reply.SIpAddr = a.Ether.IpAddr
 	reply.TIpAddr = dest
-	reply.SHwAddr = a.EthSrcAddr
+	reply.SHwAddr = a.Ether.HwAddr
 	reply.THwAddr = libol.ZEROED
 
 	buffer := make([]byte, 0, a.pointCfg.If.Mtu)
@@ -580,13 +583,13 @@ func (a *TapWorker) onArp(data []byte) bool {
 		}
 		switch arp.OpCode {
 		case libol.ARP_REQUEST:
-			if bytes.Equal(arp.TIpAddr, a.EthSrcIp) {
+			if bytes.Equal(arp.TIpAddr, a.Ether.IpAddr) {
 				eth := a.NewEth(libol.ETHPARP, arp.SHwAddr)
 				reply := libol.NewArp()
 				reply.OpCode = libol.ARP_REPLY
-				reply.SIpAddr = a.EthSrcIp
+				reply.SIpAddr = a.Ether.IpAddr
 				reply.TIpAddr = arp.SIpAddr
-				reply.SHwAddr = a.EthSrcAddr
+				reply.SHwAddr = a.Ether.HwAddr
 				reply.THwAddr = arp.SHwAddr
 				buffer := make([]byte, 0, a.pointCfg.If.Mtu)
 				buffer = append(buffer, eth.Encode()...)
@@ -598,7 +601,7 @@ func (a *TapWorker) onArp(data []byte) bool {
 				}
 			}
 		case libol.ARP_REPLY:
-			if bytes.Equal(arp.THwAddr, a.EthSrcAddr) {
+			if bytes.Equal(arp.THwAddr, a.Ether.HwAddr) {
 				a.Neighbors.Add(&Neighbor{
 					HwAddr:  arp.SHwAddr,
 					IpAddr:  arp.SIpAddr,
@@ -606,7 +609,7 @@ func (a *TapWorker) onArp(data []byte) bool {
 					Uptime:  time.Now().Unix(),
 				})
 			}
-			libol.Info("TapWorker.onArp: % x on % x.", arp.SHwAddr, arp.SIpAddr)
+			libol.Info("TapWorker.onArp: recv %x on %x.", arp.SHwAddr, arp.SIpAddr)
 		default:
 			libol.Warn("TapWorker.onArp: not op %x.", arp.OpCode)
 		}
@@ -833,7 +836,7 @@ func (p *Worker) OnIpAddr(w *TcpWorker, n *models.Network) error {
 	prefix := libol.Netmask2Len(n.Netmask)
 	ipStr := fmt.Sprintf("%s/%d", n.IfAddr, prefix)
 
-	p.tapWorker.EthSrc(ipStr)
+	p.tapWorker.SetEther(ipStr)
 	if p.Listener.AddAddr != nil {
 		_ = p.Listener.AddAddr(ipStr)
 	}
