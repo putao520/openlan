@@ -5,7 +5,7 @@ import (
 	"github.com/danieldin95/openlan-go/controller/libctrl"
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
-	"github.com/danieldin95/openlan-go/vswitch/service"
+	"github.com/danieldin95/openlan-go/vswitch/storage"
 )
 
 type Point struct {
@@ -40,7 +40,7 @@ func (p *Point) Del(key string) {
 
 func (p *Point) GetCtl(id string, m libctrl.Message) error {
 	if m.Data == "" {
-		for u := range service.Point.List() {
+		for u := range storage.Point.List() {
 			if u == nil {
 				break
 			}

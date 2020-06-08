@@ -3,7 +3,7 @@ package api
 import (
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/vswitch/schema"
-	"github.com/danieldin95/openlan-go/vswitch/service"
+	"github.com/danieldin95/openlan-go/vswitch/storage"
 	"github.com/gorilla/mux"
 	"net/http"
 )
@@ -17,7 +17,7 @@ func (h Neighbor) Router(router *mux.Router) {
 
 func (h Neighbor) List(w http.ResponseWriter, r *http.Request) {
 	neighbors := make([]schema.Neighbor, 0, 1024)
-	for n := range service.Neighbor.List() {
+	for n := range storage.Neighbor.List() {
 		if n == nil {
 			break
 		}

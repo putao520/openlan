@@ -307,7 +307,7 @@ func (n *Neighbors) Start() {
 		case <-n.done:
 			return
 		case t := <-n.ticker.C:
-			libol.Debug("Neighbors.Expire: tick at %s", t)
+			libol.Log("Neighbors.Expire: tick at %s", t)
 			n.Expire()
 		}
 	}
@@ -411,12 +411,14 @@ func (a *TapWorker) Initialize() {
 
 func (a *TapWorker) SetEther(addr string) {
 	ifAddr := strings.SplitN(addr, "/", 2)[0]
-	a.Ether.IpAddr = net.ParseIP(ifAddr).To4()
-	if a.Ether.IpAddr == nil {
-		libol.Error("TapWorker.SetEther: srcIp is nil")
-		a.Ether.IpAddr = []byte{0x00, 0x00, 0x00, 0x00}
-	} else {
-		libol.Info("TapWorker.SetEther: srcIp % x", a.Ether.IpAddr)
+	if ifAddr != "" {
+		a.Ether.IpAddr = net.ParseIP(ifAddr).To4()
+		if a.Ether.IpAddr == nil {
+			libol.Warn("TapWorker.SetEther: srcIp is nil")
+			a.Ether.IpAddr = []byte{0x00, 0x00, 0x00, 0x00}
+		} else {
+			libol.Info("TapWorker.SetEther: srcIp % x", a.Ether.IpAddr)
+		}
 	}
 }
 
@@ -455,7 +457,7 @@ func (a *TapWorker) NewEth(t uint16, dst []byte) *libol.Ether {
 }
 
 func (a *TapWorker) onMiss(dest []byte) {
-	libol.Info("TapWorker.onMiss: %x.", dest)
+	libol.Debug("TapWorker.onMiss: %x.", dest)
 	eth := a.NewEth(libol.ETHPARP, libol.BROADED)
 	reply := libol.NewArp()
 	reply.OpCode = libol.ARP_REQUEST
@@ -468,7 +470,7 @@ func (a *TapWorker) onMiss(dest []byte) {
 	buffer = append(buffer, eth.Encode()...)
 	buffer = append(buffer, reply.Encode()...)
 
-	libol.Info("TapWorker.onMiss: %x.", buffer)
+	libol.Debug("TapWorker.onMiss: %x.", buffer)
 	if a.Listener.ReadAt != nil {
 		_ = a.Listener.ReadAt(buffer)
 	}
@@ -547,7 +549,7 @@ func (a *TapWorker) DoWrite(data []byte) error {
 		if eth.IsIP4() {
 			data = data[14:]
 		} else {
-			libol.Debug("TapWorker.Loop: not IPv4 %x", eth.Type)
+			libol.Debug("TapWorker.Loop: 0x%04x not IPv4", eth.Type)
 			return nil
 		}
 	}
@@ -578,7 +580,7 @@ func (a *TapWorker) onArp(data []byte) bool {
 	}
 	if arp.IsIP4() {
 		if !bytes.Equal(eth.Src, arp.SHwAddr) {
-			libol.Error("TapWorker.onArp: eth.dst != arp.SHw % x.", arp.SIpAddr)
+			libol.Error("TapWorker.onArp: eth.dst not arp.shw %x.", arp.SIpAddr)
 			return true
 		}
 		switch arp.OpCode {
@@ -652,7 +654,7 @@ type WorkerListener struct {
 	DelRoutes func(routes []*models.Route) error
 }
 
-type Route struct {
+type PrefixRule struct {
 	Type        int
 	Destination net.IPNet
 	Nexthop     net.IP
@@ -669,7 +671,7 @@ type Worker struct {
 	uuid        string
 	network     *models.Network
 	initialized bool
-	routes      []Route
+	routes      []PrefixRule
 }
 
 func NewWorker(config *config.Point) (p *Worker) {
@@ -677,7 +679,7 @@ func NewWorker(config *config.Point) (p *Worker) {
 		IfAddr:      config.If.Address,
 		config:      config,
 		initialized: false,
-		routes:      make([]Route, 0, 32),
+		routes:      make([]PrefixRule, 0, 32),
 	}
 }
 
@@ -823,7 +825,7 @@ func (p *Worker) FindDest(dest []byte) []byte {
 			if rt.Type == 0x00 {
 				break
 			}
-			libol.Debug("Worker.FindDest %v to %v", dest, rt.Nexthop)
+			libol.Debug("Worker.FindDest %x to %v", dest, rt.Nexthop)
 			return rt.Nexthop.To4()
 		}
 	}
@@ -848,7 +850,7 @@ func (p *Worker) OnIpAddr(w *TcpWorker, n *models.Network) error {
 	// update routes
 	ip := net.ParseIP(p.network.IfAddr)
 	m := net.IPMask(net.ParseIP(p.network.Netmask).To4())
-	p.routes = append(p.routes, Route{
+	p.routes = append(p.routes, PrefixRule{
 		Type:        0x00,
 		Destination: net.IPNet{IP: ip.Mask(m), Mask: m},
 		Nexthop:     libol.ZEROED,
@@ -859,7 +861,7 @@ func (p *Worker) OnIpAddr(w *TcpWorker, n *models.Network) error {
 			continue
 		}
 		nxt := net.ParseIP(rt.Nexthop)
-		p.routes = append(p.routes, Route{
+		p.routes = append(p.routes, PrefixRule{
 			Type:        0x01,
 			Destination: *dest,
 			Nexthop:     nxt,

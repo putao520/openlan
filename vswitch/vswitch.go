@@ -8,7 +8,7 @@ import (
 	"github.com/danieldin95/openlan-go/network"
 	"github.com/danieldin95/openlan-go/vswitch/app"
 	"github.com/danieldin95/openlan-go/vswitch/ctrls"
-	"github.com/danieldin95/openlan-go/vswitch/service"
+	"github.com/danieldin95/openlan-go/vswitch/storage"
 	"strings"
 	"sync"
 	"time"
@@ -204,8 +204,8 @@ func (v *VSwitch) ReadClient(client *libol.TcpClient, data []byte) error {
 func (v *VSwitch) OnClose(client *libol.TcpClient) error {
 	libol.Info("VSwitch.OnClose: %s", client.Addr)
 
-	service.Point.Del(client.Addr)
-	service.Network.FreeAddr(client)
+	storage.Point.Del(client.Addr)
+	storage.Network.FreeAddr(client)
 
 	return nil
 }

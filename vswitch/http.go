@@ -8,7 +8,7 @@ import (
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/vswitch/api"
 	"github.com/danieldin95/openlan-go/vswitch/schema"
-	"github.com/danieldin95/openlan-go/vswitch/service"
+	"github.com/danieldin95/openlan-go/vswitch/storage"
 	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"
@@ -215,7 +215,7 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 	body.Worker = api.NewWorkerSchema(h.switcher)
 
 	pointList := make([]*models.Point, 0, 128)
-	for p := range service.Point.List() {
+	for p := range storage.Point.List() {
 		if p == nil {
 			break
 		}
@@ -229,7 +229,7 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 	}
 
 	neighborList := make([]*models.Neighbor, 0, 128)
-	for n := range service.Neighbor.List() {
+	for n := range storage.Neighbor.List() {
 		if n == nil {
 			break
 		}
@@ -243,7 +243,7 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 	}
 
 	linkList := make([]*models.Point, 0, 128)
-	for p := range service.Link.List() {
+	for p := range storage.Link.List() {
 		if p == nil {
 			break
 		}
@@ -257,7 +257,7 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 	}
 
 	lineList := make([]*models.Line, 0, 128)
-	for l := range service.Online.List() {
+	for l := range storage.Online.List() {
 		if l == nil {
 			break
 		}

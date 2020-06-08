@@ -3,7 +3,7 @@ package api
 import (
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/vswitch/schema"
-	"github.com/danieldin95/openlan-go/vswitch/service"
+	"github.com/danieldin95/openlan-go/vswitch/storage"
 	"github.com/gorilla/mux"
 	"net/http"
 )
@@ -18,7 +18,7 @@ func (h Point) Router(router *mux.Router) {
 
 func (h Point) List(w http.ResponseWriter, r *http.Request) {
 	points := make([]schema.Point, 0, 1024)
-	for u := range service.Point.List() {
+	for u := range storage.Point.List() {
 		if u == nil {
 			break
 		}
@@ -29,7 +29,7 @@ func (h Point) List(w http.ResponseWriter, r *http.Request) {
 
 func (h Point) Get(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	point := service.Point.Get(vars["id"])
+	point := storage.Point.Get(vars["id"])
 	if point != nil {
 		ResponseJson(w, models.NewPointSchema(point))
 	} else {

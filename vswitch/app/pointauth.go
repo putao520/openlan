@@ -5,7 +5,7 @@ import (
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/main/config"
 	"github.com/danieldin95/openlan-go/models"
-	"github.com/danieldin95/openlan-go/vswitch/service"
+	"github.com/danieldin95/openlan-go/vswitch/storage"
 	"strings"
 )
 
@@ -83,7 +83,7 @@ func (p *PointAuth) handleLogin(client *libol.TcpClient, data string) error {
 		name = user.Token
 	}
 	libol.Debug("PointAuth.handleLogin: %s", name)
-	nowUser := service.User.Get(name)
+	nowUser := storage.User.Get(name)
 	if nowUser != nil {
 		if nowUser.Password == user.Password {
 			p.success++
@@ -117,7 +117,7 @@ func (p *PointAuth) onAuth(client *libol.TcpClient, user *models.User) error {
 		m.UUID = user.Alias
 	}
 	client.SetPrivate(m)
-	service.Point.Add(m)
+	storage.Point.Add(m)
 	go p.master.ReadTap(dev, client.WriteMsg)
 
 	return nil

@@ -3,7 +3,7 @@ package ctrls
 import (
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
-	"github.com/danieldin95/openlan-go/vswitch/service"
+	"github.com/danieldin95/openlan-go/vswitch/storage"
 	"testing"
 	"time"
 )
@@ -28,9 +28,9 @@ func TestCtl_Point(t *testing.T) {
 			Addr: "xxx",
 		},
 	}
-	service.Point.Add(&point)
+	storage.Point.Add(&point)
 	time.Sleep(5 * time.Second)
-	service.Point.Del(point.Client.Addr)
+	storage.Point.Del(point.Client.Addr)
 	time.Sleep(5 * time.Second)
 	cc.Stop()
 	time.Sleep(5 * time.Second)

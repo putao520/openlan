@@ -5,7 +5,7 @@ import (
 	"github.com/danieldin95/openlan-go/controller/libctrl"
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
-	"github.com/danieldin95/openlan-go/vswitch/service"
+	"github.com/danieldin95/openlan-go/vswitch/storage"
 )
 
 type Neighbor struct {
@@ -39,7 +39,7 @@ func (p *Neighbor) Del(key string) {
 }
 
 func (p *Neighbor) GetCtl(id string, m libctrl.Message) error {
-	for u := range service.Neighbor.List() {
+	for u := range storage.Neighbor.List() {
 		if u == nil {
 			break
 		}

@@ -5,7 +5,7 @@ import (
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/main/config"
 	"github.com/danieldin95/openlan-go/models"
-	"github.com/danieldin95/openlan-go/vswitch/service"
+	"github.com/danieldin95/openlan-go/vswitch/storage"
 )
 
 type WithRequest struct {
@@ -57,9 +57,9 @@ func (r *WithRequest) OnIpAddr(client *libol.TcpClient, data string) {
 		n.Name = n.Tenant
 	}
 	if n.IfAddr == "" {
-		FinNet := service.Network.Get(n.Name)
+		FinNet := storage.Network.Get(n.Name)
 		libol.Info("WithRequest.OnIpAddr: find %s", FinNet)
-		ipStr, netmask := service.Network.GetFreeAddr(client, FinNet)
+		ipStr, netmask := storage.Network.GetFreeAddr(client, FinNet)
 		if ipStr == "" {
 			libol.Error("WithRequest.OnIpAddr: %s no free address", n.Name)
 			_ = client.WriteResp("ipaddr", "no free address")

@@ -6,7 +6,7 @@ import (
 	"github.com/danieldin95/openlan-go/main/config"
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/vswitch/schema"
-	"github.com/danieldin95/openlan-go/vswitch/service"
+	"github.com/danieldin95/openlan-go/vswitch/storage"
 	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"
@@ -25,7 +25,7 @@ func (h Link) Router(router *mux.Router) {
 
 func (h Link) List(w http.ResponseWriter, r *http.Request) {
 	links := make([]schema.Link, 0, 1024)
-	for l := range service.Link.List() {
+	for l := range storage.Link.List() {
 		if l == nil {
 			break
 		}
@@ -39,7 +39,7 @@ func (h Link) Get(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	libol.Info("GetPoint %s", vars["id"])
 
-	link := service.Link.Get(vars["id"])
+	link := storage.Link.Get(vars["id"])
 	if link != nil {
 		ResponseJson(w, models.NewLinkSchema(link))
 	} else {

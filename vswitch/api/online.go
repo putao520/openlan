@@ -3,7 +3,7 @@ package api
 import (
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/vswitch/schema"
-	"github.com/danieldin95/openlan-go/vswitch/service"
+	"github.com/danieldin95/openlan-go/vswitch/storage"
 	"github.com/gorilla/mux"
 	"net/http"
 )
@@ -17,7 +17,7 @@ func (h OnLine) Router(router *mux.Router) {
 
 func (h OnLine) List(w http.ResponseWriter, r *http.Request) {
 	nets := make([]schema.OnLine, 0, 1024)
-	for u := range service.Online.List() {
+	for u := range storage.Online.List() {
 		if u == nil {
 			break
 		}

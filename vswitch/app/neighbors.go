@@ -3,7 +3,7 @@ package app
 import (
 	"github.com/danieldin95/openlan-go/main/config"
 	"github.com/danieldin95/openlan-go/models"
-	"github.com/danieldin95/openlan-go/vswitch/service"
+	"github.com/danieldin95/openlan-go/vswitch/storage"
 	"net"
 	"sync"
 	"time"
@@ -70,11 +70,11 @@ func (e *Neighbors) AddNeighbor(neb *models.Neighbor) {
 		n.IpAddr = neb.IpAddr
 		n.Client = neb.Client
 		n.HitTime = time.Now().Unix()
-		service.Neighbor.Update(neb)
+		storage.Neighbor.Update(neb)
 	} else {
 		libol.Log("Neighbors.AddNeighbor: new %s.", neb)
 		e.neighbors[neb.IpAddr.String()] = neb
-		service.Neighbor.Add(neb)
+		storage.Neighbor.Add(neb)
 	}
 }
 
@@ -84,7 +84,7 @@ func (e *Neighbors) DelNeighbor(ipAddr net.IP) {
 
 	libol.Info("Neighbors.DelNeighbor %s.", ipAddr)
 	if n := e.neighbors[ipAddr.String()]; n != nil {
-		service.Neighbor.Del(ipAddr.String())
+		storage.Neighbor.Del(ipAddr.String())
 		delete(e.neighbors, ipAddr.String())
 	}
 }

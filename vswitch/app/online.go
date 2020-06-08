@@ -5,7 +5,7 @@ import (
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/main/config"
 	"github.com/danieldin95/openlan-go/models"
-	"github.com/danieldin95/openlan-go/vswitch/service"
+	"github.com/danieldin95/openlan-go/vswitch/storage"
 	"sync"
 	"time"
 )
@@ -96,14 +96,14 @@ func (o *Online) AddLine(line *models.Line) {
 
 				o.lineList.Remove(e)
 				delete(o.lines, lastLine.String())
-				service.Online.Del(lastLine.String())
+				storage.Online.Del(lastLine.String())
 			}
 		}
 		o.lineList.PushBack(line)
 		o.lines[line.String()] = line
-		service.Online.Add(line)
+		storage.Online.Add(line)
 	} else if find != nil {
 		find.HitTime = time.Now().Unix()
-		service.Online.Update(find)
+		storage.Online.Update(find)
 	}
 }

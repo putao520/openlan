@@ -5,7 +5,7 @@ import (
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/vswitch/schema"
-	"github.com/danieldin95/openlan-go/vswitch/service"
+	"github.com/danieldin95/openlan-go/vswitch/storage"
 	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"
@@ -23,7 +23,7 @@ func (h User) Router(router *mux.Router) {
 
 func (h User) List(w http.ResponseWriter, r *http.Request) {
 	users := make([]schema.User, 0, 1024)
-	for u := range service.User.List() {
+	for u := range storage.User.List() {
 		if u == nil {
 			break
 		}
@@ -34,7 +34,7 @@ func (h User) List(w http.ResponseWriter, r *http.Request) {
 
 func (h User) Get(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	user := service.User.Get(vars["id"])
+	user := storage.User.Get(vars["id"])
 	if user != nil {
 		ResponseJson(w, models.NewUserSchema(user))
 	} else {
@@ -56,7 +56,7 @@ func (h User) Add(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.User.Add(models.SchemaToUserModel(user))
+	storage.User.Add(models.SchemaToUserModel(user))
 	ResponseMsg(w, 0, "")
 }
 
@@ -64,6 +64,6 @@ func (h User) Del(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	libol.Info("DelUser %s", vars["id"])
 
-	service.User.Del(vars["id"])
+	storage.User.Del(vars["id"])
 	ResponseMsg(w, 0, "")
 }

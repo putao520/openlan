@@ -1,4 +1,4 @@
-package service
+package storage
 
 import "github.com/danieldin95/openlan-go/libol"
 

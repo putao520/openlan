@@ -4,7 +4,7 @@ import (
 	"github.com/danieldin95/lightstar/libstar"
 	"github.com/danieldin95/openlan-go/controller/libctrl"
 	"github.com/danieldin95/openlan-go/libol"
-	"github.com/danieldin95/openlan-go/vswitch/service"
+	"github.com/danieldin95/openlan-go/vswitch/storage"
 	"time"
 )
 
@@ -18,8 +18,8 @@ type CtrlC struct {
 
 func (cc *CtrlC) Register() {
 	// Listen change and update.
-	_ = service.Point.Listen.Add("ctlc", &Point{cc: cc})
-	_ = service.Neighbor.Listen.Add("ctlc", &Neighbor{cc: cc})
+	_ = storage.Point.Listen.Add("ctlc", &Point{cc: cc})
+	_ = storage.Neighbor.Listen.Add("ctlc", &Neighbor{cc: cc})
 }
 
 func (cc *CtrlC) Handle() {

@@ -6,7 +6,7 @@ import (
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/point"
 	"github.com/danieldin95/openlan-go/vswitch/api"
-	"github.com/danieldin95/openlan-go/vswitch/service"
+	"github.com/danieldin95/openlan-go/vswitch/storage"
 	"sync"
 	"time"
 )
@@ -44,7 +44,7 @@ func (w *Worker) Initialize() {
 			Name:     pass.Username + "@" + w.Conf.Name,
 			Password: pass.Password,
 		}
-		service.User.Add(&user)
+		storage.User.Add(&user)
 	}
 	if w.Conf.Subnet.Netmask != "" {
 		met := models.Network{
@@ -64,7 +64,7 @@ func (w *Worker) Initialize() {
 				Nexthop: rt.Nexthop,
 			})
 		}
-		service.Network.Add(&met)
+		storage.Network.Add(&met)
 	}
 }
 
@@ -123,7 +123,7 @@ func (w *Worker) AddLink(c *config.Point) {
 		w.links[c.Addr] = p
 		w.linksLock.Unlock()
 
-		service.Link.Add(p)
+		storage.Link.Add(p)
 		p.Start()
 	}()
 }
@@ -134,7 +134,7 @@ func (w *Worker) DelLink(addr string) {
 
 	if p, ok := w.links[addr]; ok {
 		p.Stop()
-		service.Link.Del(p.Addr())
+		storage.Link.Del(p.Addr())
 		delete(w.links, addr)
 	}
 }
