@@ -204,8 +204,11 @@ func (v *VSwitch) ReadClient(client *libol.TcpClient, data []byte) error {
 func (v *VSwitch) OnClose(client *libol.TcpClient) error {
 	libol.Info("VSwitch.OnClose: %s", client.Addr)
 
+	uuid := storage.Point.GetUUID(client.Addr)
+	if storage.Point.GetAddr(uuid) == client.Addr { // not has newer
+		storage.Network.FreeAddr(uuid)
+	}
 	storage.Point.Del(client.Addr)
-	storage.Network.FreeAddr(client)
 
 	return nil
 }
@@ -347,6 +350,13 @@ func (v *VSwitch) ReadTap(dev network.Taper, readAt func(p []byte) error) {
 			libol.Error("VSwitch.ReadTap: do-recv %s %s", dev.Name(), err)
 			break
 		}
+	}
+}
+
+func (v *VSwitch) CloseClient(client *libol.TcpClient) {
+	libol.Info("VSwitch.CloseClient: %s", client)
+	if v.server != nil {
+		v.server.CloseClient(client)
 	}
 }
 

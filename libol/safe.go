@@ -2,42 +2,53 @@ package libol
 
 import "sync"
 
-//m := NewSafeMap(1024)
-//m.Set("hi", 1)
-//a :=3
-//m.Set("hip", &a)
-//c := m.Get("hip").(*int)
-//fmt.Printf("%s\n%d\n", m, *c)
+//m := NewSafeStrStr(1024)
+//m.Set("hi", "1")
+//a := "3"
+//m.Set("hip", a)
+//c := m.Get("hip")
+//fmt.Printf("%s\n%s\n", m, c)
 
-type SafeMap struct {
+type SafeStrStr struct {
 	size int
-	data map[interface{}]interface{}
+	data map[string]string
 	lock sync.RWMutex
 }
 
-func NewSafeMap(size int) *SafeMap {
+func NewSafeStrStr(size int) *SafeStrStr {
 	calSize := size
 	if calSize == 0 {
 		calSize = 128
 	}
-	return &SafeMap{
+	return &SafeStrStr{
 		size: size,
-		data: make(map[interface{}]interface{}, calSize),
+		data: make(map[string]string, calSize),
 	}
 }
 
-func (sm *SafeMap) Len() int {
+func (sm *SafeStrStr) Len() int {
 	sm.lock.RLock()
 	defer sm.lock.RUnlock()
 	return len(sm.data)
 }
 
-func (sm *SafeMap) Set(k interface{}, v interface{}) error {
+func (sm *SafeStrStr) Reset(k, v string) error {
 	sm.lock.Lock()
 	defer sm.lock.Unlock()
 
 	if sm.size != 0 && len(sm.data) >= sm.size {
-		return NewErr("SageMap.Set already full")
+		return NewErr("SafeStrStr.Set already full")
+	}
+	sm.data[k] = v
+	return nil
+}
+
+func (sm *SafeStrStr) Set(k, v string) error {
+	sm.lock.Lock()
+	defer sm.lock.Unlock()
+
+	if sm.size != 0 && len(sm.data) >= sm.size {
+		return NewErr("SafeStrStr.Set already full")
 	}
 	if _, ok := sm.data[k]; !ok {
 		sm.data[k] = v
@@ -45,7 +56,7 @@ func (sm *SafeMap) Set(k interface{}, v interface{}) error {
 	return nil
 }
 
-func (sm *SafeMap) Del(k interface{}) {
+func (sm *SafeStrStr) Del(k string) {
 	sm.lock.Lock()
 	defer sm.lock.Unlock()
 
@@ -54,47 +65,31 @@ func (sm *SafeMap) Del(k interface{}) {
 	}
 }
 
-func (sm *SafeMap) Get(k interface{}) interface{} {
+func (sm *SafeStrStr) Get(k string) string {
 	sm.lock.RLock()
 	defer sm.lock.RUnlock()
 	return sm.data[k]
 }
 
-func (sm *SafeMap) GetEx(k interface{}) (interface{}, bool) {
+func (sm *SafeStrStr) GetEx(k string) (string, bool) {
 	sm.lock.RLock()
 	defer sm.lock.RUnlock()
 	v, ok := sm.data[k]
 	return v, ok
 }
 
-func (sm *SafeMap) Iter(proc func(k interface{}, v interface{})) int {
+func (sm *SafeStrStr) Iter(proc func(k, v string)) int {
 	sm.lock.RLock()
 	defer sm.lock.RUnlock()
 
 	count := 0
 	for k, u := range sm.data {
-		if u != nil {
+		if k != "" {
 			proc(k, u)
 			count += 1
 		}
 	}
 	return count
-}
-
-func (sm *SafeMap) List() <-chan interface{} {
-	ret := make(chan interface{}, 1024)
-
-	go func() {
-		sm.lock.RLock()
-		defer sm.lock.RUnlock()
-
-		for _, u := range sm.data {
-			ret <- u
-		}
-		ret <- nil //Finish channel by nil.
-	}()
-
-	return ret
 }
 
 type SafeStrMap struct {
@@ -122,7 +117,7 @@ func (sm *SafeStrMap) Len() int {
 
 func (sm *SafeStrMap) add(k string, v interface{}) error {
 	if sm.size != 0 && len(sm.data) >= sm.size {
-		return NewErr("SageMap.Set already full")
+		return NewErr("SafeStrMap.Set already full")
 	}
 	if _, ok := sm.data[k]; !ok {
 		sm.data[k] = v
@@ -182,22 +177,6 @@ func (sm *SafeStrMap) Iter(proc func(k string, v interface{})) int {
 		}
 	}
 	return count
-}
-
-func (sm *SafeStrMap) List() <-chan interface{} {
-	ret := make(chan interface{}, 1024)
-
-	go func() {
-		sm.lock.RLock()
-		defer sm.lock.RUnlock()
-
-		for _, u := range sm.data {
-			ret <- u
-		}
-		ret <- nil //Finish channel by nil.
-	}()
-
-	return ret
 }
 
 // a := SafeVar

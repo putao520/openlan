@@ -3,45 +3,40 @@ package libol
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"strconv"
 	"sync"
 	"testing"
 )
 
-func TestSafeMap(t *testing.T) {
-	m := NewSafeMap(1024)
-	m.Set("hi", 1)
+func TestSafeStrStr(t *testing.T) {
+	m := NewSafeStrStr(1024)
+	_ = m.Set("hi", "1")
 	i := m.Get("hi")
-	assert.Equal(t, i, 1, "be the same.")
+	assert.Equal(t, i, "1", "be the same.")
 
-	a := 3
-	m.Set("hip", &a)
-	c := m.Get("hip").(*int)
-	assert.Equal(t, c, &a, "be the same.")
+	a := "3"
+	_ = m.Set("hip", a)
+	c := m.Get("hip")
+	assert.Equal(t, c, a, "be the same.")
 	assert.Equal(t, 2, m.Len(), "be the same.")
 
 	for i := 0; i < 1024; i++ {
-		m.Set(i, i)
+		_ = m.Set(fmt.Sprintf("%d", i), fmt.Sprintf("%d", i))
 	}
 	assert.Equal(t, 1024, m.Len(), "")
-	fmt.Printf("TestSafeMap.size: %d\n", m.Len())
+	fmt.Printf("TestSafeStrStr.size: %d\n", m.Len())
 	for i := 0; i < 1024; i++ {
-		m.Del(i)
+		m.Del(fmt.Sprintf("%d", i))
 	}
 	assert.Equal(t, 2, m.Len(), "")
 
 	m.Del("hi")
 	ii := m.Get("hi")
-	assert.Equal(t, ii, nil, "be the same.")
+	assert.Equal(t, ii, "", "be the same.")
 	assert.Equal(t, 1, m.Len(), "be the same.")
 
 	iii := m.Get("hello")
-	assert.Equal(t, iii, nil, "be the same.")
-
-	var ret interface{}
-	if ret != nil {
-		ap := ret.(*int)
-		assert.Equal(t, nil, ap, "be the same")
-	}
+	assert.Equal(t, iii, "", "be the same.")
 }
 
 func TestZeroMapSet(t *testing.T) {
@@ -56,70 +51,71 @@ func TestZeroMapSet(t *testing.T) {
 	assert.Equal(t, 1, len(m), "be the same.")
 }
 
-func TestZeroSafeMapSet(t *testing.T) {
-	m := NewSafeMap(0)
-	m.Set("hi", 1)
+func TestZeroSafeStrStrSet(t *testing.T) {
+	m := NewSafeStrStr(0)
+	_ = m.Set("hi", "1")
 	i := m.Get("hi")
-	assert.Equal(t, i, 1, "be the same.")
+	assert.Equal(t, i, "1", "be the same.")
 
-	m.Set("hi", 3)
-	c := m.Get("hi").(int)
-	assert.Equal(t, c, 1, "be the same.")
+	_ = m.Set("hi", "3")
+	c := m.Get("hi")
+	assert.Equal(t, c, "1", "be the same.")
 	assert.Equal(t, 1, m.Len(), "be the same.")
 }
 
 func TestZeroSafeStrMapSet(t *testing.T) {
 	m := NewSafeStrMap(0)
-	m.Set("hi", 1)
+	_ = m.Set("hi", 1)
 	i := m.Get("hi")
 	assert.Equal(t, i, 1, "be the same.")
 
-	m.Set("hi", 3)
+	_ = m.Set("hi", 3)
 	c := m.Get("hi").(int)
 	assert.Equal(t, c, 1, "be the same.")
 	assert.Equal(t, 1, m.Len(), "be the same.")
 }
 
-func TestZeroSafeMap(t *testing.T) {
-	m := NewSafeMap(0)
-	m.Set("hi", 1)
+func TestZeroSafeStrStr(t *testing.T) {
+	m := NewSafeStrStr(0)
+	_ = m.Set("hi", "1")
 	i := m.Get("hi")
-	assert.Equal(t, i, 1, "be the same.")
+	assert.Equal(t, i, "1", "be the same.")
 
-	a := 3
-	m.Set("hip", &a)
-	c := m.Get("hip").(*int)
-	assert.Equal(t, c, &a, "be the same.")
+	a := "3"
+	_ = m.Set("hip", a)
+	c := m.Get("hip")
+	assert.Equal(t, c, a, "be the same.")
 	assert.Equal(t, 2, m.Len(), "be the same.")
 
 	for i := 0; i < 1024; i++ {
-		m.Set(i, i)
+		_ = m.Set(fmt.Sprintf("%d", i), fmt.Sprintf("%d", i))
 	}
 	assert.Equal(t, 1026, m.Len(), "")
-	fmt.Printf("TestZeroSafeMap.size: %d\n", m.Len())
+	fmt.Printf("TestZeroSafeStrStr.size: %d\n", m.Len())
 	for i := 0; i < 1024; i++ {
-		m.Del(i)
+		m.Del(fmt.Sprintf("%d", i))
 	}
 	assert.Equal(t, 2, m.Len(), "")
 	m.Del("hi")
 	ii := m.Get("hi")
-	assert.Equal(t, ii, nil, "be the same.")
+	assert.Equal(t, ii, "", "be the same.")
 	assert.Equal(t, 1, m.Len(), "be the same.")
 
 	iii := m.Get("hello")
-	assert.Equal(t, iii, nil, "be the same.")
+	assert.Equal(t, iii, "", "be the same.")
 }
 
-func TestZeroSafeMapIter(t *testing.T) {
-	m := NewSafeMap(0)
+func TestZeroSafeStrStrIter(t *testing.T) {
+	m := NewSafeStrStr(0)
 	c := 0
-	for i := 0; i < 1024; i++ {
+	for i := 0; i < 10; i++ {
 		c += i
-		m.Set(i, i)
+		_ = m.Set(fmt.Sprintf("%d", i), fmt.Sprintf("%d", i))
 	}
 	ct := 0
-	m.Iter(func(k interface{}, v interface{}) {
-		ct += v.(int)
+	m.Iter(func(k string, v string) {
+		i, _ := strconv.Atoi(v)
+		ct += i
 	})
 	assert.Equal(t, ct, c, "be the same")
 
@@ -127,7 +123,7 @@ func TestZeroSafeMapIter(t *testing.T) {
 	cm := 0
 	for i := 1024; i < 1024+1024; i++ {
 		cm += i
-		ms.Set(fmt.Sprintf("%d", i), i)
+		_ = ms.Set(fmt.Sprintf("%d", i), i)
 	}
 	cmt := 0
 	ms.Iter(func(k string, v interface{}) {
@@ -170,19 +166,19 @@ func BenchmarkMapGetWithLock(b *testing.B) {
 	}
 }
 
-func BenchmarkSafeMapGet(b *testing.B) {
-	m := NewSafeMap(2)
-	m.Set("hi", 2)
+func BenchmarkSafeStrStrGet(b *testing.B) {
+	m := NewSafeStrStr(2)
+	_ = m.Set("hi", "2")
 
 	for i := 0; i < b.N; i++ {
-		v := m.Get("hi").(int)
-		assert.Equal(b, v, 2, "")
+		v := m.Get("hi")
+		assert.Equal(b, v, "2", "")
 	}
 }
 
 func BenchmarkSafeStrMapGet(b *testing.B) {
 	m := NewSafeStrMap(2)
-	m.Set("hi", 2)
+	_ = m.Set("hi", 2)
 
 	for i := 0; i < b.N; i++ {
 		v := m.Get("hi").(int)

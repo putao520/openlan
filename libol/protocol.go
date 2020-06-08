@@ -192,7 +192,7 @@ func (a *Arp) Decode(frame []byte) error {
 	a.HrdLen = uint8(frame[4])
 	a.ProLen = uint8(frame[5])
 	if a.HrdLen != 6 || a.ProLen != 4 {
-		return NewErr("Arp.Decode: AddrLen: %d,%s", a.HrdLen, a.ProLen)
+		return NewErr("Arp.Decode: AddrLen: %d,%d", a.HrdLen, a.ProLen)
 	}
 	a.OpCode = binary.BigEndian.Uint16(frame[6:8])
 

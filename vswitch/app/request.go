@@ -59,7 +59,8 @@ func (r *WithRequest) OnIpAddr(client *libol.TcpClient, data string) {
 	if n.IfAddr == "" {
 		FinNet := storage.Network.Get(n.Name)
 		libol.Info("WithRequest.OnIpAddr: find %s", FinNet)
-		ipStr, netmask := storage.Network.GetFreeAddr(client, FinNet)
+		uuid := storage.Point.GetUUID(client.Addr)
+		ipStr, netmask := storage.Network.GetFreeAddr(uuid, FinNet)
 		if ipStr == "" {
 			libol.Error("WithRequest.OnIpAddr: %s no free address", n.Name)
 			_ = client.WriteResp("ipaddr", "no free address")

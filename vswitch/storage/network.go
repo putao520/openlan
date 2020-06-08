@@ -8,15 +8,15 @@ import (
 )
 
 type _network struct {
-	Networks   *libol.SafeStrMap
-	UsedAddr   *libol.SafeStrMap
-	ClientUsed *libol.SafeStrMap
+	Networks *libol.SafeStrMap
+	AddrUUID *libol.SafeStrStr
+	UUIDAddr *libol.SafeStrStr
 }
 
 var Network = _network{
-	Networks:   libol.NewSafeStrMap(1024),
-	UsedAddr:   libol.NewSafeStrMap(1024),
-	ClientUsed: libol.NewSafeStrMap(1024),
+	Networks: libol.NewSafeStrMap(1024),
+	AddrUUID: libol.NewSafeStrStr(1024),
+	UUIDAddr: libol.NewSafeStrStr(1024),
 }
 
 func (w *_network) Add(n *models.Network) {
@@ -51,13 +51,17 @@ func (w *_network) List() <-chan *models.Network {
 	return c
 }
 
-func (w *_network) GetFreeAddr(client *libol.TcpClient, n *models.Network) (ip string, mask string) {
-	if n == nil || client == nil {
+func (w *_network) GetFreeAddr(uuid string, n *models.Network) (ip string, mask string) {
+	if n == nil || uuid == "" {
 		return "", ""
 	}
 
 	ipStr := ""
 	netmask := n.Netmask
+
+	if addr, ok := w.UUIDAddr.GetEx(uuid); ok {
+		return addr, netmask
+	}
 
 	sIp := net.ParseIP(n.IpStart)
 	eIp := net.ParseIP(n.IpEnd)
@@ -71,23 +75,22 @@ func (w *_network) GetFreeAddr(client *libol.TcpClient, n *models.Network) (ip s
 		tmp := make([]byte, 4)
 		binary.BigEndian.PutUint32(tmp[:4], i)
 		tmpStr := net.IP(tmp).String()
-		if _, ok := w.UsedAddr.GetEx(tmpStr); !ok {
+		if _, ok := w.AddrUUID.GetEx(tmpStr); !ok {
 			ipStr = tmpStr
 			break
 		}
 	}
 
 	if ipStr != "" {
-		_ = w.UsedAddr.Set(ipStr, client.Addr)
-		_ = w.ClientUsed.Set(client.Addr, ipStr)
+		_ = w.AddrUUID.Set(ipStr, uuid)
+		_ = w.UUIDAddr.Set(uuid, ipStr)
 	}
 	return ipStr, netmask
 }
 
-func (w *_network) FreeAddr(client *libol.TcpClient) {
-	if v := w.ClientUsed.Get(client.Addr); v != nil {
-		ipStr := v.(string)
-		w.ClientUsed.Del(client.Addr)
-		w.UsedAddr.Del(ipStr)
+func (w *_network) FreeAddr(uuid string) {
+	if addr, ok := w.UUIDAddr.GetEx(uuid); ok {
+		w.UUIDAddr.Del(uuid)
+		w.AddrUUID.Del(addr)
 	}
 }

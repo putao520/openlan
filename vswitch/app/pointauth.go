@@ -116,6 +116,12 @@ func (p *PointAuth) onAuth(client *libol.TcpClient, user *models.User) error {
 	if m.UUID == "" {
 		m.UUID = user.Alias
 	}
+
+	// TODO free has same uuid's point.
+	if om := storage.Point.GetByUUID(m.UUID); om != nil {
+		p.master.CloseClient(om.Client)
+	}
+
 	client.SetPrivate(m)
 	storage.Point.Add(m)
 	go p.master.ReadTap(dev, client.WriteMsg)

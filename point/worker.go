@@ -350,6 +350,23 @@ func (n *Neighbors) Get(d uint32) *Neighbor {
 	return nil
 }
 
+func (n *Neighbors) Clear() {
+	libol.Info("Neighbor.Clear")
+	n.lock.Lock()
+	defer n.lock.Unlock()
+
+	deletes := make([]uint32, 0, 1024)
+	for index := range n.neighbors {
+		deletes = append(deletes, index)
+	}
+	//execute delete.
+	for _, d := range deletes {
+		if _, ok := n.neighbors[d]; ok {
+			delete(n.neighbors, d)
+		}
+	}
+}
+
 func (n *Neighbors) GetByBytes(d []byte) *Neighbor {
 	n.lock.RLock()
 	defer n.lock.RUnlock()
@@ -378,33 +395,37 @@ type TapWorker struct {
 	Listener  TapWorkerListener
 	Ether     TunEther
 	Neighbors Neighbors
+	OpenAgain *libol.SafeVar
 
 	lock        sync.RWMutex
 	devCfg      network.TapConfig
 	pointCfg    *config.Point
 	initialized bool
+	ifAddr      string
 }
 
 func NewTapWorker(devCfg network.TapConfig, c *config.Point) (a *TapWorker) {
 	a = &TapWorker{
-		Device: nil,
-		Neighbors: Neighbors{
-			neighbors: make(map[uint32]*Neighbor, 1024),
-			done:      make(chan bool),
-			ticker:    time.NewTicker(5 * time.Second),
-			timeout:   5 * 60,
-		},
+		Device:      nil,
 		devCfg:      devCfg,
 		pointCfg:    c,
 		initialized: false,
+		OpenAgain:   libol.NewSafeVar(),
 	}
+	a.OpenAgain.Set(false)
 
 	return
 }
 
 func (a *TapWorker) Initialize() {
-	a.initialized = true
 	libol.Info("TapWorker.Initialize")
+	a.initialized = true
+	a.Neighbors = Neighbors{
+		neighbors: make(map[uint32]*Neighbor, 1024),
+		done:      make(chan bool),
+		ticker:    time.NewTicker(5 * time.Second),
+		timeout:   5 * 60,
+	}
 	a.Open()
 	a.DoTun()
 }
@@ -420,6 +441,12 @@ func (a *TapWorker) SetEther(addr string) {
 			libol.Info("TapWorker.SetEther: srcIp % x", a.Ether.IpAddr)
 		}
 	}
+	// changed address need open device again.
+	if a.ifAddr != "" && a.ifAddr != addr {
+		libol.Warn("TapWorker.SetEther changed %s->%s", a.ifAddr, addr)
+		a.OpenAgain.Set(true)
+	}
+	a.ifAddr = addr
 }
 
 func (a *TapWorker) DoTun() {
@@ -434,9 +461,10 @@ func (a *TapWorker) DoTun() {
 func (a *TapWorker) Open() {
 	if a.Device != nil {
 		_ = a.Device.Close()
-		time.Sleep(5 * time.Second) // sleep 5s and release cpu.
+		if !a.OpenAgain.Get().(bool) {
+			time.Sleep(5 * time.Second) // sleep 5s and release cpu.
+		}
 	}
-
 	dev, err := network.NewKernelTap(a.pointCfg.Network, a.devCfg)
 	if err != nil {
 		libol.Error("TapWorker.Open: %s", err)
@@ -447,6 +475,7 @@ func (a *TapWorker) Open() {
 	if a.Listener.OnOpen != nil {
 		_ = a.Listener.OnOpen(a)
 	}
+	a.Neighbors.Clear()
 }
 
 func (a *TapWorker) NewEth(t uint16, dst []byte) *libol.Ether {
@@ -488,9 +517,13 @@ func (a *TapWorker) Read() {
 		}
 
 		n, err := a.Device.Read(data)
-		if err != nil {
-			libol.Error("TapWorker.Read: %s", err)
+		if err != nil || a.OpenAgain.Get().(bool) {
+			if err != nil {
+				libol.Warn("TapWorker.Read: %s", err)
+			}
 			a.Open()
+			// clear OpenAgain flags
+			a.OpenAgain.Set(false)
 			continue
 		}
 		libol.Log("TapWorker.Read: %x", data[:n])
@@ -727,7 +760,17 @@ func (p *Worker) Initialize() {
 	p.tcpWorker.Initialize()
 
 	p.tapWorker.Listener = TapWorkerListener{
-		OnOpen:   p.Listener.OnTap,
+		OnOpen: func(w *TapWorker) error {
+			if p.Listener.OnTap != nil {
+				if err := p.Listener.OnTap(w); err != nil {
+					return err
+				}
+			}
+			if p.network != nil {
+				_ = p.OnIpAddr(p.tcpWorker, p.network)
+			}
+			return nil
+		},
 		ReadAt:   p.tcpWorker.DoWrite,
 		FindDest: p.FindDest,
 	}
@@ -847,6 +890,7 @@ func (p *Worker) OnIpAddr(w *TcpWorker, n *models.Network) error {
 	}
 
 	p.network = n
+
 	// update routes
 	ip := net.ParseIP(p.network.IfAddr)
 	m := net.IPMask(net.ParseIP(p.network.Netmask).To4())

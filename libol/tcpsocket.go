@@ -105,6 +105,13 @@ func (t *TcpServer) Accept() {
 	}
 }
 
+func (t *TcpServer) CloseClient(client *TcpClient) {
+	Debug("TcpServer.CloseClient %s", client)
+	if client != nil {
+		t.offClients <- client
+	}
+}
+
 func (t *TcpServer) Loop(call TcpServerListener) {
 	Debug("TcpServer.Loop")
 	defer t.Close()
@@ -140,7 +147,7 @@ func (t *TcpServer) Read(client *TcpClient, ReadAt func(client *TcpClient, p []b
 		length, err := client.ReadMsg(data)
 		if err != nil {
 			Error("TcpServer.Read: %s", err)
-			t.offClients <- client
+			t.CloseClient(client)
 			break
 		}
 		if length <= 0 {
