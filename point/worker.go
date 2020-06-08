@@ -327,9 +327,17 @@ func (n *Neighbors) Add(h *Neighbor) {
 	k := binary.BigEndian.Uint32(h.IpAddr)
 	if l, ok := n.neighbors[k]; ok {
 		l.Uptime = h.Uptime
-		l.HwAddr = h.HwAddr
+		copy(l.HwAddr[:6], h.HwAddr[:6])
 	} else {
-		n.neighbors[k] = h
+		l := &Neighbor{
+			Uptime:  h.Uptime,
+			Newtime: h.Newtime,
+			HwAddr:  make([]byte, 6),
+			IpAddr:  make([]byte, 4),
+		}
+		copy(l.IpAddr[:4], h.IpAddr[:4])
+		copy(l.HwAddr[:6], h.HwAddr[:6])
+		n.neighbors[k] = l
 	}
 }
 
@@ -354,16 +362,16 @@ func (n *Neighbors) GetByBytes(d []byte) *Neighbor {
 }
 
 type TapWorkerListener struct {
-	OnOpen  func(w *TapWorker) error
-	OnClose func(w *TapWorker)
-	ReadAt  func([]byte) error
+	OnOpen   func(w *TapWorker) error
+	OnClose  func(w *TapWorker)
+	FindDest func(dest []byte) []byte
+	ReadAt   func([]byte) error
 }
 
 type TapWorker struct {
 	Device   network.Taper
 	Listener TapWorkerListener
 	//for tunnel device.
-	EthDstAddr []byte
 	EthSrcAddr []byte
 	EthSrcIp   []byte
 	Neighbors  Neighbors
@@ -413,11 +421,9 @@ func (a *TapWorker) DoTun() {
 	if a.Device == nil || !a.Device.IsTun() {
 		return
 	}
-
 	a.EthSrc(a.pointCfg.If.Address)
 	a.EthSrcAddr = libol.GenEthAddr(6)
-	a.EthDstAddr = libol.BROADED
-	libol.Info("TapWorker.DoTun: src %x, dst %x", a.EthSrcAddr, a.EthDstAddr)
+	libol.Info("TapWorker.DoTun: src %x", a.EthSrcAddr)
 }
 
 func (a *TapWorker) Open() {
@@ -440,18 +446,14 @@ func (a *TapWorker) Open() {
 
 func (a *TapWorker) NewEth(t uint16, dst []byte) *libol.Ether {
 	eth := libol.NewEther(t)
-	if dst == nil {
-		eth.Dst = a.EthDstAddr
-	} else {
-		eth.Dst = dst
-	}
+	eth.Dst = dst
 	eth.Src = a.EthSrcAddr
 	return eth
 }
 
 func (a *TapWorker) onMiss(dest []byte) {
+	libol.Info("TapWorker.onMiss: %x.", dest)
 	eth := a.NewEth(libol.ETHPARP, libol.BROADED)
-
 	reply := libol.NewArp()
 	reply.OpCode = libol.ARP_REQUEST
 	reply.SIpAddr = a.EthSrcIp
@@ -467,6 +469,7 @@ func (a *TapWorker) onMiss(dest []byte) {
 	if a.Listener.ReadAt != nil {
 		_ = a.Listener.ReadAt(buffer)
 	}
+
 }
 
 func (a *TapWorker) Read() {
@@ -492,9 +495,13 @@ func (a *TapWorker) Read() {
 				libol.Error("TapWorker.Read: %s", err)
 				continue
 			}
-			neb := a.Neighbors.GetByBytes(iph.Destination)
+			dest := iph.Destination
+			if a.Listener.FindDest != nil {
+				dest = a.Listener.FindDest(dest)
+			}
+			neb := a.Neighbors.GetByBytes(dest)
 			if neb == nil {
-				a.onMiss(iph.Destination)
+				a.onMiss(dest)
 				continue
 			}
 			eth := a.NewEth(libol.ETHPIP4, neb.HwAddr)
@@ -642,6 +649,12 @@ type WorkerListener struct {
 	DelRoutes func(routes []*models.Route) error
 }
 
+type Route struct {
+	Type        int
+	Destination net.IPNet
+	Nexthop     net.IP
+}
+
 type Worker struct {
 	IfAddr   string
 	Listener WorkerListener
@@ -653,6 +666,7 @@ type Worker struct {
 	uuid        string
 	network     *models.Network
 	initialized bool
+	routes      []Route
 }
 
 func NewWorker(config *config.Point) (p *Worker) {
@@ -660,6 +674,7 @@ func NewWorker(config *config.Point) (p *Worker) {
 		IfAddr:      config.If.Address,
 		config:      config,
 		initialized: false,
+		routes:      make([]Route, 0, 32),
 	}
 }
 
@@ -707,8 +722,9 @@ func (p *Worker) Initialize() {
 	p.tcpWorker.Initialize()
 
 	p.tapWorker.Listener = TapWorkerListener{
-		OnOpen: p.Listener.OnTap,
-		ReadAt: p.tcpWorker.DoWrite,
+		OnOpen:   p.Listener.OnTap,
+		ReadAt:   p.tcpWorker.DoWrite,
+		FindDest: p.FindDest,
 	}
 	p.tapWorker.Initialize()
 
@@ -798,6 +814,19 @@ func (p *Worker) Worker() *TcpWorker {
 	return nil
 }
 
+func (p *Worker) FindDest(dest []byte) []byte {
+	for _, rt := range p.routes {
+		if rt.Destination.Contains(dest) {
+			if rt.Type == 0x00 {
+				break
+			}
+			libol.Debug("Worker.FindDest %v to %v", dest, rt.Nexthop)
+			return rt.Nexthop.To4()
+		}
+	}
+	return dest
+}
+
 func (p *Worker) OnIpAddr(w *TcpWorker, n *models.Network) error {
 	libol.Info("Worker.OnIpAddr: %s/%s, %s", n.IfAddr, n.Netmask, n.Routes)
 
@@ -811,7 +840,28 @@ func (p *Worker) OnIpAddr(w *TcpWorker, n *models.Network) error {
 	if p.Listener.AddRoutes != nil {
 		_ = p.Listener.AddRoutes(n.Routes)
 	}
+
 	p.network = n
+	// update routes
+	ip := net.ParseIP(p.network.IfAddr)
+	m := net.IPMask(net.ParseIP(p.network.Netmask).To4())
+	p.routes = append(p.routes, Route{
+		Type:        0x00,
+		Destination: net.IPNet{IP: ip.Mask(m), Mask: m},
+		Nexthop:     libol.ZEROED,
+	})
+	for _, rt := range n.Routes {
+		_, dest, err := net.ParseCIDR(rt.Prefix)
+		if err != nil {
+			continue
+		}
+		nxt := net.ParseIP(rt.Nexthop)
+		p.routes = append(p.routes, Route{
+			Type:        0x01,
+			Destination: *dest,
+			Nexthop:     nxt,
+		})
+	}
 
 	return nil
 }

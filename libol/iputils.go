@@ -132,8 +132,14 @@ func IpRouteAdd(name, prefix, nexthop string, opts ...string) ([]byte, error) {
 		return exec.Command("netsh", args...).CombinedOutput()
 	case "darwin":
 		args := append([]string{
-			"add", "-net", prefix, nexthop,
-		}, opts...)
+			"add", "-net", prefix})
+		if name != "" {
+			args = append(args, "-iface", name)
+		}
+		if nexthop != "" {
+			args = append(args, nexthop)
+		}
+		args = append(args, opts...)
 		return exec.Command("/sbin/route", args...).CombinedOutput()
 	default:
 		return nil, NewErr("IpRouteAdd %s not support", runtime.GOOS)
@@ -156,8 +162,14 @@ func IpRouteDel(name, prefix, nexthop string, opts ...string) ([]byte, error) {
 		return exec.Command("netsh", args...).CombinedOutput()
 	case "darwin":
 		args := append([]string{
-			"delete", "-net", prefix, nexthop,
-		}, opts...)
+			"delete", "-net", prefix})
+		if name != "" {
+			args = append(args, "-iface", name)
+		}
+		if nexthop != "" {
+			args = append(args, nexthop)
+		}
+		args = append(args, opts...)
 		return exec.Command("/sbin/route", args...).CombinedOutput()
 	default:
 		return nil, NewErr("IpRouteDel %s not support", runtime.GOOS)
