@@ -30,7 +30,7 @@ type Switch struct {
 
 	hooks      []Hook
 	http       *Http
-	server     *libol.TcpServer
+	server     libol.SocketServer
 	bridge     map[string]network.Bridger
 	worker     map[string]*Worker
 	lock       sync.RWMutex
@@ -41,7 +41,6 @@ type Switch struct {
 
 func NewSwitch(c config.Switch) *Switch {
 	var tlsConf *tls.Config
-
 	if c.Cert.KeyFile != "" && c.Cert.CrtFile != "" {
 		cer, err := tls.LoadX509KeyPair(c.Cert.CrtFile, c.Cert.KeyFile)
 		if err != nil {
@@ -49,7 +48,6 @@ func NewSwitch(c config.Switch) *Switch {
 		}
 		tlsConf = &tls.Config{Certificates: []tls.Certificate{cer}}
 	}
-
 	v := Switch{
 		Conf: c,
 		Fire: FireWall{
@@ -280,7 +278,7 @@ func (v *Switch) UpTime() int64 {
 	return time.Now().Unix() - v.newTime
 }
 
-func (v *Switch) Server() *libol.TcpServer {
+func (v *Switch) Server() libol.SocketServer {
 	return v.server
 }
 

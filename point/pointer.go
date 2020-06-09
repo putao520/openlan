@@ -11,7 +11,7 @@ type Pointer interface {
 	Addr() string
 	IfName() string
 	IfAddr() string
-	Client() *libol.TcpClient
+	Client() libol.SocketClient
 	Device() network.Taper
 	UpTime() int64
 	UUID() string
@@ -64,7 +64,7 @@ func (p *MixPoint) IfName() string {
 	return p.worker.IfName()
 }
 
-func (p *MixPoint) Client() *libol.TcpClient {
+func (p *MixPoint) Client() libol.SocketClient {
 	return p.worker.Client()
 }
 

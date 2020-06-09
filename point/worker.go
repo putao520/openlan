@@ -27,7 +27,7 @@ type TcpWorkerListener struct {
 type TcpWorker struct {
 	lock     sync.RWMutex
 	Listener TcpWorkerListener
-	Client   *libol.TcpClient
+	Client   libol.SocketClient
 
 	maxSize     int
 	alias       string
@@ -38,7 +38,7 @@ type TcpWorker struct {
 	initialized bool
 }
 
-func NewTcpWorker(client *libol.TcpClient, c *config.Point) (t *TcpWorker) {
+func NewTcpWorker(client libol.SocketClient, c *config.Point) (t *TcpWorker) {
 	t = &TcpWorker{
 		Client:      client,
 		maxSize:     c.If.Mtu,
@@ -741,7 +741,6 @@ func (p *Worker) Initialize() {
 			Network: p.config.If.Address,
 		}
 	}
-
 	// register listener
 	p.tapWorker = NewTapWorker(conf, p.config)
 
@@ -804,7 +803,7 @@ func (p *Worker) Stop() {
 	p.tapWorker = nil
 }
 
-func (p *Worker) Client() *libol.TcpClient {
+func (p *Worker) Client() libol.SocketClient {
 	if p.tcpWorker != nil {
 		return p.tcpWorker.Client
 	}

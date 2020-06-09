@@ -24,13 +24,11 @@ func TestCtl_Point(t *testing.T) {
 	point := models.Point{
 		UUID:  "xxxx",
 		Alias: "alias-test",
-		Client: &libol.TcpClient{
-			Addr: "xxx",
-		},
+		Client: libol.NewTcpClient("xx", nil),
 	}
 	storage.Point.Add(&point)
 	time.Sleep(5 * time.Second)
-	storage.Point.Del(point.Client.Addr)
+	storage.Point.Del(point.Client.Addr())
 	time.Sleep(5 * time.Second)
 	cc.Stop()
 	time.Sleep(5 * time.Second)
