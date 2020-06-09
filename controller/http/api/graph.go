@@ -3,7 +3,7 @@ package api
 import (
 	"github.com/danieldin95/openlan-go/controller/ctrlc"
 	"github.com/danieldin95/openlan-go/controller/schema"
-	schema1 "github.com/danieldin95/openlan-go/vswitch/schema"
+	schema1 "github.com/danieldin95/openlan-go/switch/schema"
 	"github.com/gorilla/mux"
 	"net/http"
 )

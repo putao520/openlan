@@ -2,7 +2,7 @@ package ctrlc
 
 import (
 	"github.com/danieldin95/openlan-go/controller/libctrl"
-	"github.com/danieldin95/openlan-go/vswitch/schema"
+	"github.com/danieldin95/openlan-go/switch/schema"
 )
 
 type CtrlC struct {

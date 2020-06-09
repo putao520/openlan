@@ -6,7 +6,7 @@ import (
 	"runtime"
 )
 
-type IpFilterRule struct {
+type FilterRule struct {
 	Table    string
 	Chain    string
 	Input    string
@@ -19,7 +19,7 @@ type IpFilterRule struct {
 	Jump     string
 }
 
-func IPTables(rule IpFilterRule, action string) (string, error) {
+func IPTables(rule FilterRule, action string) (string, error) {
 	switch runtime.GOOS {
 	case "linux":
 		args := []string{"-t", rule.Table, action, rule.Chain}

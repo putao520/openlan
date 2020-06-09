@@ -37,7 +37,7 @@ env:
 	@mkdir -p $(BD)
 
 ## linux platform
-linux: linux/point linux/vswitch linux/ctrl
+linux: linux/point linux/switch linux/ctrl
 
 linux/ctrl: env
 	cd controller && make linux
@@ -45,24 +45,24 @@ linux/ctrl: env
 linux/point: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point ./main/point_linux
 
-linux/vswitch: env
-	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-vswitch ./main/vswitch.go
+linux/switch: env
+	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch ./main/switch.go
 
 linux/rpm: env
 	@./packaging/spec.sh
 	rpmbuild -ba packaging/openlan-ctrl.spec
 	rpmbuild -ba packaging/openlan-point.spec
-	rpmbuild -ba packaging/openlan-vswitch.spec
+	rpmbuild -ba packaging/openlan-switch.spec
 	@cp -rf ~/rpmbuild/RPMS/x86_64/openlan-*.rpm $(BD)
 
 ## cross build for windows
-windows: windows/point windows/vswitch
+windows: windows/point windows/switch
 
 windows/point: env
 	GOOS=windows GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point.exe ./main/point_windows
 
-windows/vswitch: env
-	GOOS=windows GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-vswitch.exe ./main/vswitch.go
+windows/switch: env
+	GOOS=windows GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch.exe ./main/switch.go
 
 windows/zip: env windows
 	@pushd $(BD)
@@ -71,7 +71,7 @@ windows/zip: env windows
 
 	@cp -rvf $(SD)/packaging/resource/point.json.example $(WD)/point.json
 	@cp -rvf $(BD)/openlan-point.exe $(WD)
-	@cp -rvf $(BD)/openlan-vswitch.exe $(WD)
+	@cp -rvf $(BD)/openlan-switch.exe $(WD)
 
 	zip -r $(WD).zip $(WD) > /dev/null
 	@popd
@@ -84,7 +84,7 @@ osx: darwin
 
 darwin: env
 	GOOS=darwin GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point.darwin ./main/point_darwin
-	GOOS=darwin GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-vswitch.darwin ./main/vswitch.go
+	GOOS=darwin GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch.darwin ./main/switch.go
 
 darwin/zip: env darwin
 	@pushd $(BD)
@@ -93,7 +93,7 @@ darwin/zip: env darwin
 
 	@cp -rvf $(SD)/packaging/resource/point.json.example $(XD)/point.json
 	@cp -rvf $(BD)/openlan-point.darwin $(XD)
-	@cp -rvf $(BD)/openlan-vswitch.darwin $(XD)
+	@cp -rvf $(BD)/openlan-switch.darwin $(XD)
 
 	zip -r $(XD).zip $(XD) > /dev/null
 	popd

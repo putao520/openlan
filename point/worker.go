@@ -64,7 +64,7 @@ func (t *TcpWorker) Initialize() {
 	t.Client.SetMaxSize(t.maxSize)
 	t.Client.Listener = libol.TcpClientListener{
 		OnConnected: func(client *libol.TcpClient) error {
-			return t.TryLogin(client)
+			return t.Login(client)
 		},
 		OnClose: func(client *libol.TcpClient) error {
 			if t.Listener.OnClose != nil {
@@ -115,34 +115,37 @@ func (t *TcpWorker) Connect() error {
 	return nil
 }
 
-func (t *TcpWorker) TryLogin(client *libol.TcpClient) error {
+// login request
+func (t *TcpWorker) Login(client *libol.TcpClient) error {
 	body, err := json.Marshal(t.user)
 	if err != nil {
-		libol.Error("TcpWorker.TryLogin: %s", err)
+		libol.Error("TcpWorker.Login: %s", err)
 		return err
 	}
 
-	libol.Cmd("TcpWorker.TryLogin: %s", body)
+	libol.Cmd("TcpWorker.Login: %s", body)
 	if err := client.WriteReq("login", string(body)); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (t *TcpWorker) TryNetwork(client *libol.TcpClient) error {
+// network request
+func (t *TcpWorker) Network(client *libol.TcpClient) error {
 	body, err := json.Marshal(t.network)
 	if err != nil {
-		libol.Error("TcpWorker.TryNetwork: %s", err)
+		libol.Error("TcpWorker.Network: %s", err)
 		return err
 	}
 
-	libol.Cmd("TcpWorker.TryNetwork: %s", body)
+	libol.Cmd("TcpWorker.Network: %s", body)
 	if err := client.WriteReq("ipaddr", string(body)); err != nil {
 		return err
 	}
 	return nil
 }
 
+// handle instruct from virtual switch
 func (t *TcpWorker) onInstruct(data []byte) error {
 	m := libol.NewFrameMessage(data)
 	if !m.IsControl() {
@@ -150,43 +153,37 @@ func (t *TcpWorker) onInstruct(data []byte) error {
 	}
 
 	action, resp := m.CmdAndParams()
-	if action == "logi:" {
-		libol.Cmd("TcpWorker.onInstruct.login: %s", resp)
-		if resp[:4] == "okay" {
-			t.Client.SetStatus(libol.CL_AUEHED)
-			if t.Listener.OnSuccess != nil {
-				_ = t.Listener.OnSuccess(t)
-			}
-			if t.allowed {
-				_ = t.TryNetwork(t.Client)
-			}
-			libol.Info("TcpWorker.onInstruct.login: success")
-		} else {
-			t.Client.SetStatus(libol.CL_UNAUTH)
-			libol.Error("TcpWorker.onInstruct.login: %s", resp)
-		}
-
-		return nil
-	}
-
-	if libol.IsErrorResponse(resp) {
+	if libol.IsNotJSON(resp) {
 		libol.Error("TcpWorker.onInstruct.%s: %s", action, resp)
 		return nil
 	}
-
-	if action == "ipad:" {
-		n := models.Network{}
-		if err := json.Unmarshal([]byte(resp), &n); err != nil {
-			return libol.NewErr("TcpWorker.onInstruct: Invalid json data.")
+	libol.Cmd("TcpWorker.onInstruct %s: %s", action, resp)
+	switch action {
+		case "logi:": {
+			if resp[:4] == "okay" {
+				t.Client.SetStatus(libol.CL_AUEHED)
+				if t.Listener.OnSuccess != nil {
+					_ = t.Listener.OnSuccess(t)
+				}
+				if t.allowed {
+					_ = t.Network(t.Client)
+				}
+				libol.Info("TcpWorker.onInstruct.login: success")
+			} else {
+				t.Client.SetStatus(libol.CL_UNAUTH)
+				libol.Error("TcpWorker.onInstruct.login: %s", resp)
+			}
 		}
-
-		libol.Cmd("TcpWorker.onInstruct: ipaddr %s", resp)
-		if t.Listener.OnIpAddr != nil {
-			_ = t.Listener.OnIpAddr(t, &n)
+		case "ipad:": {
+			n := models.Network{}
+			if err := json.Unmarshal([]byte(resp), &n); err != nil {
+				return libol.NewErr("TcpWorker.onInstruct: Invalid json data.")
+			}
+			if t.Listener.OnIpAddr != nil {
+				_ = t.Listener.OnIpAddr(t, &n)
+			}
 		}
-
 	}
-
 	return nil
 }
 
@@ -268,7 +265,7 @@ type Neighbor struct {
 	HwAddr  []byte
 	IpAddr  []byte
 	Uptime  int64
-	Newtime int64
+	NewTime int64
 }
 
 type Neighbors struct {
@@ -331,7 +328,7 @@ func (n *Neighbors) Add(h *Neighbor) {
 	} else {
 		l := &Neighbor{
 			Uptime:  h.Uptime,
-			Newtime: h.Newtime,
+			NewTime: h.NewTime,
 			HwAddr:  make([]byte, 6),
 			IpAddr:  make([]byte, 4),
 		}
@@ -447,6 +444,7 @@ func (a *TapWorker) SetEther(addr string) {
 		a.OpenAgain.Set(true)
 	}
 	a.ifAddr = addr
+	a.Neighbors.Clear()
 }
 
 func (a *TapWorker) DoTun() {
@@ -475,7 +473,6 @@ func (a *TapWorker) Open() {
 	if a.Listener.OnOpen != nil {
 		_ = a.Listener.OnOpen(a)
 	}
-	a.Neighbors.Clear()
 }
 
 func (a *TapWorker) NewEth(t uint16, dst []byte) *libol.Ether {
@@ -485,6 +482,7 @@ func (a *TapWorker) NewEth(t uint16, dst []byte) *libol.Ether {
 	return eth
 }
 
+// process if ethernet destination is missed
 func (a *TapWorker) onMiss(dest []byte) {
 	libol.Debug("TapWorker.onMiss: %x.", dest)
 	eth := a.NewEth(libol.ETHPARP, libol.BROADED)
@@ -503,7 +501,6 @@ func (a *TapWorker) onMiss(dest []byte) {
 	if a.Listener.ReadAt != nil {
 		_ = a.Listener.ReadAt(buffer)
 	}
-
 }
 
 func (a *TapWorker) Read() {
@@ -595,6 +592,7 @@ func (a *TapWorker) DoWrite(data []byte) error {
 	return nil
 }
 
+// learn source from arp
 func (a *TapWorker) onArp(data []byte) bool {
 	libol.Debug("TapWorker.onArp")
 	eth, err := libol.NewEtherFromFrame(data)
@@ -640,7 +638,7 @@ func (a *TapWorker) onArp(data []byte) bool {
 				a.Neighbors.Add(&Neighbor{
 					HwAddr:  arp.SHwAddr,
 					IpAddr:  arp.SIpAddr,
-					Newtime: time.Now().Unix(),
+					NewTime: time.Now().Unix(),
 					Uptime:  time.Now().Unix(),
 				})
 			}
@@ -690,7 +688,7 @@ type WorkerListener struct {
 type PrefixRule struct {
 	Type        int
 	Destination net.IPNet
-	Nexthop     net.IP
+	NextHop     net.IP
 }
 
 type Worker struct {
@@ -717,12 +715,12 @@ func NewWorker(config *config.Point) (p *Worker) {
 }
 
 func (p *Worker) Initialize() {
-	var conf network.TapConfig
-	var tlsConf *tls.Config
-
 	if p.config == nil {
 		return
 	}
+
+	var conf network.TapConfig
+	var tlsConf *tls.Config
 
 	libol.Info("Worker.Initialize")
 
@@ -868,8 +866,8 @@ func (p *Worker) FindDest(dest []byte) []byte {
 			if rt.Type == 0x00 {
 				break
 			}
-			libol.Debug("Worker.FindDest %x to %v", dest, rt.Nexthop)
-			return rt.Nexthop.To4()
+			libol.Debug("Worker.FindDest %x to %v", dest, rt.NextHop)
+			return rt.NextHop.To4()
 		}
 	}
 	return dest
@@ -897,7 +895,7 @@ func (p *Worker) OnIpAddr(w *TcpWorker, n *models.Network) error {
 	p.routes = append(p.routes, PrefixRule{
 		Type:        0x00,
 		Destination: net.IPNet{IP: ip.Mask(m), Mask: m},
-		Nexthop:     libol.ZEROED,
+		NextHop:     libol.ZEROED,
 	})
 	for _, rt := range n.Routes {
 		_, dest, err := net.ParseCIDR(rt.Prefix)
@@ -908,7 +906,7 @@ func (p *Worker) OnIpAddr(w *TcpWorker, n *models.Network) error {
 		p.routes = append(p.routes, PrefixRule{
 			Type:        0x01,
 			Destination: *dest,
-			Nexthop:     nxt,
+			NextHop:     nxt,
 		})
 	}
 
@@ -943,7 +941,6 @@ func (p *Worker) OnSuccess(w *TcpWorker) error {
 	if p.Listener.AddAddr != nil {
 		_ = p.Listener.AddAddr(p.IfAddr)
 	}
-
 	return nil
 }
 

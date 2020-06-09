@@ -2,7 +2,7 @@ package models
 
 import (
 	"github.com/danieldin95/openlan-go/libol"
-	"github.com/danieldin95/openlan-go/vswitch/schema"
+	"github.com/danieldin95/openlan-go/switch/schema"
 	"strings"
 )
 
@@ -80,12 +80,12 @@ func NewNetworkSchema(n *Network) schema.Network {
 		IpStart: n.IpStart,
 		IpEnd:   n.IpEnd,
 		Netmask: n.Netmask,
-		Routes:  make([]schema.Route, 0, 32),
+		Routes:  make([]schema.PrefixRoute, 0, 32),
 	}
 	for _, route := range n.Routes {
 		sn.Routes = append(sn.Routes,
-			schema.Route{
-				Nexthop: route.Nexthop,
+			schema.PrefixRoute{
+				NextHop: route.Nexthop,
 				Prefix:  route.Prefix,
 			})
 	}

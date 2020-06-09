@@ -112,11 +112,10 @@ func Netmask2Len(s string) int {
 	return prefixSize
 }
 
-func IsErrorResponse(s string) bool {
+func IsNotJSON(s string) bool {
 	if len(s) > 0 {
 		return s[0] != '[' && s[0] != '{'
 	}
-
 	return true
 }
 

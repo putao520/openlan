@@ -1,5 +1,5 @@
 Name: openlan-vswitch
-Version: 5.1.2
+Version: 5.1.5
 Release: 1%{?dist}
 Summary: OpenLan's Project Software
 Group: Applications/Communications
@@ -16,9 +16,6 @@ OpenLan's Project Software
 
 %build
 cd %_source_dir && make linux/vswitch
-
-virtualenv %_venv
-%_venv/bin/pip install --upgrade "%_source_dir/py"
 
 %install
 mkdir -p %{buildroot}/usr/bin
@@ -37,9 +34,6 @@ mkdir -p %{buildroot}/var/openlan
 cp -R %_source_dir/packaging/resource/ca %{buildroot}/var/openlan
 cp -R %_source_dir/vswitch/public %{buildroot}/var/openlan
 
-mkdir -p %{buildroot}/opt/openlan-utils
-cp -R /opt/openlan-utils/env %{buildroot}/opt/openlan-utils
-
 %pre
 firewall-cmd --permanent --zone=public --add-port=10000/tcp --permanent || {
   echo "You need allowed TCP port 10000 manually."
@@ -56,7 +50,6 @@ firewall-cmd --reload || :
 /usr/bin/*
 /usr/lib/systemd/system/*
 /var/openlan
-/opt/openlan-utils/*
 
 %clean
 rm -rf %_env
