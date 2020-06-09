@@ -191,7 +191,7 @@ func (t *TcpWorker) Read() {
 
 	data := make([]byte, libol.MAXBUF)
 	for {
-		if t.Client == nil || t.Client.IsTerminal() {
+		if t.Client == nil || t.Client.Have(libol.CL_TERMINAL) {
 			break
 		}
 

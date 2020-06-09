@@ -45,8 +45,7 @@ type SocketClient interface {
 	SetMaxSize(value int)
 	MinSize() int
 	IsOk() bool
-	IsTerminal() bool
-	IsInitialized() bool
+	Have(status int) bool
 	Addr() string
 	SetAddr(addr string)
 	Sts() ClientSts

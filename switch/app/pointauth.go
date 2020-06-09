@@ -81,18 +81,17 @@ func (p *PointAuth) handleLogin(client libol.SocketClient, data string) error {
 	if user.Token != "" {
 		name = user.Token
 	}
-	libol.Debug("PointAuth.handleLogin: %s", name)
+	libol.Info("PointAuth.handleLogin: %s on %s", name, user.Alias)
 	nowUser := storage.User.Get(name)
 	if nowUser != nil {
 		if nowUser.Password == user.Password {
 			p.success++
 			client.SetStatus(libol.CL_AUEHED)
-			libol.Info("PointAuth.handleLogin: %s auth", client.Addr)
+			libol.Info("PointAuth.handleLogin: %s auth", client.Addr())
 			_ = p.onAuth(client, user)
 			return nil
 		}
 	}
-
 	p.failed++
 	client.SetStatus(libol.CL_UNAUTH)
 	return libol.NewErr("Auth failed.")

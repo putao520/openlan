@@ -52,13 +52,12 @@ func (r *WithRequest) OnIpAddr(client libol.SocketClient, data string) {
 		libol.Error("WithRequest.OnIpAddr: Invalid json data.")
 		return
 	}
-
 	if n.Name == "" {
 		n.Name = n.Tenant
 	}
 	if n.IfAddr == "" {
 		FinNet := storage.Network.Get(n.Name)
-		libol.Info("WithRequest.OnIpAddr: find %s", FinNet)
+		libol.Cmd("WithRequest.OnIpAddr: find %s", FinNet)
 		uuid := storage.Point.GetUUID(client.Addr())
 		ipStr, netmask := storage.Network.GetFreeAddr(uuid, FinNet)
 		if ipStr == "" {
@@ -74,9 +73,10 @@ func (r *WithRequest) OnIpAddr(client libol.SocketClient, data string) {
 			Netmask: netmask,
 			Routes:  FinNet.Routes,
 		}
-		libol.Info("WithRequest.OnIpAddr: resp %s", respNet)
+		libol.Cmd("WithRequest.OnIpAddr: resp %s", respNet)
 		if respStr, err := json.Marshal(respNet); err == nil {
 			_ = client.WriteResp("ipaddr", string(respStr))
 		}
+		libol.Info("WithRequest.OnIpAddr: %s for %s", ipStr, client)
 	}
 }

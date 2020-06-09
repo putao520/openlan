@@ -463,12 +463,8 @@ func (t *TcpClient) IsOk() bool {
 	return t.conn != nil
 }
 
-func (t *TcpClient) IsTerminal() bool {
+func (t *TcpClient) Have(state int) bool {
 	return t.Status() == CL_TERMINAL
-}
-
-func (t *TcpClient) IsInitialized() bool {
-	return t.Status() == CL_INIT
 }
 
 func (t *TcpClient) Sts() ClientSts {
