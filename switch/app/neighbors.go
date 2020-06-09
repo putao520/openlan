@@ -25,7 +25,7 @@ func NewNeighbors(m Master, c config.Switch) (e *Neighbors) {
 	return
 }
 
-func (e *Neighbors) OnFrame(client *libol.TcpClient, frame *libol.FrameMessage) error {
+func (e *Neighbors) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) error {
 	libol.Log("Neighbors.OnFrame %s.", frame)
 	if frame.IsControl() {
 		return nil
@@ -89,7 +89,7 @@ func (e *Neighbors) DelNeighbor(ipAddr net.IP) {
 	}
 }
 
-func (e *Neighbors) OnClientClose(client *libol.TcpClient) {
+func (e *Neighbors) OnClientClose(client libol.SocketClient) {
 	//TODO
 	libol.Info("Neighbors.OnClientClose %s.", client)
 }

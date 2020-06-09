@@ -29,7 +29,7 @@ func NewOnline(m Master, c config.Switch) (o *Online) {
 	return
 }
 
-func (o *Online) OnFrame(client *libol.TcpClient, frame *libol.FrameMessage) error {
+func (o *Online) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) error {
 	libol.Log("Online.OnFrame %s.", frame)
 	if frame.IsControl() {
 		return nil

@@ -9,41 +9,26 @@ import (
 	"time"
 )
 
-type TcpServerListener struct {
-	OnClient func(client *TcpClient) error
-	OnClose  func(client *TcpClient) error
-	ReadAt   func(client *TcpClient, p []byte) error
-}
-
-type TcpServerSts struct {
-	RxCount  int64
-	TxCount  int64
-	DrpCount int64
-	AcpCount int64
-	ClsCount int64
-}
-
 type TcpServer struct {
-	Addr    string
-	TlsConf *tls.Config
-	Sts     TcpServerSts
-
+	tlsCfg     *tls.Config
+	sts        ServerSts
+	addr       string
 	listener   net.Listener
 	maxClient  int
-	clients    map[*TcpClient]bool
-	onClients  chan *TcpClient
-	offClients chan *TcpClient
+	clients    map[SocketClient]bool
+	onClients  chan SocketClient
+	offClients chan SocketClient
 }
 
 func NewTcpServer(listen string, config *tls.Config) (t *TcpServer) {
 	t = &TcpServer{
-		Addr:       listen,
-		TlsConf:    config,
-		Sts:        TcpServerSts{},
+		addr:       listen,
+		tlsCfg:     config,
+		sts:        ServerSts{},
 		maxClient:  1024,
-		clients:    make(map[*TcpClient]bool, 1024),
-		onClients:  make(chan *TcpClient, 4),
-		offClients: make(chan *TcpClient, 8),
+		clients:    make(map[SocketClient]bool, 1024),
+		onClients:  make(chan SocketClient, 4),
+		offClients: make(chan SocketClient, 8),
 	}
 
 	if err := t.Listen(); err != nil {
@@ -54,19 +39,19 @@ func NewTcpServer(listen string, config *tls.Config) (t *TcpServer) {
 }
 
 func (t *TcpServer) Listen() (err error) {
-	if t.TlsConf != nil {
-		t.listener, err = tls.Listen("tcp", t.Addr, t.TlsConf)
+	if t.tlsCfg != nil {
+		t.listener, err = tls.Listen("tcp", t.addr, t.tlsCfg)
 		if err != nil {
 			return err
 		}
-		Info("TcpServer.Listen: tls://%s", t.Addr)
+		Info("TcpServer.Listen: tls://%s", t.addr)
 	} else {
-		t.listener, err = net.Listen("tcp", t.Addr)
+		t.listener, err = net.Listen("tcp", t.addr)
 		if err != nil {
 			t.listener = nil
 			return err
 		}
-		Info("TcpServer.Listen: tcp://%s", t.Addr)
+		Info("TcpServer.Listen: tcp://%s", t.addr)
 	}
 	return nil
 }
@@ -74,7 +59,7 @@ func (t *TcpServer) Listen() (err error) {
 func (t *TcpServer) Close() {
 	if t.listener != nil {
 		_ = t.listener.Close()
-		Info("TcpServer.Close: %s", t.Addr)
+		Info("TcpServer.Close: %s", t.addr)
 		t.listener = nil
 	}
 }
@@ -99,26 +84,25 @@ func (t *TcpServer) Accept() {
 			Error("TcpServer.Accept: %s", err)
 			return
 		}
-
-		t.Sts.AcpCount++
+		t.sts.AcpCount++
 		t.onClients <- NewTcpClientFromConn(conn)
 	}
 }
 
-func (t *TcpServer) CloseClient(client *TcpClient) {
+func (t *TcpServer) CloseClient(client SocketClient) {
 	Debug("TcpServer.CloseClient %s", client)
 	if client != nil {
 		t.offClients <- client
 	}
 }
 
-func (t *TcpServer) Loop(call TcpServerListener) {
+func (t *TcpServer) Loop(call ServerListener) {
 	Debug("TcpServer.Loop")
 	defer t.Close()
 	for {
 		select {
 		case client := <-t.onClients:
-			Debug("TcpServer.addClient: %s", client.Addr)
+			Debug("TcpServer.addClient: %s", client.Addr())
 			t.clients[client] = true
 			if call.OnClient != nil {
 				_ = call.OnClient(client)
@@ -128,8 +112,8 @@ func (t *TcpServer) Loop(call TcpServerListener) {
 			}
 		case client := <-t.offClients:
 			if ok := t.clients[client]; ok {
-				Debug("TcpServer.delClient: %s", client.Addr)
-				t.Sts.ClsCount++
+				Debug("TcpServer.delClient: %s", client.Addr())
+				t.sts.ClsCount++
 				if call.OnClose != nil {
 					_ = call.OnClose(client)
 				}
@@ -140,8 +124,8 @@ func (t *TcpServer) Loop(call TcpServerListener) {
 	}
 }
 
-func (t *TcpServer) Read(client *TcpClient, ReadAt func(client *TcpClient, p []byte) error) {
-	Log("TcpServer.Read: %s", client.Addr)
+func (t *TcpServer) Read(client SocketClient, ReadAt ReadClient) {
+	Log("TcpServer.Read: %s", client.Addr())
 	data := make([]byte, MAXBUF)
 	for {
 		length, err := client.ReadMsg(data)
@@ -153,7 +137,7 @@ func (t *TcpServer) Read(client *TcpClient, ReadAt func(client *TcpClient, p []b
 		if length <= 0 {
 			continue
 		}
-		t.Sts.RxCount++
+		t.sts.RxCount++
 		Log("TcpServer.Read: length: %d ", length)
 		Log("TcpServer.Read: data  : %x", data[:length])
 		if err := ReadAt(client, data[:length]); err != nil {
@@ -163,50 +147,38 @@ func (t *TcpServer) Read(client *TcpClient, ReadAt func(client *TcpClient, p []b
 	}
 }
 
-type TcpClientListener struct {
-	OnClose     func(client *TcpClient) error
-	OnConnected func(client *TcpClient) error
-	OnStatus    func(client *TcpClient, old, new uint8)
+func (t *TcpServer) Addr() string {
+	return t.addr
 }
 
-const (
-	CL_INIT       = 0x00
-	CL_CONNECTED  = 0x01
-	CL_UNAUTH     = 0x02
-	CL_AUEHED     = 0x03
-	CL_CONNECTING = 0x04
-	CL_TERMINAL   = 0x05
-	CL_CLOSED     = 0x06
-)
+func (t *TcpServer) String() string {
+	return t.Addr()
+}
 
-type TcpClientSts struct {
-	TxOkay  uint64
-	RxOkay  uint64
-	TxError uint64
-	Dropped uint64
+func (t *TcpServer) Sts() ServerSts {
+	return t.sts
 }
 
 type TcpClient struct {
-	Addr     string
+	listener ClientListener
+	addr     string
 	NewTime  int64
-	TlsConf  *tls.Config
-	Sts      TcpClientSts
-	Listener TcpClientListener
+	tlsCfg   *tls.Config
+	sts      ClientSts
 	private  interface{}
-
-	conn    net.Conn
-	maxSize int
-	minSize int
-	lock    sync.RWMutex
-	status  uint8
+	conn     net.Conn
+	maxSize  int
+	minSize  int
+	lock     sync.RWMutex
+	status   uint8
 }
 
 func NewTcpClient(addr string, config *tls.Config) (t *TcpClient) {
 	t = &TcpClient{
-		Addr:    addr,
+		addr:    addr,
 		NewTime: time.Now().Unix(),
-		Sts:     TcpClientSts{},
-		TlsConf: config,
+		sts:     ClientSts{},
+		tlsCfg:  config,
 		maxSize: 1514,
 		minSize: 15,
 		status:  CL_INIT,
@@ -217,7 +189,7 @@ func NewTcpClient(addr string, config *tls.Config) (t *TcpClient) {
 
 func NewTcpClientFromConn(conn net.Conn) (t *TcpClient) {
 	t = &TcpClient{
-		Addr:    conn.RemoteAddr().String(),
+		addr:    conn.RemoteAddr().String(),
 		conn:    conn,
 		maxSize: 1514,
 		minSize: 15,
@@ -238,30 +210,30 @@ func (t *TcpClient) Connect() (err error) {
 		return nil
 	}
 	schema := "tcp"
-	if t.TlsConf != nil {
+	if t.tlsCfg != nil {
 		schema = "tls"
 	}
 	if t.conn != nil {
 		_ = t.conn.Close()
 		t.conn = nil
 	}
-	Info("TcpClient.Connect: %s://%s", schema, t.Addr)
+	Info("TcpClient.Connect: %s://%s", schema, t.addr)
 	t.status = CL_CONNECTING
 	t.lock.Unlock()
 
 	var conn net.Conn
-	if t.TlsConf != nil {
-		conn, err = tls.Dial("tcp", t.Addr, t.TlsConf)
+	if t.tlsCfg != nil {
+		conn, err = tls.Dial("tcp", t.addr, t.tlsCfg)
 	} else {
-		conn, err = net.Dial("tcp", t.Addr)
+		conn, err = net.Dial("tcp", t.addr)
 	}
 	if err == nil {
 		t.lock.Lock()
 		t.conn = conn
 		t.status = CL_CONNECTED
 		t.lock.Unlock()
-		if t.Listener.OnConnected != nil {
-			_ = t.Listener.OnConnected(t)
+		if t.listener.OnConnected != nil {
+			_ = t.listener.OnConnected(t)
 		}
 	}
 
@@ -274,14 +246,14 @@ func (t *TcpClient) Close() {
 		if t.status != CL_TERMINAL {
 			t.status = CL_CLOSED
 		}
-		Info("TcpClient.Close: %s", t.Addr)
+		Info("TcpClient.Close: %s", t.addr)
 		_ = t.conn.Close()
 		t.conn = nil
 		t.private = nil
 		t.lock.Unlock()
 
-		if t.Listener.OnClose != nil {
-			_ = t.Listener.OnClose(t)
+		if t.listener.OnClose != nil {
+			_ = t.listener.OnClose(t)
 		}
 	} else {
 		t.lock.Unlock()
@@ -331,6 +303,7 @@ func (t *TcpClient) WriteFull(buffer []byte) error {
 
 func (t *TcpClient) WriteMsg(data []byte) error {
 	if err := t.Connect(); err != nil {
+		t.sts.Dropped++
 		return err
 	}
 
@@ -341,11 +314,10 @@ func (t *TcpClient) WriteMsg(data []byte) error {
 	copy(buf[HSIZE:], data)
 
 	if err := t.WriteFull(buf); err != nil {
-		t.Sts.TxError++
+		t.sts.TxError++
 		return err
 	}
-
-	t.Sts.TxOkay += uint64(size)
+	t.sts.TxOkay += uint64(size)
 
 	return nil
 }
@@ -378,7 +350,7 @@ func (t *TcpClient) ReadMsg(data []byte) (int, error) {
 	}
 
 	copy(data, d)
-	t.Sts.RxOkay += uint64(size)
+	t.sts.RxOkay += uint64(size)
 
 	return len(d), nil
 }
@@ -429,8 +401,16 @@ func (t *TcpClient) UpTime() int64 {
 	return time.Now().Unix() - t.NewTime
 }
 
+func (t *TcpClient) Addr() string {
+	return t.addr
+}
+
+func (t *TcpClient) SetAddr(addr string) {
+	t.addr = addr
+}
+
 func (t *TcpClient) String() string {
-	return t.Addr
+	return t.Addr()
 }
 
 func (t *TcpClient) Terminal() {
@@ -460,8 +440,8 @@ func (t *TcpClient) SetStatus(v uint8) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	if t.status != v {
-		if t.Listener.OnStatus != nil {
-			t.Listener.OnStatus(t, t.status, v)
+		if t.listener.OnStatus != nil {
+			t.listener.OnStatus(t, t.status, v)
 		}
 		t.status = v
 	}
@@ -489,4 +469,12 @@ func (t *TcpClient) IsTerminal() bool {
 
 func (t *TcpClient) IsInitialized() bool {
 	return t.Status() == CL_INIT
+}
+
+func (t *TcpClient) Sts() ClientSts {
+	return t.sts
+}
+
+func (t *TcpClient) SetListener(listener ClientListener) {
+	t.listener = listener
 }

@@ -23,7 +23,7 @@ func NewPointAuth(m Master, c config.Switch) (p *PointAuth) {
 	return
 }
 
-func (p *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.FrameMessage) error {
+func (p *PointAuth) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) error {
 	libol.Log("PointAuth.OnFrame %s.", frame)
 
 	if frame.IsControl() {
@@ -47,7 +47,6 @@ func (p *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.FrameMessage) 
 
 	//Dropped all frames if not auth.
 	if client.Status() != libol.CL_AUEHED {
-		client.Sts.Dropped++
 		libol.Debug("PointAuth.onRead: %s unAuth", client.Addr)
 		return libol.NewErr("unAuth client.")
 	}
@@ -55,7 +54,7 @@ func (p *PointAuth) OnFrame(client *libol.TcpClient, frame *libol.FrameMessage) 
 	return nil
 }
 
-func (p *PointAuth) handleLogin(client *libol.TcpClient, data string) error {
+func (p *PointAuth) handleLogin(client libol.SocketClient, data string) error {
 	libol.Debug("PointAuth.handleLogin: %s", data)
 
 	if client.Status() == libol.CL_AUEHED {
@@ -99,7 +98,7 @@ func (p *PointAuth) handleLogin(client *libol.TcpClient, data string) error {
 	return libol.NewErr("Auth failed.")
 }
 
-func (p *PointAuth) onAuth(client *libol.TcpClient, user *models.User) error {
+func (p *PointAuth) onAuth(client libol.SocketClient, user *models.User) error {
 	if client.Status() != libol.CL_AUEHED {
 		return libol.NewErr("not auth.")
 	}

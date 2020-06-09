@@ -26,10 +26,10 @@ func (p *_point) Init(size int) {
 }
 
 func (p *_point) Add(m *models.Point) {
-	_ = p.UUIDAddr.Reset(m.UUID, m.Client.Addr)
-	_ = p.AddrUUID.Set(m.Client.Addr, m.UUID)
-	_ = p.Clients.Set(m.Client.Addr, m)
-	_ = p.Listen.AddV(m.Client.Addr, m)
+	_ = p.UUIDAddr.Reset(m.UUID, m.Client.Addr())
+	_ = p.AddrUUID.Set(m.Client.Addr(), m.UUID)
+	_ = p.Clients.Set(m.Client.Addr(), m)
+	_ = p.Listen.AddV(m.Client.Addr(), m)
 }
 
 func (p *_point) Get(addr string) *models.Point {
@@ -65,7 +65,7 @@ func (p *_point) Del(addr string) {
 		if p.UUIDAddr.Get(m.UUID) == addr { // not has newer
 			p.UUIDAddr.Del(m.UUID)
 		}
-		p.AddrUUID.Del(m.Client.Addr)
+		p.AddrUUID.Del(m.Client.Addr())
 		p.Clients.Del(addr)
 	}
 	p.Listen.DelV(addr)

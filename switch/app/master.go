@@ -9,5 +9,5 @@ type Master interface {
 	ReadTap(dev network.Taper, readAt func(p []byte) error)
 	NewTap(tenant string) (network.Taper, error)
 	UUID() string
-	CloseClient(client *libol.TcpClient)
+	CloseClient(client libol.SocketClient)
 }

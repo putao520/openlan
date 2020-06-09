@@ -62,17 +62,17 @@ func (t *TcpWorker) Initialize() {
 	libol.Info("TcpWorker.Initialize")
 	t.initialized = true
 	t.Client.SetMaxSize(t.maxSize)
-	t.Client.Listener = libol.TcpClientListener{
-		OnConnected: func(client *libol.TcpClient) error {
+	t.Client.SetListener(libol.ClientListener{
+		OnConnected: func(client libol.SocketClient) error {
 			return t.Login(client)
 		},
-		OnClose: func(client *libol.TcpClient) error {
+		OnClose: func(client libol.SocketClient) error {
 			if t.Listener.OnClose != nil {
 				_ = t.Listener.OnClose(t)
 			}
 			return nil
 		},
-	}
+	})
 }
 
 func (t *TcpWorker) Start() {
@@ -116,7 +116,7 @@ func (t *TcpWorker) Connect() error {
 }
 
 // login request
-func (t *TcpWorker) Login(client *libol.TcpClient) error {
+func (t *TcpWorker) Login(client libol.SocketClient) error {
 	body, err := json.Marshal(t.user)
 	if err != nil {
 		libol.Error("TcpWorker.Login: %s", err)
@@ -131,7 +131,7 @@ func (t *TcpWorker) Login(client *libol.TcpClient) error {
 }
 
 // network request
-func (t *TcpWorker) Network(client *libol.TcpClient) error {
+func (t *TcpWorker) Network(client libol.SocketClient) error {
 	body, err := json.Marshal(t.network)
 	if err != nil {
 		libol.Error("TcpWorker.Network: %s", err)
@@ -155,7 +155,8 @@ func (t *TcpWorker) onInstruct(data []byte) error {
 	action, resp := m.CmdAndParams()
 	libol.Cmd("TcpWorker.onInstruct %s %s", action, resp)
 	switch action {
-		case "logi:": {
+	case "logi:":
+		{
 			if resp[:4] == "okay" {
 				t.Client.SetStatus(libol.CL_AUEHED)
 				if t.Listener.OnSuccess != nil {
@@ -170,7 +171,8 @@ func (t *TcpWorker) onInstruct(data []byte) error {
 				libol.Error("TcpWorker.onInstruct.login: %s", resp)
 			}
 		}
-		case "ipad:": {
+	case "ipad:":
+		{
 			n := models.Network{}
 			if err := json.Unmarshal([]byte(resp), &n); err != nil {
 				return libol.NewErr("TcpWorker.onInstruct: Invalid json data.")
@@ -226,7 +228,6 @@ func (t *TcpWorker) DoWrite(data []byte) error {
 		return libol.NewErr("Client is nil")
 	}
 	if t.Client.Status() != libol.CL_AUEHED {
-		t.Client.Sts.Dropped++
 		libol.Debug("TcpWorker.Loop: dropping by unAuth")
 		return nil
 	}
@@ -250,7 +251,7 @@ func (t *TcpWorker) SetAuth(auth string) {
 }
 
 func (t *TcpWorker) SetAddr(addr string) {
-	t.Client.Addr = addr
+	t.Client.SetAddr(addr)
 }
 
 func (t *TcpWorker) SetUUID(v string) {
@@ -836,7 +837,7 @@ func (p *Worker) State() string {
 func (p *Worker) Addr() string {
 	client := p.Client()
 	if client != nil {
-		return client.Addr
+		return client.Addr()
 	}
 	return ""
 }

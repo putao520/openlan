@@ -58,9 +58,9 @@ func (w *_network) ListLease() <-chan *schema.Lease {
 	go func() {
 		w.UUIDAddr.Iter(func(k string, v string) {
 			c <- &schema.Lease{
-				UUID: k,
+				UUID:    k,
 				Address: v,
-				Client: Point.GetAddr(k),
+				Client:  Point.GetAddr(k),
 			}
 		})
 		c <- nil //Finish channel by nil.

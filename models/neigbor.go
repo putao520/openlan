@@ -9,18 +9,18 @@ import (
 )
 
 type Neighbor struct {
-	Client  *libol.TcpClient `json:"Client"`
-	HwAddr  net.HardwareAddr `json:"HwAddr"`
-	IpAddr  net.IP           `json:"IpAddr"`
-	NewTime int64            `json:"NewTime"`
-	HitTime int64            `json:"HitTime"`
+	Client  libol.SocketClient `json:"Client"`
+	HwAddr  net.HardwareAddr   `json:"HwAddr"`
+	IpAddr  net.IP             `json:"IpAddr"`
+	NewTime int64              `json:"NewTime"`
+	HitTime int64              `json:"HitTime"`
 }
 
 func (e *Neighbor) String() string {
 	return fmt.Sprintf("%s,%s,%s", e.HwAddr, e.IpAddr, e.Client)
 }
 
-func NewNeighbor(hwAddr net.HardwareAddr, ipAddr net.IP, client *libol.TcpClient) (e *Neighbor) {
+func NewNeighbor(hwAddr net.HardwareAddr, ipAddr net.IP, client libol.SocketClient) (e *Neighbor) {
 	e = &Neighbor{
 		HwAddr:  hwAddr,
 		IpAddr:  ipAddr,
@@ -28,7 +28,6 @@ func NewNeighbor(hwAddr net.HardwareAddr, ipAddr net.IP, client *libol.TcpClient
 		NewTime: time.Now().Unix(),
 		HitTime: time.Now().Unix(),
 	}
-
 	return
 }
 

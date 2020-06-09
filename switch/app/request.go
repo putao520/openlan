@@ -19,7 +19,7 @@ func NewWithRequest(m Master, c config.Switch) (r *WithRequest) {
 	return
 }
 
-func (r *WithRequest) OnFrame(client *libol.TcpClient, frame *libol.FrameMessage) error {
+func (r *WithRequest) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) error {
 	libol.Log("WithRequest.OnFrame %s.", frame)
 	if frame.IsControl() {
 		action, body := frame.CmdAndParams()
@@ -40,11 +40,11 @@ func (r *WithRequest) OnFrame(client *libol.TcpClient, frame *libol.FrameMessage
 	return nil
 }
 
-func (r *WithRequest) OnNeighbor(client *libol.TcpClient, data string) {
+func (r *WithRequest) OnNeighbor(client libol.SocketClient, data string) {
 	libol.Info("TODO WithRequest.OnNeighbor: %s from %s", data, client)
 }
 
-func (r *WithRequest) OnIpAddr(client *libol.TcpClient, data string) {
+func (r *WithRequest) OnIpAddr(client libol.SocketClient, data string) {
 	libol.Info("WithRequest.OnIpAddr: %s from %s", data, client)
 
 	n := models.NewNetwork("", "")
@@ -59,7 +59,7 @@ func (r *WithRequest) OnIpAddr(client *libol.TcpClient, data string) {
 	if n.IfAddr == "" {
 		FinNet := storage.Network.Get(n.Name)
 		libol.Info("WithRequest.OnIpAddr: find %s", FinNet)
-		uuid := storage.Point.GetUUID(client.Addr)
+		uuid := storage.Point.GetUUID(client.Addr())
 		ipStr, netmask := storage.Network.GetFreeAddr(uuid, FinNet)
 		if ipStr == "" {
 			libol.Error("WithRequest.OnIpAddr: %s no free address", n.Name)

@@ -12,11 +12,11 @@ func NewPointSchema(p *Point) schema.Point {
 		Uptime:  p.Uptime,
 		UUID:    p.UUID,
 		Alias:   p.Alias,
-		Address: client.Addr,
+		Address: client.Addr(),
 		Device:  dev.Name(),
-		RxBytes: client.Sts.RxOkay,
-		TxBytes: client.Sts.TxOkay,
-		ErrPkt:  client.Sts.TxError,
+		RxBytes: client.Sts().RxOkay,
+		TxBytes: client.Sts().TxOkay,
+		ErrPkt:  client.Sts().TxError,
 		State:   client.State(),
 		Network: p.Network,
 	}
@@ -28,9 +28,9 @@ func NewLinkSchema(p *Point) schema.Link {
 		UUID:    p.UUID,
 		Uptime:  client.UpTime(),
 		Device:  dev.Name(),
-		Address: client.Addr,
+		Address: client.Addr(),
 		State:   client.State(),
-		IpAddr:  strings.Split(client.Addr, ":")[0],
+		IpAddr:  strings.Split(client.Addr(), ":")[0],
 		Network: p.Network,
 	}
 }

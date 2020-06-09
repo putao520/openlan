@@ -21,7 +21,7 @@ type Apps struct {
 	OnLines  *app.Online
 }
 
-type Hook func(client *libol.TcpClient, frame *libol.FrameMessage) error
+type Hook func(client libol.SocketClient, frame *libol.FrameMessage) error
 
 type Switch struct {
 	Conf config.Switch
@@ -156,7 +156,7 @@ func (v *Switch) Initialize() {
 	libol.Info("Switch.Initialize total %d rules", len(v.Fire.Rules))
 }
 
-func (v *Switch) OnHook(client *libol.TcpClient, data []byte) error {
+func (v *Switch) OnHook(client libol.SocketClient, data []byte) error {
 	frame := libol.NewFrameMessage(data)
 	for _, h := range v.hooks {
 		libol.Log("Worker.onHook: h %p", h)
@@ -169,19 +169,16 @@ func (v *Switch) OnHook(client *libol.TcpClient, data []byte) error {
 	return nil
 }
 
-func (v *Switch) OnClient(client *libol.TcpClient) error {
+func (v *Switch) OnClient(client libol.SocketClient) error {
 	client.SetStatus(libol.CL_CONNECTED)
-	libol.Info("Switch.onClient: %s", client.Addr)
+	libol.Info("Switch.onClient: %s", client.Addr())
 	return nil
 }
 
-func (v *Switch) ReadClient(client *libol.TcpClient, data []byte) error {
-	libol.Log("Switch.ReadClient: %s % x", client.Addr, data)
+func (v *Switch) ReadClient(client libol.SocketClient, data []byte) error {
+	libol.Log("Switch.ReadClient: %s % x", client.Addr(), data)
 	if err := v.OnHook(client, data); err != nil {
-		libol.Debug("Switch.OnRead: %s dropping by %s", client.Addr, err)
-		if client.Status() != libol.CL_AUEHED {
-			v.server.Sts.DrpCount++
-		}
+		libol.Debug("Switch.OnRead: %s dropping by %s", client.Addr(), err)
 		return nil
 	}
 
@@ -201,14 +198,14 @@ func (v *Switch) ReadClient(client *libol.TcpClient, data []byte) error {
 	return libol.NewErr("%s Point not found.", client)
 }
 
-func (v *Switch) OnClose(client *libol.TcpClient) error {
-	libol.Info("Switch.OnClose: %s", client.Addr)
+func (v *Switch) OnClose(client libol.SocketClient) error {
+	libol.Info("Switch.OnClose: %s", client.Addr())
 
-	uuid := storage.Point.GetUUID(client.Addr)
-	if storage.Point.GetAddr(uuid) == client.Addr { // not has newer
+	uuid := storage.Point.GetUUID(client.Addr())
+	if storage.Point.GetAddr(uuid) == client.Addr() { // not has newer
 		storage.Network.FreeAddr(uuid)
 	}
-	storage.Point.Del(client.Addr)
+	storage.Point.Del(client.Addr())
 
 	return nil
 }
@@ -229,7 +226,7 @@ func (v *Switch) Start() error {
 		}
 	}
 	go v.server.Accept()
-	call := libol.TcpServerListener{
+	call := libol.ServerListener{
 		OnClient: v.OnClient,
 		OnClose:  v.OnClose,
 		ReadAt:   v.ReadClient,
@@ -353,7 +350,7 @@ func (v *Switch) ReadTap(dev network.Taper, readAt func(p []byte) error) {
 	}
 }
 
-func (v *Switch) CloseClient(client *libol.TcpClient) {
+func (v *Switch) CloseClient(client libol.SocketClient) {
 	libol.Info("Switch.CloseClient: %s", client)
 	if v.server != nil {
 		v.server.CloseClient(client)
