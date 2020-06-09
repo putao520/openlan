@@ -10,7 +10,9 @@ import (
 func main() {
 	log.SetFlags(log.Lshortfile)
 
-	cer, err := tls.LoadX509KeyPair("./resource/ca/crt.pem", "./resource/ca/private.key")
+	cer, err := tls.LoadX509KeyPair(
+		"./resource/ca/crt.pem",
+		"./resource/ca/private.key")
 	if err != nil {
 		log.Println(err)
 		return

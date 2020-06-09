@@ -40,13 +40,20 @@ type Switch struct {
 }
 
 func NewSwitch(c config.Switch) *Switch {
-	var tlsConf *tls.Config
+	var tlsCfg *tls.Config
+	var server libol.SocketServer
+
 	if c.Cert.KeyFile != "" && c.Cert.CrtFile != "" {
 		cer, err := tls.LoadX509KeyPair(c.Cert.CrtFile, c.Cert.KeyFile)
 		if err != nil {
 			libol.Error("NewSwitch: %s", err)
 		}
-		tlsConf = &tls.Config{Certificates: []tls.Certificate{cer}}
+		tlsCfg = &tls.Config{Certificates: []tls.Certificate{cer}}
+	}
+	if c.Protocol == "kcp" {
+		server = libol.NewKcpServer(c.Listen, nil)
+	} else {
+		server = libol.NewTcpServer(c.Listen, tlsCfg)
 	}
 	v := Switch{
 		Conf: c,
@@ -55,7 +62,7 @@ func NewSwitch(c config.Switch) *Switch {
 		},
 		worker:     make(map[string]*Worker, 32),
 		bridge:     make(map[string]network.Bridger, 32),
-		server:     libol.NewTcpServer(c.Listen, tlsConf),
+		server:     server,
 		newTime:    time.Now().Unix(),
 		initialize: false,
 	}

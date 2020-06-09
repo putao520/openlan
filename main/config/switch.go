@@ -73,6 +73,7 @@ type FlowRules struct {
 
 type Switch struct {
 	Alias     string      `json:"alias"`
+	Protocol  string      `json:"protocol"` // tcp/tls/kcp.
 	Listen    string      `json:"listen"`
 	Http      *Http       `json:"http,omitempty" yaml:"http,omitempty"`
 	Log       Log         `json:"log" yaml:"log"`

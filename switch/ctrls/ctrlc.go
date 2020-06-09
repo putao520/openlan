@@ -98,7 +98,7 @@ var Ctrl = &CtrlC{}
 
 func Load(path string) {
 	if err := libol.UnmarshalLoad(Ctrl, path); err != nil {
-		libol.Error("ctrls.Load: %s", err)
+		libol.Warn("ctrls.Load: %s", err)
 		return
 	}
 }

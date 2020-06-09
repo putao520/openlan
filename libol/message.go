@@ -2,6 +2,7 @@ package libol
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 )
 
@@ -97,4 +98,13 @@ func NewControlMessage(action string, opr string, body string) *ControlMessage {
 func (c *ControlMessage) Encode() []byte {
 	p := fmt.Sprintf("%s%s%s", c.action[:4], c.opr[:2], c.params)
 	return append(ZEROED[:6], p...)
+}
+
+func BuildMessage(data []byte) []byte {
+	size := len(data)
+	buf := make([]byte, HSIZE+size)
+	copy(buf[0:2], MAGIC)
+	binary.BigEndian.PutUint16(buf[2:4], uint16(size))
+	copy(buf[HSIZE:], data)
+	return buf
 }
