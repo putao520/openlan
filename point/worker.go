@@ -153,11 +153,7 @@ func (t *TcpWorker) onInstruct(data []byte) error {
 	}
 
 	action, resp := m.CmdAndParams()
-	if libol.IsNotJSON(resp) {
-		libol.Error("TcpWorker.onInstruct.%s: %s", action, resp)
-		return nil
-	}
-	libol.Cmd("TcpWorker.onInstruct %s: %s", action, resp)
+	libol.Cmd("TcpWorker.onInstruct %s %s", action, resp)
 	switch action {
 		case "logi:": {
 			if resp[:4] == "okay" {
