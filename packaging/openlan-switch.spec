@@ -1,4 +1,4 @@
-Name: openlan-vswitch
+Name: openlan-switch
 Version: 5.1.5
 Release: 1%{?dist}
 Summary: OpenLan's Project Software
@@ -15,24 +15,24 @@ Requires: net-tools, iptables, iputils
 OpenLan's Project Software
 
 %build
-cd %_source_dir && make linux/vswitch
+cd %_source_dir && make linux/switch
 
 %install
 mkdir -p %{buildroot}/usr/bin
-cp %_source_dir/build/openlan-vswitch %{buildroot}/usr/bin
+cp %_source_dir/build/openlan-switch %{buildroot}/usr/bin
 
-mkdir -p %{buildroot}/etc/openlan/vswitch
-cp %_source_dir/packaging/resource/ctrl.json.example %{buildroot}/etc/openlan/vswitch
-cp %_source_dir/packaging/resource/vswitch.json.example %{buildroot}/etc/openlan/vswitch
+mkdir -p %{buildroot}/etc/openlan/switch
+cp %_source_dir/packaging/resource/ctrl.json.example %{buildroot}/etc/openlan/switch
+cp %_source_dir/packaging/resource/switch.json.example %{buildroot}/etc/openlan/switch
 mkdir -p %{buildroot}/etc/sysconfig/openlan
-cp %_source_dir/packaging/resource/vswitch.cfg %{buildroot}/etc/sysconfig/openlan
+cp %_source_dir/packaging/resource/switch.cfg %{buildroot}/etc/sysconfig/openlan
 
 mkdir -p %{buildroot}/usr/lib/systemd/system
-cp %_source_dir/packaging/resource/openlan-vswitch.service %{buildroot}/usr/lib/systemd/system
+cp %_source_dir/packaging/resource/openlan-switch.service %{buildroot}/usr/lib/systemd/system
 
 mkdir -p %{buildroot}/var/openlan
 cp -R %_source_dir/packaging/resource/ca %{buildroot}/var/openlan
-cp -R %_source_dir/vswitch/public %{buildroot}/var/openlan
+cp -R %_source_dir/switch/public %{buildroot}/var/openlan
 
 %pre
 firewall-cmd --permanent --zone=public --add-port=10000/tcp --permanent || {

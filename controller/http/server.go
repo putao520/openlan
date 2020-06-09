@@ -43,7 +43,7 @@ func (h *Server) LoadRouter() {
 	router.Use(h.Middleware)
 
 	// API legacy
-	api.VSwitch{}.Router(router)
+	api.Switch{}.Router(router)
 	api.User{}.Router(router)
 	api.Point{}.Router(router)
 	api.Graph{}.Router(router)

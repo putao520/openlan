@@ -1,10 +1,10 @@
 # Configure virtual switch
-kind: vswitch
+kind: switch
 name: my-vs-01.openlan.net
 cert:dir: /var/openlan/ca
 log:
   level: 20
-  file: /var/log/openlan-vswitch.log
+  file: /var/log/openlan-switch.log
 http:
   public: /var/openlan/public
   listen: 0.0.0.0:10000

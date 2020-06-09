@@ -8,15 +8,15 @@ import (
 	"sort"
 )
 
-type VSwitch struct {
+type Switch struct {
 	Api
 }
 
-func (z VSwitch) Router(router *mux.Router) {
-	router.HandleFunc("/api/vswitch", z.GET).Methods("GET")
+func (z Switch) Router(router *mux.Router) {
+	router.HandleFunc("/api/switch", z.GET).Methods("GET")
 }
 
-func (z VSwitch) GET(w http.ResponseWriter, r *http.Request) {
+func (z Switch) GET(w http.ResponseWriter, r *http.Request) {
 	ss := make([]schema.Switch, 0, 32)
 	ctrlc.Storager.Switch.Iter(func(k string, v interface{}) {
 		if s, ok := v.(*schema.Switch); ok {

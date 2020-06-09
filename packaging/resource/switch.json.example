@@ -7,7 +7,7 @@
     "public": "/var/openlan/public"
   },
   "log": {
-    "file": "/var/log/openlan-vswitch.log"
+    "file": "/var/log/openlan-switch.log"
   },
   "network": [
     {

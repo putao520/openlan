@@ -87,7 +87,7 @@ type Switch struct {
 var vSwitchDef = Switch{
 	Alias: "",
 	Log: Log{
-		File:    "./openlan-vswitch.log",
+		File:    "./openlan-switch.log",
 		Verbose: libol.INFO,
 	},
 	Http: &Http{
@@ -101,7 +101,7 @@ func NewSwitch() (c Switch) {
 	flag.StringVar(&c.ConfDir, "conf:dir", vSwitchDef.ConfDir, "Configure virtual switch directory")
 	flag.Parse()
 
-	c.SaveFile = fmt.Sprintf("%s/vswitch.json", c.ConfDir)
+	c.SaveFile = fmt.Sprintf("%s/switch.json", c.ConfDir)
 	if err := c.Load(); err != nil {
 		libol.Error("NewSwitch.load %s", err)
 	}
@@ -120,7 +120,7 @@ func (c *Switch) Right() {
 		RightAddr(&c.Http.Listen, 10000)
 	}
 	c.TokenFile = fmt.Sprintf("%s/token", c.ConfDir)
-	c.SaveFile = fmt.Sprintf("%s/vswitch.json", c.ConfDir)
+	c.SaveFile = fmt.Sprintf("%s/switch.json", c.ConfDir)
 	if c.Cert.Dir != "" {
 		c.Cert.CrtFile = fmt.Sprintf("%s/crt.pem", c.Cert.Dir)
 		c.Cert.KeyFile = fmt.Sprintf("%s/private.key", c.Cert.Dir)

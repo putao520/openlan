@@ -5,9 +5,9 @@ After=network.target
 [Service]
 Type=notify
 RemainAfterExit=yes
-EnvironmentFile=/etc/sysconfig/openlan/vswitch.cfg
-ExecStart=/usr/bin/openlan-vswitch $OPTIONS
-ExecStop=/usr/bin/kill `/usr/sbin/pidof openlan-vswitch`
+EnvironmentFile=/etc/sysconfig/openlan/switch.cfg
+ExecStart=/usr/bin/openlan-switch $OPTIONS
+ExecStop=/usr/bin/kill `/usr/sbin/pidof openlan-switch`
 
 [Install]
 WantedBy=multi-user.target
