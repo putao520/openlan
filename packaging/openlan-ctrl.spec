@@ -18,7 +18,7 @@ cd %_source_dir && make linux/ctrl
 
 %install
 mkdir -p %{buildroot}/usr/bin
-cp %_source_dir/controller/openlan-ctrl %{buildroot}/usr/bin
+cp %_source_dir/build/openlan-ctrl %{buildroot}/usr/bin
 
 mkdir -p %{buildroot}/etc/sysconfig/openlan
 cp %_source_dir/packaging/resource/ctrl.cfg %{buildroot}/etc/sysconfig/openlan

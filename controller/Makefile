@@ -2,15 +2,30 @@
 # github.com/danieldin95/openlan-go/controller
 #
 
+SHELL := /bin/bash
+
+.ONESHELL:
 .PHONY: linux test
 
-PKG = github.com/danieldin95/openlan-go/libol
 
-LDFLAGS += -X $(PKG).Commit=$$(git rev-list -1 HEAD)
-LDFLAGS += -X $(PKG).Date=$$(date +%FT%T%z)
-LDFLAGS += -X $(PKG).Version=$$(cat ../VERSION)
+## version
+LSB = $(shell lsb_release -i -s)$(shell lsb_release -r -s)
+VER = $(shell cat ../VERSION)
+
+## declare flags
+MOD = github.com/danieldin95/openlan-go/libol
+LDFLAGS += -X $(MOD).Commit=$(shell git rev-list -1 HEAD)
+LDFLAGS += -X $(MOD).Date=$(shell date +%FT%T%z)
+LDFLAGS += -X $(MOD).Version=$(VER)
+
+## declare directory
+SD = $(shell pwd)
+BD = $(SD)/../build
 
 all: linux
 
+env:
+	@mkdir -p $(BD)
+
 linux:
-	go build -mod=vendor -ldflags "$(LDFLAGS)" -o openlan-ctrl main.go
+	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-ctrl main.go
