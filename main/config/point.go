@@ -71,7 +71,7 @@ func NewPoint() (c *Point) {
 	flag.Parse()
 
 	if err := c.Load(); err != nil {
-		libol.Error("NewPoint.load %s", err)
+		libol.Warn("NewPoint.load %s", err)
 	}
 	c.Default()
 	libol.Init(c.Log.File, c.Log.Verbose)

@@ -22,8 +22,8 @@ func TestCtl_Point(t *testing.T) {
 	}
 	cc.Start()
 	point := models.Point{
-		UUID:  "xxxx",
-		Alias: "alias-test",
+		UUID:   "xxxx",
+		Alias:  "alias-test",
 		Client: libol.NewTcpClient("xx", nil),
 	}
 	storage.Point.Add(&point)

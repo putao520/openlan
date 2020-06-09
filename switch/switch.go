@@ -348,10 +348,10 @@ func (v *Switch) ReadTap(dev network.Taper, readAt func(p []byte) error) {
 	}
 }
 
-func (v *Switch) CloseClient(client libol.SocketClient) {
-	libol.Info("Switch.CloseClient: %s", client)
+func (v *Switch) OffClient(client libol.SocketClient) {
+	libol.Info("Switch.OffClient: %s", client)
 	if v.server != nil {
-		v.server.CloseClient(client)
+		v.server.OffClient(client)
 	}
 }
 
