@@ -46,7 +46,7 @@ func IpAddrAdd(name, addr string, opts ...string) ([]byte, error) {
 	switch runtime.GOOS {
 	case "linux":
 		args := append([]string{
-			"addr", "add", addr, "dev", name,
+			"address", "add", addr, "dev", name,
 		}, opts...)
 		return exec.Command("/usr/sbin/ip", args...).CombinedOutput()
 	case "windows":
@@ -69,7 +69,7 @@ func IpAddrDel(name, addr string) ([]byte, error) {
 	switch runtime.GOOS {
 	case "linux":
 		args := []string{
-			"addr", "del", addr, "dev", name,
+			"address", "del", addr, "dev", name,
 		}
 		return exec.Command("/usr/sbin/ip", args...).CombinedOutput()
 	case "windows":
@@ -120,7 +120,7 @@ func IpRouteAdd(name, prefix, nexthop string, opts ...string) ([]byte, error) {
 	switch runtime.GOOS {
 	case "linux":
 		args := []string{
-			"route", "addr", prefix, "via", nexthop,
+			"route", "address", prefix, "via", nexthop,
 		}
 		return exec.Command("/usr/sbin/ip", args...).CombinedOutput()
 	case "windows":

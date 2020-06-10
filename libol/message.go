@@ -34,7 +34,7 @@ type FrameMessage struct {
 	action  string
 	params  string
 	frame   []byte
-	raw     []byte
+	rawData []byte
 }
 
 func NewFrameMessage(data []byte) *FrameMessage {
@@ -42,19 +42,19 @@ func NewFrameMessage(data []byte) *FrameMessage {
 		control: false,
 		action:  "",
 		params:  "",
-		raw:     data,
+		rawData: data,
 	}
 	m.Decode()
 	return &m
 }
 
 func (m *FrameMessage) Decode() bool {
-	m.control = IsControl(m.raw)
+	m.control = IsControl(m.rawData)
 	if m.control {
-		m.action = string(m.raw[6:11])
-		m.params = string(m.raw[12:])
+		m.action = string(m.rawData[6:11])
+		m.params = string(m.rawData[12:])
 	} else {
-		m.frame = m.raw
+		m.frame = m.rawData
 	}
 	return m.control
 }
@@ -68,7 +68,7 @@ func (m *FrameMessage) Data() []byte {
 }
 
 func (m *FrameMessage) String() string {
-	return fmt.Sprintf("control: %t, raw: %x", m.control, m.raw[:20])
+	return fmt.Sprintf("control: %t, rawData: %x", m.control, m.rawData[:20])
 }
 
 func (m *FrameMessage) CmdAndParams() (string, string) {
@@ -76,28 +76,28 @@ func (m *FrameMessage) CmdAndParams() (string, string) {
 }
 
 type ControlMessage struct {
-	control bool
-	opr     string
-	action  string
-	params  string
+	control  bool
+	operator string
+	action   string
+	params   string
 }
 
-//opr: request is '= ', and response is  ': '
+//operator: request is '= ', and response is  ': '
 //action: login, network etc.
 //body: json string.
 func NewControlMessage(action string, opr string, body string) *ControlMessage {
 	c := ControlMessage{
-		control: true,
-		action:  action,
-		params:  body,
-		opr:     opr,
+		control:  true,
+		action:   action,
+		params:   body,
+		operator: opr,
 	}
 
 	return &c
 }
 
 func (c *ControlMessage) Encode() []byte {
-	p := fmt.Sprintf("%s%s%s", c.action[:4], c.opr[:2], c.params)
+	p := fmt.Sprintf("%s%s%s", c.action[:4], c.operator[:2], c.params)
 	return append(ZEROED[:6], p...)
 }
 

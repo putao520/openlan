@@ -18,7 +18,7 @@ func NewTcpServer(listen string, cfg *tls.Config) *TcpServer {
 	t := &TcpServer{
 		tlsCfg: cfg,
 		socketServer: socketServer{
-			addr:       listen,
+			address:    listen,
 			sts:        ServerSts{},
 			maxClient:  1024,
 			clients:    make(map[SocketClient]bool, 1024),
@@ -35,19 +35,19 @@ func NewTcpServer(listen string, cfg *tls.Config) *TcpServer {
 
 func (t *TcpServer) Listen() (err error) {
 	if t.tlsCfg != nil {
-		t.listener, err = tls.Listen("tcp", t.addr, t.tlsCfg)
+		t.listener, err = tls.Listen("tcp", t.address, t.tlsCfg)
 		if err != nil {
 			t.listener = nil
 			return err
 		}
-		Info("TcpServer.Listen: tls://%s", t.addr)
+		Info("TcpServer.Listen: tls://%s", t.address)
 	} else {
-		t.listener, err = net.Listen("tcp", t.addr)
+		t.listener, err = net.Listen("tcp", t.address)
 		if err != nil {
 			t.listener = nil
 			return err
 		}
-		Info("TcpServer.Listen: tcp://%s", t.addr)
+		Info("TcpServer.Listen: tcp://%s", t.address)
 	}
 	return nil
 }
@@ -55,7 +55,7 @@ func (t *TcpServer) Listen() (err error) {
 func (t *TcpServer) Close() {
 	if t.listener != nil {
 		_ = t.listener.Close()
-		Info("TcpServer.Close: %s", t.addr)
+		Info("TcpServer.Close: %s", t.address)
 		t.listener = nil
 	}
 }
@@ -78,7 +78,7 @@ func (t *TcpServer) Accept() {
 			Error("TcpServer.Accept: %s", err)
 			return
 		}
-		t.sts.AcpCount++
+		t.sts.AcceptCount++
 		t.onClients <- NewTcpClientFromConn(conn)
 	}
 }
@@ -94,8 +94,8 @@ func NewTcpClient(addr string, cfg *tls.Config) *TcpClient {
 	t := &TcpClient{
 		tlsCfg: cfg,
 		socketClient: socketClient{
-			addr:    addr,
-			NewTime: time.Now().Unix(),
+			address: addr,
+			newTime: time.Now().Unix(),
 			dataStream: dataStream{
 				maxSize: 1514,
 				minSize: 15,
@@ -103,62 +103,62 @@ func NewTcpClient(addr string, cfg *tls.Config) *TcpClient {
 			status: CL_INIT,
 		},
 	}
-	t.connect = t.Connect
+	t.connecter = t.Connect
 	return t
 }
 
 func NewTcpClientFromConn(conn net.Conn) *TcpClient {
 	t := &TcpClient{
 		socketClient: socketClient{
-			addr: conn.RemoteAddr().String(),
+			address: conn.RemoteAddr().String(),
 			dataStream: dataStream{
-				conn:    conn,
-				maxSize: 1514,
-				minSize: 15,
+				connection: conn,
+				maxSize:    1514,
+				minSize:    15,
 			},
-			NewTime: time.Now().Unix(),
+			newTime: time.Now().Unix(),
 		},
 	}
-	t.connect = t.Connect
+	t.connecter = t.Connect
 	return t
 }
 
 func (t *TcpClient) LocalAddr() string {
-	if t.conn != nil {
-		return t.conn.LocalAddr().String()
+	if t.connection != nil {
+		return t.connection.LocalAddr().String()
 	}
-	return t.addr
+	return t.address
 }
 
 func (t *TcpClient) Connect() error {
 	t.lock.Lock()
-	if t.conn != nil || t.status == CL_TERMINAL || t.status == CL_UNAUTH {
+	if t.connection != nil || t.status == CL_TERMINAL || t.status == CL_UNAUTH {
 		t.lock.Unlock()
 		return nil
 	}
-	if t.conn != nil {
-		_ = t.conn.Close()
-		t.conn = nil
+	if t.connection != nil {
+		_ = t.connection.Close()
+		t.connection = nil
 	}
 	t.status = CL_CONNECTING
 	t.lock.Unlock()
 
 	if t.tlsCfg != nil {
-		Info("TcpClient.Connect: tls://%s", t.addr)
+		Info("TcpClient.Connect: tls://%s", t.address)
 	} else {
-		Info("TcpClient.Connect: tcp://%s", t.addr)
+		Info("TcpClient.Connect: tcp://%s", t.address)
 	}
 
 	var err error
 	var conn net.Conn
 	if t.tlsCfg != nil {
-		conn, err = tls.Dial("tcp", t.addr, t.tlsCfg)
+		conn, err = tls.Dial("tcp", t.address, t.tlsCfg)
 	} else {
-		conn, err = net.Dial("tcp", t.addr)
+		conn, err = net.Dial("tcp", t.address)
 	}
 	if err == nil {
 		t.lock.Lock()
-		t.conn = conn
+		t.connection = conn
 		t.status = CL_CONNECTED
 		t.lock.Unlock()
 		if t.listener.OnConnected != nil {
@@ -170,13 +170,13 @@ func (t *TcpClient) Connect() error {
 
 func (t *TcpClient) Close() {
 	t.lock.Lock()
-	if t.conn != nil {
+	if t.connection != nil {
 		if t.status != CL_TERMINAL {
 			t.status = CL_CLOSED
 		}
-		Info("TcpClient.Close: %s", t.addr)
-		_ = t.conn.Close()
-		t.conn = nil
+		Info("TcpClient.Close: %s", t.address)
+		_ = t.connection.Close()
+		t.connection = nil
 		t.private = nil
 		t.lock.Unlock()
 		if t.listener.OnClose != nil {

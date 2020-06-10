@@ -12,7 +12,7 @@ type Neighbor struct {
 	Client  libol.SocketClient `json:"Client"`
 	HwAddr  net.HardwareAddr   `json:"HwAddr"`
 	IpAddr  net.IP             `json:"IpAddr"`
-	NewTime int64              `json:"NewTime"`
+	NewTime int64              `json:"newTime"`
 	HitTime int64              `json:"HitTime"`
 }
 

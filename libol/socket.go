@@ -17,10 +17,10 @@ const (
 )
 
 type ClientSts struct {
-	TxOkay  uint64
-	RxOkay  uint64
-	TxError uint64
-	Dropped uint64
+	SendOkay  uint64
+	RecvOkay  uint64
+	SendError uint64
+	Dropped   uint64
 }
 
 type ClientListener struct {
@@ -57,39 +57,39 @@ type SocketClient interface {
 }
 
 type dataStream struct {
-	message Messager
-	conn    net.Conn
-	sts     ClientSts
-	maxSize int
-	minSize int
-	connect func() error
+	message    Messager
+	connection net.Conn
+	sts        ClientSts
+	maxSize    int
+	minSize    int
+	connecter  func() error
 }
 
 func (t *dataStream) String() string {
-	if t.conn != nil {
-		return t.conn.RemoteAddr().String()
+	if t.connection != nil {
+		return t.connection.RemoteAddr().String()
 	}
 	return "unknown"
 }
 
 func (t *dataStream) IsOk() bool {
-	return t.conn != nil
+	return t.connection != nil
 }
 
 func (t *dataStream) WriteMsg(data []byte) error {
-	if err := t.connect(); err != nil {
+	if err := t.connecter(); err != nil {
 		t.sts.Dropped++
 		return err
 	}
 	if t.message == nil { // default is stream message
 		t.message = &StreamMessage{}
 	}
-	n, err := t.message.Send(t.conn, data)
+	n, err := t.message.Send(t.connection, data)
 	if err != nil {
-		t.sts.TxError++
+		t.sts.SendError++
 		return err
 	}
-	t.sts.TxOkay += uint64(n)
+	t.sts.SendOkay += uint64(n)
 	return nil
 }
 
@@ -101,11 +101,11 @@ func (t *dataStream) ReadMsg(data []byte) (int, error) {
 	if t.message == nil { // default is stream message
 		t.message = &StreamMessage{}
 	}
-	size, err := t.message.Receive(t.conn, data, t.maxSize, t.minSize)
+	size, err := t.message.Receive(t.connection, data, t.maxSize, t.minSize)
 	if err != nil {
 		return size, err
 	}
-	t.sts.RxOkay += uint64(size)
+	t.sts.RecvOkay += uint64(size)
 
 	return size, nil
 }
@@ -128,13 +128,10 @@ type socketClient struct {
 	dataStream
 	lock     sync.RWMutex
 	listener ClientListener
-	addr     string
-	NewTime  int64
+	address  string
+	newTime  int64
 	private  interface{}
-	//sts      ClientSts
-	//maxSize  int
-	//minSize  int
-	status uint8
+	status   uint8
 }
 
 func (s *socketClient) State() string {
@@ -164,15 +161,15 @@ func (s *socketClient) Status() uint8 {
 }
 
 func (s *socketClient) UpTime() int64 {
-	return time.Now().Unix() - s.NewTime
+	return time.Now().Unix() - s.newTime
 }
 
 func (s *socketClient) Addr() string {
-	return s.addr
+	return s.address
 }
 
 func (s *socketClient) SetAddr(addr string) {
-	s.addr = addr
+	s.address = addr
 }
 
 func (s *socketClient) String() string {
@@ -218,11 +215,11 @@ func (s *socketClient) SetListener(listener ClientListener) {
 // Socket Server
 
 type ServerSts struct {
-	RxCount  int64
-	TxCount  int64
-	DrpCount int64
-	AcpCount int64
-	ClsCount int64
+	RecvCount   int64
+	SendCount   int64
+	DropCount   int64
+	AcceptCount int64
+	CloseCount  int64
 }
 
 type ServerListener struct {
@@ -248,7 +245,7 @@ type SocketServer interface {
 type socketServer struct {
 	lock       sync.RWMutex
 	sts        ServerSts
-	addr       string
+	address    string
 	maxClient  int
 	clients    map[SocketClient]bool
 	onClients  chan SocketClient
@@ -277,7 +274,7 @@ func (t *socketServer) doOnClient(call ServerListener, client SocketClient) {
 func (t *socketServer) doOffClient(call ServerListener, client SocketClient) {
 	Debug("socketServer.doOffClient: %s", client.Addr())
 	if ok := t.clients[client]; ok {
-		t.sts.ClsCount++
+		t.sts.CloseCount++
 		if call.OnClose != nil {
 			_ = call.OnClose(client)
 		}
@@ -312,7 +309,7 @@ func (t *socketServer) Read(client SocketClient, ReadAt ReadClient) {
 		if length <= 0 {
 			continue
 		}
-		t.sts.RxCount++
+		t.sts.RecvCount++
 		Log("socketServer.Read: length: %d ", length)
 		Log("socketServer.Read: data  : %x", data[:length])
 		if err := ReadAt(client, data[:length]); err != nil {
@@ -329,7 +326,7 @@ func (t *socketServer) Close() {
 }
 
 func (t *socketServer) Addr() string {
-	return t.addr
+	return t.address
 }
 
 func (t *socketServer) String() string {

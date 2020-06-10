@@ -7,12 +7,12 @@ import (
 )
 
 type XDP struct {
-	lock     sync.RWMutex
-	bufSize  int
-	conn     *net.UDPConn
-	addr     *net.UDPAddr
-	sessions *SafeStrMap
-	accept   chan *XDPConn
+	lock       sync.RWMutex
+	bufSize    int
+	connection *net.UDPConn
+	address    *net.UDPAddr
+	sessions   *SafeStrMap
+	accept     chan *XDPConn
 }
 
 func XDPListen(addr string) (net.Listener, error) {
@@ -21,7 +21,7 @@ func XDPListen(addr string) (net.Listener, error) {
 		return nil, err
 	}
 	x := &XDP{
-		addr:     udpAddr,
+		address:  udpAddr,
 		sessions: NewSafeStrMap(1024),
 		accept:   make(chan *XDPConn, 2),
 		bufSize:  MAXBUF,
@@ -30,7 +30,7 @@ func XDPListen(addr string) (net.Listener, error) {
 	if err != nil {
 		return nil, err
 	}
-	x.conn = conn
+	x.connection = conn
 	go x.Loop()
 	return x, nil
 }
@@ -39,7 +39,7 @@ func XDPListen(addr string) (net.Listener, error) {
 func (x *XDP) Loop() {
 	for {
 		data := make([]byte, x.bufSize)
-		n, udpAddr, err := x.conn.ReadFromUDP(data)
+		n, udpAddr, err := x.connection.ReadFromUDP(data)
 		if err != nil {
 			Error("XDP.Loop %s", err)
 			break
@@ -52,16 +52,16 @@ func (x *XDP) Loop() {
 			newConn = obj.(*XDPConn)
 		} else {
 			newConn = &XDPConn{
-				conn:   x.conn,
-				raddr:  udpAddr,
-				laddr:  x.addr,
-				rqueue: make(chan []byte, 1024),
-				closed: false,
+				connection: x.connection,
+				remoteAddr: udpAddr,
+				localAddr:  x.address,
+				readQueue:  make(chan []byte, 1024),
+				closed:     false,
 			}
 			_ = x.sessions.Set(addr, newConn)
 			x.accept <- newConn
 		}
-		newConn.RxQ(data[:n])
+		newConn.toQueue(data[:n])
 	}
 }
 
@@ -75,15 +75,9 @@ func (x *XDP) Accept() (net.Conn, error) {
 func (x *XDP) Close() error {
 	x.lock.Lock()
 	defer x.lock.Unlock()
-	//if x.conn == nil {
-	//	return nil
-	//}
-	_ = x.conn.Close()
-	//x.conn = nil
-	//close(x.accept)
-	//x.accept = nil
 
-	// close all conn in sessions.
+	_ = x.connection.Close()
+	// close all connection in sessions.
 	x.sessions.Iter(func(k string, v interface{}) {
 		conn, ok := v.(*XDPConn)
 		if ok {
@@ -95,29 +89,50 @@ func (x *XDP) Close() error {
 
 // Addr returns the listener's network address.
 func (x *XDP) Addr() net.Addr {
-	return nil
+	return x.address
 }
 
 type XDPConn struct {
-	lock   sync.RWMutex
-	conn   *net.UDPConn
-	raddr  *net.UDPAddr
-	laddr  *net.UDPAddr
-	rqueue chan []byte
-	closed bool
+	lock       sync.RWMutex
+	connection *net.UDPConn
+	remoteAddr *net.UDPAddr
+	localAddr  *net.UDPAddr
+	readQueue  chan []byte
+	closed     bool
 }
 
-func (c *XDPConn) RxQ(b []byte) {
-	c.rqueue <- b
+func (c *XDPConn) toQueue(b []byte) {
+	c.lock.RLock()
+	if c.closed {
+		c.lock.RUnlock()
+		return
+	} else {
+		c.lock.RUnlock()
+	}
+	c.readQueue <- b
 }
 
 func (c *XDPConn) Read(b []byte) (n int, err error) {
-	d := <-c.rqueue
+	c.lock.RLock()
+	if c.closed {
+		c.lock.RUnlock()
+		return 0, NewErr("read on closed")
+	} else {
+		c.lock.RUnlock()
+	}
+	d := <-c.readQueue
 	return copy(b, d), nil
 }
 
 func (c *XDPConn) Write(b []byte) (n int, err error) {
-	return c.conn.WriteToUDP(b, c.raddr)
+	c.lock.RLock()
+	if c.closed {
+		c.lock.RUnlock()
+		return 0, NewErr("write to closed")
+	} else {
+		c.lock.RUnlock()
+	}
+	return c.connection.WriteToUDP(b, c.remoteAddr)
 }
 
 func (c *XDPConn) Close() error {
@@ -126,33 +141,31 @@ func (c *XDPConn) Close() error {
 	if c.closed {
 		return nil
 	}
-	c.conn = nil
-	//close(c.rqueue)
-	//c.rqueue = nil
+	c.connection = nil
 	c.closed = true
 
 	return nil
 }
 
 func (c *XDPConn) LocalAddr() net.Addr {
-	return c.laddr
+	return c.localAddr
 }
 
 func (c *XDPConn) RemoteAddr() net.Addr {
-	return c.raddr
+	return c.remoteAddr
 }
 
 func (c *XDPConn) SetDeadline(t time.Time) error {
-	Warn("XDPConn.SetDeadline %s", "implement me")
+	Warn("XDPConn.SetDeadline implement me")
 	return nil
 }
 
 func (c *XDPConn) SetReadDeadline(t time.Time) error {
-	Warn("XDPConn.SetReadDeadline %s", "implement me")
+	Warn("XDPConn.SetReadDeadline implement me")
 	return nil
 }
 
 func (c *XDPConn) SetWriteDeadline(t time.Time) error {
-	Warn("XDPConn.SetReadDeadline %s", "implement me")
+	Warn("XDPConn.SetReadDeadline implement me")
 	return nil
 }

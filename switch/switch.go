@@ -185,7 +185,8 @@ func (v *Switch) OnClient(client libol.SocketClient) error {
 func (v *Switch) ReadClient(client libol.SocketClient, data []byte) error {
 	libol.Log("Switch.ReadClient: %s %x", client.Addr(), data)
 	if err := v.OnHook(client, data); err != nil {
-		libol.Debug("Switch.OnRead: %s dropping by %s", client.Addr(), err)
+		libol.Debug("Switch.ReadClient: %s dropping by %s", client.Addr(), err)
+		// TODO send request to point login again.
 		return nil
 	}
 
@@ -197,12 +198,12 @@ func (v *Switch) ReadClient(client libol.SocketClient, data []byte) error {
 			return libol.NewErr("Tap devices is nil")
 		}
 		if _, err := dev.Write(data); err != nil {
-			libol.Error("Worker.OnRead: %s", err)
+			libol.Error("Switch.ReadClient: %s", err)
 			return err
 		}
 		return nil
 	}
-	return libol.NewErr("%s Point not found.", client)
+	return libol.NewErr("point %s not found.", client)
 }
 
 func (v *Switch) OnClose(client libol.SocketClient) error {

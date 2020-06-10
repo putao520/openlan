@@ -28,7 +28,7 @@ func NewKcpServer(listen string, cfg *KcpConfig) *KcpServer {
 	k := &KcpServer{
 		kcpCfg: cfg,
 		socketServer: socketServer{
-			addr:       listen,
+			address:    listen,
 			sts:        ServerSts{},
 			maxClient:  1024,
 			clients:    make(map[SocketClient]bool, 1024),
@@ -47,19 +47,19 @@ func NewKcpServer(listen string, cfg *KcpConfig) *KcpServer {
 }
 
 func (k *KcpServer) Listen() (err error) {
-	k.listener, err = kcp.ListenWithOptions(k.addr, k.kcpCfg.block, k.kcpCfg.dataShards, k.kcpCfg.parityShards)
+	k.listener, err = kcp.ListenWithOptions(k.address, k.kcpCfg.block, k.kcpCfg.dataShards, k.kcpCfg.parityShards)
 	if err != nil {
 		k.listener = nil
 		return err
 	}
-	Info("KcpServer.Listen: kcp://%s", k.addr)
+	Info("KcpServer.Listen: kcp://%s", k.address)
 	return nil
 }
 
 func (k *KcpServer) Close() {
 	if k.listener != nil {
 		_ = k.listener.Close()
-		Info("KcpServer.Close: %s", k.addr)
+		Info("KcpServer.Close: %s", k.address)
 		k.listener = nil
 	}
 }
@@ -83,7 +83,7 @@ func (k *KcpServer) Accept() {
 			Error("KcpServer.Accept: %s", err)
 			return
 		}
-		k.sts.AcpCount++
+		k.sts.AcceptCount++
 		conn.SetStreamMode(true)
 		conn.SetWriteDelay(false)
 		conn.SetACKNoDelay(false)
@@ -102,8 +102,8 @@ func NewKcpClient(addr string, cfg *KcpConfig) *KcpClient {
 	c := &KcpClient{
 		kcpCfg: cfg,
 		socketClient: socketClient{
-			addr:    addr,
-			NewTime: time.Now().Unix(),
+			address: addr,
+			newTime: time.Now().Unix(),
 			dataStream: dataStream{
 				maxSize: 1514,
 				minSize: 15,
@@ -111,7 +111,7 @@ func NewKcpClient(addr string, cfg *KcpConfig) *KcpClient {
 			status: CL_INIT,
 		},
 	}
-	c.connect = c.Connect
+	c.connecter = c.Connect
 	if c.kcpCfg == nil {
 		c.kcpCfg = &defaultKcpConfig
 	}
@@ -121,43 +121,43 @@ func NewKcpClient(addr string, cfg *KcpConfig) *KcpClient {
 func NewKcpClientFromConn(conn net.Conn) *KcpClient {
 	c := &KcpClient{
 		socketClient: socketClient{
-			addr: conn.RemoteAddr().String(),
+			address: conn.RemoteAddr().String(),
 			dataStream: dataStream{
-				conn:    conn,
-				maxSize: 1514,
-				minSize: 15,
+				connection: conn,
+				maxSize:    1514,
+				minSize:    15,
 			},
-			NewTime: time.Now().Unix(),
+			newTime: time.Now().Unix(),
 		},
 	}
-	c.connect = c.Connect
+	c.connecter = c.Connect
 	return c
 }
 
 func (c *KcpClient) LocalAddr() string {
-	if c.conn != nil {
-		return c.conn.LocalAddr().String()
+	if c.connection != nil {
+		return c.connection.LocalAddr().String()
 	}
-	return c.addr
+	return c.address
 }
 
 func (c *KcpClient) Connect() error {
 	c.lock.Lock()
-	if c.conn != nil || c.status == CL_TERMINAL || c.status == CL_UNAUTH {
+	if c.connection != nil || c.status == CL_TERMINAL || c.status == CL_UNAUTH {
 		c.lock.Unlock()
 		return nil
 	}
 	c.status = CL_CONNECTING
 	c.lock.Unlock()
 
-	Info("KcpClient.Connect: kcp://%s", c.addr)
-	conn, err := kcp.DialWithOptions(c.addr, c.kcpCfg.block, c.kcpCfg.dataShards, c.kcpCfg.dataShards)
+	Info("KcpClient.Connect: kcp://%s", c.address)
+	conn, err := kcp.DialWithOptions(c.address, c.kcpCfg.block, c.kcpCfg.dataShards, c.kcpCfg.dataShards)
 	if err == nil {
 		conn.SetStreamMode(true)
 		conn.SetWriteDelay(false)
 		conn.SetACKNoDelay(false)
 		c.lock.Lock()
-		c.conn = conn
+		c.connection = conn
 		c.status = CL_CONNECTED
 		c.lock.Unlock()
 		if c.listener.OnConnected != nil {
@@ -169,13 +169,13 @@ func (c *KcpClient) Connect() error {
 
 func (c *KcpClient) Close() {
 	c.lock.Lock()
-	if c.conn != nil {
+	if c.connection != nil {
 		if c.status != CL_TERMINAL {
 			c.status = CL_CLOSED
 		}
-		Info("KcpClient.Close: %s", c.addr)
-		_ = c.conn.Close()
-		c.conn = nil
+		Info("KcpClient.Close: %s", c.address)
+		_ = c.connection.Close()
+		c.connection = nil
 		c.private = nil
 		c.lock.Unlock()
 		if c.listener.OnClose != nil {

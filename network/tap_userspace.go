@@ -49,7 +49,7 @@ func (t *UserSpaceTap) Name() string {
 
 func (t *UserSpaceTap) Read(p []byte) (n int, err error) {
 	t.lock.RLock()
-	if t.closed || t.readQ == nil {
+	if t.closed {
 		t.lock.RUnlock()
 		return 0, libol.NewErr("Close")
 	}
@@ -62,7 +62,7 @@ func (t *UserSpaceTap) Read(p []byte) (n int, err error) {
 func (t *UserSpaceTap) InRead(p []byte) (n int, err error) {
 	libol.Debug("UserSpaceTap.InRead: %s % x", t, p[:20])
 	t.lock.RLock()
-	if t.closed || t.readQ == nil {
+	if t.closed {
 		t.lock.RUnlock()
 		return 0, libol.NewErr("Close")
 	}
@@ -75,7 +75,7 @@ func (t *UserSpaceTap) InRead(p []byte) (n int, err error) {
 func (t *UserSpaceTap) Write(p []byte) (n int, err error) {
 	libol.Debug("UserSpaceTap.Write: %s % x", t, p[:20])
 	t.lock.RLock()
-	if t.closed || t.writeQ == nil {
+	if t.closed {
 		t.lock.RUnlock()
 		return 0, libol.NewErr("Close")
 	}
@@ -87,7 +87,7 @@ func (t *UserSpaceTap) Write(p []byte) (n int, err error) {
 
 func (t *UserSpaceTap) OutWrite() ([]byte, error) {
 	t.lock.RLock()
-	if t.closed || t.writeQ == nil {
+	if t.closed {
 		t.lock.RUnlock()
 		return nil, libol.NewErr("Close")
 	}
@@ -120,15 +120,11 @@ func (t *UserSpaceTap) Close() error {
 		return nil
 	}
 
-	close(t.readQ)
-	close(t.writeQ)
 	Tapers.Del(t.name)
 	if t.bridge != nil {
 		_ = t.bridge.DelSlave(t)
 		t.bridge = nil
 	}
-	t.readQ = nil
-	t.writeQ = nil
 	t.closed = true
 
 	return nil

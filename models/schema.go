@@ -14,9 +14,9 @@ func NewPointSchema(p *Point) schema.Point {
 		Alias:   p.Alias,
 		Address: client.Addr(),
 		Device:  dev.Name(),
-		RxBytes: client.Sts().RxOkay,
-		TxBytes: client.Sts().TxOkay,
-		ErrPkt:  client.Sts().TxError,
+		RxBytes: client.Sts().RecvOkay,
+		TxBytes: client.Sts().SendOkay,
+		ErrPkt:  client.Sts().SendError,
 		State:   client.State(),
 		Network: p.Network,
 	}

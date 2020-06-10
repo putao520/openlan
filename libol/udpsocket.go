@@ -22,7 +22,7 @@ type UdpServer struct {
 func NewUdpServer(listen string, cfg *UdpConfig) *UdpServer {
 	k := &UdpServer{
 		socketServer: socketServer{
-			addr:       listen,
+			address:    listen,
 			sts:        ServerSts{},
 			maxClient:  1024,
 			clients:    make(map[SocketClient]bool, 1024),
@@ -41,19 +41,19 @@ func NewUdpServer(listen string, cfg *UdpConfig) *UdpServer {
 }
 
 func (k *UdpServer) Listen() (err error) {
-	k.listener, err = XDPListen(k.addr)
+	k.listener, err = XDPListen(k.address)
 	if err != nil {
 		k.listener = nil
 		return err
 	}
-	Info("UdpServer.Listen: udp://%s", k.addr)
+	Info("UdpServer.Listen: udp://%s", k.address)
 	return nil
 }
 
 func (k *UdpServer) Close() {
 	if k.listener != nil {
 		_ = k.listener.Close()
-		Info("UdpServer.Close: %s", k.addr)
+		Info("UdpServer.Close: %s", k.address)
 		k.listener = nil
 	}
 }
@@ -75,7 +75,7 @@ func (k *UdpServer) Accept() {
 			Error("TcpServer.Accept: %s", err)
 			return
 		}
-		k.sts.AcpCount++
+		k.sts.AcceptCount++
 		k.onClients <- NewUdpClientFromConn(conn)
 	}
 }
@@ -91,8 +91,8 @@ func NewUdpClient(addr string, cfg *UdpConfig) *UdpClient {
 	c := &UdpClient{
 		udpCfg: cfg,
 		socketClient: socketClient{
-			addr:    addr,
-			NewTime: time.Now().Unix(),
+			address: addr,
+			newTime: time.Now().Unix(),
 			dataStream: dataStream{
 				maxSize: 1514,
 				minSize: 15,
@@ -101,7 +101,7 @@ func NewUdpClient(addr string, cfg *UdpConfig) *UdpClient {
 			status: CL_INIT,
 		},
 	}
-	c.connect = c.Connect
+	c.connecter = c.Connect
 	if c.udpCfg == nil {
 		c.udpCfg = &defaultUdpConfig
 	}
@@ -111,41 +111,41 @@ func NewUdpClient(addr string, cfg *UdpConfig) *UdpClient {
 func NewUdpClientFromConn(conn net.Conn) *UdpClient {
 	c := &UdpClient{
 		socketClient: socketClient{
-			addr: conn.RemoteAddr().String(),
+			address: conn.RemoteAddr().String(),
 			dataStream: dataStream{
-				conn:    conn,
-				maxSize: 1514,
-				minSize: 15,
-				message: &DataGramMessage{},
+				connection: conn,
+				maxSize:    1514,
+				minSize:    15,
+				message:    &DataGramMessage{},
 			},
-			NewTime: time.Now().Unix(),
+			newTime: time.Now().Unix(),
 		},
 	}
-	c.connect = c.Connect
+	c.connecter = c.Connect
 	return c
 }
 
 func (c *UdpClient) LocalAddr() string {
-	if c.conn != nil {
-		return c.conn.LocalAddr().String()
+	if c.connection != nil {
+		return c.connection.LocalAddr().String()
 	}
-	return c.addr
+	return c.address
 }
 
 func (c *UdpClient) Connect() error {
 	c.lock.Lock()
-	if c.conn != nil || c.status == CL_TERMINAL || c.status == CL_UNAUTH {
+	if c.connection != nil || c.status == CL_TERMINAL || c.status == CL_UNAUTH {
 		c.lock.Unlock()
 		return nil
 	}
 	c.status = CL_CONNECTING
 	c.lock.Unlock()
 
-	Info("UdpClient.Connect: udp://%s", c.addr)
-	conn, err := net.Dial("udp", c.addr)
+	Info("UdpClient.Connect: udp://%s", c.address)
+	conn, err := net.Dial("udp", c.address)
 	if err == nil {
 		c.lock.Lock()
-		c.conn = conn
+		c.connection = conn
 		c.status = CL_CONNECTED
 		c.lock.Unlock()
 		if c.listener.OnConnected != nil {
@@ -157,13 +157,13 @@ func (c *UdpClient) Connect() error {
 
 func (c *UdpClient) Close() {
 	c.lock.Lock()
-	if c.conn != nil {
+	if c.connection != nil {
 		if c.status != CL_TERMINAL {
 			c.status = CL_CLOSED
 		}
-		Info("UdpClient.Close: %s", c.addr)
-		_ = c.conn.Close()
-		c.conn = nil
+		Info("UdpClient.Close: %s", c.address)
+		_ = c.connection.Close()
+		c.connection = nil
 		c.private = nil
 		c.lock.Unlock()
 		if c.listener.OnClose != nil {
