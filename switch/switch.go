@@ -14,6 +14,31 @@ import (
 	"time"
 )
 
+func GetTlsCfg(c config.Switch) *tls.Config {
+	if c.Cert.KeyFile != "" && c.Cert.CrtFile != "" {
+		cer, err := tls.LoadX509KeyPair(c.Cert.CrtFile, c.Cert.KeyFile)
+		if err != nil {
+			libol.Error("NewSwitch: %s", err)
+		}
+		return &tls.Config{Certificates: []tls.Certificate{cer}}
+	}
+	return nil
+}
+
+func GetSocketServer(c config.Switch) libol.SocketServer {
+	tlsCfg := GetTlsCfg(c)
+	switch c.Protocol {
+	case "kcp":
+		return libol.NewKcpServer(c.Listen, nil)
+	case "tcp":
+		return libol.NewTcpServer(c.Listen, nil)
+	case "udp":
+		return libol.NewUdpServer(c.Listen, nil)
+	default:
+		return libol.NewTcpServer(c.Listen, tlsCfg)
+	}
+}
+
 type Apps struct {
 	Auth     *app.PointAuth
 	Request  *app.WithRequest
@@ -40,23 +65,7 @@ type Switch struct {
 }
 
 func NewSwitch(c config.Switch) *Switch {
-	var tlsCfg *tls.Config
-	var server libol.SocketServer
-
-	if c.Cert.KeyFile != "" && c.Cert.CrtFile != "" {
-		cer, err := tls.LoadX509KeyPair(c.Cert.CrtFile, c.Cert.KeyFile)
-		if err != nil {
-			libol.Error("NewSwitch: %s", err)
-		}
-		tlsCfg = &tls.Config{Certificates: []tls.Certificate{cer}}
-	}
-	if c.Protocol == "kcp" {
-		server = libol.NewKcpServer(c.Listen, nil)
-	} else if c.Protocol == "udp" {
-		server = libol.NewUdpServer(c.Listen, nil)
-	} else {
-		server = libol.NewTcpServer(c.Listen, tlsCfg)
-	}
+	server := GetSocketServer(c)
 	v := Switch{
 		Conf: c,
 		Fire: FireWall{

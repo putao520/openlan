@@ -696,6 +696,39 @@ type PrefixRule struct {
 	NextHop     net.IP
 }
 
+func GetSocketClient(c *config.Point) libol.SocketClient {
+	var tlsConf *tls.Config
+	if c.Protocol == "tls" {
+		tlsConf = &tls.Config{InsecureSkipVerify: true}
+	}
+	switch c.Protocol {
+	case "kcp":
+		return libol.NewKcpClient(c.Addr, nil)
+	case "tcp":
+		return libol.NewTcpClient(c.Addr, nil)
+	case "udp":
+		return libol.NewUdpClient(c.Addr, nil)
+	default:
+		return libol.NewTcpClient(c.Addr, tlsConf)
+	}
+}
+
+func GetTapCfg(c *config.Point) network.TapConfig {
+	if c.If.Provider == "tun" {
+		return network.TapConfig{
+			Type:    network.TUN,
+			Name:    c.If.Name,
+			Network: c.If.Address,
+		}
+	} else {
+		return network.TapConfig{
+			Type:    network.TAP,
+			Name:    c.If.Name,
+			Network: c.If.Address,
+		}
+	}
+}
+
 type Worker struct {
 	IfAddr   string
 	Listener WorkerListener
@@ -723,40 +756,14 @@ func (p *Worker) Initialize() {
 	if p.config == nil {
 		return
 	}
-
-	var conf network.TapConfig
-	var tlsConf *tls.Config
-	var client libol.SocketClient
 	libol.Info("Worker.Initialize")
-
+	client := GetSocketClient(p.config)
 	p.initialized = true
-	if p.config.Protocol == "tls" {
-		tlsConf = &tls.Config{InsecureSkipVerify: true}
-	}
-	if p.config.Protocol == "kcp" {
-		client = libol.NewKcpClient(p.config.Addr, nil)
-	} else if p.config.Protocol == "udp" {
-		client = libol.NewUdpClient(p.config.Addr, nil)
-	} else { // default is tcp/tls
-		client = libol.NewTcpClient(p.config.Addr, tlsConf)
-	}
 	p.tcpWorker = NewSessWorker(client, p.config)
 
-	if p.config.If.Provider == "tun" {
-		conf = network.TapConfig{
-			Type:    network.TUN,
-			Name:    p.config.If.Name,
-			Network: p.config.If.Address,
-		}
-	} else {
-		conf = network.TapConfig{
-			Type:    network.TAP,
-			Name:    p.config.If.Name,
-			Network: p.config.If.Address,
-		}
-	}
+	tapCfg := GetTapCfg(p.config)
 	// register listener
-	p.tapWorker = NewTapWorker(conf, p.config)
+	p.tapWorker = NewTapWorker(tapCfg, p.config)
 
 	p.tcpWorker.SetUUID(p.UUID())
 	p.tcpWorker.Listener = SessWorkerListener{

@@ -12,7 +12,7 @@ import (
 type PointAuth struct {
 	success int
 	failed  int
-	master Master
+	master  Master
 }
 
 func NewPointAuth(m Master, c config.Switch) (p *PointAuth) {
