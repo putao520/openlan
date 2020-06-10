@@ -53,7 +53,7 @@ func (p *Point) AddAddr(ipStr string) error {
 	ips := strings.SplitN(ipStr, "/", 2)
 	out, err := libol.IpAddrAdd(p.IfName(), ips[0], ips[0])
 	if err != nil {
-		libol.Error("Point.AddAddr: %s, %s", err, out)
+		libol.Warn("Point.AddAddr: %s, %s", err, out)
 		return err
 	}
 	libol.Info("Point.AddAddr: %s", ipStr)
@@ -61,10 +61,9 @@ func (p *Point) AddAddr(ipStr string) error {
 	// add directly route.
 	out, err = libol.IpRouteAdd(p.IfName(), ipStr, "")
 	if err != nil {
-		libol.Error("Point.AddAddr: %s, %s", err, out)
+		libol.Warn("Point.AddAddr: %s, %s", err, out)
 	}
 	libol.Info("Point.AddAddr: route %s via %s", ipStr, p.IfName())
-
 	p.addr = ipStr
 
 	return nil
@@ -74,7 +73,7 @@ func (p *Point) DelAddr(ipStr string) error {
 	// delete directly route.
 	out, err := libol.IpRouteDel(p.IfName(), ipStr, "")
 	if err != nil {
-		libol.Error("Point.DelAddr: %s, %s", err, out)
+		libol.Warn("Point.DelAddr: %s, %s", err, out)
 	}
 	libol.Info("Point.DelAddr: route %s via %s", ipStr, p.IfName())
 
@@ -82,12 +81,11 @@ func (p *Point) DelAddr(ipStr string) error {
 	ip4 := strings.SplitN(ipStr, "/", 2)[0]
 	out, err = libol.IpAddrDel(p.IfName(), ip4)
 	if err != nil {
-		libol.Error("Point.DelAddr: %s, %s", err, out)
+		libol.Warn("Point.DelAddr: %s, %s", err, out)
 		return err
 	}
 	libol.Info("Point.DelAddr: %s", ip4)
 	p.addr = ""
-
 	return nil
 }
 
@@ -99,12 +97,11 @@ func (p *Point) AddRoutes(routes []*models.Route) error {
 	for _, route := range routes {
 		out, err := libol.IpRouteAdd(p.IfName(), route.Prefix, "")
 		if err != nil {
-			libol.Error("Point.AddRoutes: %s, %s", err, out)
+			libol.Warn("Point.AddRoutes: %s, %s", err, out)
 			continue
 		}
 		libol.Info("Point.AddRoutes: route %s via %s", route.Prefix, p.IfName())
 	}
-
 	p.routes = routes
 	return nil
 }
@@ -113,13 +110,11 @@ func (p *Point) DelRoutes(routes []*models.Route) error {
 	for _, route := range routes {
 		out, err := libol.IpRouteDel(p.IfName(), route.Prefix, "")
 		if err != nil {
-			libol.Error("Point.DelRoutes: %s, %s", err, out)
+			libol.Warn("Point.DelRoutes: %s, %s", err, out)
 			continue
 		}
 		libol.Info("Point.DelRoutes: route %s via %s", route.Prefix, p.IfName())
 	}
-
 	p.routes = nil
-
 	return nil
 }

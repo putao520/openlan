@@ -890,9 +890,11 @@ func (p *Worker) FindDest(dest []byte) []byte {
 func (p *Worker) OnIpAddr(w *SocketWorker, n *models.Network) error {
 	libol.Info("Worker.OnIpAddr: %s/%s, %s", n.IfAddr, n.Netmask, n.Routes)
 
+	if p.network != nil { // remove older firstly
+		p.FreeIpAddr()
+	}
 	prefix := libol.Netmask2Len(n.Netmask)
 	ipStr := fmt.Sprintf("%s/%d", n.IfAddr, prefix)
-
 	p.tapWorker.SetEther(ipStr)
 	if p.Listener.AddAddr != nil {
 		_ = p.Listener.AddAddr(ipStr)
@@ -900,7 +902,6 @@ func (p *Worker) OnIpAddr(w *SocketWorker, n *models.Network) error {
 	if p.Listener.AddRoutes != nil {
 		_ = p.Listener.AddRoutes(n.Routes)
 	}
-
 	p.network = n
 
 	// update routes
@@ -931,7 +932,6 @@ func (p *Worker) FreeIpAddr() {
 	if p.network == nil {
 		return
 	}
-
 	if p.Listener.DelRoutes != nil {
 		_ = p.Listener.DelRoutes(p.network.Routes)
 	}
@@ -941,6 +941,7 @@ func (p *Worker) FreeIpAddr() {
 		_ = p.Listener.DelAddr(ipStr)
 	}
 	p.network = nil
+	p.routes = make([]PrefixRule, 0, 32)
 }
 
 func (p *Worker) OnClose(w *SocketWorker) error {
@@ -951,7 +952,6 @@ func (p *Worker) OnClose(w *SocketWorker) error {
 
 func (p *Worker) OnSuccess(w *SocketWorker) error {
 	libol.Info("Worker.OnSuccess")
-
 	if p.Listener.AddAddr != nil {
 		_ = p.Listener.AddAddr(p.IfAddr)
 	}

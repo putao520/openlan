@@ -58,14 +58,12 @@ func (p *Point) DelAddr(ipStr string) error {
 		libol.Error("Point.AddAddr.ParseCIDR %s: %s", ipStr, err)
 		return err
 	}
-
 	if err := netlink.AddrDel(p.link, ipAddr); err != nil {
-		libol.Error("Point.DelAddr.UnsetLinkIp: %s", err)
+		libol.Warn("Point.DelAddr.UnsetLinkIp: %s", err)
 	}
 
 	libol.Info("Point.DelAddr: %s", ipStr)
 	p.addr = ""
-
 	return nil
 }
 
@@ -80,12 +78,10 @@ func (p *Point) AddAddr(ipStr string) error {
 		return err
 	}
 	if err := netlink.AddrAdd(p.link, ipAddr); err != nil {
-		libol.Error("Point.AddAddr.SetLinkIp: %s", err)
+		libol.Warn("Point.AddAddr.SetLinkIp: %s", err)
 		return err
 	}
-
 	libol.Info("Point.AddAddr: %s", ipStr)
-
 	p.addr = ipStr
 
 	return nil
@@ -168,7 +164,7 @@ func (p *Point) AddRoutes(routes []*models.Route) error {
 		rte := netlink.Route{LinkIndex: p.link.Attrs().Index, Dst: dst, Gw: nxt}
 		libol.Debug("Point.AddRoute: %s", rte)
 		if err := netlink.RouteAdd(&rte); err != nil {
-			libol.Error("Point.AddRoute: %s", err)
+			libol.Warn("Point.AddRoute: %s", err)
 			continue
 		}
 		libol.Info("Point.AddRoutes: route %s via %s", route.Prefix, route.Nexthop)
@@ -193,7 +189,7 @@ func (p *Point) DelRoutes(routes []*models.Route) error {
 		nxt := net.ParseIP(route.Nexthop)
 		rte := netlink.Route{LinkIndex: p.link.Attrs().Index, Dst: dst, Gw: nxt}
 		if err := netlink.RouteDel(&rte); err != nil {
-			libol.Error("Point.DelRoute: %s", err)
+			libol.Warn("Point.DelRoute: %s", err)
 			continue
 		}
 		libol.Info("Point.DelRoutes: route %s via %s", route.Prefix, route.Nexthop)
