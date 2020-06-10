@@ -62,7 +62,6 @@ func (t *TcpServer) Close() {
 
 func (t *TcpServer) Accept() {
 	Debug("TcpServer.Accept")
-
 	for {
 		if t.listener != nil {
 			break
@@ -97,7 +96,7 @@ func NewTcpClient(addr string, cfg *tls.Config) *TcpClient {
 		socketClient: socketClient{
 			addr:    addr,
 			NewTime: time.Now().Unix(),
-			connWrapper: connWrapper{
+			dataStream: dataStream{
 				maxSize: 1514,
 				minSize: 15,
 			},
@@ -112,7 +111,7 @@ func NewTcpClientFromConn(conn net.Conn) *TcpClient {
 	t := &TcpClient{
 		socketClient: socketClient{
 			addr: conn.RemoteAddr().String(),
-			connWrapper: connWrapper{
+			dataStream: dataStream{
 				conn:    conn,
 				maxSize: 1514,
 				minSize: 15,

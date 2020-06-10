@@ -15,7 +15,7 @@ var defaultUdpConfig = UdpConfig{
 
 type UdpServer struct {
 	socketServer
-	udpCfg   *UdpConfig
+	udpCfg  *UdpConfig
 	listener net.Listener
 }
 
@@ -41,7 +41,7 @@ func NewUdpServer(listen string, cfg *UdpConfig) *UdpServer {
 }
 
 func (k *UdpServer) Listen() (err error) {
-	k.listener, err = net.Listen("udp", k.addr)
+	k.listener, err = XDPListen(k.addr)
 	if err != nil {
 		k.listener = nil
 		return err
@@ -59,8 +59,6 @@ func (k *UdpServer) Close() {
 }
 
 func (k *UdpServer) Accept() {
-	Debug("UdpServer.Accept")
-
 	for {
 		if k.listener != nil {
 			break
@@ -74,7 +72,7 @@ func (k *UdpServer) Accept() {
 	for {
 		conn, err := k.listener.Accept()
 		if err != nil {
-			Error("UdpServer.Accept: %s", err)
+			Error("TcpServer.Accept: %s", err)
 			return
 		}
 		k.sts.AcpCount++
@@ -95,9 +93,10 @@ func NewUdpClient(addr string, cfg *UdpConfig) *UdpClient {
 		socketClient: socketClient{
 			addr:    addr,
 			NewTime: time.Now().Unix(),
-			connWrapper: connWrapper{
+			dataStream: dataStream{
 				maxSize: 1514,
 				minSize: 15,
+				message: &DataGramMessage{},
 			},
 			status: CL_INIT,
 		},
@@ -113,10 +112,11 @@ func NewUdpClientFromConn(conn net.Conn) *UdpClient {
 	c := &UdpClient{
 		socketClient: socketClient{
 			addr: conn.RemoteAddr().String(),
-			connWrapper: connWrapper{
+			dataStream: dataStream{
 				conn:    conn,
 				maxSize: 1514,
 				minSize: 15,
+				message: &DataGramMessage{},
 			},
 			NewTime: time.Now().Unix(),
 		},
@@ -141,7 +141,7 @@ func (c *UdpClient) Connect() error {
 	c.status = CL_CONNECTING
 	c.lock.Unlock()
 
-	Info("UdpClient.Connect: kcp://%s", c.addr)
+	Info("UdpClient.Connect: udp://%s", c.addr)
 	conn, err := net.Dial("udp", c.addr)
 	if err == nil {
 		c.lock.Lock()

@@ -104,7 +104,7 @@ func NewKcpClient(addr string, cfg *KcpConfig) *KcpClient {
 		socketClient: socketClient{
 			addr:    addr,
 			NewTime: time.Now().Unix(),
-			connWrapper: connWrapper{
+			dataStream: dataStream{
 				maxSize: 1514,
 				minSize: 15,
 			},
@@ -122,7 +122,7 @@ func NewKcpClientFromConn(conn net.Conn) *KcpClient {
 	c := &KcpClient{
 		socketClient: socketClient{
 			addr: conn.RemoteAddr().String(),
-			connWrapper: connWrapper{
+			dataStream: dataStream{
 				conn:    conn,
 				maxSize: 1514,
 				minSize: 15,

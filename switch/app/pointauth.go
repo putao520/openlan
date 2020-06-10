@@ -47,7 +47,7 @@ func (p *PointAuth) OnFrame(client libol.SocketClient, frame *libol.FrameMessage
 
 	//Dropped all frames if not auth.
 	if client.Status() != libol.CL_AUEHED {
-		libol.Debug("PointAuth.onRead: %s unAuth", client.Addr)
+		libol.Debug("PointAuth.OnFrame: %s unAuth", client.Addr())
 		return libol.NewErr("unAuth client.")
 	}
 

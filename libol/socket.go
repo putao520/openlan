@@ -1,8 +1,6 @@
 package libol
 
 import (
-	"bytes"
-	"encoding/binary"
 	"net"
 	"sync"
 	"time"
@@ -58,51 +56,8 @@ type SocketClient interface {
 	SetListener(listener ClientListener)
 }
 
-func readFull(conn net.Conn, buf []byte) error {
-	if conn == nil {
-		return NewErr("connection is nil")
-	}
-	offset := 0
-	left := len(buf)
-	Log("readFull: %d", len(buf))
-	for left > 0 {
-		tmp := make([]byte, left)
-		n, err := conn.Read(tmp)
-		if err != nil {
-			return err
-		}
-		copy(buf[offset:], tmp)
-		offset += n
-		left -= n
-	}
-	Log("readFull: Data %x", buf)
-	return nil
-}
-
-func writeFull(conn net.Conn, buf []byte) error {
-	if conn == nil {
-		return NewErr("connection is nil")
-	}
-	offset := 0
-	size := len(buf)
-	left := size - offset
-	Log("writeFull: %d", size)
-	Log("writeFull: Data %x", buf)
-	for left > 0 {
-		tmp := buf[offset:]
-		Log("writeFull: tmp %d", len(tmp))
-		n, err := conn.Write(tmp)
-		if err != nil {
-			return err
-		}
-		Log("writeFull: snd %d, size %d", n, size)
-		offset += n
-		left = size - offset
-	}
-	return nil
-}
-
-type connWrapper struct {
+type dataStream struct {
+	message Messager
 	conn    net.Conn
 	sts     ClientSts
 	maxSize int
@@ -110,80 +65,67 @@ type connWrapper struct {
 	connect func() error
 }
 
-func (t *connWrapper) String() string {
+func (t *dataStream) String() string {
 	if t.conn != nil {
 		return t.conn.RemoteAddr().String()
 	}
 	return "unknown"
 }
 
-func (t *connWrapper) IsOk() bool {
+func (t *dataStream) IsOk() bool {
 	return t.conn != nil
 }
 
-func (t *connWrapper) WriteMsg(data []byte) error {
+func (t *dataStream) WriteMsg(data []byte) error {
 	if err := t.connect(); err != nil {
 		t.sts.Dropped++
 		return err
 	}
-	buf := BuildMessage(data)
-	if err := writeFull(t.conn, buf); err != nil {
+	if t.message == nil { // default is stream message
+		t.message = &StreamMessage{}
+	}
+	n, err := t.message.Send(t.conn, data)
+	if err != nil {
 		t.sts.TxError++
 		return err
 	}
-	t.sts.TxOkay += uint64(len(data))
+	t.sts.TxOkay += uint64(n)
 	return nil
 }
 
-func (t *connWrapper) ReadMsg(data []byte) (int, error) {
-	Log("connWrapper.ReadMsg: %s", t)
-
+func (t *dataStream) ReadMsg(data []byte) (int, error) {
+	Log("dataStream.ReadMsg: %s", t)
 	if !t.IsOk() {
 		return -1, NewErr("%s: not okay", t)
 	}
-
-	hl := GetHeaderLen()
-	buffer := make([]byte, hl+t.maxSize)
-	h := buffer[:hl]
-	if err := readFull(t.conn, h); err != nil {
-		return -1, err
+	if t.message == nil { // default is stream message
+		t.message = &StreamMessage{}
 	}
-	magic := GetMagic()
-	if !bytes.Equal(h[0:2], magic) {
-		return -1, NewErr("%s: wrong magic", t)
+	size, err := t.message.Receive(t.conn, data, t.maxSize, t.minSize)
+	if err != nil {
+		return size, err
 	}
-
-	size := binary.BigEndian.Uint16(h[2:4])
-	if int(size) > t.maxSize || int(size) < t.minSize {
-		return -1, NewErr("%s: wrong size(%d)", t, size)
-	}
-	d := buffer[hl : hl+int(size)]
-	if err := readFull(t.conn, d); err != nil {
-		return -1, err
-	}
-
-	copy(data, d)
 	t.sts.RxOkay += uint64(size)
 
-	return len(d), nil
+	return size, nil
 }
 
-func (t *connWrapper) WriteReq(action string, body string) error {
+func (t *dataStream) WriteReq(action string, body string) error {
 	m := NewControlMessage(action, "= ", body)
 	data := m.Encode()
-	Log("connWrapper.WriteReq: %d %s", len(data), data[6:])
+	Log("dataStream.WriteReq: %d %s", len(data), data[6:])
 	return t.WriteMsg(data)
 }
 
-func (t *connWrapper) WriteResp(action string, body string) error {
+func (t *dataStream) WriteResp(action string, body string) error {
 	m := NewControlMessage(action, ": ", body)
 	data := m.Encode()
-	Log("connWrapper.WriteResp: %d %s", len(data), data[6:])
+	Log("dataStream.WriteResp: %d %s", len(data), data[6:])
 	return t.WriteMsg(data)
 }
 
 type socketClient struct {
-	connWrapper
+	dataStream
 	lock     sync.RWMutex
 	listener ClientListener
 	addr     string
