@@ -12,7 +12,6 @@ import (
 type PointAuth struct {
 	success int
 	failed  int
-
 	master Master
 }
 
