@@ -15,7 +15,7 @@ var defaultUdpConfig = UdpConfig{
 
 type UdpServer struct {
 	socketServer
-	udpCfg  *UdpConfig
+	udpCfg   *UdpConfig
 	listener net.Listener
 }
 

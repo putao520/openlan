@@ -7,12 +7,12 @@ import (
 )
 
 type XDP struct {
-	lock      sync.RWMutex
-	bufSize   int
-	conn      *net.UDPConn
-	addr      *net.UDPAddr
-	sessions  *SafeStrMap
-	accept    chan *XDPConn
+	lock     sync.RWMutex
+	bufSize  int
+	conn     *net.UDPConn
+	addr     *net.UDPAddr
+	sessions *SafeStrMap
+	accept   chan *XDPConn
 }
 
 func XDPListen(addr string) (net.Listener, error) {
@@ -21,10 +21,10 @@ func XDPListen(addr string) (net.Listener, error) {
 		return nil, err
 	}
 	x := &XDP{
-		addr: udpAddr,
+		addr:     udpAddr,
 		sessions: NewSafeStrMap(1024),
-		accept: make(chan *XDPConn, 2),
-		bufSize: MAXBUF,
+		accept:   make(chan *XDPConn, 2),
+		bufSize:  MAXBUF,
 	}
 	conn, err := net.ListenUDP("udp", udpAddr)
 	if err != nil {
@@ -67,7 +67,7 @@ func (x *XDP) Loop() {
 
 // Accept waits for and returns the next connection to the listener.
 func (x *XDP) Accept() (net.Conn, error) {
-	return <- x.accept, nil
+	return <-x.accept, nil
 }
 
 // Close closes the listener.
@@ -112,7 +112,7 @@ func (c *XDPConn) RxQ(b []byte) {
 }
 
 func (c *XDPConn) Read(b []byte) (n int, err error) {
-	d := <- c.rqueue
+	d := <-c.rqueue
 	return copy(b, d), nil
 }
 
@@ -156,5 +156,3 @@ func (c *XDPConn) SetWriteDeadline(t time.Time) error {
 	Warn("XDPConn.SetReadDeadline %s", "implement me")
 	return nil
 }
-
-

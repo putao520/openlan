@@ -101,7 +101,6 @@ func (c *ControlMessage) Encode() []byte {
 	return append(ZEROED[:6], p...)
 }
 
-
 func readFull(conn net.Conn, buf []byte) error {
 	if conn == nil {
 		return NewErr("connection is nil")
@@ -155,7 +154,7 @@ type StreamMessage struct {
 	//TODO
 }
 
-func (s *StreamMessage) Send(conn net.Conn, data []byte) (int, error)  {
+func (s *StreamMessage) Send(conn net.Conn, data []byte) (int, error) {
 	size := len(data)
 	buf := make([]byte, HSIZE+size)
 	copy(buf[0:2], MAGIC)
@@ -233,4 +232,3 @@ func (s *DataGramMessage) Receive(conn net.Conn, data []byte, max, min int) (int
 	copy(data, d)
 	return len(d), nil
 }
-
