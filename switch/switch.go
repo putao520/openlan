@@ -2,6 +2,7 @@ package _switch
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/main/config"
 	"github.com/danieldin95/openlan-go/models"
@@ -191,14 +192,36 @@ func (v *Switch) OnClient(client libol.SocketClient) error {
 	return nil
 }
 
+func (v *Switch) SignIn(client libol.SocketClient) error {
+	libol.Cmd("Switch.SignIn %s", client.String())
+	data := struct {
+		Address string `json:"address"`
+		Switch  string `json:"switch"`
+	}{
+		Address: client.String(),
+		Switch:  client.LocalAddr(),
+	}
+	body, err := json.Marshal(data)
+	if err != nil {
+		libol.Error("Switch.SignIn: %s", err)
+		return err
+	}
+	libol.Cmd("Switch.SignIn: %s", body)
+	if err := client.WriteReq("signin", string(body)); err != nil {
+		libol.Error("Switch.SignIn: %s", err)
+		return err
+	}
+	return nil
+}
+
 func (v *Switch) ReadClient(client libol.SocketClient, data []byte) error {
 	libol.Log("Switch.ReadClient: %s %x", client.Addr(), data)
 	if err := v.OnHook(client, data); err != nil {
 		libol.Debug("Switch.ReadClient: %s dropping by %s", client.Addr(), err)
-		// TODO send request to point login again.
+		// send request to point login again.
+		_ = v.SignIn(client)
 		return nil
 	}
-
 	private := client.Private()
 	if private != nil {
 		point := private.(*models.Point)

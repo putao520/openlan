@@ -18,17 +18,18 @@ import (
 )
 
 type SessWorkerListener struct {
-	OnClose   func(w *SessWorker) error
-	OnSuccess func(w *SessWorker) error
-	OnIpAddr  func(w *SessWorker, n *models.Network) error
+	OnClose   func(w *SocketWorker) error
+	OnSuccess func(w *SocketWorker) error
+	OnIpAddr  func(w *SocketWorker, n *models.Network) error
 	ReadAt    func(p []byte) error
 }
 
-type SessWorker struct {
-	lock     sync.RWMutex
+type SocketWorker struct {
+	// public
 	Listener SessWorkerListener
 	Client   libol.SocketClient
-
+	// private
+	lock        sync.RWMutex
 	maxSize     int
 	alias       string
 	user        *models.User
@@ -37,10 +38,11 @@ type SessWorker struct {
 	allowed     bool
 	initialized bool
 	idleTime    int64 // 15s timeout.
+	sleepTimes  int
 }
 
-func NewSessWorker(client libol.SocketClient, c *config.Point) (t *SessWorker) {
-	t = &SessWorker{
+func NewSessWorker(client libol.SocketClient, c *config.Point) (t *SocketWorker) {
+	t = &SocketWorker{
 		Client:      client,
 		maxSize:     c.If.Mtu,
 		user:        models.NewUser(c.Username, c.Password),
@@ -56,12 +58,18 @@ func NewSessWorker(client libol.SocketClient, c *config.Point) (t *SessWorker) {
 	return
 }
 
-func (t *SessWorker) Initialize() {
+func (t *SocketWorker) GetSleepIdle() time.Duration {
+	if t.sleepTimes < 20 {
+		t.sleepTimes++
+	}
+	return time.Duration(t.sleepTimes) * time.Second * 3
+}
+
+func (t *SocketWorker) Initialize() {
 	if t.Client == nil {
 		return
 	}
-
-	libol.Info("SessWorker.Initialize")
+	libol.Info("SocketWorker.Initialize")
 	t.initialized = true
 	t.Client.SetMaxSize(t.maxSize)
 	t.Client.SetListener(libol.ClientListener{
@@ -77,16 +85,15 @@ func (t *SessWorker) Initialize() {
 	})
 }
 
-func (t *SessWorker) Start() {
+func (t *SocketWorker) Start() {
 	if !t.initialized {
 		t.Initialize()
 	}
 	_ = t.Connect()
-
 	go t.Read()
 }
 
-func (t *SessWorker) Stop() {
+func (t *SocketWorker) Stop() {
 	t.Client.Terminal()
 
 	t.lock.Lock()
@@ -94,104 +101,98 @@ func (t *SessWorker) Stop() {
 	t.Client = nil
 }
 
-func (t *SessWorker) Close() {
+func (t *SocketWorker) Close() {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
-
 	if t.Client != nil {
 		t.Client.Close()
 	}
 }
 
-func (t *SessWorker) Connect() error {
+func (t *SocketWorker) Connect() error {
 	s := t.Client.Status()
 	if s != libol.CL_INIT {
-		libol.Warn("SessWorker.Connect status %d->%d", s, libol.CL_INIT)
+		libol.Warn("SocketWorker.Connect status %d->%d", s, libol.CL_INIT)
 		t.Client.SetStatus(libol.CL_INIT)
 	}
-
 	if err := t.Client.Connect(); err != nil {
-		libol.Error("SessWorker.Connect %s", err)
+		libol.Error("SocketWorker.Connect %s", err)
 		return err
 	}
 	return nil
 }
 
 // login request
-func (t *SessWorker) Login(client libol.SocketClient) error {
+func (t *SocketWorker) Login(client libol.SocketClient) error {
 	body, err := json.Marshal(t.user)
 	if err != nil {
-		libol.Error("SessWorker.Login: %s", err)
+		libol.Error("SocketWorker.Login: %s", err)
 		return err
 	}
-
-	libol.Cmd("SessWorker.Login: %s", body)
+	libol.Cmd("SocketWorker.Login: %s", body)
 	if err := client.WriteReq("login", string(body)); err != nil {
-		libol.Error("SessWorker.Login: %s", err)
+		libol.Error("SocketWorker.Login: %s", err)
 		return err
 	}
 	return nil
 }
 
 // network request
-func (t *SessWorker) Network(client libol.SocketClient) error {
+func (t *SocketWorker) Network(client libol.SocketClient) error {
 	body, err := json.Marshal(t.network)
 	if err != nil {
-		libol.Error("SessWorker.Network: %s", err)
+		libol.Error("SocketWorker.Network: %s", err)
 		return err
 	}
-
-	libol.Cmd("SessWorker.Network: %s", body)
+	libol.Cmd("SocketWorker.Network: %s", body)
 	if err := client.WriteReq("ipaddr", string(body)); err != nil {
-		libol.Error("SessWorker.Network: %s", err)
+		libol.Error("SocketWorker.Network: %s", err)
 		return err
 	}
 	return nil
 }
 
 // handle instruct from virtual switch
-func (t *SessWorker) onInstruct(data []byte) error {
+func (t *SocketWorker) onInstruct(data []byte) error {
 	m := libol.NewFrameMessage(data)
 	if !m.IsControl() {
 		return nil
 	}
-
 	action, resp := m.CmdAndParams()
-	libol.Cmd("SessWorker.onInstruct %s %s", action, resp)
+	libol.Cmd("SocketWorker.onInstruct %s %s", action, resp)
 	switch action {
 	case "logi:":
-		{
-			if resp[:4] == "okay" {
-				t.Client.SetStatus(libol.CL_AUEHED)
-				if t.Listener.OnSuccess != nil {
-					_ = t.Listener.OnSuccess(t)
-				}
-				if t.allowed {
-					_ = t.Network(t.Client)
-				}
-				libol.Info("SessWorker.onInstruct.login: success")
-			} else {
-				t.Client.SetStatus(libol.CL_UNAUTH)
-				libol.Error("SessWorker.onInstruct.login: %s", resp)
+		if resp[:4] == "okay" {
+			t.Client.SetStatus(libol.CL_AUEHED)
+			if t.Listener.OnSuccess != nil {
+				_ = t.Listener.OnSuccess(t)
 			}
+			t.sleepTimes = 0
+			if t.allowed {
+				_ = t.Network(t.Client)
+			}
+			libol.Info("SocketWorker.onInstruct.login: success")
+		} else {
+			t.Client.SetStatus(libol.CL_UNAUTH)
+			libol.Error("SocketWorker.onInstruct.login: %s", resp)
 		}
 	case "ipad:":
-		{
-			n := models.Network{}
-			if err := json.Unmarshal([]byte(resp), &n); err != nil {
-				return libol.NewErr("SessWorker.onInstruct: Invalid json data.")
-			}
-			if t.Listener.OnIpAddr != nil {
-				_ = t.Listener.OnIpAddr(t, &n)
-			}
+		n := models.Network{}
+		if err := json.Unmarshal([]byte(resp), &n); err != nil {
+			return libol.NewErr("SocketWorker.onInstruct: Invalid json data.")
 		}
+		if t.Listener.OnIpAddr != nil {
+			_ = t.Listener.OnIpAddr(t, &n)
+		}
+	case "sign=":
+		_ = t.Login(t.Client)
 	}
 	return nil
 }
 
-func (t *SessWorker) Read() {
-	libol.Info("SessWorker.Read: %s", t.Client.State())
-	defer libol.Catch("SessWorker.Read")
+func (t *SocketWorker) Read() {
+	libol.Info("SocketWorker.Read: %s", t.Client.State())
+	defer libol.Catch("SocketWorker.Read")
 
 	data := make([]byte, libol.MAXBUF)
 	for {
@@ -199,18 +200,18 @@ func (t *SessWorker) Read() {
 			break
 		}
 		if !t.Client.IsOk() {
-			time.Sleep(30 * time.Second) // sleep 30s and release cpu.
+			time.Sleep(t.GetSleepIdle()) // sleep 30s and release cpu.
 			_ = t.Connect()
 			continue
 		}
 		n, err := t.Client.ReadMsg(data)
 		if err != nil {
-			libol.Error("SessWorker.Read: %s", err)
+			libol.Error("SocketWorker.Read: %s", err)
 			t.Close()
 			continue
 		}
 		t.idleTime = time.Now().Unix()
-		libol.Log("SessWorker.Read: %x", data[:n])
+		libol.Log("SocketWorker.Read: %x", data[:n])
 		if n > 0 {
 			frame := data[:n]
 			if libol.IsControl(frame) {
@@ -220,23 +221,25 @@ func (t *SessWorker) Read() {
 			}
 		}
 	}
-
 	t.Close()
-	libol.Info("SessWorker.Read: exit")
+	libol.Info("SocketWorker.Read: exit")
 }
 
-func (t *SessWorker) DoWrite(data []byte) error {
-	libol.Log("SessWorker.DoWrite: %x", data)
-	//
-	//if time.Now().Unix()  - t.idleTime > 15 {
-	//	t.Close()
-	//	_ = t.Connect()
-	//}
+func (t *SocketWorker) Expire() {
+	if time.Now().Unix()-t.idleTime > 15 {
+		t.Close()
+		_ = t.Connect()
+	}
+}
+
+func (t *SocketWorker) DoWrite(data []byte) error {
+	libol.Log("SocketWorker.DoWrite: %x", data)
+	//t.Expire()
 	if t.Client == nil {
 		return libol.NewErr("Client is nil")
 	}
 	if t.Client.Status() != libol.CL_AUEHED {
-		libol.Debug("SessWorker.Loop: dropping by unAuth")
+		libol.Debug("SocketWorker.Loop: dropping by unAuth")
 		return nil
 	}
 	if err := t.Client.WriteMsg(data); err != nil {
@@ -246,11 +249,11 @@ func (t *SessWorker) DoWrite(data []byte) error {
 	return nil
 }
 
-func (t *SessWorker) Auth() (string, string) {
+func (t *SocketWorker) Auth() (string, string) {
 	return t.user.Name, t.user.Password
 }
 
-func (t *SessWorker) SetAuth(auth string) {
+func (t *SocketWorker) SetAuth(auth string) {
 	values := strings.Split(auth, ":")
 	t.user.Name = values[0]
 	if len(values) > 1 {
@@ -258,11 +261,11 @@ func (t *SessWorker) SetAuth(auth string) {
 	}
 }
 
-func (t *SessWorker) SetAddr(addr string) {
+func (t *SocketWorker) SetAddr(addr string) {
 	t.Client.SetAddr(addr)
 }
 
-func (t *SessWorker) SetUUID(v string) {
+func (t *SocketWorker) SetUUID(v string) {
 	t.user.UUID = v
 }
 
@@ -393,12 +396,13 @@ type TunEther struct {
 }
 
 type TapWorker struct {
+	// public
 	Device    network.Taper
 	Listener  TapWorkerListener
 	Ether     TunEther
 	Neighbors Neighbors
 	OpenAgain *libol.SafeVar
-
+	// private
 	lock        sync.RWMutex
 	devCfg      network.TapConfig
 	pointCfg    *config.Point
@@ -558,7 +562,6 @@ func (a *TapWorker) Read() {
 			}
 		}
 	}
-
 	a.Close()
 	libol.Info("TapWorker.Read: exit")
 }
@@ -619,36 +622,30 @@ func (a *TapWorker) onArp(data []byte) bool {
 			libol.Error("TapWorker.onArp: eth.dst not arp.shw %x.", arp.SIpAddr)
 			return true
 		}
-		switch arp.OpCode {
-		case libol.ARP_REQUEST:
-			if bytes.Equal(arp.TIpAddr, a.Ether.IpAddr) {
-				eth := a.NewEth(libol.ETHPARP, arp.SHwAddr)
-				reply := libol.NewArp()
-				reply.OpCode = libol.ARP_REPLY
-				reply.SIpAddr = a.Ether.IpAddr
-				reply.TIpAddr = arp.SIpAddr
-				reply.SHwAddr = a.Ether.HwAddr
-				reply.THwAddr = arp.SHwAddr
-				buffer := make([]byte, 0, a.pointCfg.If.Mtu)
-				buffer = append(buffer, eth.Encode()...)
-				buffer = append(buffer, reply.Encode()...)
-
-				libol.Info("TapWorker.onArp: reply %x.", buffer)
-				if a.Listener.ReadAt != nil {
-					_ = a.Listener.ReadAt(buffer)
-				}
+		if arp.OpCode == libol.ARP_REQUEST && bytes.Equal(arp.TIpAddr, a.Ether.IpAddr) {
+			eth := a.NewEth(libol.ETHPARP, arp.SHwAddr)
+			reply := libol.NewArp()
+			reply.OpCode = libol.ARP_REPLY
+			reply.SIpAddr = a.Ether.IpAddr
+			reply.TIpAddr = arp.SIpAddr
+			reply.SHwAddr = a.Ether.HwAddr
+			reply.THwAddr = arp.SHwAddr
+			buffer := make([]byte, 0, a.pointCfg.If.Mtu)
+			buffer = append(buffer, eth.Encode()...)
+			buffer = append(buffer, reply.Encode()...)
+			libol.Info("TapWorker.onArp: reply %x.", buffer)
+			if a.Listener.ReadAt != nil {
+				_ = a.Listener.ReadAt(buffer)
 			}
-		case libol.ARP_REPLY:
-			if bytes.Equal(arp.THwAddr, a.Ether.HwAddr) {
-				a.Neighbors.Add(&Neighbor{
-					HwAddr:  arp.SHwAddr,
-					IpAddr:  arp.SIpAddr,
-					NewTime: time.Now().Unix(),
-					Uptime:  time.Now().Unix(),
-				})
-			}
+		} else if arp.OpCode == libol.ARP_REPLY && bytes.Equal(arp.THwAddr, a.Ether.HwAddr) {
+			a.Neighbors.Add(&Neighbor{
+				HwAddr:  arp.SHwAddr,
+				IpAddr:  arp.SIpAddr,
+				NewTime: time.Now().Unix(),
+				Uptime:  time.Now().Unix(),
+			})
 			libol.Info("TapWorker.onArp: recv %x on %x.", arp.SHwAddr, arp.SIpAddr)
-		default:
+		} else {
 			libol.Warn("TapWorker.onArp: not op %x.", arp.OpCode)
 		}
 	}
@@ -659,7 +656,6 @@ func (a *TapWorker) Close() {
 	libol.Info("TapWorker.Close")
 	a.lock.Lock()
 	defer a.lock.Unlock()
-
 	if a.Device != nil {
 		if a.Listener.OnClose != nil {
 			a.Listener.OnClose(a)
@@ -730,11 +726,12 @@ func GetTapCfg(c *config.Point) network.TapConfig {
 }
 
 type Worker struct {
+	// public
 	IfAddr   string
 	Listener WorkerListener
-
+	// private
 	http        *http.Http
-	tcpWorker   *SessWorker
+	tcpWorker   *SocketWorker
 	tapWorker   *TapWorker
 	config      *config.Point
 	uuid        string
@@ -870,7 +867,7 @@ func (p *Worker) IfName() string {
 	return ""
 }
 
-func (p *Worker) Worker() *SessWorker {
+func (p *Worker) Worker() *SocketWorker {
 	if p.tcpWorker != nil {
 		return p.tcpWorker
 	}
@@ -890,7 +887,7 @@ func (p *Worker) FindDest(dest []byte) []byte {
 	return dest
 }
 
-func (p *Worker) OnIpAddr(w *SessWorker, n *models.Network) error {
+func (p *Worker) OnIpAddr(w *SocketWorker, n *models.Network) error {
 	libol.Info("Worker.OnIpAddr: %s/%s, %s", n.IfAddr, n.Netmask, n.Routes)
 
 	prefix := libol.Netmask2Len(n.Netmask)
@@ -946,13 +943,13 @@ func (p *Worker) FreeIpAddr() {
 	p.network = nil
 }
 
-func (p *Worker) OnClose(w *SessWorker) error {
+func (p *Worker) OnClose(w *SocketWorker) error {
 	libol.Info("Worker.OnClose")
 	p.FreeIpAddr()
 	return nil
 }
 
-func (p *Worker) OnSuccess(w *SessWorker) error {
+func (p *Worker) OnSuccess(w *SocketWorker) error {
 	libol.Info("Worker.OnSuccess")
 
 	if p.Listener.AddAddr != nil {

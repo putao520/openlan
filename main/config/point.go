@@ -55,11 +55,11 @@ func NewPoint() (c *Point) {
 		Allowed: true,
 	}
 	flag.StringVar(&c.Alias, "alias", pointDef.Alias, "Alias for this point")
-	flag.StringVar(&c.Network, "network", pointDef.Network, "Network name")
-	flag.StringVar(&c.Addr, "connection", pointDef.Addr, "Virtual switch connect to")
-	flag.StringVar(&c.Username, "username", pointDef.Username, "Accessed username")
-	flag.StringVar(&c.Password, "password", pointDef.Password, "Accessed password")
-	flag.StringVar(&c.Protocol, "protocol", pointDef.Protocol, "Connection protocol")
+	flag.StringVar(&c.Network, "net", pointDef.Network, "Network name")
+	flag.StringVar(&c.Addr, "conn", pointDef.Addr, "Virtual switch connect to")
+	flag.StringVar(&c.Username, "user", pointDef.Username, "Accessed username")
+	flag.StringVar(&c.Password, "pass", pointDef.Password, "Accessed password")
+	flag.StringVar(&c.Protocol, "proto", pointDef.Protocol, "Connection protocol")
 	flag.IntVar(&c.Log.Verbose, "log:level", pointDef.Log.Verbose, "log level")
 	flag.StringVar(&c.Log.File, "log:file", pointDef.Log.File, "log saved to file")
 	flag.StringVar(&c.If.Name, "if:name", pointDef.If.Name, "Configure interface name")
