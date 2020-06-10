@@ -19,11 +19,12 @@ func main() {
 			panic(e)
 		}
 		go func(conn net.Conn) {
-			var buffer = make([]byte, 1024, 1024)
+			var buffer = make([]byte, 4096)
 			for {
 				n, e := conn.Read(buffer)
 				if e != nil {
 					if e == io.EOF {
+						fmt.Println("receive EOF")
 						break
 					}
 					fmt.Println(e)

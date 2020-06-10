@@ -52,6 +52,8 @@ func NewSwitch(c config.Switch) *Switch {
 	}
 	if c.Protocol == "kcp" {
 		server = libol.NewKcpServer(c.Listen, nil)
+	} else if c.Protocol == "udp" {
+		server = libol.NewUdpServer(c.Listen, nil)
 	} else {
 		server = libol.NewTcpServer(c.Listen, tlsCfg)
 	}
@@ -181,7 +183,7 @@ func (v *Switch) OnClient(client libol.SocketClient) error {
 }
 
 func (v *Switch) ReadClient(client libol.SocketClient, data []byte) error {
-	libol.Log("Switch.ReadClient: %s % x", client.Addr(), data)
+	libol.Log("Switch.ReadClient: %s %x", client.Addr(), data)
 	if err := v.OnHook(client, data); err != nil {
 		libol.Debug("Switch.OnRead: %s dropping by %s", client.Addr(), err)
 		return nil
@@ -347,7 +349,7 @@ func (v *Switch) ReadTap(dev network.Taper, readAt func(p []byte) error) {
 			libol.Error("Switch.ReadTap: %s", err)
 			break
 		}
-		libol.Log("Switch.ReadTap: % x\n", data)
+		libol.Log("Switch.ReadTap: %x\n", data[:n])
 		if err := readAt(data[:n]); err != nil {
 			libol.Error("Switch.ReadTap: do-recv %s %s", dev.Name(), err)
 			break

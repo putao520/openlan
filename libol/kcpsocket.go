@@ -78,12 +78,15 @@ func (k *KcpServer) Accept() {
 	}
 	defer k.Close()
 	for {
-		conn, err := k.listener.Accept()
+		conn, err := k.listener.AcceptKCP()
 		if err != nil {
 			Error("KcpServer.Accept: %s", err)
 			return
 		}
 		k.sts.AcpCount++
+		conn.SetStreamMode(true)
+		conn.SetWriteDelay(false)
+		conn.SetACKNoDelay(false)
 		k.onClients <- NewKcpClientFromConn(conn)
 	}
 }
@@ -150,6 +153,9 @@ func (c *KcpClient) Connect() error {
 	Info("KcpClient.Connect: kcp://%s", c.addr)
 	conn, err := kcp.DialWithOptions(c.addr, c.kcpCfg.block, c.kcpCfg.dataShards, c.kcpCfg.dataShards)
 	if err == nil {
+		conn.SetStreamMode(true)
+		conn.SetWriteDelay(false)
+		conn.SetACKNoDelay(false)
 		c.lock.Lock()
 		c.conn = conn
 		c.status = CL_CONNECTED

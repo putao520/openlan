@@ -67,7 +67,7 @@ func (m *FrameMessage) Data() []byte {
 }
 
 func (m *FrameMessage) String() string {
-	return fmt.Sprintf("control: %t,raw:% x", m.control, m.raw[:20])
+	return fmt.Sprintf("control: %t, raw: %x", m.control, m.raw[:20])
 }
 
 func (m *FrameMessage) CmdAndParams() (string, string) {

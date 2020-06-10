@@ -95,6 +95,7 @@ func writeFull(conn net.Conn, buf []byte) error {
 		if err != nil {
 			return err
 		}
+		Log("writeFull: snd %d, size %d", n, size)
 		offset += n
 		left = size - offset
 	}
@@ -107,6 +108,13 @@ type connWrapper struct {
 	maxSize int
 	minSize int
 	connect func() error
+}
+
+func (t *connWrapper) String() string {
+	if t.conn != nil {
+		return t.conn.RemoteAddr().String()
+	}
+	return "unknown"
 }
 
 func (t *connWrapper) IsOk() bool {

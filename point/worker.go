@@ -36,6 +36,7 @@ type SessWorker struct {
 	routes      map[string]*models.Route
 	allowed     bool
 	initialized bool
+	idleTime    int64 // 15s timeout.
 }
 
 func NewSessWorker(client libol.SocketClient, c *config.Point) (t *SessWorker) {
@@ -47,6 +48,7 @@ func NewSessWorker(client libol.SocketClient, c *config.Point) (t *SessWorker) {
 		routes:      make(map[string]*models.Route, 64),
 		allowed:     c.Allowed,
 		initialized: false,
+		idleTime:    time.Now().Unix(),
 	}
 	t.user.Alias = c.Alias
 	t.user.Network = c.Network
@@ -196,7 +198,6 @@ func (t *SessWorker) Read() {
 		if t.Client == nil || t.Client.Have(libol.CL_TERMINAL) {
 			break
 		}
-
 		if !t.Client.IsOk() {
 			time.Sleep(30 * time.Second) // sleep 30s and release cpu.
 			_ = t.Connect()
@@ -208,6 +209,7 @@ func (t *SessWorker) Read() {
 			t.Close()
 			continue
 		}
+		t.idleTime = time.Now().Unix()
 		libol.Log("SessWorker.Read: %x", data[:n])
 		if n > 0 {
 			frame := data[:n]
@@ -225,7 +227,11 @@ func (t *SessWorker) Read() {
 
 func (t *SessWorker) DoWrite(data []byte) error {
 	libol.Log("SessWorker.DoWrite: %x", data)
-
+	//
+	//if time.Now().Unix()  - t.idleTime > 15 {
+	//	t.Close()
+	//	_ = t.Connect()
+	//}
 	if t.Client == nil {
 		return libol.NewErr("Client is nil")
 	}
@@ -729,6 +735,8 @@ func (p *Worker) Initialize() {
 	}
 	if p.config.Protocol == "kcp" {
 		client = libol.NewKcpClient(p.config.Addr, nil)
+	} else if p.config.Protocol == "udp" {
+		client = libol.NewUdpClient(p.config.Addr, nil)
 	} else { // default is tcp/tls
 		client = libol.NewTcpClient(p.config.Addr, tlsConf)
 	}
