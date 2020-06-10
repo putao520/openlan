@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-type SessWorkerListener struct {
+type SocketWorkerListener struct {
 	OnClose   func(w *SocketWorker) error
 	OnSuccess func(w *SocketWorker) error
 	OnIpAddr  func(w *SocketWorker, n *models.Network) error
@@ -26,7 +26,7 @@ type SessWorkerListener struct {
 
 type SocketWorker struct {
 	// public
-	Listener SessWorkerListener
+	Listener SocketWorkerListener
 	Client   libol.SocketClient
 	// private
 	lock        sync.RWMutex
@@ -41,7 +41,7 @@ type SocketWorker struct {
 	sleepTimes  int
 }
 
-func NewSessWorker(client libol.SocketClient, c *config.Point) (t *SocketWorker) {
+func NewSocketWorker(client libol.SocketClient, c *config.Point) (t *SocketWorker) {
 	t = &SocketWorker{
 		Client:      client,
 		maxSize:     c.If.Mtu,
@@ -756,14 +756,14 @@ func (p *Worker) Initialize() {
 	libol.Info("Worker.Initialize")
 	client := GetSocketClient(p.config)
 	p.initialized = true
-	p.tcpWorker = NewSessWorker(client, p.config)
+	p.tcpWorker = NewSocketWorker(client, p.config)
 
 	tapCfg := GetTapCfg(p.config)
 	// register listener
 	p.tapWorker = NewTapWorker(tapCfg, p.config)
 
 	p.tcpWorker.SetUUID(p.UUID())
-	p.tcpWorker.Listener = SessWorkerListener{
+	p.tcpWorker.Listener = SocketWorkerListener{
 		OnClose:   p.OnClose,
 		OnSuccess: p.OnSuccess,
 		OnIpAddr:  p.OnIpAddr,
