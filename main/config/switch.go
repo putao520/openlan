@@ -88,7 +88,7 @@ type Switch struct {
 
 var sd = Switch{
 	Alias:   "",
-	Timeout: 120,
+	Timeout: 5 * 60,
 	Log: Log{
 		File:    "./openlan-switch.log",
 		Verbose: libol.INFO,

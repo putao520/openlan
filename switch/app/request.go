@@ -90,4 +90,3 @@ func (r *WithRequest) OnLeave(client libol.SocketClient, data string) {
 	libol.Info("WithRequest.OnLeave: %s", client.RemoteAddr())
 	r.master.OffClient(client)
 }
-
