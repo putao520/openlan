@@ -112,8 +112,8 @@ func (w *Worker) UpTime() int64 {
 
 func (w *Worker) AddLink(c *config.Point) {
 	c.Alias = w.Alias
-	c.If.Bridge = w.Conf.Bridge.Name //Reset bridge name.
-	c.Allowed = false
+	c.Intf.Bridge = w.Conf.Bridge.Name //Reset bridge name.
+	c.RequestAddr = false
 	c.Network = w.Conf.Name
 	go func() {
 		p := point.NewPoint(c)

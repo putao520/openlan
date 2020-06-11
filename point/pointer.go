@@ -31,7 +31,7 @@ func NewMixPoint(config *config.Point) MixPoint {
 	p := MixPoint{
 		Tenant: config.Network,
 		worker: Worker{
-			IfAddr: config.If.Address,
+			IfAddr: config.Intf.Address,
 			config: config,
 		},
 		config:     config,

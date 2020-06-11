@@ -18,12 +18,12 @@ func (l Server) Router(router *mux.Router) {
 func (l Server) List(w http.ResponseWriter, r *http.Request) {
 	server := l.Switcher.Server()
 	data := &struct {
-		UpTime int64 `json:"uptime"`
+		UpTime     int64           `json:"uptime"`
 		Statistic  libol.ServerSts `json:"statistic"`
 		Connection []interface{}
 	}{
-		UpTime: l.Switcher.UpTime(),
-		Statistic: server.Sts(),
+		UpTime:     l.Switcher.UpTime(),
+		Statistic:  server.Sts(),
 		Connection: make([]interface{}, 0, 1024),
 	}
 	for u := range server.ListClient() {

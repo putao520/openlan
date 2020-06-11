@@ -18,7 +18,7 @@ type Point struct {
 
 func NewPoint(config *config.Point) *Point {
 	p := Point{
-		BrName:   config.If.Bridge,
+		BrName:   config.Intf.Bridge,
 		MixPoint: NewMixPoint(config),
 	}
 	return &p

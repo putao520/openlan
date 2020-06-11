@@ -15,18 +15,18 @@ type Interface struct {
 }
 
 type Point struct {
-	Alias    string    `json:"name,omitempty" yaml:"name,omitempty"`
-	Network  string    `json:"network,omitempty" yaml:"network,omitempty"`
-	Addr     string    `json:"connection" yaml:"connection"`
-	Timeout  int       `json:"timeout"`
-	Username string    `json:"username,omitempty" yaml:"username,omitempty"`
-	Password string    `json:"password,omitempty" yaml:"password,omitempty"`
-	Protocol string    `json:"protocol,omitempty" yaml:"protocol,omitempty"`
-	If       Interface `json:"interface" yaml:"interface"`
-	Log      Log       `json:"log" yaml:"log"`
-	Http     *Http     `json:"http,omitempty" yaml:"http,omitempty"`
-	Allowed  bool      `json:"-" yaml:"-"`
-	SaveFile string    `json:"-" yaml:"-"`
+	Alias       string    `json:"name,omitempty" yaml:"name,omitempty"`
+	Network     string    `json:"network,omitempty" yaml:"network,omitempty"`
+	Addr        string    `json:"connection" yaml:"connection"`
+	Timeout     int       `json:"timeout"`
+	Username    string    `json:"username,omitempty" yaml:"username,omitempty"`
+	Password    string    `json:"password,omitempty" yaml:"password,omitempty"`
+	Protocol    string    `json:"protocol,omitempty" yaml:"protocol,omitempty"`
+	Intf        Interface `json:"interface" yaml:"interface"`
+	Log         Log       `json:"log" yaml:"log"`
+	Http        *Http     `json:"http,omitempty" yaml:"http,omitempty"`
+	RequestAddr bool      `json:"-" yaml:"-"`
+	SaveFile    string    `json:"-" yaml:"-"`
 }
 
 var pd = Point{
@@ -38,7 +38,7 @@ var pd = Point{
 		File:    "./point.log",
 		Verbose: libol.INFO,
 	},
-	If: Interface{
+	Intf: Interface{
 		Mtu:      1518,
 		Provider: "tap",
 		Name:     "",
@@ -46,15 +46,15 @@ var pd = Point{
 	Http: &Http{
 		Listen: "0.0.0.0:10001",
 	},
-	SaveFile: "./point.json",
-	Network:  "default",
-	Allowed:  true,
+	SaveFile:    "./point.json",
+	Network:     "default",
+	RequestAddr: true,
 }
 
 func NewPoint() (c *Point) {
 	c = &Point{
-		Http:    &Http{},
-		Allowed: true,
+		Http:        &Http{},
+		RequestAddr: true,
 	}
 	flag.StringVar(&c.Alias, "alias", pd.Alias, "Alias for this point")
 	flag.StringVar(&c.Network, "net", pd.Network, "Network name")
@@ -65,10 +65,10 @@ func NewPoint() (c *Point) {
 	flag.IntVar(&c.Timeout, "timeout", pd.Timeout, "Time in secs socket dead")
 	flag.IntVar(&c.Log.Verbose, "log:level", pd.Log.Verbose, "Log level")
 	flag.StringVar(&c.Log.File, "log:file", pd.Log.File, "Log saved to file")
-	flag.StringVar(&c.If.Name, "if:name", pd.If.Name, "Configure interface name")
-	flag.StringVar(&c.If.Address, "if:addr", pd.If.Address, "Configure interface address")
-	flag.StringVar(&c.If.Bridge, "if:br", pd.If.Bridge, "Configure bridge name")
-	flag.StringVar(&c.If.Provider, "if:provider", pd.If.Provider, "Interface provider")
+	flag.StringVar(&c.Intf.Name, "if:name", pd.Intf.Name, "Configure interface name")
+	flag.StringVar(&c.Intf.Address, "if:addr", pd.Intf.Address, "Configure interface address")
+	flag.StringVar(&c.Intf.Bridge, "if:br", pd.Intf.Bridge, "Configure bridge name")
+	flag.StringVar(&c.Intf.Provider, "if:provider", pd.Intf.Provider, "Interface provider")
 	flag.StringVar(&c.Http.Listen, "http:listen", pd.Http.Listen, "Http listen on")
 	flag.StringVar(&c.SaveFile, "conf", pd.SaveFile, "the configuration file")
 	flag.Parse()
@@ -87,7 +87,7 @@ func (c *Point) Right() {
 	}
 	RightAddr(&c.Addr, 10002)
 	if runtime.GOOS == "darwin" {
-		c.If.Provider = "tun"
+		c.Intf.Provider = "tun"
 	}
 }
 
@@ -98,8 +98,8 @@ func (c *Point) Default() {
 	if c.Addr == "" {
 		c.Addr = pd.Addr
 	}
-	if c.If.Mtu == 0 {
-		c.If.Mtu = pd.If.Mtu
+	if c.Intf.Mtu == 0 {
+		c.Intf.Mtu = pd.Intf.Mtu
 	}
 	if c.Timeout == 0 {
 		c.Timeout = pd.Timeout

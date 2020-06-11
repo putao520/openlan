@@ -58,7 +58,7 @@ func NewSocketWorker(client libol.SocketClient, c *config.Point) (t *SocketWorke
 	t = &SocketWorker{
 		Client:      client,
 		user:        models.NewUser(c.Username, c.Password),
-		network:     models.NewNetwork(c.Network, c.If.Address),
+		network:     models.NewNetwork(c.Network, c.Intf.Address),
 		routes:      make(map[string]*models.Route, 64),
 		initialized: false,
 		lastTime:    time.Now().Unix(),
@@ -89,7 +89,7 @@ func (t *SocketWorker) Initialize() {
 	}
 	libol.Info("SocketWorker.Initialize")
 	t.initialized = true
-	t.Client.SetMaxSize(t.pointCfg.If.Mtu)
+	t.Client.SetMaxSize(t.pointCfg.Intf.Mtu)
 	t.Client.SetListener(libol.ClientListener{
 		OnConnected: func(client libol.SocketClient) error {
 			return t.Login(client)
@@ -184,13 +184,13 @@ func (t *SocketWorker) onInstruct(data []byte) error {
 	libol.Cmd("SocketWorker.onInstruct %s %s", action, resp)
 	switch action {
 	case "logi:":
-		if resp[:4] == "okay" {
+		if strings.HasPrefix(resp, "okay") {
 			t.Client.SetStatus(libol.ClAuth)
 			if t.Listener.OnSuccess != nil {
 				_ = t.Listener.OnSuccess(t)
 			}
 			t.sleepTimes = 0
-			if t.pointCfg.Allowed {
+			if t.pointCfg.RequestAddr {
 				_ = t.Network(t.Client)
 			}
 			libol.Info("SocketWorker.onInstruct.login: success")
@@ -412,7 +412,7 @@ func (a *TapWorker) DoTun() {
 	if a.Device == nil || !a.Device.IsTun() {
 		return
 	}
-	a.SetEther(a.pointCfg.If.Address)
+	a.SetEther(a.pointCfg.Intf.Address)
 	a.Ether.HwAddr = libol.GenEthAddr(6)
 	libol.Info("TapWorker.DoTun: src %x", a.Ether.HwAddr)
 }
@@ -454,7 +454,7 @@ func (a *TapWorker) onMiss(dest []byte) {
 	reply.SHwAddr = a.Ether.HwAddr
 	reply.THwAddr = libol.ZEROED
 
-	buffer := make([]byte, 0, a.pointCfg.If.Mtu)
+	buffer := make([]byte, 0, a.pointCfg.Intf.Mtu)
 	buffer = append(buffer, eth.Encode()...)
 	buffer = append(buffer, reply.Encode()...)
 
@@ -582,7 +582,7 @@ func (a *TapWorker) onArp(data []byte) bool {
 			reply.TIpAddr = arp.SIpAddr
 			reply.SHwAddr = a.Ether.HwAddr
 			reply.THwAddr = arp.SHwAddr
-			buffer := make([]byte, 0, a.pointCfg.If.Mtu)
+			buffer := make([]byte, 0, a.pointCfg.Intf.Mtu)
 			buffer = append(buffer, eth.Encode()...)
 			buffer = append(buffer, reply.Encode()...)
 			libol.Info("TapWorker.onArp: reply %x.", buffer)
@@ -662,17 +662,17 @@ func GetSocketClient(c *config.Point) libol.SocketClient {
 }
 
 func GetTapCfg(c *config.Point) network.TapConfig {
-	if c.If.Provider == "tun" {
+	if c.Intf.Provider == "tun" {
 		return network.TapConfig{
 			Type:    network.TUN,
-			Name:    c.If.Name,
-			Network: c.If.Address,
+			Name:    c.Intf.Name,
+			Network: c.Intf.Address,
 		}
 	} else {
 		return network.TapConfig{
 			Type:    network.TAP,
-			Name:    c.If.Name,
-			Network: c.If.Address,
+			Name:    c.Intf.Name,
+			Network: c.Intf.Address,
 		}
 	}
 }
@@ -694,7 +694,7 @@ type Worker struct {
 
 func NewWorker(config *config.Point) (p *Worker) {
 	return &Worker{
-		IfAddr:      config.If.Address,
+		IfAddr:      config.Intf.Address,
 		config:      config,
 		initialized: false,
 		routes:      make([]PrefixRule, 0, 32),
