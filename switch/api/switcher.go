@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/main/config"
 	"github.com/danieldin95/openlan-go/switch/schema"
 )
@@ -12,6 +13,7 @@ type Switcher interface {
 	AddLink(tenant string, c *config.Point)
 	DelLink(tenant, addr string)
 	Config() *config.Switch
+	Server() libol.SocketServer
 }
 
 func NewWorkerSchema(s Switcher) schema.Worker {

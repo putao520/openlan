@@ -87,7 +87,7 @@ type Switch struct {
 }
 
 var vSwitchDef = Switch{
-	Alias: "",
+	Alias:   "",
 	Timeout: 30,
 	Log: Log{
 		File:    "./openlan-switch.log",

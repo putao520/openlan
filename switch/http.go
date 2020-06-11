@@ -140,6 +140,7 @@ func (h *Http) LoadRouter() {
 	api.OnLine{}.Router(router)
 	api.Ctrl{Switcher: h.switcher}.Router(router)
 	api.Lease{}.Router(router)
+	api.Server{Switcher: h.switcher}.Router(router)
 }
 
 func (h *Http) LoadToken() error {

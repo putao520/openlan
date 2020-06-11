@@ -365,11 +365,11 @@ func (v *Switch) UUID() string {
 }
 
 func (v *Switch) AddLink(tenant string, c *config.Point) {
-
+	//TODO
 }
 
 func (v *Switch) DelLink(tenant, addr string) {
-
+	//TODO
 }
 
 func (v *Switch) ReadTap(dev network.Taper, readAt func(p []byte) error) {

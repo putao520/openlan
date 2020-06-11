@@ -21,7 +21,7 @@ func NewTcpServer(listen string, cfg *tls.Config) *TcpServer {
 			address:    listen,
 			sts:        ServerSts{},
 			maxClient:  1024,
-			clients:    make(map[SocketClient]bool, 1024),
+			clients:    NewSafeStrMap(1024),
 			onClients:  make(chan SocketClient, 4),
 			offClients: make(chan SocketClient, 8),
 		},
@@ -121,13 +121,6 @@ func NewTcpClientFromConn(conn net.Conn) *TcpClient {
 	}
 	t.connecter = t.Connect
 	return t
-}
-
-func (t *TcpClient) LocalAddr() string {
-	if t.connection != nil {
-		return t.connection.LocalAddr().String()
-	}
-	return t.address
 }
 
 func (t *TcpClient) Connect() error {

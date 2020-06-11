@@ -31,7 +31,7 @@ func NewKcpServer(listen string, cfg *KcpConfig) *KcpServer {
 			address:    listen,
 			sts:        ServerSts{},
 			maxClient:  1024,
-			clients:    make(map[SocketClient]bool, 1024),
+			clients:    NewSafeStrMap(1024),
 			onClients:  make(chan SocketClient, 4),
 			offClients: make(chan SocketClient, 8),
 		},
@@ -132,13 +132,6 @@ func NewKcpClientFromConn(conn net.Conn) *KcpClient {
 	}
 	c.connecter = c.Connect
 	return c
-}
-
-func (c *KcpClient) LocalAddr() string {
-	if c.connection != nil {
-		return c.connection.LocalAddr().String()
-	}
-	return c.address
 }
 
 func (c *KcpClient) Connect() error {

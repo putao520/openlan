@@ -17,10 +17,10 @@ const (
 )
 
 type ClientSts struct {
-	SendOkay  uint64
-	RecvOkay  uint64
-	SendError uint64
-	Dropped   uint64
+	SendOkay  uint64 `json:"send"`
+	RecvOkay  uint64 `json:"recv"`
+	SendError uint64 `json:"error"`
+	Dropped   uint64 `json:"dropped"`
 }
 
 type ClientListener struct {
@@ -31,6 +31,7 @@ type ClientListener struct {
 
 type SocketClient interface {
 	LocalAddr() string
+	RemoteAddr() string
 	Connect() error
 	Close()
 	WriteMsg(data []byte) error
@@ -212,14 +213,28 @@ func (s *socketClient) SetListener(listener ClientListener) {
 	s.listener = listener
 }
 
+func (s *socketClient) LocalAddr() string {
+	if s.connection != nil {
+		return s.connection.LocalAddr().String()
+	}
+	return s.address
+}
+
+func (s *socketClient) RemoteAddr() string {
+	if s.connection != nil {
+		return s.connection.RemoteAddr().String()
+	}
+	return s.address
+}
+
 // Socket Server
 
 type ServerSts struct {
-	RecvCount   int64
-	SendCount   int64
-	DropCount   int64
-	AcceptCount int64
-	CloseCount  int64
+	RecvCount   int64 `json:"recv"`
+	SendCount   int64 `json:"send"`
+	DropCount   int64 `json:"dropped"`
+	AcceptCount int64 `json:"accept"`
+	CloseCount  int64 `json:"closed"`
 }
 
 type ServerListener struct {
@@ -234,6 +249,7 @@ type SocketServer interface {
 	Listen() (err error)
 	Close()
 	Accept()
+	ListClient() <-chan SocketClient
 	OffClient(client SocketClient)
 	Loop(call ServerListener)
 	Read(client SocketClient, ReadAt ReadClient)
@@ -247,10 +263,23 @@ type socketServer struct {
 	sts        ServerSts
 	address    string
 	maxClient  int
-	clients    map[SocketClient]bool
+	clients    *SafeStrMap
 	onClients  chan SocketClient
 	offClients chan SocketClient
 	close      func()
+}
+
+func (t *socketServer) ListClient() <-chan SocketClient {
+	list := make(chan SocketClient, 32)
+	go func() {
+		t.clients.Iter(func(k string, v interface{}) {
+			if client, ok := v.(SocketClient); ok {
+				list <- client
+			}
+		})
+		list <- nil
+	}()
+	return list
 }
 
 func (t *socketServer) OffClient(client SocketClient) {
@@ -262,7 +291,7 @@ func (t *socketServer) OffClient(client SocketClient) {
 
 func (t *socketServer) doOnClient(call ServerListener, client SocketClient) {
 	Debug("socketServer.doOnClient: %s", client.Addr())
-	t.clients[client] = true
+	_ = t.clients.Set(client.RemoteAddr(), client)
 	if call.OnClient != nil {
 		_ = call.OnClient(client)
 		if call.ReadAt != nil {
@@ -273,13 +302,13 @@ func (t *socketServer) doOnClient(call ServerListener, client SocketClient) {
 
 func (t *socketServer) doOffClient(call ServerListener, client SocketClient) {
 	Debug("socketServer.doOffClient: %s", client.Addr())
-	if ok := t.clients[client]; ok {
+	if _, ok := t.clients.GetEx(client.RemoteAddr()); ok {
 		t.sts.CloseCount++
 		if call.OnClose != nil {
 			_ = call.OnClose(client)
 		}
 		client.Close()
-		delete(t.clients, client)
+		t.clients.Del(client.RemoteAddr())
 	}
 }
 

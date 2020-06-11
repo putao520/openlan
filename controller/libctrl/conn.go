@@ -73,7 +73,7 @@ func (cn *Conn) Close() {
 	if cn.Wait != nil {
 		cn.Wait.Done()
 	}
-	cn.Conn.Close()
+	_ = cn.Conn.Close()
 	cn.Conn = nil
 	cn.SendQ = nil
 	cn.RecvQ = nil
