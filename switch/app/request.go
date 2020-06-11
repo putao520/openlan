@@ -5,6 +5,7 @@ import (
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/main/config"
 	"github.com/danieldin95/openlan-go/models"
+	"github.com/danieldin95/openlan-go/switch/schema"
 	"github.com/danieldin95/openlan-go/switch/storage"
 	"strings"
 )
@@ -47,7 +48,16 @@ func (r *WithRequest) OnDefault(client libol.SocketClient, data string) {
 }
 
 func (r *WithRequest) OnNeighbor(client libol.SocketClient, data string) {
-	libol.Info("TODO WithRequest.OnNeighbor: %s from %s", data, client)
+	resp := make([]schema.Neighbor, 0, 32)
+	for obj := range storage.Neighbor.List() {
+		if obj == nil {
+			break
+		}
+		resp = append(resp, models.NewNeighborSchema(obj))
+	}
+	if respStr, err := json.Marshal(resp); err == nil {
+		_ = client.WriteResp("neighbor", string(respStr))
+	}
 }
 
 func (r *WithRequest) OnIpAddr(client libol.SocketClient, data string) {
