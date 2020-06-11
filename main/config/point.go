@@ -29,7 +29,7 @@ type Point struct {
 	SaveFile string    `json:"-" yaml:"-"`
 }
 
-var pointDef = Point{
+var pd = Point{
 	Alias:    "",
 	Addr:     "openlan.net",
 	Protocol: "tls", // udp, kcp, tcp, tls, ws and wss etc.
@@ -56,21 +56,21 @@ func NewPoint() (c *Point) {
 		Http:    &Http{},
 		Allowed: true,
 	}
-	flag.StringVar(&c.Alias, "alias", pointDef.Alias, "Alias for this point")
-	flag.StringVar(&c.Network, "net", pointDef.Network, "Network name")
-	flag.StringVar(&c.Addr, "conn", pointDef.Addr, "Virtual switch connect to")
-	flag.StringVar(&c.Username, "user", pointDef.Username, "Accessed username")
-	flag.StringVar(&c.Password, "pass", pointDef.Password, "Accessed password")
-	flag.StringVar(&c.Protocol, "proto", pointDef.Protocol, "Connection protocol")
-	flag.IntVar(&c.Timeout, "timeout", pointDef.Timeout, "Time in secs socket dead")
-	flag.IntVar(&c.Log.Verbose, "log:level", pointDef.Log.Verbose, "Log level")
-	flag.StringVar(&c.Log.File, "log:file", pointDef.Log.File, "Log saved to file")
-	flag.StringVar(&c.If.Name, "if:name", pointDef.If.Name, "Configure interface name")
-	flag.StringVar(&c.If.Address, "if:addr", pointDef.If.Address, "Configure interface address")
-	flag.StringVar(&c.If.Bridge, "if:br", pointDef.If.Bridge, "Configure bridge name")
-	flag.StringVar(&c.If.Provider, "if:provider", pointDef.If.Provider, "Interface provider")
-	flag.StringVar(&c.Http.Listen, "http:listen", pointDef.Http.Listen, "Http listen on")
-	flag.StringVar(&c.SaveFile, "conf", pointDef.SaveFile, "the configuration file")
+	flag.StringVar(&c.Alias, "alias", pd.Alias, "Alias for this point")
+	flag.StringVar(&c.Network, "net", pd.Network, "Network name")
+	flag.StringVar(&c.Addr, "conn", pd.Addr, "Virtual switch connect to")
+	flag.StringVar(&c.Username, "user", pd.Username, "Accessed username")
+	flag.StringVar(&c.Password, "pass", pd.Password, "Accessed password")
+	flag.StringVar(&c.Protocol, "proto", pd.Protocol, "Connection protocol")
+	flag.IntVar(&c.Timeout, "timeout", pd.Timeout, "Time in secs socket dead")
+	flag.IntVar(&c.Log.Verbose, "log:level", pd.Log.Verbose, "Log level")
+	flag.StringVar(&c.Log.File, "log:file", pd.Log.File, "Log saved to file")
+	flag.StringVar(&c.If.Name, "if:name", pd.If.Name, "Configure interface name")
+	flag.StringVar(&c.If.Address, "if:addr", pd.If.Address, "Configure interface address")
+	flag.StringVar(&c.If.Bridge, "if:br", pd.If.Bridge, "Configure bridge name")
+	flag.StringVar(&c.If.Provider, "if:provider", pd.If.Provider, "Interface provider")
+	flag.StringVar(&c.Http.Listen, "http:listen", pd.Http.Listen, "Http listen on")
+	flag.StringVar(&c.SaveFile, "conf", pd.SaveFile, "the configuration file")
 	flag.Parse()
 
 	if err := c.Load(); err != nil {
@@ -96,10 +96,13 @@ func (c *Point) Default() {
 
 	//reset zero value to default
 	if c.Addr == "" {
-		c.Addr = pointDef.Addr
+		c.Addr = pd.Addr
 	}
 	if c.If.Mtu == 0 {
-		c.If.Mtu = pointDef.If.Mtu
+		c.If.Mtu = pd.If.Mtu
+	}
+	if c.Timeout == 0 {
+		c.Timeout = pd.Timeout
 	}
 }
 
@@ -108,5 +111,5 @@ func (c *Point) Load() error {
 }
 
 func init() {
-	pointDef.Right()
+	pd.Right()
 }

@@ -78,9 +78,9 @@ func (w *Worker) String() string {
 
 func (w *Worker) LoadLinks() {
 	if w.Conf.Links != nil {
-		for _, lc := range w.Conf.Links {
-			lc.Default()
-			w.AddLink(lc)
+		for _, lin := range w.Conf.Links {
+			lin.Default()
+			w.AddLink(lin)
 		}
 	}
 }

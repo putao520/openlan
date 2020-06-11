@@ -139,11 +139,11 @@ func (t *SocketWorker) Close() {
 func (t *SocketWorker) Connect() error {
 	s := t.Client.Status()
 	if s != libol.CL_INIT {
-		libol.Warn("SocketWorker.Connect status %d->%d", s, libol.CL_INIT)
+		libol.Warn("SocketWorker.Connect %s %d->%d", t.Client, s, libol.CL_INIT)
 		t.Client.SetStatus(libol.CL_INIT)
 	}
 	if err := t.Client.Connect(); err != nil {
-		libol.Error("SocketWorker.Connect %s", err)
+		libol.Error("SocketWorker.Connect %s %s", t.Client, err)
 		return err
 	}
 	return nil
