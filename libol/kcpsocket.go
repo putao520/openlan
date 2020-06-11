@@ -108,7 +108,7 @@ func NewKcpClient(addr string, cfg *KcpConfig) *KcpClient {
 				maxSize: 1514,
 				minSize: 15,
 			},
-			status: CL_INIT,
+			status: ClInit,
 		},
 	}
 	c.connecter = c.Connect
@@ -143,11 +143,11 @@ func (c *KcpClient) LocalAddr() string {
 
 func (c *KcpClient) Connect() error {
 	c.lock.Lock()
-	if c.connection != nil || c.status == CL_TERMINAL || c.status == CL_UNAUTH {
+	if c.connection != nil || c.status == ClTerminal || c.status == ClUnAuth {
 		c.lock.Unlock()
 		return nil
 	}
-	c.status = CL_CONNECTING
+	c.status = ClConnecting
 	c.lock.Unlock()
 
 	Info("KcpClient.Connect: kcp://%s", c.address)
@@ -158,7 +158,7 @@ func (c *KcpClient) Connect() error {
 		conn.SetACKNoDelay(false)
 		c.lock.Lock()
 		c.connection = conn
-		c.status = CL_CONNECTED
+		c.status = ClConnected
 		c.lock.Unlock()
 		if c.listener.OnConnected != nil {
 			_ = c.listener.OnConnected(c)
@@ -170,8 +170,8 @@ func (c *KcpClient) Connect() error {
 func (c *KcpClient) Close() {
 	c.lock.Lock()
 	if c.connection != nil {
-		if c.status != CL_TERMINAL {
-			c.status = CL_CLOSED
+		if c.status != ClTerminal {
+			c.status = ClClosed
 		}
 		Info("KcpClient.Close: %s", c.address)
 		_ = c.connection.Close()
@@ -187,7 +187,7 @@ func (c *KcpClient) Close() {
 }
 
 func (c *KcpClient) Terminal() {
-	c.SetStatus(CL_TERMINAL)
+	c.SetStatus(ClTerminal)
 	c.Close()
 }
 

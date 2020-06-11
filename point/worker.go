@@ -42,38 +42,33 @@ type SocketWorker struct {
 	Client   libol.SocketClient
 	// private
 	lock        sync.RWMutex
-	maxSize     int
-	alias       string
 	user        *models.User
 	network     *models.Network
 	routes      map[string]*models.Route
-	allowed     bool
 	initialized bool
-	timeout     int
 	lastTime    int64 // 15s timeout.
 	sleepTimes  int
 	keepalive   KeepAlive
 	done        chan bool
 	ticker      *time.Ticker
+	pointCfg    *config.Point
 }
 
 func NewSocketWorker(client libol.SocketClient, c *config.Point) (t *SocketWorker) {
 	t = &SocketWorker{
 		Client:      client,
-		maxSize:     c.If.Mtu,
 		user:        models.NewUser(c.Username, c.Password),
 		network:     models.NewNetwork(c.Network, c.If.Address),
 		routes:      make(map[string]*models.Route, 64),
-		allowed:     c.Allowed,
 		initialized: false,
 		lastTime:    time.Now().Unix(),
-		timeout:     c.Timeout,
 		done:        make(chan bool),
 		ticker:      time.NewTicker(5 * time.Second),
 		keepalive:   KeepAlive{
 			Interval: 10,
 			LastTime: time.Now().Unix(),
 		},
+		pointCfg:    c,
 	}
 	t.user.Alias = c.Alias
 	t.user.Network = c.Network
@@ -94,7 +89,7 @@ func (t *SocketWorker) Initialize() {
 	}
 	libol.Info("SocketWorker.Initialize")
 	t.initialized = true
-	t.Client.SetMaxSize(t.maxSize)
+	t.Client.SetMaxSize(t.pointCfg.If.Mtu)
 	t.Client.SetListener(libol.ClientListener{
 		OnConnected: func(client libol.SocketClient) error {
 			return t.Login(client)
@@ -138,9 +133,9 @@ func (t *SocketWorker) Close() {
 
 func (t *SocketWorker) Connect() error {
 	s := t.Client.Status()
-	if s != libol.CL_INIT {
-		libol.Warn("SocketWorker.Connect %s %d->%d", t.Client, s, libol.CL_INIT)
-		t.Client.SetStatus(libol.CL_INIT)
+	if s != libol.ClInit {
+		libol.Warn("SocketWorker.Connect %s %d->%d", t.Client, s, libol.ClInit)
+		t.Client.SetStatus(libol.ClInit)
 	}
 	if err := t.Client.Connect(); err != nil {
 		libol.Error("SocketWorker.Connect %s %s", t.Client, err)
@@ -190,17 +185,17 @@ func (t *SocketWorker) onInstruct(data []byte) error {
 	switch action {
 	case "logi:":
 		if resp[:4] == "okay" {
-			t.Client.SetStatus(libol.CL_AUEHED)
+			t.Client.SetStatus(libol.ClAuth)
 			if t.Listener.OnSuccess != nil {
 				_ = t.Listener.OnSuccess(t)
 			}
 			t.sleepTimes = 0
-			if t.allowed {
+			if t.pointCfg.Allowed {
 				_ = t.Network(t.Client)
 			}
 			libol.Info("SocketWorker.onInstruct.login: success")
 		} else {
-			t.Client.SetStatus(libol.CL_UNAUTH)
+			t.Client.SetStatus(libol.ClUnAuth)
 			libol.Error("SocketWorker.onInstruct.login: %s", resp)
 		}
 	case "ipad:":
@@ -262,7 +257,7 @@ func (t *SocketWorker) Read() {
 
 	data := make([]byte, libol.MAXBUF)
 	for {
-		if t.Client == nil || t.Client.Have(libol.CL_TERMINAL) {
+		if t.Client == nil || t.Client.Have(libol.ClTerminal) {
 			break
 		}
 		if !t.Client.IsOk() {
@@ -293,7 +288,7 @@ func (t *SocketWorker) Read() {
 
 func (t *SocketWorker) DeadCheck() {
 	dt := time.Now().Unix() - t.lastTime
-	if dt > int64(t.timeout) {
+	if dt > int64(t.pointCfg.Timeout) {
 		libol.Warn("SocketWorker.DeadCheck: %s idle %ds", t.Client.String(), dt)
 		t.Close()
 		_ = t.Connect()
@@ -309,7 +304,7 @@ func (t *SocketWorker) DoWrite(data []byte) error {
 	if t.Client == nil {
 		return libol.NewErr("Client is nil")
 	}
-	if t.Client.Status() != libol.CL_AUEHED {
+	if t.Client.Status() != libol.ClAuth {
 		libol.Debug("SocketWorker.Loop: dropping by unAuth")
 		return nil
 	}

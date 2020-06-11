@@ -100,7 +100,7 @@ func NewTcpClient(addr string, cfg *tls.Config) *TcpClient {
 				maxSize: 1514,
 				minSize: 15,
 			},
-			status: CL_INIT,
+			status: ClInit,
 		},
 	}
 	t.connecter = t.Connect
@@ -132,7 +132,7 @@ func (t *TcpClient) LocalAddr() string {
 
 func (t *TcpClient) Connect() error {
 	t.lock.Lock()
-	if t.connection != nil || t.status == CL_TERMINAL || t.status == CL_UNAUTH {
+	if t.connection != nil || t.status == ClTerminal || t.status == ClUnAuth {
 		t.lock.Unlock()
 		return nil
 	}
@@ -140,7 +140,7 @@ func (t *TcpClient) Connect() error {
 		_ = t.connection.Close()
 		t.connection = nil
 	}
-	t.status = CL_CONNECTING
+	t.status = ClConnecting
 	t.lock.Unlock()
 
 	if t.tlsCfg != nil {
@@ -159,7 +159,7 @@ func (t *TcpClient) Connect() error {
 	if err == nil {
 		t.lock.Lock()
 		t.connection = conn
-		t.status = CL_CONNECTED
+		t.status = ClConnected
 		t.lock.Unlock()
 		if t.listener.OnConnected != nil {
 			_ = t.listener.OnConnected(t)
@@ -171,8 +171,8 @@ func (t *TcpClient) Connect() error {
 func (t *TcpClient) Close() {
 	t.lock.Lock()
 	if t.connection != nil {
-		if t.status != CL_TERMINAL {
-			t.status = CL_CLOSED
+		if t.status != ClTerminal {
+			t.status = ClClosed
 		}
 		Info("TcpClient.Close: %s", t.address)
 		_ = t.connection.Close()
@@ -188,7 +188,7 @@ func (t *TcpClient) Close() {
 }
 
 func (t *TcpClient) Terminal() {
-	t.SetStatus(CL_TERMINAL)
+	t.SetStatus(ClTerminal)
 	t.Close()
 }
 

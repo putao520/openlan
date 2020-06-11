@@ -188,7 +188,7 @@ func (v *Switch) OnHook(client libol.SocketClient, data []byte) error {
 }
 
 func (v *Switch) OnClient(client libol.SocketClient) error {
-	client.SetStatus(libol.CL_CONNECTED)
+	client.SetStatus(libol.ClConnected)
 	libol.Info("Switch.onClient: %s", client.Addr())
 	return nil
 }

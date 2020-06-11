@@ -7,13 +7,13 @@ import (
 )
 
 const (
-	CL_INIT       = 0x00
-	CL_CONNECTED  = 0x01
-	CL_UNAUTH     = 0x02
-	CL_AUEHED     = 0x03
-	CL_CONNECTING = 0x04
-	CL_TERMINAL   = 0x05
-	CL_CLOSED     = 0x06
+	ClInit       = 0x00
+	ClConnected  = 0x01
+	ClUnAuth     = 0x02
+	ClAuth       = 0x03
+	ClConnecting = 0x04
+	ClTerminal   = 0x05
+	ClClosed     = 0x06
 )
 
 type ClientSts struct {
@@ -136,19 +136,19 @@ type socketClient struct {
 
 func (s *socketClient) State() string {
 	switch s.Status() {
-	case CL_INIT:
+	case ClInit:
 		return "initialized"
-	case CL_CONNECTED:
+	case ClConnected:
 		return "connected"
-	case CL_UNAUTH:
+	case ClUnAuth:
 		return "unauthenticated"
-	case CL_AUEHED:
+	case ClAuth:
 		return "authenticated"
-	case CL_CLOSED:
+	case ClClosed:
 		return "closed"
-	case CL_CONNECTING:
+	case ClConnecting:
 		return "connecting"
-	case CL_TERMINAL:
+	case ClTerminal:
 		return "terminal"
 	}
 	return ""

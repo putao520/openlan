@@ -98,7 +98,7 @@ func NewUdpClient(addr string, cfg *UdpConfig) *UdpClient {
 				minSize: 15,
 				message: &DataGramMessage{},
 			},
-			status: CL_INIT,
+			status: ClInit,
 		},
 	}
 	c.connecter = c.Connect
@@ -134,11 +134,11 @@ func (c *UdpClient) LocalAddr() string {
 
 func (c *UdpClient) Connect() error {
 	c.lock.Lock()
-	if c.connection != nil || c.status == CL_TERMINAL || c.status == CL_UNAUTH {
+	if c.connection != nil || c.status == ClTerminal || c.status == ClUnAuth {
 		c.lock.Unlock()
 		return nil
 	}
-	c.status = CL_CONNECTING
+	c.status = ClConnecting
 	c.lock.Unlock()
 
 	Info("UdpClient.Connect: udp://%s", c.address)
@@ -146,7 +146,7 @@ func (c *UdpClient) Connect() error {
 	if err == nil {
 		c.lock.Lock()
 		c.connection = conn
-		c.status = CL_CONNECTED
+		c.status = ClConnected
 		c.lock.Unlock()
 		if c.listener.OnConnected != nil {
 			_ = c.listener.OnConnected(c)
@@ -158,8 +158,8 @@ func (c *UdpClient) Connect() error {
 func (c *UdpClient) Close() {
 	c.lock.Lock()
 	if c.connection != nil {
-		if c.status != CL_TERMINAL {
-			c.status = CL_CLOSED
+		if c.status != ClTerminal {
+			c.status = ClClosed
 		}
 		Info("UdpClient.Close: %s", c.address)
 		_ = c.connection.Close()
@@ -175,7 +175,7 @@ func (c *UdpClient) Close() {
 }
 
 func (c *UdpClient) Terminal() {
-	c.SetStatus(CL_TERMINAL)
+	c.SetStatus(ClTerminal)
 	c.Close()
 }
 
