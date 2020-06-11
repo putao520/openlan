@@ -180,8 +180,7 @@ func (v *Switch) Initialize() {
 	libol.Info("Switch.Initialize total %d rules", len(v.Fire.Rules))
 }
 
-func (v *Switch) OnHook(client libol.SocketClient, data []byte) error {
-	frame := libol.NewFrameMessage(data)
+func (v *Switch) OnHook(client libol.SocketClient, frame *libol.FrameMessage) error {
 	for _, h := range v.hooks {
 		libol.Log("Worker.onHook: h %p", h)
 		if h != nil {
@@ -223,12 +222,17 @@ func (v *Switch) SignIn(client libol.SocketClient) error {
 
 func (v *Switch) ReadClient(client libol.SocketClient, data []byte) error {
 	libol.Log("Switch.ReadClient: %s %x", client.Addr(), data)
-	if err := v.OnHook(client, data); err != nil {
+	frame := libol.NewFrameMessage(data)
+	if err := v.OnHook(client, frame); err != nil {
 		libol.Debug("Switch.ReadClient: %s dropping by %s", client.Addr(), err)
 		// send request to point login again.
 		_ = v.SignIn(client)
 		return nil
 	}
+	if frame.IsControl() {
+		return nil
+	}
+	// process ethernet frame message.
 	private := client.Private()
 	if private != nil {
 		point := private.(*models.Point)

@@ -38,7 +38,7 @@ func (p *Point) Start() {
 	if !p.initialize {
 		p.Initialize()
 	}
-	p.worker.Start()
+	go p.worker.Start()
 }
 
 func (p *Point) Stop() {

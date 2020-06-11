@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"reflect"
 	"runtime"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -114,6 +115,22 @@ func Netmask2Len(s string) int {
 	return prefixSize
 }
 
+func IpAddrFormat(ipAddr string) string {
+	address := ipAddr
+	netmask := "255.255.255.255"
+	s := strings.SplitN(ipAddr, "/", 2)
+	if len(s) == 2 {
+		address = s[0]
+		_, n, err := net.ParseCIDR(ipAddr)
+		if err == nil {
+			netmask = net.IP(n.Mask).String()
+		} else {
+			netmask = s[1]
+		}
+	}
+	return address + "/" + netmask
+}
+
 func IsNotJSON(s string) bool {
 	if len(s) > 0 {
 		return s[0] != '[' && s[0] != '{'
@@ -161,6 +178,7 @@ func Wait() {
 	signal.Notify(x, os.Interrupt, syscall.SIGKILL)
 	signal.Notify(x, os.Interrupt, syscall.SIGQUIT) //CTL+/
 	signal.Notify(x, os.Interrupt, syscall.SIGINT)  //CTL+C
-	<-x
-	fmt.Println("Done!")
+	Info("Wait...")
+	n := <-x
+	Warn("Received %d, and Done !!!", n)
 }

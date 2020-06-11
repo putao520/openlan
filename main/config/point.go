@@ -33,7 +33,7 @@ var pd = Point{
 	Alias:    "",
 	Addr:     "openlan.net",
 	Protocol: "tls", // udp, kcp, tcp, tls, ws and wss etc.
-	Timeout:  30,
+	Timeout:  60,
 	Log: Log{
 		File:    "./point.log",
 		Verbose: libol.INFO,

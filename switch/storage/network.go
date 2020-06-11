@@ -10,8 +10,8 @@ import (
 
 type _network struct {
 	Networks *libol.SafeStrMap
-	AddrUUID *libol.SafeStrStr
-	UUIDAddr *libol.SafeStrStr
+	AddrUUID *libol.SafeStrStr // TODO with network
+	UUIDAddr *libol.SafeStrStr // TODO with network
 }
 
 var Network = _network{
@@ -65,8 +65,14 @@ func (w *_network) ListLease() <-chan *schema.Lease {
 		})
 		c <- nil //Finish channel by nil.
 	}()
-
 	return c
+}
+
+func (w *_network) AddUsedAddr(uuid, ipStr string) {
+	if ipStr != "" {
+		_ = w.AddrUUID.Set(ipStr, uuid)
+		_ = w.UUIDAddr.Set(uuid, ipStr)
+	}
 }
 
 func (w *_network) GetFreeAddr(uuid string, n *models.Network) (ip string, mask string) {
@@ -76,17 +82,14 @@ func (w *_network) GetFreeAddr(uuid string, n *models.Network) (ip string, mask 
 
 	ipStr := ""
 	netmask := n.Netmask
-
 	if addr, ok := w.UUIDAddr.GetEx(uuid); ok {
 		return addr, netmask
 	}
-
 	sIp := net.ParseIP(n.IpStart)
 	eIp := net.ParseIP(n.IpEnd)
 	if sIp == nil || eIp == nil {
 		return ipStr, netmask
 	}
-
 	start := binary.BigEndian.Uint32(sIp.To4()[:4])
 	end := binary.BigEndian.Uint32(eIp.To4()[:4])
 	for i := start; i <= end; i++ {
@@ -98,7 +101,6 @@ func (w *_network) GetFreeAddr(uuid string, n *models.Network) (ip string, mask 
 			break
 		}
 	}
-
 	if ipStr != "" {
 		_ = w.AddrUUID.Set(ipStr, uuid)
 		_ = w.UUIDAddr.Set(uuid, ipStr)

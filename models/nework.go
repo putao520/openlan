@@ -1,6 +1,10 @@
 package models
 
-import "fmt"
+import (
+	"fmt"
+	"net"
+	"strings"
+)
 
 type Route struct {
 	Prefix  string `json:"prefix"`
@@ -30,9 +34,22 @@ type Network struct {
 }
 
 func NewNetwork(name string, ifAddr string) (this *Network) {
+	address := ifAddr
+	netmask := "255.255.255.255"
+	s := strings.SplitN(ifAddr, "/", 2)
+	if len(s) == 2 {
+		address = s[0]
+		_, n, err := net.ParseCIDR(ifAddr)
+		if err == nil {
+			netmask = net.IP(n.Mask).String()
+		} else {
+			netmask = s[1]
+		}
+	}
 	this = &Network{
-		Name:   name,
-		IfAddr: ifAddr,
+		Name:    name,
+		IfAddr:  address,
+		Netmask: netmask,
 	}
 	return
 }

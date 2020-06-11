@@ -6,6 +6,7 @@ import (
 	"github.com/danieldin95/openlan-go/main/config"
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/switch/storage"
+	"strings"
 )
 
 type WithRequest struct {
@@ -35,7 +36,6 @@ func (r *WithRequest) OnFrame(client libol.SocketClient, frame *libol.FrameMessa
 		r.OnLeave(client, body)
 	case "logi=":
 		libol.Debug("WithRequest.OnFrame %s: %s", action, body)
-		break
 	default:
 		r.OnDefault(client, body)
 	}
@@ -53,37 +53,45 @@ func (r *WithRequest) OnNeighbor(client libol.SocketClient, data string) {
 func (r *WithRequest) OnIpAddr(client libol.SocketClient, data string) {
 	libol.Info("WithRequest.OnIpAddr: %s from %s", data, client)
 
-	n := models.NewNetwork("", "")
-	if err := json.Unmarshal([]byte(data), n); err != nil {
+	rcvNet := models.NewNetwork("", "")
+	if err := json.Unmarshal([]byte(data), rcvNet); err != nil {
 		libol.Error("WithRequest.OnIpAddr: Invalid json data.")
 		return
 	}
-	if n.Name == "" {
-		n.Name = n.Tenant
+	if rcvNet.Name == "" {
+		rcvNet.Name = rcvNet.Tenant
 	}
-	if n.IfAddr == "" {
-		FinNet := storage.Network.Get(n.Name)
-		libol.Cmd("WithRequest.OnIpAddr: find %s", FinNet)
-		uuid := storage.Point.GetUUID(client.Addr())
-		ipStr, netmask := storage.Network.GetFreeAddr(uuid, FinNet)
-		if ipStr == "" {
-			libol.Error("WithRequest.OnIpAddr: %s no free address", n.Name)
-			_ = client.WriteResp("ipaddr", "no free address")
-			return
+	net := storage.Network.Get(rcvNet.Name)
+	libol.Cmd("WithRequest.OnIpAddr: find %s", net)
+	uuid := storage.Point.GetUUID(client.Addr())
+
+	var resp *models.Network
+	if rcvNet.IfAddr == "" {
+		ipStr, netmask := storage.Network.GetFreeAddr(uuid, net)
+		if ipStr != "" {
+			resp = &models.Network{
+				Name:    net.Name,
+				IfAddr:  ipStr,
+				IpStart: ipStr,
+				IpEnd:   ipStr,
+				Netmask: netmask,
+				Routes:  net.Routes,
+			}
 		}
-		respNet := &models.Network{
-			Name:    FinNet.Name,
-			IfAddr:  ipStr,
-			IpStart: ipStr,
-			IpEnd:   ipStr,
-			Netmask: netmask,
-			Routes:  FinNet.Routes,
-		}
-		libol.Cmd("WithRequest.OnIpAddr: resp %s", respNet)
-		if respStr, err := json.Marshal(respNet); err == nil {
+	} else {
+		ipAddr := strings.SplitN(rcvNet.IfAddr, "/", 2)[0]
+		storage.Network.AddUsedAddr(uuid, ipAddr)
+		resp = rcvNet
+	}
+	if resp != nil {
+		libol.Cmd("WithRequest.OnIpAddr: resp %s", resp)
+		if respStr, err := json.Marshal(resp); err == nil {
 			_ = client.WriteResp("ipaddr", string(respStr))
 		}
-		libol.Info("WithRequest.OnIpAddr: %s for %s", ipStr, client)
+		libol.Info("WithRequest.OnIpAddr: %s for %s", resp.IfAddr, client)
+	} else {
+		libol.Error("WithRequest.OnIpAddr: %s no free address", rcvNet.Name)
+		_ = client.WriteResp("ipaddr", "no free address")
 	}
 }
 

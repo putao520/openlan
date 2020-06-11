@@ -426,6 +426,7 @@ func (a *TapWorker) Initialize() {
 }
 
 func (a *TapWorker) SetEther(addr string) {
+	addr = libol.IpAddrFormat(addr)
 	ifAddr := strings.SplitN(addr, "/", 2)[0]
 	if ifAddr != "" {
 		a.Ether.IpAddr = net.ParseIP(ifAddr).To4()
@@ -437,7 +438,7 @@ func (a *TapWorker) SetEther(addr string) {
 		}
 	}
 	// changed address need open device again.
-	if a.ifAddr != "" && a.ifAddr != addr {
+	if a.ifAddr != addr {
 		libol.Warn("TapWorker.SetEther changed %s->%s", a.ifAddr, addr)
 		a.OpenAgain.Set(true)
 	}
@@ -611,30 +612,35 @@ func (a *TapWorker) onArp(data []byte) bool {
 			libol.Error("TapWorker.onArp: eth.dst not arp.shw %x.", arp.SIpAddr)
 			return true
 		}
-		if arp.OpCode == libol.ArpRequest && bytes.Equal(arp.TIpAddr, a.Ether.IpAddr) {
-			eth := a.NewEth(libol.EthArp, arp.SHwAddr)
-			reply := libol.NewArp()
-			reply.OpCode = libol.ArpReply
-			reply.SIpAddr = a.Ether.IpAddr
-			reply.TIpAddr = arp.SIpAddr
-			reply.SHwAddr = a.Ether.HwAddr
-			reply.THwAddr = arp.SHwAddr
-			buffer := make([]byte, 0, a.pointCfg.Intf.Mtu)
-			buffer = append(buffer, eth.Encode()...)
-			buffer = append(buffer, reply.Encode()...)
-			libol.Info("TapWorker.onArp: reply %x.", buffer)
-			if a.Listener.ReadAt != nil {
-				_ = a.Listener.ReadAt(buffer)
+		switch arp.OpCode {
+		case libol.ArpRequest:
+			if bytes.Equal(arp.TIpAddr, a.Ether.IpAddr) {
+				eth := a.NewEth(libol.EthArp, arp.SHwAddr)
+				reply := libol.NewArp()
+				reply.OpCode = libol.ArpReply
+				reply.SIpAddr = a.Ether.IpAddr
+				reply.TIpAddr = arp.SIpAddr
+				reply.SHwAddr = a.Ether.HwAddr
+				reply.THwAddr = arp.SHwAddr
+				buffer := make([]byte, 0, a.pointCfg.Intf.Mtu)
+				buffer = append(buffer, eth.Encode()...)
+				buffer = append(buffer, reply.Encode()...)
+				libol.Info("TapWorker.onArp: reply %x.", buffer)
+				if a.Listener.ReadAt != nil {
+					_ = a.Listener.ReadAt(buffer)
+				}
 			}
-		} else if arp.OpCode == libol.ArpReply && bytes.Equal(arp.THwAddr, a.Ether.HwAddr) {
-			a.Neighbors.Add(&Neighbor{
-				HwAddr:  arp.SHwAddr,
-				IpAddr:  arp.SIpAddr,
-				NewTime: time.Now().Unix(),
-				Uptime:  time.Now().Unix(),
-			})
-			libol.Info("TapWorker.onArp: recv %x on %x.", arp.SHwAddr, arp.SIpAddr)
-		} else {
+		case libol.ArpReply:
+			if bytes.Equal(arp.THwAddr, a.Ether.HwAddr) {
+				a.Neighbors.Add(&Neighbor{
+					HwAddr:  arp.SHwAddr,
+					IpAddr:  arp.SIpAddr,
+					NewTime: time.Now().Unix(),
+					Uptime:  time.Now().Unix(),
+				})
+				libol.Info("TapWorker.onArp: recv %x on %x.", arp.SHwAddr, arp.SIpAddr)
+			}
+		default:
 			libol.Warn("TapWorker.onArp: not op %x.", arp.OpCode)
 		}
 	}
