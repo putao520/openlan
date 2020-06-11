@@ -11,7 +11,7 @@ import (
 type Point struct {
 	MixPoint
 	BrName string
-
+	// private
 	addr   string
 	routes []*models.Route
 	link   netlink.Link
@@ -160,14 +160,14 @@ func (p *Point) AddRoutes(routes []*models.Route) error {
 			continue
 		}
 
-		nxt := net.ParseIP(route.Nexthop)
+		nxt := net.ParseIP(route.NextHop)
 		rte := netlink.Route{LinkIndex: p.link.Attrs().Index, Dst: dst, Gw: nxt}
 		libol.Debug("Point.AddRoute: %s", rte)
 		if err := netlink.RouteAdd(&rte); err != nil {
 			libol.Warn("Point.AddRoute: %s", err)
 			continue
 		}
-		libol.Info("Point.AddRoutes: route %s via %s", route.Prefix, route.Nexthop)
+		libol.Info("Point.AddRoutes: route %s via %s", route.Prefix, route.NextHop)
 	}
 
 	p.routes = routes
@@ -186,13 +186,13 @@ func (p *Point) DelRoutes(routes []*models.Route) error {
 			continue
 		}
 
-		nxt := net.ParseIP(route.Nexthop)
+		nxt := net.ParseIP(route.NextHop)
 		rte := netlink.Route{LinkIndex: p.link.Attrs().Index, Dst: dst, Gw: nxt}
 		if err := netlink.RouteDel(&rte); err != nil {
 			libol.Warn("Point.DelRoute: %s", err)
 			continue
 		}
-		libol.Info("Point.DelRoutes: route %s via %s", route.Prefix, route.Nexthop)
+		libol.Info("Point.DelRoutes: route %s via %s", route.Prefix, route.NextHop)
 	}
 
 	p.routes = nil

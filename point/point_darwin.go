@@ -10,7 +10,7 @@ import (
 type Point struct {
 	MixPoint
 	BrName string
-
+	// private
 	addr   string
 	routes []*models.Route
 }

@@ -18,7 +18,9 @@ type Pointer interface {
 }
 
 type MixPoint struct {
-	Tenant     string
+	// public
+	Tenant string
+	// private
 	uuid       string
 	worker     Worker
 	config     *config.Point

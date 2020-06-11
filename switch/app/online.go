@@ -57,14 +57,14 @@ func (o *Online) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) e
 		line.IpProtocol = ip.Protocol
 
 		switch ip.Protocol {
-		case libol.IPPROTO_TCP:
+		case libol.IpTcp:
 			tcp, err := libol.NewTcpFromFrame(data)
 			if err != nil {
 				libol.Warn("Online.OnFrame %s", err)
 			}
 			line.PortDest = tcp.Destination
 			line.PortSource = tcp.Source
-		case libol.IPPROTO_UDP:
+		case libol.IpUdp:
 			udp, err := libol.NewUdpFromFrame(data)
 			if err != nil {
 				libol.Warn("Online.OnFrame %s", err)

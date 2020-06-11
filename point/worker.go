@@ -22,7 +22,7 @@ type KeepAlive struct {
 }
 
 func (k *KeepAlive) CanKeep() bool {
-	return time.Now().Unix() - k.LastTime >= k.Interval
+	return time.Now().Unix()-k.LastTime >= k.Interval
 }
 
 func (k *KeepAlive) Update() {
@@ -64,11 +64,11 @@ func NewSocketWorker(client libol.SocketClient, c *config.Point) (t *SocketWorke
 		lastTime:    time.Now().Unix(),
 		done:        make(chan bool),
 		ticker:      time.NewTicker(5 * time.Second),
-		keepalive:   KeepAlive{
+		keepalive: KeepAlive{
 			Interval: 10,
 			LastTime: time.Now().Unix(),
 		},
-		pointCfg:    c,
+		pointCfg: c,
 	}
 	t.user.Alias = c.Alias
 	t.user.Network = c.Network
@@ -221,8 +221,8 @@ func (t *SocketWorker) Ticker() error {
 			Alias    string `json:"alias"`
 		}{
 			DateTime: time.Now().Unix(),
-			UUID: t.user.UUID,
-			Alias: t.user.Alias,
+			UUID:     t.user.UUID,
+			Alias:    t.user.Alias,
 		}
 		body, err := json.Marshal(data)
 		if err != nil {
@@ -249,7 +249,7 @@ func (t *SocketWorker) Loop() {
 			t.Ticker()
 		}
 	}
-	}
+}
 
 func (t *SocketWorker) Read() {
 	libol.Info("SocketWorker.Read: %s", t.Client.State())
@@ -446,9 +446,9 @@ func (a *TapWorker) NewEth(t uint16, dst []byte) *libol.Ether {
 // process if ethernet destination is missed
 func (a *TapWorker) onMiss(dest []byte) {
 	libol.Debug("TapWorker.onMiss: %x.", dest)
-	eth := a.NewEth(libol.ETHPARP, libol.BROADED)
+	eth := a.NewEth(libol.EthArp, libol.BROADED)
 	reply := libol.NewArp()
-	reply.OpCode = libol.ARP_REQUEST
+	reply.OpCode = libol.ArpRequest
 	reply.SIpAddr = a.Ether.IpAddr
 	reply.TIpAddr = dest
 	reply.SHwAddr = a.Ether.HwAddr
@@ -500,7 +500,7 @@ func (a *TapWorker) Read() {
 				a.onMiss(dest)
 				continue
 			}
-			eth := a.NewEth(libol.ETHPIP4, neb.HwAddr)
+			eth := a.NewEth(libol.EthIp4, neb.HwAddr)
 			buffer := make([]byte, 0, libol.MAXBUF)
 			buffer = append(buffer, eth.Encode()...)
 			buffer = append(buffer, data[0:n]...)
@@ -574,10 +574,10 @@ func (a *TapWorker) onArp(data []byte) bool {
 			libol.Error("TapWorker.onArp: eth.dst not arp.shw %x.", arp.SIpAddr)
 			return true
 		}
-		if arp.OpCode == libol.ARP_REQUEST && bytes.Equal(arp.TIpAddr, a.Ether.IpAddr) {
-			eth := a.NewEth(libol.ETHPARP, arp.SHwAddr)
+		if arp.OpCode == libol.ArpRequest && bytes.Equal(arp.TIpAddr, a.Ether.IpAddr) {
+			eth := a.NewEth(libol.EthArp, arp.SHwAddr)
 			reply := libol.NewArp()
-			reply.OpCode = libol.ARP_REPLY
+			reply.OpCode = libol.ArpReply
 			reply.SIpAddr = a.Ether.IpAddr
 			reply.TIpAddr = arp.SIpAddr
 			reply.SHwAddr = a.Ether.HwAddr
@@ -589,7 +589,7 @@ func (a *TapWorker) onArp(data []byte) bool {
 			if a.Listener.ReadAt != nil {
 				_ = a.Listener.ReadAt(buffer)
 			}
-		} else if arp.OpCode == libol.ARP_REPLY && bytes.Equal(arp.THwAddr, a.Ether.HwAddr) {
+		} else if arp.OpCode == libol.ArpReply && bytes.Equal(arp.THwAddr, a.Ether.HwAddr) {
 			a.Neighbors.Add(&Neighbor{
 				HwAddr:  arp.SHwAddr,
 				IpAddr:  arp.SIpAddr,
@@ -869,7 +869,7 @@ func (p *Worker) OnIpAddr(w *SocketWorker, n *models.Network) error {
 		if err != nil {
 			continue
 		}
-		nxt := net.ParseIP(rt.Nexthop)
+		nxt := net.ParseIP(rt.NextHop)
 		p.routes = append(p.routes, PrefixRule{
 			Type:        0x01,
 			Destination: *dest,

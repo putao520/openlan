@@ -14,7 +14,7 @@ import (
 type Worker struct {
 	Alias string
 	Conf  config.Network
-
+	// private
 	newTime     int64
 	startTime   int64
 	linksLock   sync.RWMutex
@@ -61,7 +61,7 @@ func (w *Worker) Initialize() {
 			}
 			met.Routes = append(met.Routes, &models.Route{
 				Prefix:  rt.Prefix,
-				Nexthop: rt.NextHop,
+				NextHop: rt.NextHop,
 			})
 		}
 		storage.Network.Add(&met)

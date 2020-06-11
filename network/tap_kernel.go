@@ -12,7 +12,7 @@ type KernelTap struct {
 	bridge Bridger
 	tenant string
 	name   string
-	cfg    TapConfig
+	config TapConfig
 	mtu    int
 }
 
@@ -25,7 +25,7 @@ func NewKernelTap(tenant string, c TapConfig) (*KernelTap, error) {
 		tenant: tenant,
 		device: device,
 		name:   device.Name(),
-		cfg:    c,
+		config: c,
 		mtu:    1514,
 	}
 
@@ -39,11 +39,11 @@ func (t *KernelTap) Tenant() string {
 }
 
 func (t *KernelTap) IsTun() bool {
-	return t.cfg.Type == TUN
+	return t.config.Type == TUN
 }
 
 func (t *KernelTap) IsTap() bool {
-	return t.cfg.Type == TAP
+	return t.config.Type == TAP
 }
 
 func (t *KernelTap) Name() string {
@@ -113,7 +113,7 @@ func (t *KernelTap) Up() {
 	defer t.lock.Unlock()
 
 	if t.device == nil {
-		device, err := WaterNew(t.cfg)
+		device, err := WaterNew(t.config)
 		if err != nil {
 			libol.Error("KernelTap.Up %s", err)
 			return

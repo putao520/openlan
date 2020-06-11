@@ -85,7 +85,7 @@ func NewNetworkSchema(n *Network) schema.Network {
 	for _, route := range n.Routes {
 		sn.Routes = append(sn.Routes,
 			schema.PrefixRoute{
-				NextHop: route.Nexthop,
+				NextHop: route.NextHop,
 				Prefix:  route.Prefix,
 			})
 	}

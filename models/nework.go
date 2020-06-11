@@ -4,19 +4,19 @@ import "fmt"
 
 type Route struct {
 	Prefix  string `json:"prefix"`
-	Nexthop string `json:"nexthop"`
+	NextHop string `json:"nexthop"`
 }
 
 func NewRoute(prefix string, nexthop string) (this *Route) {
 	this = &Route{
 		Prefix:  prefix,
-		Nexthop: nexthop,
+		NextHop: nexthop,
 	}
 	return
 }
 
 func (u *Route) String() string {
-	return fmt.Sprintf("%s, %s", u.Prefix, u.Nexthop)
+	return fmt.Sprintf("%s, %s", u.Prefix, u.NextHop)
 }
 
 type Network struct {

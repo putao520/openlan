@@ -12,7 +12,7 @@ type UserSpaceTap struct {
 	bridge Bridger
 	tenant string
 	closed bool
-	cfg    TapConfig
+	config TapConfig
 	name   string
 	mtu    int
 }
@@ -36,11 +36,11 @@ func (t *UserSpaceTap) Tenant() string {
 }
 
 func (t *UserSpaceTap) IsTun() bool {
-	return t.cfg.Type == TUN
+	return t.config.Type == TUN
 }
 
 func (t *UserSpaceTap) IsTap() bool {
-	return t.cfg.Type == TAP
+	return t.config.Type == TAP
 }
 
 func (t *UserSpaceTap) Name() string {

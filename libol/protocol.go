@@ -12,10 +12,10 @@ var (
 )
 
 const (
-	ETHPARP  = 0x0806
-	ETHPIP4  = 0x0800
-	ETHPIP6  = 0x86DD
-	ETHPVLAN = 0x8100
+	EthArp  = 0x0806
+	EthIp4  = 0x0800
+	EthIp6  = 0x86DD
+	EthVlan = 0x8100
 )
 
 type Ether struct {
@@ -36,11 +36,11 @@ func NewEther(t uint16) (e *Ether) {
 }
 
 func NewEtherArp() (e *Ether) {
-	return NewEther(ETHPARP)
+	return NewEther(EthArp)
 }
 
 func NewEtherIP4() (e *Ether) {
-	return NewEther(ETHPIP4)
+	return NewEther(EthIp4)
 }
 
 func NewEtherFromFrame(frame []byte) (e *Ether, err error) {
@@ -73,15 +73,15 @@ func (e *Ether) Encode() []byte {
 }
 
 func (e *Ether) IsVlan() bool {
-	return e.Type == ETHPVLAN
+	return e.Type == EthVlan
 }
 
 func (e *Ether) IsArp() bool {
-	return e.Type == ETHPARP
+	return e.Type == EthArp
 }
 
 func (e *Ether) IsIP4() bool {
-	return e.Type == ETHPIP4
+	return e.Type == EthIp4
 }
 
 type Vlan struct {
@@ -133,14 +133,13 @@ func (n *Vlan) Encode() []byte {
 }
 
 const (
-	ARP_REQUEST = 1
-	ARP_REPLY   = 2
+	ArpRequest = 1
+	ArpReply   = 2
 )
 
 const (
-	ARPHRD_NETROM = 0
-	ARPHRD_ETHER  = 1
-	ARPHRD_EETHER = 2
+	ArpHrdNetrom = 0
+	ArpHrdEther  = 1
 )
 
 type Arp struct {
@@ -159,11 +158,11 @@ type Arp struct {
 
 func NewArp() (a *Arp) {
 	a = &Arp{
-		HrdCode: ARPHRD_ETHER,
-		ProCode: ETHPIP4,
+		HrdCode: ArpHrdEther,
+		ProCode: EthIp4,
 		HrdLen:  6,
 		ProLen:  4,
-		OpCode:  ARP_REQUEST,
+		OpCode:  ArpRequest,
 		Len:     0,
 		SHwAddr: make([]byte, 6),
 		SIpAddr: make([]byte, 4),
@@ -241,58 +240,58 @@ func (a *Arp) Encode() []byte {
 }
 
 func (a *Arp) IsIP4() bool {
-	return a.ProCode == ETHPIP4
+	return a.ProCode == EthIp4
 }
 
 const (
-	IPV4_VER = 0x04
-	IPV6_VER = 0x06
+	Ipv4Ver = 0x04
+	Ipv6Ver = 0x06
 )
 
 const (
-	IPPROTO_ICMP = 0x01
-	IPPROTO_IGMP = 0x02
-	IPPROTO_IPIP = 0x04
-	IPPROTO_TCP  = 0x06
-	IPPROTO_UDP  = 0x11
-	IPPROTO_ESP  = 0x32
-	IPPROTO_AH   = 0x33
-	IPPROTO_OSPF = 0x59
-	IPPROTO_PIM  = 0x67
-	IPPROTO_VRRP = 0x70
-	IPPROTO_ISIS = 0x7c
+	IpIcmp = 0x01
+	IpIgmp = 0x02
+	IpIpIp = 0x04
+	IpTcp  = 0x06
+	IpUdp  = 0x11
+	IpEsp  = 0x32
+	IpAh   = 0x33
+	IpOspf = 0x59
+	IpPim  = 0x67
+	IpVrrp = 0x70
+	IpIsis = 0x7c
 )
 
 func IpProto2Str(proto uint8) string {
 	switch proto {
-	case IPPROTO_ICMP:
+	case IpIcmp:
 		return "icmp"
-	case IPPROTO_IGMP:
+	case IpIgmp:
 		return "igmp"
-	case IPPROTO_IPIP:
+	case IpIpIp:
 		return "ipip"
-	case IPPROTO_ESP:
+	case IpEsp:
 		return "esp"
-	case IPPROTO_AH:
+	case IpAh:
 		return "ah"
-	case IPPROTO_OSPF:
+	case IpOspf:
 		return "ospf"
-	case IPPROTO_ISIS:
+	case IpIsis:
 		return "isis"
-	case IPPROTO_UDP:
+	case IpUdp:
 		return "udp"
-	case IPPROTO_TCP:
+	case IpTcp:
 		return "tcp"
-	case IPPROTO_PIM:
+	case IpPim:
 		return "pim"
-	case IPPROTO_VRRP:
+	case IpVrrp:
 		return "vrrp"
 	default:
 		return fmt.Sprintf("%02x", proto)
 	}
 }
 
-const IPV4_LEN = 20
+const Ipv4Len = 20
 
 type Ipv4 struct {
 	Version        uint8 //4bite v4: 0100, v6: 0110
@@ -324,7 +323,7 @@ func NewIpv4() (i *Ipv4) {
 		Protocol:       0,
 		HeaderChecksum: 0,
 		Options:        0,
-		Len:            IPV4_LEN,
+		Len:            Ipv4Len,
 		Source:         make([]byte, 4),
 		Destination:    make([]byte, 4),
 	}
@@ -338,7 +337,7 @@ func NewIpv4FromFrame(frame []byte) (i *Ipv4, err error) {
 }
 
 func (i *Ipv4) Decode(frame []byte) error {
-	if len(frame) < IPV4_LEN {
+	if len(frame) < Ipv4Len {
 		return NewErr("Ipv4.Decode: too small header: %d", len(frame))
 	}
 
@@ -383,10 +382,10 @@ func (i *Ipv4) Encode() []byte {
 }
 
 func (i *Ipv4) IsIP4() bool {
-	return i.Version == IPV4_VER
+	return i.Version == Ipv4Ver
 }
 
-const TCP_LEN = 20
+const TcpLen = 20
 
 type Tcp struct {
 	Source         uint16
@@ -414,7 +413,7 @@ func NewTcp() (t *Tcp) {
 		Window:         0,
 		Checksum:       0,
 		UrgentPointer:  0,
-		Len:            TCP_LEN,
+		Len:            TcpLen,
 	}
 	return
 }
@@ -426,7 +425,7 @@ func NewTcpFromFrame(frame []byte) (t *Tcp, err error) {
 }
 
 func (t *Tcp) Decode(frame []byte) error {
-	if len(frame) < TCP_LEN {
+	if len(frame) < TcpLen {
 		return NewErr("Tcp.Decode: too small header: %d", len(frame))
 	}
 
@@ -459,7 +458,7 @@ func (t *Tcp) Encode() []byte {
 	return buffer[:t.Len]
 }
 
-const UDP_LEN = 8
+const UdpLen = 8
 
 type Udp struct {
 	Source      uint16
@@ -475,7 +474,7 @@ func NewUdp() (u *Udp) {
 		Destination: 0,
 		Length:      0,
 		Checksum:    0,
-		Len:         UDP_LEN,
+		Len:         UdpLen,
 	}
 	return
 }
@@ -487,7 +486,7 @@ func NewUdpFromFrame(frame []byte) (u *Udp, err error) {
 }
 
 func (u *Udp) Decode(frame []byte) error {
-	if len(frame) < UDP_LEN {
+	if len(frame) < UdpLen {
 		return NewErr("Udp.Decode: too small header: %d", len(frame))
 	}
 

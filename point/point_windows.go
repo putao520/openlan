@@ -10,7 +10,7 @@ import (
 type Point struct {
 	MixPoint
 	BrName string
-
+	// private
 	addr   string
 	routes []*models.Route
 	config *config.Point
@@ -51,8 +51,8 @@ func (p *Point) OnTap(w *TapWorker) error {
 	routes := make([]*models.Route, 0, 32)
 	if err := libol.UnmarshalLoad(&routes, ".routes.json"); err == nil {
 		for _, route := range routes {
-			_, _ = libol.IpRouteDel(p.IfName(), route.Prefix, route.Nexthop)
-			libol.Info("Point.OnTap: clear %s via %s", route.Prefix, route.Nexthop)
+			_, _ = libol.IpRouteDel(p.IfName(), route.Prefix, route.NextHop)
+			libol.Info("Point.OnTap: clear %s via %s", route.Prefix, route.NextHop)
 		}
 	}
 	return nil
@@ -100,12 +100,12 @@ func (p *Point) AddRoutes(routes []*models.Route) error {
 
 	_ = libol.MarshalSave(routes, ".routes.json", true)
 	for _, route := range routes {
-		out, err := libol.IpRouteAdd(p.IfName(), route.Prefix, route.Nexthop)
+		out, err := libol.IpRouteAdd(p.IfName(), route.Prefix, route.NextHop)
 		if err != nil {
 			libol.Warn("Point.AddRoutes: %s, %s", err, out)
 			continue
 		}
-		libol.Info("Point.AddRoutes: route %s via %s", route.Prefix, route.Nexthop)
+		libol.Info("Point.AddRoutes: route %s via %s", route.Prefix, route.NextHop)
 	}
 	p.routes = routes
 	return nil
@@ -113,12 +113,12 @@ func (p *Point) AddRoutes(routes []*models.Route) error {
 
 func (p *Point) DelRoutes(routes []*models.Route) error {
 	for _, route := range routes {
-		out, err := libol.IpRouteDel(p.IfName(), route.Prefix, route.Nexthop)
+		out, err := libol.IpRouteDel(p.IfName(), route.Prefix, route.NextHop)
 		if err != nil {
 			libol.Warn("Point.DelRoutes: %s, %s", err, out)
 			continue
 		}
-		libol.Info("Point.DelRoutes: route %s via %s", route.Prefix, route.Nexthop)
+		libol.Info("Point.DelRoutes: route %s via %s", route.Prefix, route.NextHop)
 	}
 	p.routes = nil
 	return nil
