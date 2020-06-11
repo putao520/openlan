@@ -20,7 +20,7 @@ func (l Server) List(w http.ResponseWriter, r *http.Request) {
 	data := &struct {
 		UpTime     int64           `json:"uptime"`
 		Statistic  libol.ServerSts `json:"statistic"`
-		Connection []interface{}
+		Connection []interface{}   `json:"connection"`
 	}{
 		UpTime:     l.Switcher.UpTime(),
 		Statistic:  server.Sts(),
