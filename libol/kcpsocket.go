@@ -7,15 +7,17 @@ import (
 )
 
 type KcpConfig struct {
-	block        kcp.BlockCrypt
-	dataShards   int // default 1024
-	parityShards int // default 3
+	Block        kcp.BlockCrypt
+	DataShards   int           // default 1024
+	ParityShards int           // default 3
+	Timeout      time.Duration // ns
 }
 
 var defaultKcpConfig = KcpConfig{
-	block:        nil,
-	dataShards:   1024,
-	parityShards: 3,
+	Block:        nil,
+	DataShards:   1024,
+	ParityShards: 3,
+	Timeout:      120 * time.Second,
 }
 
 type KcpServer struct {
@@ -25,6 +27,9 @@ type KcpServer struct {
 }
 
 func NewKcpServer(listen string, cfg *KcpConfig) *KcpServer {
+	if cfg == nil {
+		cfg = &defaultKcpConfig
+	}
 	k := &KcpServer{
 		kcpCfg: cfg,
 		socketServer: socketServer{
@@ -36,9 +41,6 @@ func NewKcpServer(listen string, cfg *KcpConfig) *KcpServer {
 			offClients: make(chan SocketClient, 8),
 		},
 	}
-	if k.kcpCfg == nil {
-		k.kcpCfg = &defaultKcpConfig
-	}
 	k.close = k.Close
 	if err := k.Listen(); err != nil {
 		Debug("NewKcpServer: %s", err)
@@ -47,7 +49,7 @@ func NewKcpServer(listen string, cfg *KcpConfig) *KcpServer {
 }
 
 func (k *KcpServer) Listen() (err error) {
-	k.listener, err = kcp.ListenWithOptions(k.address, k.kcpCfg.block, k.kcpCfg.dataShards, k.kcpCfg.parityShards)
+	k.listener, err = kcp.ListenWithOptions(k.address, k.kcpCfg.Block, k.kcpCfg.DataShards, k.kcpCfg.ParityShards)
 	if err != nil {
 		k.listener = nil
 		return err
@@ -87,7 +89,7 @@ func (k *KcpServer) Accept() {
 		conn.SetStreamMode(true)
 		conn.SetWriteDelay(false)
 		conn.SetACKNoDelay(false)
-		k.onClients <- NewKcpClientFromConn(conn)
+		k.onClients <- NewKcpClientFromConn(conn, k.kcpCfg)
 	}
 }
 
@@ -99,6 +101,9 @@ type KcpClient struct {
 }
 
 func NewKcpClient(addr string, cfg *KcpConfig) *KcpClient {
+	if cfg == nil {
+		cfg = &defaultKcpConfig
+	}
 	c := &KcpClient{
 		kcpCfg: cfg,
 		socketClient: socketClient{
@@ -107,18 +112,21 @@ func NewKcpClient(addr string, cfg *KcpConfig) *KcpClient {
 			dataStream: dataStream{
 				maxSize: 1514,
 				minSize: 15,
+				message: &StreamMessage{
+					timeout: cfg.Timeout,
+				},
 			},
 			status: ClInit,
 		},
 	}
 	c.connecter = c.Connect
-	if c.kcpCfg == nil {
-		c.kcpCfg = &defaultKcpConfig
-	}
 	return c
 }
 
-func NewKcpClientFromConn(conn net.Conn) *KcpClient {
+func NewKcpClientFromConn(conn net.Conn, cfg *KcpConfig) *KcpClient {
+	if cfg == nil {
+		cfg = &defaultKcpConfig
+	}
 	c := &KcpClient{
 		socketClient: socketClient{
 			address: conn.RemoteAddr().String(),
@@ -126,6 +134,9 @@ func NewKcpClientFromConn(conn net.Conn) *KcpClient {
 				connection: conn,
 				maxSize:    1514,
 				minSize:    15,
+				message: &StreamMessage{
+					timeout: cfg.Timeout,
+				},
 			},
 			newTime: time.Now().Unix(),
 		},
@@ -144,7 +155,7 @@ func (c *KcpClient) Connect() error {
 	c.lock.Unlock()
 
 	Info("KcpClient.Connect: kcp://%s", c.address)
-	conn, err := kcp.DialWithOptions(c.address, c.kcpCfg.block, c.kcpCfg.dataShards, c.kcpCfg.dataShards)
+	conn, err := kcp.DialWithOptions(c.address, c.kcpCfg.Block, c.kcpCfg.DataShards, c.kcpCfg.DataShards)
 	if err == nil {
 		conn.SetStreamMode(true)
 		conn.SetWriteDelay(false)

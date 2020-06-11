@@ -99,6 +99,8 @@ type XDPConn struct {
 	localAddr  *net.UDPAddr
 	readQueue  chan []byte
 	closed     bool
+	readDead   time.Time
+	writeDead  time.Time
 }
 
 func (c *XDPConn) toQueue(b []byte) {
@@ -117,11 +119,27 @@ func (c *XDPConn) Read(b []byte) (n int, err error) {
 	if c.closed {
 		c.lock.RUnlock()
 		return 0, NewErr("read on closed")
-	} else {
-		c.lock.RUnlock()
 	}
-	d := <-c.readQueue
-	return copy(b, d), nil
+	var timeout *time.Timer
+	outChan := make(<-chan time.Time)
+	if !c.readDead.IsZero() {
+		if time.Now().After(c.readDead) {
+			c.lock.RUnlock()
+			return 0, NewErr("read timeout")
+		}
+		delay := c.readDead.Sub(time.Now())
+		timeout = time.NewTimer(delay)
+		outChan = timeout.C
+	}
+	c.lock.RUnlock()
+
+	// wait for read event or timeout or error
+	select {
+	case <-outChan:
+		return 0, NewErr("read timeout")
+	case d := <-c.readQueue:
+		return copy(b, d), nil
+	}
 }
 
 func (c *XDPConn) Write(b []byte) (n int, err error) {
@@ -156,16 +174,23 @@ func (c *XDPConn) RemoteAddr() net.Addr {
 }
 
 func (c *XDPConn) SetDeadline(t time.Time) error {
-	Warn("XDPConn.SetDeadline implement me")
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	c.readDead = t
+	c.writeDead = t
 	return nil
 }
 
 func (c *XDPConn) SetReadDeadline(t time.Time) error {
-	Warn("XDPConn.SetReadDeadline implement me")
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	c.readDead = t
 	return nil
 }
 
 func (c *XDPConn) SetWriteDeadline(t time.Time) error {
-	Warn("XDPConn.SetReadDeadline implement me")
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	c.writeDead = t
 	return nil
 }

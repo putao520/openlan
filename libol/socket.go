@@ -55,6 +55,7 @@ type SocketClient interface {
 	SetAddr(addr string)
 	Sts() ClientSts
 	SetListener(listener ClientListener)
+	SetTimeout(v int64)
 }
 
 type dataStream struct {
@@ -114,14 +115,14 @@ func (t *dataStream) ReadMsg(data []byte) (int, error) {
 func (t *dataStream) WriteReq(action string, body string) error {
 	m := NewControlMessage(action, "= ", body)
 	data := m.Encode()
-	Log("dataStream.WriteReq: %d %s", len(data), data[6:])
+	Cmd("dataStream.WriteReq: %s", data)
 	return t.WriteMsg(data)
 }
 
 func (t *dataStream) WriteResp(action string, body string) error {
 	m := NewControlMessage(action, ": ", body)
 	data := m.Encode()
-	Log("dataStream.WriteResp: %d %s", len(data), data[6:])
+	Cmd("dataStream.WriteResp: %s", data)
 	return t.WriteMsg(data)
 }
 
@@ -133,6 +134,7 @@ type socketClient struct {
 	newTime  int64
 	private  interface{}
 	status   uint8
+	timeout  int64 // sec for read and write timeout
 }
 
 func (s *socketClient) State() string {
@@ -227,6 +229,10 @@ func (s *socketClient) RemoteAddr() string {
 	return s.address
 }
 
+func (s *socketClient) SetTimeout(v int64) {
+	s.timeout = v
+}
+
 // Socket Server
 
 type ServerSts struct {
@@ -256,6 +262,7 @@ type SocketServer interface {
 	String() string
 	Addr() string
 	Sts() ServerSts
+	SetTimeout(v int64)
 }
 
 type socketServer struct {
@@ -267,6 +274,7 @@ type socketServer struct {
 	onClients  chan SocketClient
 	offClients chan SocketClient
 	close      func()
+	timeout    int64 // sec for read and write timeout
 }
 
 func (t *socketServer) ListClient() <-chan SocketClient {
@@ -364,4 +372,8 @@ func (t *socketServer) String() string {
 
 func (t *socketServer) Sts() ServerSts {
 	return t.sts
+}
+
+func (t *socketServer) SetTimeout(v int64) {
+	t.timeout = v
 }

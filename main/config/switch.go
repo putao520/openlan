@@ -86,9 +86,9 @@ type Switch struct {
 	SaveFile  string      `json:"-" yaml:"-"`
 }
 
-var vSwitchDef = Switch{
+var sd = Switch{
 	Alias:   "",
-	Timeout: 30,
+	Timeout: 120,
 	Log: Log{
 		File:    "./openlan-switch.log",
 		Verbose: libol.INFO,
@@ -100,8 +100,8 @@ var vSwitchDef = Switch{
 }
 
 func NewSwitch() (c Switch) {
-	flag.IntVar(&c.Log.Verbose, "log:level", vSwitchDef.Log.Verbose, "Configure log level")
-	flag.StringVar(&c.ConfDir, "conf:dir", vSwitchDef.ConfDir, "Configure virtual switch directory")
+	flag.IntVar(&c.Log.Verbose, "log:level", sd.Log.Verbose, "Configure log level")
+	flag.StringVar(&c.ConfDir, "conf:dir", sd.ConfDir, "Configure virtual switch directory")
 	flag.Parse()
 
 	c.SaveFile = fmt.Sprintf("%s/switch.json", c.ConfDir)
@@ -135,7 +135,9 @@ func (c *Switch) Default() {
 	if c.Network == nil {
 		c.Network = make([]*Network, 0, 32)
 	}
-
+	if c.Timeout == 0 {
+		c.Timeout = sd.Timeout
+	}
 	files, err := filepath.Glob(c.ConfDir + "/network/*.json")
 	if err != nil {
 		libol.Error("Switch.Default %s", err)
@@ -164,5 +166,5 @@ func (c *Switch) Load() error {
 }
 
 func init() {
-	vSwitchDef.Right()
+	sd.Right()
 }

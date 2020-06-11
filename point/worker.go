@@ -21,7 +21,7 @@ type KeepAlive struct {
 	LastTime int64
 }
 
-func (k *KeepAlive) CanKeep() bool {
+func (k *KeepAlive) Should() bool {
 	return time.Now().Unix()-k.LastTime >= k.Interval
 }
 
@@ -213,24 +213,28 @@ func (t *SocketWorker) onInstruct(data []byte) error {
 }
 
 func (t *SocketWorker) Ticker() error {
-	if t.keepalive.CanKeep() {
+	if t.keepalive.Should() {
 		t.keepalive.Update()
 		data := struct {
-			DateTime int64  `json:"datetime"`
-			UUID     string `json:"uuid"`
-			Alias    string `json:"alias"`
+			DateTime   int64  `json:"datetime"`
+			UUID       string `json:"uuid"`
+			Alias      string `json:"alias"`
+			Connection string `json:"connection"`
+			Address    string `json:"address"`
 		}{
-			DateTime: time.Now().Unix(),
-			UUID:     t.user.UUID,
-			Alias:    t.user.Alias,
+			DateTime:   time.Now().Unix(),
+			UUID:       t.user.UUID,
+			Alias:      t.user.Alias,
+			Address:    t.Client.LocalAddr(),
+			Connection: t.Client.RemoteAddr(),
 		}
 		body, err := json.Marshal(data)
 		if err != nil {
 			libol.Error("SocketWorker.Ticker: %s", err)
 			return err
 		}
-		libol.Cmd("SocketWorker.Ticker: %s", body)
-		if err := t.Client.WriteReq("ping", string(body)); err != nil {
+		libol.Cmd("SocketWorker.Ticker: ping: %s", body)
+		if err := t.Client.WriteReq("ping=", string(body)); err != nil {
 			libol.Error("Switch.SignIn: %s", err)
 			return err
 		}
@@ -246,7 +250,7 @@ func (t *SocketWorker) Loop() {
 			return
 		case c := <-t.ticker.C:
 			libol.Log("Neighbors.Expire: tick at %s", c)
-			t.Ticker()
+			_ = t.Ticker()
 		}
 	}
 }

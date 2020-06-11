@@ -30,11 +30,17 @@ func GetSocketServer(c config.Switch) libol.SocketServer {
 	tlsCfg := GetTlsCfg(c)
 	switch c.Protocol {
 	case "kcp":
-		return libol.NewKcpServer(c.Listen, nil)
+		kcpCfg := &libol.KcpConfig{
+			Timeout: time.Duration(c.Timeout) * time.Second,
+		}
+		return libol.NewKcpServer(c.Listen, kcpCfg)
 	case "tcp":
 		return libol.NewTcpServer(c.Listen, nil)
 	case "udp":
-		return libol.NewUdpServer(c.Listen, nil)
+		udpCfg := &libol.UdpConfig{
+			Timeout: time.Duration(c.Timeout) * time.Second,
+		}
+		return libol.NewUdpServer(c.Listen, udpCfg)
 	default:
 		return libol.NewTcpServer(c.Listen, tlsCfg)
 	}

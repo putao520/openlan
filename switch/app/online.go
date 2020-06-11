@@ -34,14 +34,12 @@ func (o *Online) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) e
 	if frame.IsControl() {
 		return nil
 	}
-
 	data := frame.Data()
 	eth, err := libol.NewEtherFromFrame(data)
 	if err != nil {
 		libol.Warn("Online.OnFrame %s", err)
 		return err
 	}
-
 	data = data[eth.Len:]
 	if eth.IsIP4() {
 		ip, err := libol.NewIpv4FromFrame(data)
@@ -50,12 +48,10 @@ func (o *Online) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) e
 			return err
 		}
 		data = data[ip.Len:]
-
 		line := models.NewLine(eth.Type)
 		line.IpSource = ip.Source
 		line.IpDest = ip.Destination
 		line.IpProtocol = ip.Protocol
-
 		switch ip.Protocol {
 		case libol.IpTcp:
 			tcp, err := libol.NewTcpFromFrame(data)
@@ -75,10 +71,8 @@ func (o *Online) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) e
 			line.PortDest = 0
 			line.PortSource = 0
 		}
-
 		o.AddLine(line)
 	}
-
 	return nil
 }
 

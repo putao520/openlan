@@ -24,11 +24,9 @@ func NewPointAuth(m Master, c config.Switch) (p *PointAuth) {
 
 func (p *PointAuth) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) error {
 	libol.Log("PointAuth.OnFrame %s.", frame)
-
 	if frame.IsControl() {
 		action, params := frame.CmdAndParams()
 		libol.Debug("PointAuth.OnFrame: %s", action)
-
 		switch action {
 		case "logi=":
 			if err := p.handleLogin(client, params); err != nil {
@@ -39,17 +37,16 @@ func (p *PointAuth) OnFrame(client libol.SocketClient, frame *libol.FrameMessage
 			}
 			_ = client.WriteResp("login", "okay.")
 		}
-
-		//If instruct is not login, continue to process.
-		return nil
+		//If instruct is not login and already auth, continue to process.
+		if client.Status() == libol.ClAuth {
+			return nil
+		}
 	}
-
 	//Dropped all frames if not auth.
 	if client.Status() != libol.ClAuth {
 		libol.Debug("PointAuth.OnFrame: %s unAuth", client.Addr())
 		return libol.NewErr("unAuth client.")
 	}
-
 	return nil
 }
 

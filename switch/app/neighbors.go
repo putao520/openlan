@@ -30,7 +30,6 @@ func (e *Neighbors) OnFrame(client libol.SocketClient, frame *libol.FrameMessage
 	if frame.IsControl() {
 		return nil
 	}
-
 	data := frame.Data()
 	eth, err := libol.NewEtherFromFrame(data)
 	if err != nil {
@@ -44,7 +43,6 @@ func (e *Neighbors) OnFrame(client libol.SocketClient, frame *libol.FrameMessage
 		}
 		return nil
 	}
-
 	arp, err := libol.NewArpFromFrame(data[eth.Len:])
 	if err != nil {
 		libol.Error("Neighbors.OnFrame %s.", err)
@@ -57,7 +55,6 @@ func (e *Neighbors) OnFrame(client libol.SocketClient, frame *libol.FrameMessage
 			e.AddNeighbor(n)
 		}
 	}
-
 	return nil
 }
 

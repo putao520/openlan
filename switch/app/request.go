@@ -24,9 +24,8 @@ func (r *WithRequest) OnFrame(client libol.SocketClient, frame *libol.FrameMessa
 	if !frame.IsControl() {
 		return nil
 	}
-
 	action, body := frame.CmdAndParams()
-	libol.Debug("WithRequest.OnFrame: %s %s", action, body)
+	libol.Cmd("WithRequest.OnFrame: %s %s", action, body)
 	switch action {
 	case "neig=":
 		r.OnNeighbor(client, body)
@@ -36,7 +35,6 @@ func (r *WithRequest) OnFrame(client libol.SocketClient, frame *libol.FrameMessa
 		break
 	default:
 		r.OnDefault(client, body)
-		//libol.Warn("WithRequest.OnFrame: %s %s", action, body)
 	}
 	return nil
 }

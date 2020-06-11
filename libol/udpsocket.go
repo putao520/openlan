@@ -6,11 +6,13 @@ import (
 )
 
 type UdpConfig struct {
-	Key string
+	Key     string
+	Timeout time.Duration // ns
 }
 
 var defaultUdpConfig = UdpConfig{
-	Key: "78fxojvnu",
+	Key:     "78fxojvnu",
+	Timeout: 120 * time.Second,
 }
 
 type UdpServer struct {
@@ -20,7 +22,11 @@ type UdpServer struct {
 }
 
 func NewUdpServer(listen string, cfg *UdpConfig) *UdpServer {
+	if cfg == nil {
+		cfg = &defaultUdpConfig
+	}
 	k := &UdpServer{
+		udpCfg: cfg,
 		socketServer: socketServer{
 			address:    listen,
 			sts:        ServerSts{},
@@ -29,9 +35,6 @@ func NewUdpServer(listen string, cfg *UdpConfig) *UdpServer {
 			onClients:  make(chan SocketClient, 4),
 			offClients: make(chan SocketClient, 8),
 		},
-	}
-	if k.udpCfg == nil {
-		k.udpCfg = &defaultUdpConfig
 	}
 	k.close = k.Close
 	if err := k.Listen(); err != nil {
@@ -76,7 +79,7 @@ func (k *UdpServer) Accept() {
 			return
 		}
 		k.sts.AcceptCount++
-		k.onClients <- NewUdpClientFromConn(conn)
+		k.onClients <- NewUdpClientFromConn(conn, k.udpCfg)
 	}
 }
 
@@ -88,6 +91,9 @@ type UdpClient struct {
 }
 
 func NewUdpClient(addr string, cfg *UdpConfig) *UdpClient {
+	if cfg == nil {
+		cfg = &defaultUdpConfig
+	}
 	c := &UdpClient{
 		udpCfg: cfg,
 		socketClient: socketClient{
@@ -96,19 +102,21 @@ func NewUdpClient(addr string, cfg *UdpConfig) *UdpClient {
 			dataStream: dataStream{
 				maxSize: 1514,
 				minSize: 15,
-				message: &DataGramMessage{},
+				message: &DataGramMessage{
+					timeout: cfg.Timeout,
+				},
 			},
 			status: ClInit,
 		},
 	}
 	c.connecter = c.Connect
-	if c.udpCfg == nil {
-		c.udpCfg = &defaultUdpConfig
-	}
 	return c
 }
 
-func NewUdpClientFromConn(conn net.Conn) *UdpClient {
+func NewUdpClientFromConn(conn net.Conn, cfg *UdpConfig) *UdpClient {
+	if cfg == nil {
+		cfg = &defaultUdpConfig
+	}
 	c := &UdpClient{
 		socketClient: socketClient{
 			address: conn.RemoteAddr().String(),
@@ -116,7 +124,9 @@ func NewUdpClientFromConn(conn net.Conn) *UdpClient {
 				connection: conn,
 				maxSize:    1514,
 				minSize:    15,
-				message:    &DataGramMessage{},
+				message: &DataGramMessage{
+					timeout: cfg.Timeout,
+				},
 			},
 			newTime: time.Now().Unix(),
 		},
