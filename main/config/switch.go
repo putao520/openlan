@@ -75,6 +75,7 @@ type Switch struct {
 	Alias     string      `json:"alias"`
 	Protocol  string      `json:"protocol"` // tcp/tls/kcp.
 	Listen    string      `json:"listen"`
+	Timeout   int         `json:"timeout"`
 	Http      *Http       `json:"http,omitempty" yaml:"http,omitempty"`
 	Log       Log         `json:"log" yaml:"log"`
 	Cert      Cert        `json:"cert"`
@@ -87,6 +88,7 @@ type Switch struct {
 
 var vSwitchDef = Switch{
 	Alias: "",
+	Timeout: 30,
 	Log: Log{
 		File:    "./openlan-switch.log",
 		Verbose: libol.INFO,

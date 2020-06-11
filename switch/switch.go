@@ -50,10 +50,11 @@ type Apps struct {
 type Hook func(client libol.SocketClient, frame *libol.FrameMessage) error
 
 type Switch struct {
+	// public
 	Conf config.Switch
 	Apps Apps
 	Fire FireWall
-
+	// private
 	hooks      []Hook
 	http       *Http
 	server     libol.SocketServer

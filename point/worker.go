@@ -3,7 +3,6 @@ package point
 import (
 	"bytes"
 	"crypto/tls"
-	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"github.com/danieldin95/openlan-go/libol"
@@ -16,6 +15,19 @@ import (
 	"sync"
 	"time"
 )
+
+type KeepAlive struct {
+	Interval int64
+	LastTime int64
+}
+
+func (k *KeepAlive) CanKeep() bool {
+	return time.Now().Unix() - k.LastTime >= k.Interval
+}
+
+func (k *KeepAlive) Update() {
+	k.LastTime = time.Now().Unix()
+}
 
 type SocketWorkerListener struct {
 	OnClose   func(w *SocketWorker) error
@@ -37,8 +49,12 @@ type SocketWorker struct {
 	routes      map[string]*models.Route
 	allowed     bool
 	initialized bool
-	idleTime    int64 // 15s timeout.
+	timeout     int
+	lastTime    int64 // 15s timeout.
 	sleepTimes  int
+	keepalive   KeepAlive
+	done        chan bool
+	ticker      *time.Ticker
 }
 
 func NewSocketWorker(client libol.SocketClient, c *config.Point) (t *SocketWorker) {
@@ -50,7 +66,14 @@ func NewSocketWorker(client libol.SocketClient, c *config.Point) (t *SocketWorke
 		routes:      make(map[string]*models.Route, 64),
 		allowed:     c.Allowed,
 		initialized: false,
-		idleTime:    time.Now().Unix(),
+		lastTime:    time.Now().Unix(),
+		timeout:     c.Timeout,
+		done:        make(chan bool),
+		ticker:      time.NewTicker(5 * time.Second),
+		keepalive:   KeepAlive{
+			Interval: 10,
+			LastTime: time.Now().Unix(),
+		},
 	}
 	t.user.Alias = c.Alias
 	t.user.Network = c.Network
@@ -91,6 +114,7 @@ func (t *SocketWorker) Start() {
 	}
 	_ = t.Connect()
 	go t.Read()
+	go t.Loop()
 }
 
 func (t *SocketWorker) Stop() {
@@ -99,6 +123,9 @@ func (t *SocketWorker) Stop() {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	t.Client = nil
+
+	t.ticker.Stop()
+	t.done <- true
 }
 
 func (t *SocketWorker) Close() {
@@ -190,6 +217,45 @@ func (t *SocketWorker) onInstruct(data []byte) error {
 	return nil
 }
 
+func (t *SocketWorker) Ticker() error {
+	if t.keepalive.CanKeep() {
+		t.keepalive.Update()
+		data := struct {
+			DateTime int64  `json:"datetime"`
+			UUID     string `json:"uuid"`
+			Alias    string `json:"alias"`
+		}{
+			DateTime: time.Now().Unix(),
+			UUID: t.user.UUID,
+			Alias: t.user.Alias,
+		}
+		body, err := json.Marshal(data)
+		if err != nil {
+			libol.Error("SocketWorker.Ticker: %s", err)
+			return err
+		}
+		libol.Cmd("SocketWorker.Ticker: %s", body)
+		if err := t.Client.WriteReq("ping", string(body)); err != nil {
+			libol.Error("Switch.SignIn: %s", err)
+			return err
+		}
+	}
+	return nil
+}
+
+func (t *SocketWorker) Loop() {
+	defer libol.Info("SocketWorker.Loop exit")
+	for {
+		select {
+		case <-t.done:
+			return
+		case c := <-t.ticker.C:
+			libol.Log("Neighbors.Expire: tick at %s", c)
+			t.Ticker()
+		}
+	}
+	}
+
 func (t *SocketWorker) Read() {
 	libol.Info("SocketWorker.Read: %s", t.Client.State())
 	defer libol.Catch("SocketWorker.Read")
@@ -210,7 +276,7 @@ func (t *SocketWorker) Read() {
 			t.Close()
 			continue
 		}
-		t.idleTime = time.Now().Unix()
+		t.lastTime = time.Now().Unix()
 		libol.Log("SocketWorker.Read: %x", data[:n])
 		if n > 0 {
 			frame := data[:n]
@@ -225,16 +291,21 @@ func (t *SocketWorker) Read() {
 	libol.Info("SocketWorker.Read: exit")
 }
 
-func (t *SocketWorker) Expire() {
-	if time.Now().Unix()-t.idleTime > 15 {
+func (t *SocketWorker) DeadCheck() {
+	dt := time.Now().Unix() - t.lastTime
+	if dt > int64(t.timeout) {
+		libol.Warn("SocketWorker.DeadCheck: %s idle %ds", t.Client.String(), dt)
 		t.Close()
 		_ = t.Connect()
+		//
+		t.lastTime = time.Now().Unix()
 	}
 }
 
 func (t *SocketWorker) DoWrite(data []byte) error {
 	libol.Log("SocketWorker.DoWrite: %x", data)
-	//t.Expire()
+
+	t.DeadCheck()
 	if t.Client == nil {
 		return libol.NewErr("Client is nil")
 	}
@@ -267,120 +338,6 @@ func (t *SocketWorker) SetAddr(addr string) {
 
 func (t *SocketWorker) SetUUID(v string) {
 	t.user.UUID = v
-}
-
-type Neighbor struct {
-	HwAddr  []byte
-	IpAddr  []byte
-	Uptime  int64
-	NewTime int64
-}
-
-type Neighbors struct {
-	lock      sync.RWMutex
-	neighbors map[uint32]*Neighbor
-	done      chan bool
-	ticker    *time.Ticker
-	timeout   int64
-}
-
-func (n *Neighbors) Expire() {
-	deletes := make([]uint32, 0, 1024)
-
-	n.lock.Lock()
-	defer n.lock.Unlock()
-	//collect need deleted.
-	for index, learn := range n.neighbors {
-		now := time.Now().Unix()
-		if now-learn.Uptime > n.timeout {
-			deletes = append(deletes, index)
-		}
-	}
-	libol.Debug("Neighbors.Expire delete %d", len(deletes))
-	//execute delete.
-	for _, d := range deletes {
-		if l, ok := n.neighbors[d]; ok {
-			delete(n.neighbors, d)
-			libol.Info("Neighbors.Expire: delete %x", l.HwAddr)
-		}
-	}
-}
-
-func (n *Neighbors) Start() {
-	for {
-		select {
-		case <-n.done:
-			return
-		case t := <-n.ticker.C:
-			libol.Log("Neighbors.Expire: tick at %s", t)
-			n.Expire()
-		}
-	}
-}
-
-func (n *Neighbors) Stop() {
-	n.ticker.Stop()
-	n.done <- true
-}
-
-func (n *Neighbors) Add(h *Neighbor) {
-	if h == nil {
-		return
-	}
-	n.lock.Lock()
-	defer n.lock.Unlock()
-	k := binary.BigEndian.Uint32(h.IpAddr)
-	if l, ok := n.neighbors[k]; ok {
-		l.Uptime = h.Uptime
-		copy(l.HwAddr[:6], h.HwAddr[:6])
-	} else {
-		l := &Neighbor{
-			Uptime:  h.Uptime,
-			NewTime: h.NewTime,
-			HwAddr:  make([]byte, 6),
-			IpAddr:  make([]byte, 4),
-		}
-		copy(l.IpAddr[:4], h.IpAddr[:4])
-		copy(l.HwAddr[:6], h.HwAddr[:6])
-		n.neighbors[k] = l
-	}
-}
-
-func (n *Neighbors) Get(d uint32) *Neighbor {
-	n.lock.RLock()
-	defer n.lock.RUnlock()
-	if l, ok := n.neighbors[d]; ok {
-		return l
-	}
-	return nil
-}
-
-func (n *Neighbors) Clear() {
-	libol.Info("Neighbor.Clear")
-	n.lock.Lock()
-	defer n.lock.Unlock()
-
-	deletes := make([]uint32, 0, 1024)
-	for index := range n.neighbors {
-		deletes = append(deletes, index)
-	}
-	//execute delete.
-	for _, d := range deletes {
-		if _, ok := n.neighbors[d]; ok {
-			delete(n.neighbors, d)
-		}
-	}
-}
-
-func (n *Neighbors) GetByBytes(d []byte) *Neighbor {
-	n.lock.RLock()
-	defer n.lock.RUnlock()
-
-	k := binary.BigEndian.Uint32(d)
-	if l, ok := n.neighbors[k]; ok {
-		return l
-	}
-	return nil
 }
 
 type TapWorkerListener struct {

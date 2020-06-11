@@ -21,23 +21,28 @@ func NewWithRequest(m Master, c config.Switch) (r *WithRequest) {
 
 func (r *WithRequest) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) error {
 	libol.Log("WithRequest.OnFrame %s.", frame)
-	if frame.IsControl() {
-		action, body := frame.CmdAndParams()
-		libol.Debug("WithRequest.OnFrame: %s %s", action, body)
-
-		switch action {
-		case "neig=":
-			r.OnNeighbor(client, body)
-		case "ipad=":
-			r.OnIpAddr(client, body)
-		case "logi=":
-			break
-		default:
-			libol.Warn("WithRequest.OnFrame: %s %s", action, body)
-		}
+	if !frame.IsControl() {
+		return nil
 	}
 
+	action, body := frame.CmdAndParams()
+	libol.Debug("WithRequest.OnFrame: %s %s", action, body)
+	switch action {
+	case "neig=":
+		r.OnNeighbor(client, body)
+	case "ipad=":
+		r.OnIpAddr(client, body)
+	case "logi=":
+		break
+	default:
+		r.OnDefault(client, body)
+		//libol.Warn("WithRequest.OnFrame: %s %s", action, body)
+	}
 	return nil
+}
+
+func (r *WithRequest) OnDefault(client libol.SocketClient, data string) {
+	_ = client.WriteResp("pong", data)
 }
 
 func (r *WithRequest) OnNeighbor(client libol.SocketClient, data string) {

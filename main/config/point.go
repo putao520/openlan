@@ -18,6 +18,7 @@ type Point struct {
 	Alias    string    `json:"name,omitempty" yaml:"name,omitempty"`
 	Network  string    `json:"network,omitempty" yaml:"network,omitempty"`
 	Addr     string    `json:"connection" yaml:"connection"`
+	Timeout  int       `json:"timeout"`
 	Username string    `json:"username,omitempty" yaml:"username,omitempty"`
 	Password string    `json:"password,omitempty" yaml:"password,omitempty"`
 	Protocol string    `json:"protocol,omitempty" yaml:"protocol,omitempty"`
@@ -31,7 +32,8 @@ type Point struct {
 var pointDef = Point{
 	Alias:    "",
 	Addr:     "openlan.net",
-	Protocol: "tls", // tcp, tls, ws and wss etc.
+	Protocol: "tls", // udp, kcp, tcp, tls, ws and wss etc.
+	Timeout:  30,
 	Log: Log{
 		File:    "./point.log",
 		Verbose: libol.INFO,
@@ -60,8 +62,9 @@ func NewPoint() (c *Point) {
 	flag.StringVar(&c.Username, "user", pointDef.Username, "Accessed username")
 	flag.StringVar(&c.Password, "pass", pointDef.Password, "Accessed password")
 	flag.StringVar(&c.Protocol, "proto", pointDef.Protocol, "Connection protocol")
-	flag.IntVar(&c.Log.Verbose, "log:level", pointDef.Log.Verbose, "log level")
-	flag.StringVar(&c.Log.File, "log:file", pointDef.Log.File, "log saved to file")
+	flag.IntVar(&c.Timeout, "timeout", pointDef.Timeout, "Time in secs socket dead")
+	flag.IntVar(&c.Log.Verbose, "log:level", pointDef.Log.Verbose, "Log level")
+	flag.StringVar(&c.Log.File, "log:file", pointDef.Log.File, "Log saved to file")
 	flag.StringVar(&c.If.Name, "if:name", pointDef.If.Name, "Configure interface name")
 	flag.StringVar(&c.If.Address, "if:addr", pointDef.If.Address, "Configure interface address")
 	flag.StringVar(&c.If.Bridge, "if:br", pointDef.If.Bridge, "Configure bridge name")
