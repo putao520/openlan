@@ -31,8 +31,10 @@ func (r *WithRequest) OnFrame(client libol.SocketClient, frame *libol.FrameMessa
 		r.OnNeighbor(client, body)
 	case "ipad=":
 		r.OnIpAddr(client, body)
+	case "left=":
+		r.OnLeave(client, body)
 	case "logi=":
-		break
+		libol.Warn("WithRequest.OnFrame %s: %s", action, body)
 	default:
 		r.OnDefault(client, body)
 	}
@@ -83,3 +85,9 @@ func (r *WithRequest) OnIpAddr(client libol.SocketClient, data string) {
 		libol.Info("WithRequest.OnIpAddr: %s for %s", ipStr, client)
 	}
 }
+
+func (r *WithRequest) OnLeave(client libol.SocketClient, data string) {
+	libol.Info("WithRequest.OnLeave: %s", client.RemoteAddr())
+	r.master.OffClient(client)
+}
+

@@ -7,17 +7,12 @@ import (
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/main/config"
 	"github.com/danieldin95/openlan-go/point"
-	"os"
-	"os/signal"
 )
 
 func main() {
 	c := config.NewPoint()
 	p := point.NewPoint(c)
-	p.Start()
-
-	x := make(chan os.Signal)
-	signal.Notify(x)
+	go p.Start()
 
 	go func() {
 		for {
@@ -34,9 +29,6 @@ func main() {
 			}
 		}
 	}()
-
-	sig := <-x
-	libol.Warn("exit by %d", sig)
+	libol.Wait()
 	p.Stop()
-	fmt.Println("Done!")
 }

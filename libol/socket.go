@@ -122,7 +122,7 @@ func (t *dataStream) WriteReq(action string, body string) error {
 func (t *dataStream) WriteResp(action string, body string) error {
 	m := NewControlMessage(action, ": ", body)
 	data := m.Encode()
-	Cmd("dataStream.WriteResp: %s", data)
+	Cmd("dataStream.WriteRsp: %s", data)
 	return t.WriteMsg(data)
 }
 

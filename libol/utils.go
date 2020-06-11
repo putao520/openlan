@@ -8,8 +8,10 @@ import (
 	"math/rand"
 	"net"
 	"os"
+	"os/signal"
 	"reflect"
 	"runtime"
+	"syscall"
 	"time"
 )
 
@@ -151,4 +153,14 @@ func PrettyBytes(b uint64) string {
 	}
 	g, d := split(m, 1024)
 	return fmt.Sprintf("%d.%02dG", g, d)
+}
+
+func Wait() {
+	x := make(chan os.Signal)
+	signal.Notify(x, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(x, os.Interrupt, syscall.SIGKILL)
+	signal.Notify(x, os.Interrupt, syscall.SIGQUIT) //CTL+/
+	signal.Notify(x, os.Interrupt, syscall.SIGINT)  //CTL+C
+	<-x
+	fmt.Println("Done!")
 }

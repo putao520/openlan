@@ -112,7 +112,37 @@ func (t *SocketWorker) Start() {
 	go t.Loop()
 }
 
+func (t *SocketWorker) Leave() {
+	if t.Client == nil {
+		return
+	}
+	data := struct {
+		DateTime   int64  `json:"datetime"`
+		UUID       string `json:"uuid"`
+		Alias      string `json:"alias"`
+		Connection string `json:"connection"`
+		Address    string `json:"address"`
+	}{
+		DateTime:   time.Now().Unix(),
+		UUID:       t.user.UUID,
+		Alias:      t.user.Alias,
+		Address:    t.Client.LocalAddr(),
+		Connection: t.Client.RemoteAddr(),
+	}
+	body, err := json.Marshal(data)
+	if err != nil {
+		libol.Error("SocketWorker.Leave: %s", err)
+		return
+	}
+	libol.Cmd("SocketWorker.Leave: left: %s", body)
+	if err := t.Client.WriteReq("left", string(body)); err != nil {
+		libol.Error("Switch.Leave: %s", err)
+		return
+	}
+}
+
 func (t *SocketWorker) Stop() {
+	t.Leave()
 	t.Client.Terminal()
 
 	t.lock.Lock()
@@ -214,6 +244,9 @@ func (t *SocketWorker) onInstruct(data []byte) error {
 
 func (t *SocketWorker) Ticker() error {
 	if t.keepalive.Should() {
+		if t.Client == nil {
+			return nil
+		}
 		t.keepalive.Update()
 		data := struct {
 			DateTime   int64  `json:"datetime"`
@@ -234,8 +267,8 @@ func (t *SocketWorker) Ticker() error {
 			return err
 		}
 		libol.Cmd("SocketWorker.Ticker: ping: %s", body)
-		if err := t.Client.WriteReq("ping=", string(body)); err != nil {
-			libol.Error("Switch.SignIn: %s", err)
+		if err := t.Client.WriteReq("ping", string(body)); err != nil {
+			libol.Error("SocketWorker.Ticker: %s", err)
 			return err
 		}
 	}
