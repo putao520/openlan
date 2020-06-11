@@ -12,9 +12,8 @@ func main() {
 	c := config.NewPoint()
 	p := point.NewPoint(c)
 	libol.PreNotify()
-	go p.Start()
-
+	p.Start()
+	libol.SdNotify()
 	libol.Wait()
 	p.Stop()
-	libol.SdNotify()
 }

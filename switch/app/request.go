@@ -34,7 +34,8 @@ func (r *WithRequest) OnFrame(client libol.SocketClient, frame *libol.FrameMessa
 	case "left=":
 		r.OnLeave(client, body)
 	case "logi=":
-		libol.Warn("WithRequest.OnFrame %s: %s", action, body)
+		libol.Debug("WithRequest.OnFrame %s: %s", action, body)
+		break
 	default:
 		r.OnDefault(client, body)
 	}

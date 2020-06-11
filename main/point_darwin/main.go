@@ -11,8 +11,7 @@ import (
 func main() {
 	c := config.NewPoint()
 	p := point.NewPoint(c)
-	go p.Start()
-
+	p.Start()
 	libol.Wait()
 	p.Stop()
 }
