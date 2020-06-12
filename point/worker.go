@@ -37,11 +37,12 @@ type SocketWorkerListener struct {
 }
 
 var (
-	EventConed   = "connected"
-	EventRecon   = "reconnect"
+	EventConed   = "conned"
+	EventRecon   = "reconn"
 	EventClosed  = "closed"
 	EventSuccess = "success"
-	EventSignIn  = "singin"
+	EventSignIn  = "signIn"
+	EventLogin   = "login"
 )
 
 type socketEvent struct {
@@ -50,37 +51,49 @@ type socketEvent struct {
 	Time   int64
 }
 
+func NewEvent(typ, reason string) socketEvent {
+	return socketEvent{
+		Time:   time.Now().Unix(),
+		Reason: reason,
+		Type:   typ,
+	}
+}
+
+type socketTimer struct {
+	Time int64
+	Call func() error
+}
+
 type SocketWorker struct {
 	// private
-	listener    SocketWorkerListener
-	client      libol.SocketClient
-	lock        sync.Mutex
-	user        *models.User
-	network     *models.Network
-	routes      map[string]*models.Route
-	initialized bool
-	lastTime    int64 // 15s timeout.
-	reconTime   int64
-	sleepTimes  int
-	keepalive   KeepAlive
-	done        chan bool
-	ticker      *time.Ticker
-	pointCfg    *config.Point
-	eventQueue  chan socketEvent
-	writeQueue  chan []byte
+	listener   SocketWorkerListener
+	client     libol.SocketClient
+	lock       sync.Mutex
+	user       *models.User
+	network    *models.Network
+	routes     map[string]*models.Route
+	lastTime   int64 // record time, last frame received or connected.
+	reconTime  int64 // record time, trigged reconnected
+	sleepTimes int   // record times to control connecting delay.
+	keepalive  KeepAlive
+	done       chan bool
+	ticker     *time.Ticker
+	pointCfg   *config.Point
+	eventQueue chan socketEvent
+	writeQueue chan []byte
+	timer      []socketTimer
 }
 
 func NewSocketWorker(client libol.SocketClient, c *config.Point) (t *SocketWorker) {
 	t = &SocketWorker{
-		client:      client,
-		user:        models.NewUser(c.Username, c.Password),
-		network:     models.NewNetwork(c.Network, c.Interface.Address),
-		routes:      make(map[string]*models.Route, 64),
-		initialized: false,
-		lastTime:    time.Now().Unix(),
-		reconTime:   time.Now().Unix(),
-		done:        make(chan bool, 2),
-		ticker:      time.NewTicker(5 * time.Second),
+		client:    client,
+		user:      models.NewUser(c.Username, c.Password),
+		network:   models.NewNetwork(c.Network, c.Interface.Address),
+		routes:    make(map[string]*models.Route, 64),
+		lastTime:  time.Now().Unix(),
+		reconTime: time.Now().Unix(),
+		done:      make(chan bool, 2),
+		ticker:    time.NewTicker(2 * time.Second),
 		keepalive: KeepAlive{
 			Interval: 10,
 			LastTime: time.Now().Unix(),
@@ -88,6 +101,7 @@ func NewSocketWorker(client libol.SocketClient, c *config.Point) (t *SocketWorke
 		pointCfg:   c,
 		eventQueue: make(chan socketEvent, 32),
 		writeQueue: make(chan []byte, 1024),
+		timer:      make([]socketTimer, 0, 32),
 	}
 	t.user.Alias = c.Alias
 	t.user.Network = c.Network
@@ -99,11 +113,11 @@ func (t *SocketWorker) sleepNow() int64 {
 	return int64(t.sleepTimes * 5)
 }
 
-func (t *SocketWorker) sleepIdle() time.Duration {
+func (t *SocketWorker) sleepIdle() int64 {
 	if t.sleepTimes < 20 {
 		t.sleepTimes++
 	}
-	return time.Duration(t.sleepNow()) * time.Second
+	return t.sleepNow()
 }
 
 func (t *SocketWorker) Initialize() {
@@ -114,21 +128,14 @@ func (t *SocketWorker) Initialize() {
 		return
 	}
 	libol.Info("SocketWorker.Initialize")
-	t.initialized = true
 	t.client.SetMaxSize(t.pointCfg.Interface.Mtu)
 	t.client.SetListener(libol.ClientListener{
 		OnConnected: func(client libol.SocketClient) error {
-			t.eventQueue <- socketEvent{
-				Type:   EventConed,
-				Reason: "from socket",
-			}
+			t.eventQueue <- NewEvent(EventConed, "from socket")
 			return nil
 		},
 		OnClose: func(client libol.SocketClient) error {
-			t.eventQueue <- socketEvent{
-				Type:   EventClosed,
-				Reason: "from socket",
-			}
+			t.eventQueue <- NewEvent(EventClosed, "from socket")
 			return nil
 		},
 	})
@@ -175,8 +182,8 @@ func (t *SocketWorker) Stop() {
 	defer t.lock.Unlock()
 
 	t.leave()
-	t.done <- true
 	t.client.Terminal()
+	t.done <- true
 	t.client = nil
 	t.ticker.Stop()
 }
@@ -188,13 +195,13 @@ func (t *SocketWorker) close() {
 }
 
 func (t *SocketWorker) connect() error {
+	libol.Warn("SocketWorker.connect %s", t.client, libol.ClInit)
 	t.client.Close()
 	s := t.client.Status()
 	if s != libol.ClInit {
 		libol.Warn("SocketWorker.connect %s %d->%d", t.client, s, libol.ClInit)
 		t.client.SetStatus(libol.ClInit)
 	}
-	t.reconTime = time.Now().Unix()
 	if err := t.client.Connect(); err != nil {
 		libol.Error("SocketWorker.connect %s %s", t.client, err)
 		return err
@@ -206,16 +213,19 @@ func (t *SocketWorker) reconnect() {
 	if t.isStopped() {
 		return
 	}
-	time.Sleep(t.sleepIdle())
-	_ = t.connect()
-}
-
-func (t *SocketWorker) splitControl(data []byte, n int) (string, string) {
-	if n == 0 || !libol.IsControl(data) {
-		return "", ""
-	}
-	m := libol.NewFrameMessage(data)
-	return m.CmdAndParams()
+	t.reconTime = time.Now().Unix()
+	t.timer = append(t.timer, socketTimer{
+		Time: time.Now().Unix() + t.sleepIdle(),
+		Call: func() error {
+			libol.Debug("SocketWorker.reconnect: on timer")
+			if t.lastTime < t.reconTime { // has frame from server.
+				return t.connect()
+			} else {
+				libol.Info("SocketWorker.reconnect: dissed by waked up")
+			}
+			return nil
+		},
+	})
 }
 
 // toLogin request
@@ -230,16 +240,7 @@ func (t *SocketWorker) toLogin(client libol.SocketClient) error {
 		libol.Error("SocketWorker.toLogin: %s", err)
 		return err
 	}
-	data := make([]byte, libol.MAXBUF)
-	n, _ := t.client.ReadMsg(data)
-	if action, resp := t.splitControl(data, n); action == "logi:" {
-		_ = t.onLogin(resp)
-		if t.client.Have(libol.ClAuth) {
-			return nil
-		}
-	}
-	t.reconnect()
-	return libol.NewErr("login failed")
+	return nil
 }
 
 // network request
@@ -254,10 +255,6 @@ func (t *SocketWorker) toNetwork(client libol.SocketClient) error {
 		libol.Error("SocketWorker.toNetwork: %s", err)
 		return err
 	}
-	t.eventQueue <- socketEvent{
-		Type:   EventSuccess,
-		Reason: "already request network",
-	}
 	return nil
 }
 
@@ -271,6 +268,7 @@ func (t *SocketWorker) onLogin(resp string) error {
 		if t.pointCfg.RequestAddr {
 			_ = t.toNetwork(t.client)
 		}
+		t.eventQueue <- NewEvent(EventSuccess, "already success")
 		libol.Info("SocketWorker.onInstruct.toLogin: success")
 	} else {
 		t.client.SetStatus(libol.ClUnAuth)
@@ -301,10 +299,7 @@ func (t *SocketWorker) onLeft(resp string) error {
 func (t *SocketWorker) onSignIn(resp string) error {
 	client := t.client
 	libol.Info("SocketWorker.onSignIn: %s %s", client.String(), resp)
-	t.eventQueue <- socketEvent{
-		Type:   EventSignIn,
-		Reason: "request from server",
-	}
+	t.eventQueue <- NewEvent(EventSignIn, "request from server")
 	return nil
 }
 
@@ -362,30 +357,55 @@ func (t *SocketWorker) doTicker() error {
 			return err
 		}
 	}
+
+	// travel timer and execute expired.
+	now := time.Now().Unix()
+	newTimer := make([]socketTimer, 0, 32)
+	for _, t := range t.timer {
+		if now >= t.Time {
+			_ = t.Call()
+		} else {
+			newTimer = append(newTimer, t)
+		}
+	}
+	t.timer = newTimer
+	libol.Debug("SocketWorker.doTicker %d", len(t.timer))
 	return nil
+}
+
+func (t *SocketWorker) reconFast(ev socketEvent) bool {
+	now := t.sleepNow()
+	last := time.Now().Unix() - ev.Time
+	if last < now {
+		libol.Info("SocketWorker.reconnect too fast %d:%d", last, now)
+		return true
+	}
+	return false
 }
 
 func (t *SocketWorker) dispatch(ev socketEvent) {
 	libol.Info("SocketWorker.dispatch %v", ev)
 	switch ev.Type {
 	case EventConed:
+		t.lastTime = time.Now().Unix()
 		if t.client != nil {
+			go t.Read()
 			_ = t.toLogin(t.client)
 		}
 	case EventRecon:
-		now := t.sleepNow()
-		last := time.Now().Unix() - ev.Time
-		if last >= now {
-			t.close()
+		if !t.reconFast(ev) {
 			t.reconnect()
-		} else {
-			libol.Warn("SocketWorker.reconnect too fast %d:%d", last, now)
 		}
 	case EventSuccess:
-		go t.Read()
+		//go t.Read()
 	case EventSignIn:
 		if !t.client.Have(libol.ClAuth) {
-			t.close()
+			if !t.reconFast(ev) {
+				t.reconnect()
+			}
+		}
+	case EventLogin:
+		if !t.reconFast(ev) {
 			t.reconnect()
 		}
 	}
@@ -417,7 +437,7 @@ func (t *SocketWorker) isStopped() bool {
 }
 
 func (t *SocketWorker) Read() {
-	libol.Info("SocketWorker.Read: %s", t.client.State())
+	libol.Info("SocketWorker.Read: %s", t.client)
 	data := make([]byte, libol.MAXBUF)
 	for {
 		t.lock.Lock()
@@ -447,11 +467,7 @@ func (t *SocketWorker) Read() {
 		t.lock.Unlock()
 	}
 	if !t.isStopped() {
-		t.eventQueue <- socketEvent{
-			Type:   EventRecon,
-			Reason: "from read",
-			Time:   time.Now().Unix(),
-		}
+		t.eventQueue <- NewEvent(EventRecon, "from read")
 	}
 	libol.Info("SocketWorker.Read: exit")
 }
@@ -459,12 +475,8 @@ func (t *SocketWorker) Read() {
 func (t *SocketWorker) deadCheck() {
 	dt := time.Now().Unix() - t.lastTime
 	if dt > int64(t.pointCfg.Timeout) {
-		libol.Warn("SocketWorker.deadCheck: %s idle %ds", t.client.String(), dt)
-		t.eventQueue <- socketEvent{
-			Type:   EventRecon,
-			Reason: "from dead check",
-			Time:   time.Now().Unix(),
-		}
+		libol.Warn("SocketWorker.deadCheck: %s idle %ds", t.client, dt)
+		t.eventQueue <- NewEvent(EventRecon, "from dead check")
 		t.lastTime = time.Now().Unix()
 	}
 }
@@ -484,11 +496,7 @@ func (t *SocketWorker) DoWrite(data []byte) error {
 	}
 	t.lock.Unlock()
 	if err := t.client.WriteMsg(data); err != nil {
-		t.eventQueue <- socketEvent{
-			Type:   EventRecon,
-			Reason: "from write",
-			Time:   time.Now().Unix(),
-		}
+		t.eventQueue <- NewEvent(EventRecon, "from write")
 		return err
 	}
 	return nil
