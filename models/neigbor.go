@@ -9,7 +9,7 @@ import (
 )
 
 type Neighbor struct {
-	Client  libol.SocketClient `json:"Client"`
+	Client  libol.SocketClient `json:"client"`
 	HwAddr  net.HardwareAddr   `json:"HwAddr"`
 	IpAddr  net.IP             `json:"IpAddr"`
 	NewTime int64              `json:"newTime"`

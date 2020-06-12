@@ -9,7 +9,7 @@ func TestTapWrite(t *testing.T) {
 	cfg := water.Config{DeviceType: water.TAP}
 	dev, err := water.New(cfg)
 	if err != nil {
-		t.Errorf("Tap.Open %s", err)
+		t.Errorf("Tap.open %s", err)
 		return
 	}
 
@@ -33,7 +33,7 @@ func BenchmarkTapWrite64(b *testing.B) {
 	cfg := water.Config{DeviceType: water.TAP}
 	dev, err := water.New(cfg)
 	if err != nil {
-		b.Errorf("Tap.Open %s", err)
+		b.Errorf("Tap.open %s", err)
 		return
 	}
 
@@ -59,7 +59,7 @@ func BenchmarkTapWrite1500(b *testing.B) {
 	cfg := water.Config{DeviceType: water.TAP}
 	dev, err := water.New(cfg)
 	if err != nil {
-		b.Errorf("Tap.Open %s", err)
+		b.Errorf("Tap.open %s", err)
 		return
 	}
 

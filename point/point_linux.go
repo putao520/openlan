@@ -122,7 +122,7 @@ func (p *Point) UpBr(name string) *netlink.Bridge {
 func (p *Point) OnTap(w *TapWorker) error {
 	libol.Info("Point.OnTap")
 
-	name := w.Device.Name()
+	name := w.device.Name()
 	link, err := netlink.LinkByName(name)
 	if err != nil {
 		libol.Error("Point.OnTap: Get dev %s: %s", name, err)

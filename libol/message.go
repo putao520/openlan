@@ -25,6 +25,9 @@ func GetMagic() []byte {
 }
 
 func IsControl(data []byte) bool {
+	if len(data) < 6 {
+		return false
+	}
 	if bytes.Equal(data[:6], ZEROED[:6]) {
 		return true
 	}

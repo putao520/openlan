@@ -50,7 +50,7 @@ func (n *Neighbors) Start() {
 		case <-n.done:
 			return
 		case t := <-n.ticker.C:
-			libol.Log("Neighbors.Expire: tick at %s", t)
+			libol.Log("Neighbors.Ticker: at %s", t)
 			n.Expire()
 		}
 	}

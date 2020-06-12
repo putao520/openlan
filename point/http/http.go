@@ -58,7 +58,6 @@ func (h *Http) PProf(r *mux.Router) {
 func (h *Http) IsAuth(w http.ResponseWriter, r *http.Request) bool {
 	token, pass, ok := r.BasicAuth()
 	libol.Debug("Http.IsAuth token: %s, pass: %s", token, pass)
-
 	if !ok || token != h.token {
 		w.Header().Set("WWW-Authenticate", "Basic")
 		http.Error(w, "Authorization Required.", http.StatusUnauthorized)
