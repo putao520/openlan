@@ -108,6 +108,7 @@ func (v *Switch) Initialize() {
 	if v.Conf.Http != nil {
 		v.http = NewHttp(v, v.Conf)
 	}
+	crypt := v.Conf.Crypt
 	for _, nCfg := range v.Conf.Network {
 		name := nCfg.Name
 		brCfg := nCfg.Bridge
@@ -127,7 +128,7 @@ func (v *Switch) Initialize() {
 				v.AddRules(source, rt.Prefix)
 			}
 		}
-		v.worker[name] = NewWorker(*nCfg)
+		v.worker[name] = NewWorker(*nCfg, crypt)
 		v.bridge[name] = network.NewBridger(brCfg.Provider, brCfg.Name, brCfg.Mtu)
 	}
 

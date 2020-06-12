@@ -511,7 +511,6 @@ func (a *TapWorker) Read() {
 		if a.Device == nil {
 			break
 		}
-
 		n, err := a.Device.Read(data)
 		if err != nil || a.OpenAgain.Get().(bool) {
 			if err != nil {
@@ -926,7 +925,6 @@ func (p *Worker) OnIpAddr(w *SocketWorker, n *models.Network) error {
 			NextHop:     nxt,
 		})
 	}
-
 	return nil
 }
 

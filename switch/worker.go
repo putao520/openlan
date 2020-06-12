@@ -21,9 +21,10 @@ type Worker struct {
 	links       map[string]*point.Point
 	uuid        string
 	initialized bool
+	crypt       *config.Crypt
 }
 
-func NewWorker(c config.Network) *Worker {
+func NewWorker(c config.Network, crypt *config.Crypt) *Worker {
 	w := Worker{
 		Alias:       c.Alias,
 		Conf:        c,
@@ -31,6 +32,7 @@ func NewWorker(c config.Network) *Worker {
 		startTime:   0,
 		links:       make(map[string]*point.Point),
 		initialized: false,
+		crypt:       crypt,
 	}
 
 	return &w
@@ -115,6 +117,9 @@ func (w *Worker) AddLink(c *config.Point) {
 	c.Intf.Bridge = w.Conf.Bridge.Name //Reset bridge name.
 	c.RequestAddr = false
 	c.Network = w.Conf.Name
+	if c.Crypt == nil {
+		c.Crypt = w.crypt
+	}
 	go func() {
 		p := point.NewPoint(c)
 		p.Initialize()

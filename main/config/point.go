@@ -25,7 +25,7 @@ type Point struct {
 	Intf        Interface `json:"interface" yaml:"interface"`
 	Log         Log       `json:"log" yaml:"log"`
 	Http        *Http     `json:"http,omitempty" yaml:"http,omitempty"`
-	Crypt       Crypt     `json:"crypt"`
+	Crypt       *Crypt    `json:"crypt"`
 	RequestAddr bool      `json:"-" yaml:"-"`
 	SaveFile    string    `json:"-" yaml:"-"`
 }
@@ -50,7 +50,7 @@ var pd = Point{
 	SaveFile:    "./point.json",
 	Network:     "default",
 	RequestAddr: true,
-	Crypt: Crypt{
+	Crypt: &Crypt{
 		Algo: "xor",
 	},
 }
@@ -109,7 +109,9 @@ func (c *Point) Default() {
 	if c.Timeout == 0 {
 		c.Timeout = pd.Timeout
 	}
-	CryptDefault(&c.Crypt)
+	if c.Crypt != nil {
+		c.Crypt.Default()
+	}
 }
 
 func (c *Point) Load() error {

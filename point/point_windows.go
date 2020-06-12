@@ -62,7 +62,6 @@ func (p *Point) AddAddr(ipStr string) error {
 	if ipStr == "" {
 		return nil
 	}
-
 	addrExisted := libol.IpAddrShow(p.IfName())
 	if len(addrExisted) > 0 {
 		for _, addr := range addrExisted {

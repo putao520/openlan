@@ -79,7 +79,7 @@ type Switch struct {
 	Http      *Http       `json:"http,omitempty" yaml:"http,omitempty"`
 	Log       Log         `json:"log" yaml:"log"`
 	Cert      Cert        `json:"cert"`
-	Crypt     Crypt       `json:"crypt"`
+	Crypt     *Crypt      `json:"crypt"`
 	Network   []*Network  `json:"network"`
 	FireWall  []FlowRules `json:"firewall"`
 	ConfDir   string      `json:"-" yaml:"-"`
@@ -98,9 +98,6 @@ var sd = Switch{
 		Listen: "0.0.0.0:10000",
 	},
 	Listen: "0.0.0.0:10002",
-	Crypt: Crypt{
-		Algo: "xor",
-	},
 }
 
 func NewSwitch() (c Switch) {
@@ -142,7 +139,9 @@ func (c *Switch) Default() {
 	if c.Timeout == 0 {
 		c.Timeout = sd.Timeout
 	}
-	CryptDefault(&c.Crypt)
+	if c.Crypt != nil {
+		c.Crypt.Default()
+	}
 	files, err := filepath.Glob(c.ConfDir + "/network/*.json")
 	if err != nil {
 		libol.Error("Switch.Default %s", err)
