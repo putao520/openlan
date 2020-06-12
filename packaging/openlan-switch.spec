@@ -32,6 +32,7 @@ cp %_source_dir/packaging/resource/openlan-switch.service %{buildroot}/usr/lib/s
 
 mkdir -p %{buildroot}/var/openlan
 cp -R %_source_dir/packaging/resource/ca %{buildroot}/var/openlan
+cp -R %_source_dir/packaging/script %{buildroot}/var/openlan
 cp -R %_source_dir/switch/public %{buildroot}/var/openlan
 
 %pre

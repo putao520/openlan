@@ -9,6 +9,10 @@
   "log": {
     "file": "/var/log/openlan-switch.log"
   },
+  "crypt": {
+    "algo": "xor",
+    "secret": "123456"
+  },
   "network": [
     {
       "name": "default",
