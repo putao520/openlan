@@ -438,7 +438,7 @@ func (a *TapWorker) SetEther(addr string) {
 		}
 	}
 	// changed address need open device again.
-	if a.ifAddr != addr {
+	if a.ifAddr != "" && a.ifAddr != addr {
 		libol.Warn("TapWorker.SetEther changed %s->%s", a.ifAddr, addr)
 		a.OpenAgain.Set(true)
 	}

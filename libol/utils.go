@@ -116,6 +116,9 @@ func Netmask2Len(s string) int {
 }
 
 func IpAddrFormat(ipAddr string) string {
+	if ipAddr == "" {
+		return ""
+	}
 	address := ipAddr
 	netmask := "255.255.255.255"
 	s := strings.SplitN(ipAddr, "/", 2)
