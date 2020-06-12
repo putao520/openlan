@@ -61,7 +61,7 @@ type Switch struct {
 	http       *Http
 	server     libol.SocketServer
 	bridge     map[string]network.Bridger
-	worker     map[string]*Worker
+	worker     map[string]*NetworkWorker
 	lock       sync.RWMutex
 	uuid       string
 	newTime    int64
@@ -75,7 +75,7 @@ func NewSwitch(c config.Switch) *Switch {
 		Fire: FireWall{
 			Rules: make([]libol.FilterRule, 0, 32),
 		},
-		worker:     make(map[string]*Worker, 32),
+		worker:     make(map[string]*NetworkWorker, 32),
 		bridge:     make(map[string]network.Bridger, 32),
 		server:     server,
 		newTime:    time.Now().Unix(),
@@ -134,7 +134,7 @@ func (v *Switch) Initialize() {
 				v.AddRules(source, rt.Prefix)
 			}
 		}
-		v.worker[name] = NewWorker(*nCfg, crypt)
+		v.worker[name] = NewNetworkWorker(*nCfg, crypt)
 		v.bridge[name] = network.NewBridger(brCfg.Provider, brCfg.Name, brCfg.Mtu)
 	}
 
@@ -179,7 +179,7 @@ func (v *Switch) Initialize() {
 
 func (v *Switch) OnHook(client libol.SocketClient, frame *libol.FrameMessage) error {
 	for _, h := range v.hooks {
-		libol.Log("Worker.onHook: h %p", h)
+		libol.Log("Switch.onHook: h %p", h)
 		if h != nil {
 			if err := h(client, frame); err != nil {
 				return err
@@ -302,6 +302,21 @@ func (v *Switch) Stop() error {
 	if v.bridge == nil {
 		return libol.NewErr("already closed")
 	}
+	if v.http != nil {
+		v.http.Shutdown()
+		v.http = nil
+	}
+	for _, w := range v.worker {
+		w.Stop()
+	}
+	for p := range storage.Point.List() {
+		if p == nil {
+			break
+		}
+		if p.Client != nil {
+			v.LeftClient(p.Client)
+		}
+	}
 	for _, nCfg := range v.Conf.Network {
 		if br, ok := v.bridge[nCfg.Name]; ok {
 			brCfg := nCfg.Bridge
@@ -309,14 +324,7 @@ func (v *Switch) Stop() error {
 			delete(v.bridge, brCfg.Name)
 		}
 	}
-	if v.http != nil {
-		v.http.Shutdown()
-		v.http = nil
-	}
 	v.server.Close()
-	for _, w := range v.worker {
-		w.Stop()
-	}
 	return nil
 }
 
@@ -335,7 +343,7 @@ func (v *Switch) Server() libol.SocketServer {
 func (v *Switch) NewTap(tenant string) (network.Taper, error) {
 	v.lock.RLock()
 	defer v.lock.RUnlock()
-	libol.Debug("Worker.NewTap")
+	libol.Debug("Switch.NewTap")
 
 	br, ok := v.bridge[tenant]
 	if !ok {
@@ -343,14 +351,14 @@ func (v *Switch) NewTap(tenant string) (network.Taper, error) {
 	}
 	dev, err := network.NewTaper(br.Type(), tenant, network.TapConfig{Type: network.TAP})
 	if err != nil {
-		libol.Error("Worker.NewTap: %s", err)
+		libol.Error("Switch.NewTap: %s", err)
 		return nil, err
 	}
 	mtu := br.Mtu()
 	dev.SetMtu(mtu)
 	dev.Up()
 	_ = br.AddSlave(dev)
-	libol.Info("Worker.NewTap: %s on %s", dev.Name(), tenant)
+	libol.Info("Switch.NewTap: %s on %s", dev.Name(), tenant)
 	return dev, nil
 }
 
@@ -360,7 +368,7 @@ func (v *Switch) FreeTap(dev network.Taper) error {
 		return libol.NewErr("Not found bridge %s", dev.Tenant())
 	}
 	_ = br.DelSlave(dev)
-	libol.Info("Worker.FreeTap: %s", dev.Name())
+	libol.Info("Switch.FreeTap: %s", dev.Name())
 	return nil
 }
 
@@ -407,4 +415,30 @@ func (v *Switch) OffClient(client libol.SocketClient) {
 
 func (v *Switch) Config() *config.Switch {
 	return &v.Conf
+}
+
+func (v *Switch) LeftClient(client libol.SocketClient) {
+	data := struct {
+		DateTime   int64  `json:"datetime"`
+		UUID       string `json:"uuid"`
+		Alias      string `json:"alias"`
+		Connection string `json:"connection"`
+		Address    string `json:"address"`
+	}{
+		DateTime:   time.Now().Unix(),
+		UUID:       v.UUID(),
+		Alias:      v.Alias(),
+		Address:    client.LocalAddr(),
+		Connection: client.RemoteAddr(),
+	}
+	body, err := json.Marshal(data)
+	if err != nil {
+		libol.Error("Switch.Leave: %s", err)
+		return
+	}
+	libol.Cmd("Switch.Leave: left: %s", body)
+	if err := client.WriteReq("left", string(body)); err != nil {
+		libol.Error("Switch.Leave: %s", err)
+		return
+	}
 }

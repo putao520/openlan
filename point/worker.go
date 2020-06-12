@@ -58,7 +58,7 @@ func NewSocketWorker(client libol.SocketClient, c *config.Point) (t *SocketWorke
 	t = &SocketWorker{
 		Client:      client,
 		user:        models.NewUser(c.Username, c.Password),
-		network:     models.NewNetwork(c.Network, c.Intf.Address),
+		network:     models.NewNetwork(c.Network, c.Interface.Address),
 		routes:      make(map[string]*models.Route, 64),
 		initialized: false,
 		lastTime:    time.Now().Unix(),
@@ -89,7 +89,7 @@ func (t *SocketWorker) Initialize() {
 	}
 	libol.Info("SocketWorker.Initialize")
 	t.initialized = true
-	t.Client.SetMaxSize(t.pointCfg.Intf.Mtu)
+	t.Client.SetMaxSize(t.pointCfg.Interface.Mtu)
 	t.Client.SetListener(libol.ClientListener{
 		OnConnected: func(client libol.SocketClient) error {
 			return t.Login(client)
@@ -204,40 +204,70 @@ func (t *SocketWorker) Network(client libol.SocketClient) error {
 	return nil
 }
 
+func (t *SocketWorker) OnLogin(resp string) error {
+	if strings.HasPrefix(resp, "okay") {
+		t.Client.SetStatus(libol.ClAuth)
+		if t.Listener.OnSuccess != nil {
+			_ = t.Listener.OnSuccess(t)
+		}
+		t.sleepTimes = 0
+		if t.pointCfg.RequestAddr {
+			_ = t.Network(t.Client)
+		}
+		libol.Info("SocketWorker.OnInstruct.login: success")
+	} else {
+		t.Client.SetStatus(libol.ClUnAuth)
+		libol.Error("SocketWorker.OnInstruct.login: %s", resp)
+	}
+	return nil
+}
+
+func (t *SocketWorker) OnIpAddr(resp string) error {
+	n := &models.Network{}
+	if err := json.Unmarshal([]byte(resp), n); err != nil {
+		return libol.NewErr("SocketWorker.OnInstruct: Invalid json data.")
+	}
+	t.network = n
+	if t.Listener.OnIpAddr != nil {
+		_ = t.Listener.OnIpAddr(t, n)
+	}
+	return nil
+}
+
+func (t *SocketWorker) OnLeft(resp string) error {
+	client := t.Client
+	libol.Info("SocketWorker.OnLeft: %s %s", client.String(), resp)
+	t.Close()
+	return nil
+}
+
+func (t *SocketWorker) OnSignIn(resp string) error {
+	client := t.Client
+	libol.Info("SocketWorker.OnSignIn: %s %s", client.String(), resp)
+	_ = t.Login(client)
+	return nil
+}
+
 // handle instruct from virtual switch
-func (t *SocketWorker) onInstruct(data []byte) error {
+func (t *SocketWorker) OnInstruct(data []byte) error {
 	m := libol.NewFrameMessage(data)
 	if !m.IsControl() {
 		return nil
 	}
 	action, resp := m.CmdAndParams()
-	libol.Cmd("SocketWorker.onInstruct %s %s", action, resp)
+	libol.Cmd("SocketWorker.OnInstruct %s %s", action, resp)
 	switch action {
 	case "logi:":
-		if strings.HasPrefix(resp, "okay") {
-			t.Client.SetStatus(libol.ClAuth)
-			if t.Listener.OnSuccess != nil {
-				_ = t.Listener.OnSuccess(t)
-			}
-			t.sleepTimes = 0
-			if t.pointCfg.RequestAddr {
-				_ = t.Network(t.Client)
-			}
-			libol.Info("SocketWorker.onInstruct.login: success")
-		} else {
-			t.Client.SetStatus(libol.ClUnAuth)
-			libol.Error("SocketWorker.onInstruct.login: %s", resp)
-		}
+		return t.OnLogin(resp)
 	case "ipad:":
-		n := models.Network{}
-		if err := json.Unmarshal([]byte(resp), &n); err != nil {
-			return libol.NewErr("SocketWorker.onInstruct: Invalid json data.")
-		}
-		if t.Listener.OnIpAddr != nil {
-			_ = t.Listener.OnIpAddr(t, &n)
-		}
+		return t.OnIpAddr(resp)
+	case "pong:":
 	case "sign=":
-		_ = t.Login(t.Client)
+		return t.OnSignIn(resp)
+	case "left=":
+		return t.OnLeft(resp)
+	default:
+		libol.Warn("SocketWorker.OnInstruct: %s %s", action, resp)
 	}
 	return nil
 }
@@ -313,7 +343,7 @@ func (t *SocketWorker) Read() {
 		if n > 0 {
 			frame := data[:n]
 			if libol.IsControl(frame) {
-				_ = t.onInstruct(frame)
+				_ = t.OnInstruct(frame)
 			} else if t.Listener.ReadAt != nil {
 				_ = t.Listener.ReadAt(frame)
 			}
@@ -450,7 +480,7 @@ func (a *TapWorker) DoTun() {
 	if a.Device == nil || !a.Device.IsTun() {
 		return
 	}
-	a.SetEther(a.pointCfg.Intf.Address)
+	a.SetEther(a.pointCfg.Interface.Address)
 	a.Ether.HwAddr = libol.GenEthAddr(6)
 	libol.Info("TapWorker.DoTun: src %x", a.Ether.HwAddr)
 }
@@ -492,7 +522,7 @@ func (a *TapWorker) onMiss(dest []byte) {
 	reply.SHwAddr = a.Ether.HwAddr
 	reply.THwAddr = libol.ZEROED
 
-	buffer := make([]byte, 0, a.pointCfg.Intf.Mtu)
+	buffer := make([]byte, 0, a.pointCfg.Interface.Mtu)
 	buffer = append(buffer, eth.Encode()...)
 	buffer = append(buffer, reply.Encode()...)
 
@@ -621,7 +651,7 @@ func (a *TapWorker) onArp(data []byte) bool {
 				reply.TIpAddr = arp.SIpAddr
 				reply.SHwAddr = a.Ether.HwAddr
 				reply.THwAddr = arp.SHwAddr
-				buffer := make([]byte, 0, a.pointCfg.Intf.Mtu)
+				buffer := make([]byte, 0, a.pointCfg.Interface.Mtu)
 				buffer = append(buffer, eth.Encode()...)
 				buffer = append(buffer, reply.Encode()...)
 				libol.Info("TapWorker.onArp: reply %x.", buffer)
@@ -714,17 +744,17 @@ func GetSocketClient(c *config.Point) libol.SocketClient {
 }
 
 func GetTapCfg(c *config.Point) network.TapConfig {
-	if c.Intf.Provider == "tun" {
+	if c.Interface.Provider == "tun" {
 		return network.TapConfig{
 			Type:    network.TUN,
-			Name:    c.Intf.Name,
-			Network: c.Intf.Address,
+			Name:    c.Interface.Name,
+			Network: c.Interface.Address,
 		}
 	} else {
 		return network.TapConfig{
 			Type:    network.TAP,
-			Name:    c.Intf.Name,
-			Network: c.Intf.Address,
+			Name:    c.Interface.Name,
+			Network: c.Interface.Address,
 		}
 	}
 }
@@ -742,11 +772,12 @@ type Worker struct {
 	network     *models.Network
 	initialized bool
 	routes      []PrefixRule
+	lock        sync.RWMutex
 }
 
 func NewWorker(config *config.Point) (p *Worker) {
 	return &Worker{
-		IfAddr:      config.Intf.Address,
+		IfAddr:      config.Interface.Address,
 		config:      config,
 		initialized: false,
 		routes:      make([]PrefixRule, 0, 32),

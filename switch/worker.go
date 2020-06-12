@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-type Worker struct {
+type NetworkWorker struct {
 	Alias string
 	Conf  config.Network
 	// private
@@ -24,8 +24,8 @@ type Worker struct {
 	crypt       *config.Crypt
 }
 
-func NewWorker(c config.Network, crypt *config.Crypt) *Worker {
-	w := Worker{
+func NewNetworkWorker(c config.Network, crypt *config.Crypt) *NetworkWorker {
+	w := NetworkWorker{
 		Alias:       c.Alias,
 		Conf:        c,
 		newTime:     time.Now().Unix(),
@@ -38,7 +38,7 @@ func NewWorker(c config.Network, crypt *config.Crypt) *Worker {
 	return &w
 }
 
-func (w *Worker) Initialize() {
+func (w *NetworkWorker) Initialize() {
 	w.initialized = true
 
 	for _, pass := range w.Conf.Password {
@@ -58,7 +58,7 @@ func (w *Worker) Initialize() {
 		}
 		for _, rt := range w.Conf.Routes {
 			if rt.NextHop == "" {
-				libol.Warn("Worker.Initialize %s no nexthop", rt.Prefix)
+				libol.Warn("NetworkWorker.Initialize %s no nexthop", rt.Prefix)
 				continue
 			}
 			met.Routes = append(met.Routes, &models.Route{
@@ -70,15 +70,15 @@ func (w *Worker) Initialize() {
 	}
 }
 
-func (w *Worker) ID() string {
+func (w *NetworkWorker) ID() string {
 	return w.uuid
 }
 
-func (w *Worker) String() string {
+func (w *NetworkWorker) String() string {
 	return w.ID()
 }
 
-func (w *Worker) LoadLinks() {
+func (w *NetworkWorker) LoadLinks() {
 	if w.Conf.Links != nil {
 		for _, lin := range w.Conf.Links {
 			lin.Default()
@@ -87,8 +87,8 @@ func (w *Worker) LoadLinks() {
 	}
 }
 
-func (w *Worker) Start(v api.Switcher) {
-	libol.Info("Worker.Start: %s", w.Conf.Name)
+func (w *NetworkWorker) Start(v api.Switcher) {
+	libol.Info("NetworkWorker.Start: %s", w.Conf.Name)
 	if !w.initialized {
 		w.Initialize()
 	}
@@ -97,29 +97,26 @@ func (w *Worker) Start(v api.Switcher) {
 	w.LoadLinks()
 }
 
-func (w *Worker) Stop() {
-	libol.Info("Worker.Close: %s", w.Conf.Name)
+func (w *NetworkWorker) Stop() {
+	libol.Info("NetworkWorker.Close: %s", w.Conf.Name)
 	for _, p := range w.links {
 		p.Stop()
 	}
 	w.startTime = 0
 }
 
-func (w *Worker) UpTime() int64 {
+func (w *NetworkWorker) UpTime() int64 {
 	if w.startTime != 0 {
 		return time.Now().Unix() - w.startTime
 	}
 	return 0
 }
 
-func (w *Worker) AddLink(c *config.Point) {
+func (w *NetworkWorker) AddLink(c *config.Point) {
 	c.Alias = w.Alias
-	c.Intf.Bridge = w.Conf.Bridge.Name //Reset bridge name.
+	c.Interface.Bridge = w.Conf.Bridge.Name //Reset bridge name.
 	c.RequestAddr = false
 	c.Network = w.Conf.Name
-	if c.Crypt == nil || c.Crypt.IsZero() {
-		c.Crypt = w.crypt
-	}
 	go func() {
 		p := point.NewPoint(c)
 		p.Initialize()
@@ -133,7 +130,7 @@ func (w *Worker) AddLink(c *config.Point) {
 	}()
 }
 
-func (w *Worker) DelLink(addr string) {
+func (w *NetworkWorker) DelLink(addr string) {
 	w.linksLock.Lock()
 	defer w.linksLock.Unlock()
 

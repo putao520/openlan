@@ -22,7 +22,7 @@ type Point struct {
 	Username    string    `json:"username,omitempty" yaml:"username,omitempty"`
 	Password    string    `json:"password,omitempty" yaml:"password,omitempty"`
 	Protocol    string    `json:"protocol,omitempty" yaml:"protocol,omitempty"`
-	Intf        Interface `json:"interface" yaml:"interface"`
+	Interface   Interface `json:"interface" yaml:"interface"`
 	Log         Log       `json:"log" yaml:"log"`
 	Http        *Http     `json:"http,omitempty" yaml:"http,omitempty"`
 	Crypt       *Crypt    `json:"crypt"`
@@ -39,7 +39,7 @@ var pd = Point{
 		File:    "./point.log",
 		Verbose: libol.INFO,
 	},
-	Intf: Interface{
+	Interface: Interface{
 		Mtu:      1518,
 		Provider: "tap",
 		Name:     "",
@@ -68,10 +68,10 @@ func NewPoint() (c *Point) {
 	flag.IntVar(&c.Timeout, "timeout", pd.Timeout, "Time in secs socket dead")
 	flag.IntVar(&c.Log.Verbose, "log:level", pd.Log.Verbose, "Log level")
 	flag.StringVar(&c.Log.File, "log:file", pd.Log.File, "Log saved to file")
-	flag.StringVar(&c.Intf.Name, "if:name", pd.Intf.Name, "Configure interface name")
-	flag.StringVar(&c.Intf.Address, "if:addr", pd.Intf.Address, "Configure interface address")
-	flag.StringVar(&c.Intf.Bridge, "if:br", pd.Intf.Bridge, "Configure bridge name")
-	flag.StringVar(&c.Intf.Provider, "if:provider", pd.Intf.Provider, "Interface provider")
+	flag.StringVar(&c.Interface.Name, "if:name", pd.Interface.Name, "Configure interface name")
+	flag.StringVar(&c.Interface.Address, "if:addr", pd.Interface.Address, "Configure interface address")
+	flag.StringVar(&c.Interface.Bridge, "if:br", pd.Interface.Bridge, "Configure bridge name")
+	flag.StringVar(&c.Interface.Provider, "if:provider", pd.Interface.Provider, "Interface provider")
 	flag.StringVar(&c.Http.Listen, "http:listen", pd.Http.Listen, "Http listen on")
 	flag.StringVar(&c.SaveFile, "conf", pd.SaveFile, "the configuration file")
 	flag.StringVar(&c.Crypt.Secret, "crypt:secret", pd.Crypt.Secret, "Crypt secret")
@@ -92,7 +92,7 @@ func (c *Point) Right() {
 	}
 	RightAddr(&c.Addr, 10002)
 	if runtime.GOOS == "darwin" {
-		c.Intf.Provider = "tun"
+		c.Interface.Provider = "tun"
 	}
 }
 
@@ -102,8 +102,8 @@ func (c *Point) Default() {
 	if c.Addr == "" {
 		c.Addr = pd.Addr
 	}
-	if c.Intf.Mtu == 0 {
-		c.Intf.Mtu = pd.Intf.Mtu
+	if c.Interface.Mtu == 0 {
+		c.Interface.Mtu = pd.Interface.Mtu
 	}
 	if c.Timeout == 0 {
 		c.Timeout = pd.Timeout
