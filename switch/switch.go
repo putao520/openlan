@@ -1,7 +1,6 @@
 package _switch
 
 import (
-	"crypto/tls"
 	"encoding/json"
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/main/config"
@@ -15,22 +14,12 @@ import (
 	"time"
 )
 
-func GetTlsCfg(c config.Switch) *tls.Config {
-	if c.Cert.KeyFile != "" && c.Cert.CrtFile != "" {
-		cer, err := tls.LoadX509KeyPair(c.Cert.CrtFile, c.Cert.KeyFile)
-		if err != nil {
-			libol.Error("NewSwitch: %s", err)
-		}
-		return &tls.Config{Certificates: []tls.Certificate{cer}}
-	}
-	return nil
-}
-
 func GetSocketServer(c config.Switch) libol.SocketServer {
-	tlsCfg := GetTlsCfg(c)
+	tlsCfg := config.GetTlsCfg(c.Cert)
 	switch c.Protocol {
 	case "kcp":
 		kcpCfg := &libol.KcpConfig{
+			Block:   config.GetBlock(c.Crypt),
 			Timeout: time.Duration(c.Timeout) * time.Second,
 		}
 		return libol.NewKcpServer(c.Listen, kcpCfg)
@@ -38,6 +27,7 @@ func GetSocketServer(c config.Switch) libol.SocketServer {
 		return libol.NewTcpServer(c.Listen, nil)
 	case "udp":
 		udpCfg := &libol.UdpConfig{
+			Block:   config.GetBlock(c.Crypt),
 			Timeout: time.Duration(c.Timeout) * time.Second,
 		}
 		return libol.NewUdpServer(c.Listen, udpCfg)

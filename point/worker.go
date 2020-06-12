@@ -694,11 +694,18 @@ func GetSocketClient(c *config.Point) libol.SocketClient {
 	}
 	switch c.Protocol {
 	case "kcp":
-		return libol.NewKcpClient(c.Addr, nil)
+		kcpCfg := &libol.KcpConfig{
+			Block: config.GetBlock(c.Crypt),
+		}
+		return libol.NewKcpClient(c.Addr, kcpCfg)
 	case "tcp":
 		return libol.NewTcpClient(c.Addr, nil)
 	case "udp":
-		return libol.NewUdpClient(c.Addr, nil)
+		udpCfg := &libol.UdpConfig{
+			Block:   config.GetBlock(c.Crypt),
+			Timeout: time.Duration(c.Timeout) * time.Second,
+		}
+		return libol.NewUdpClient(c.Addr, udpCfg)
 	default:
 		return libol.NewTcpClient(c.Addr, tlsConf)
 	}

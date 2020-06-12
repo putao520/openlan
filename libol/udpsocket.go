@@ -1,17 +1,17 @@
 package libol
 
 import (
+	"github.com/xtaci/kcp-go/v5"
 	"net"
 	"time"
 )
 
 type UdpConfig struct {
-	Key     string
+	Block   kcp.BlockCrypt
 	Timeout time.Duration // ns
 }
 
 var defaultUdpConfig = UdpConfig{
-	Key:     "78fxojvnu",
 	Timeout: 120 * time.Second,
 }
 

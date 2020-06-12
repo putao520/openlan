@@ -25,6 +25,7 @@ type Point struct {
 	Intf        Interface `json:"interface" yaml:"interface"`
 	Log         Log       `json:"log" yaml:"log"`
 	Http        *Http     `json:"http,omitempty" yaml:"http,omitempty"`
+	Crypt       Crypt     `json:"crypt"`
 	RequestAddr bool      `json:"-" yaml:"-"`
 	SaveFile    string    `json:"-" yaml:"-"`
 }
@@ -33,7 +34,7 @@ var pd = Point{
 	Alias:    "",
 	Addr:     "openlan.net",
 	Protocol: "tls", // udp, kcp, tcp, tls, ws and wss etc.
-	Timeout:  60,
+	Timeout:  120,
 	Log: Log{
 		File:    "./point.log",
 		Verbose: libol.INFO,
@@ -49,6 +50,9 @@ var pd = Point{
 	SaveFile:    "./point.json",
 	Network:     "default",
 	RequestAddr: true,
+	Crypt: Crypt{
+		Algo: "xor",
+	},
 }
 
 func NewPoint() (c *Point) {
@@ -71,6 +75,8 @@ func NewPoint() (c *Point) {
 	flag.StringVar(&c.Intf.Provider, "if:provider", pd.Intf.Provider, "Interface provider")
 	flag.StringVar(&c.Http.Listen, "http:listen", pd.Http.Listen, "Http listen on")
 	flag.StringVar(&c.SaveFile, "conf", pd.SaveFile, "the configuration file")
+	flag.StringVar(&c.Crypt.Secret, "crypt:secret", pd.Crypt.Secret, "Crypt secret")
+	flag.StringVar(&c.Crypt.Algo, "crypt:algo", pd.Crypt.Algo, "Crypt algorithm")
 	flag.Parse()
 
 	if err := c.Load(); err != nil {
@@ -93,7 +99,6 @@ func (c *Point) Right() {
 
 func (c *Point) Default() {
 	c.Right()
-
 	//reset zero value to default
 	if c.Addr == "" {
 		c.Addr = pd.Addr
@@ -104,6 +109,7 @@ func (c *Point) Default() {
 	if c.Timeout == 0 {
 		c.Timeout = pd.Timeout
 	}
+	CryptDefault(&c.Crypt)
 }
 
 func (c *Point) Load() error {
