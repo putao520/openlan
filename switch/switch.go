@@ -15,7 +15,6 @@ import (
 )
 
 func GetSocketServer(c config.Switch) libol.SocketServer {
-	tlsCfg := config.GetTlsCfg(c.Cert)
 	switch c.Protocol {
 	case "kcp":
 		kcpCfg := &libol.KcpConfig{
@@ -24,7 +23,10 @@ func GetSocketServer(c config.Switch) libol.SocketServer {
 		}
 		return libol.NewKcpServer(c.Listen, kcpCfg)
 	case "tcp":
-		return libol.NewTcpServer(c.Listen, nil)
+		tcpCfg := &libol.TcpConfig{
+			Block: config.GetBlock(c.Crypt),
+		}
+		return libol.NewTcpServer(c.Listen, tcpCfg)
 	case "udp":
 		udpCfg := &libol.UdpConfig{
 			Block:   config.GetBlock(c.Crypt),
@@ -32,7 +34,11 @@ func GetSocketServer(c config.Switch) libol.SocketServer {
 		}
 		return libol.NewUdpServer(c.Listen, udpCfg)
 	default:
-		return libol.NewTcpServer(c.Listen, tlsCfg)
+		tcpCfg := &libol.TcpConfig{
+			Tls:   config.GetTlsCfg(c.Cert),
+			Block: config.GetBlock(c.Crypt),
+		}
+		return libol.NewTcpServer(c.Listen, tcpCfg)
 	}
 }
 

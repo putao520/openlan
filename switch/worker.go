@@ -117,7 +117,7 @@ func (w *Worker) AddLink(c *config.Point) {
 	c.Intf.Bridge = w.Conf.Bridge.Name //Reset bridge name.
 	c.RequestAddr = false
 	c.Network = w.Conf.Name
-	if c.Crypt == nil {
+	if c.Crypt == nil || c.Crypt.IsZero() {
 		c.Crypt = w.crypt
 	}
 	go func() {

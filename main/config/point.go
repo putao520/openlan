@@ -50,15 +50,14 @@ var pd = Point{
 	SaveFile:    "./point.json",
 	Network:     "default",
 	RequestAddr: true,
-	Crypt: &Crypt{
-		Algo: "xor",
-	},
+	Crypt:       &Crypt{},
 }
 
 func NewPoint() (c *Point) {
 	c = &Point{
 		Http:        &Http{},
 		RequestAddr: true,
+		Crypt:       &Crypt{},
 	}
 	flag.StringVar(&c.Alias, "alias", pd.Alias, "Alias for this point")
 	flag.StringVar(&c.Network, "net", pd.Network, "Network name")

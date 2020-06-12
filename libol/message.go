@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"github.com/xtaci/kcp-go/v5"
 	"net"
 	"time"
 )
@@ -109,6 +110,7 @@ type Messager interface {
 
 type StreamMessage struct {
 	timeout time.Duration // ns for read and write deadline.
+	block   kcp.BlockCrypt
 }
 
 func (s *StreamMessage) write(conn net.Conn, tmp []byte) (int, error) {
@@ -153,6 +155,9 @@ func (s *StreamMessage) Send(conn net.Conn, data []byte) (int, error) {
 	buf := make([]byte, HSIZE+size)
 	copy(buf[0:2], MAGIC)
 	binary.BigEndian.PutUint16(buf[2:4], uint16(size))
+	if s.block != nil {
+		s.block.Encrypt(data, data)
+	}
 	copy(buf[HSIZE:], data)
 	if err := s.writeFull(conn, buf); err != nil {
 		return 0, err
@@ -210,16 +215,20 @@ func (s *StreamMessage) Receive(conn net.Conn, data []byte, max, min int) (int, 
 	if int(size) > max || int(size) < min {
 		return 0, NewErr("%s: wrong size(%d)", conn.RemoteAddr(), size)
 	}
-	d := buf[hl : hl+int(size)]
-	if err := s.readFull(conn, d); err != nil {
+	tmp := buf[hl : hl+int(size)]
+	if err := s.readFull(conn, tmp); err != nil {
 		return 0, err
 	}
-	copy(data, d)
-	return len(d), nil
+	if s.block != nil {
+		s.block.Decrypt(tmp, tmp)
+	}
+	copy(data, tmp)
+	return len(tmp), nil
 }
 
 type DataGramMessage struct {
 	timeout time.Duration // ns for read and write deadline
+	block   kcp.BlockCrypt
 }
 
 func (s *DataGramMessage) Send(conn net.Conn, data []byte) (int, error) {
@@ -227,6 +236,9 @@ func (s *DataGramMessage) Send(conn net.Conn, data []byte) (int, error) {
 	buf := make([]byte, HSIZE+size)
 	copy(buf[0:2], MAGIC)
 	binary.BigEndian.PutUint16(buf[2:4], uint16(size))
+	if s.block != nil {
+		s.block.Encrypt(data, data)
+	}
 	copy(buf[HSIZE:], data)
 	Log("DataGramMessage.Send: %s %x", conn.RemoteAddr(), data)
 	if s.timeout != 0 {
@@ -267,7 +279,10 @@ func (s *DataGramMessage) Receive(conn net.Conn, data []byte, max, min int) (int
 	if int(size) > max || int(size) < min {
 		return 0, NewErr("%s: wrong size(%d)", conn.RemoteAddr(), size)
 	}
-	d := buf[hl : hl+int(size)]
-	copy(data, d)
-	return len(d), nil
+	tmp := buf[hl : hl+int(size)]
+	if s.block != nil {
+		s.block.Encrypt(tmp, tmp)
+	}
+	copy(data, tmp)
+	return len(tmp), nil
 }

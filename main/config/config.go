@@ -24,12 +24,13 @@ type Crypt struct {
 	Secret string `json:"secret,omitempty" yaml:"secret,omitempty"`
 }
 
+func (c *Crypt) IsZero() bool {
+	return c.Algo == "" && c.Secret == ""
+}
+
 func (c *Crypt) Default() {
-	if c.Algo == "" {
+	if c.Secret != "" && c.Algo == "" {
 		c.Algo = "xor"
-	}
-	if c.Secret == "" {
-		c.Secret = "3ir456dew"
 	}
 }
 
@@ -59,7 +60,7 @@ func GetTlsCfg(cfg Cert) *tls.Config {
 }
 
 func GetBlock(cfg *Crypt) kcp.BlockCrypt {
-	if cfg == nil {
+	if cfg == nil || cfg.IsZero() {
 		return nil
 	}
 	var block kcp.BlockCrypt

@@ -687,10 +687,6 @@ type PrefixRule struct {
 }
 
 func GetSocketClient(c *config.Point) libol.SocketClient {
-	var tlsConf *tls.Config
-	if c.Protocol == "tls" {
-		tlsConf = &tls.Config{InsecureSkipVerify: true}
-	}
 	switch c.Protocol {
 	case "kcp":
 		kcpCfg := &libol.KcpConfig{
@@ -698,7 +694,10 @@ func GetSocketClient(c *config.Point) libol.SocketClient {
 		}
 		return libol.NewKcpClient(c.Addr, kcpCfg)
 	case "tcp":
-		return libol.NewTcpClient(c.Addr, nil)
+		tcpCfg := &libol.TcpConfig{
+			Block: config.GetBlock(c.Crypt),
+		}
+		return libol.NewTcpClient(c.Addr, tcpCfg)
 	case "udp":
 		udpCfg := &libol.UdpConfig{
 			Block:   config.GetBlock(c.Crypt),
@@ -706,7 +705,11 @@ func GetSocketClient(c *config.Point) libol.SocketClient {
 		}
 		return libol.NewUdpClient(c.Addr, udpCfg)
 	default:
-		return libol.NewTcpClient(c.Addr, tlsConf)
+		tcpCfg := &libol.TcpConfig{
+			Tls:   &tls.Config{InsecureSkipVerify: true},
+			Block: config.GetBlock(c.Crypt),
+		}
+		return libol.NewTcpClient(c.Addr, tcpCfg)
 	}
 }
 

@@ -2,21 +2,28 @@ package libol
 
 import (
 	"crypto/tls"
+	"github.com/xtaci/kcp-go/v5"
 	"net"
 	"time"
 )
+
+type TcpConfig struct {
+	Tls     *tls.Config
+	Block   kcp.BlockCrypt
+	Timeout time.Duration // ns
+}
 
 // Server Implement
 
 type TcpServer struct {
 	socketServer
-	tlsCfg   *tls.Config
+	tcpCfg   *TcpConfig
 	listener net.Listener
 }
 
-func NewTcpServer(listen string, cfg *tls.Config) *TcpServer {
+func NewTcpServer(listen string, cfg *TcpConfig) *TcpServer {
 	t := &TcpServer{
-		tlsCfg: cfg,
+		tcpCfg: cfg,
 		socketServer: socketServer{
 			address:    listen,
 			sts:        ServerSts{},
@@ -34,8 +41,8 @@ func NewTcpServer(listen string, cfg *tls.Config) *TcpServer {
 }
 
 func (t *TcpServer) Listen() (err error) {
-	if t.tlsCfg != nil {
-		t.listener, err = tls.Listen("tcp", t.address, t.tlsCfg)
+	if t.tcpCfg.Tls != nil {
+		t.listener, err = tls.Listen("tcp", t.address, t.tcpCfg.Tls)
 		if err != nil {
 			t.listener = nil
 			return err
@@ -79,7 +86,7 @@ func (t *TcpServer) Accept() {
 			return
 		}
 		t.sts.AcceptCount++
-		t.onClients <- NewTcpClientFromConn(conn)
+		t.onClients <- NewTcpClientFromConn(conn, t.tcpCfg)
 	}
 }
 
@@ -87,18 +94,21 @@ func (t *TcpServer) Accept() {
 
 type TcpClient struct {
 	socketClient
-	tlsCfg *tls.Config
+	tcpCfg *TcpConfig
 }
 
-func NewTcpClient(addr string, cfg *tls.Config) *TcpClient {
+func NewTcpClient(addr string, cfg *TcpConfig) *TcpClient {
 	t := &TcpClient{
-		tlsCfg: cfg,
+		tcpCfg: cfg,
 		socketClient: socketClient{
 			address: addr,
 			newTime: time.Now().Unix(),
 			dataStream: dataStream{
 				maxSize: 1514,
 				minSize: 15,
+				message: &StreamMessage{
+					block: cfg.Block,
+				},
 			},
 			status: ClInit,
 		},
@@ -107,14 +117,18 @@ func NewTcpClient(addr string, cfg *tls.Config) *TcpClient {
 	return t
 }
 
-func NewTcpClientFromConn(conn net.Conn) *TcpClient {
+func NewTcpClientFromConn(conn net.Conn, cfg *TcpConfig) *TcpClient {
 	t := &TcpClient{
+		tcpCfg: cfg,
 		socketClient: socketClient{
 			address: conn.RemoteAddr().String(),
 			dataStream: dataStream{
 				connection: conn,
 				maxSize:    1514,
 				minSize:    15,
+				message: &StreamMessage{
+					block: cfg.Block,
+				},
 			},
 			newTime: time.Now().Unix(),
 		},
@@ -136,7 +150,7 @@ func (t *TcpClient) Connect() error {
 	t.status = ClConnecting
 	t.lock.Unlock()
 
-	if t.tlsCfg != nil {
+	if t.tcpCfg != nil {
 		Info("TcpClient.Connect: tls://%s", t.address)
 	} else {
 		Info("TcpClient.Connect: tcp://%s", t.address)
@@ -144,8 +158,8 @@ func (t *TcpClient) Connect() error {
 
 	var err error
 	var conn net.Conn
-	if t.tlsCfg != nil {
-		conn, err = tls.Dial("tcp", t.address, t.tlsCfg)
+	if t.tcpCfg.Tls != nil {
+		conn, err = tls.Dial("tcp", t.address, t.tcpCfg.Tls)
 	} else {
 		conn, err = net.Dial("tcp", t.address)
 	}

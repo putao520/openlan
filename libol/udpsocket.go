@@ -104,6 +104,7 @@ func NewUdpClient(addr string, cfg *UdpConfig) *UdpClient {
 				minSize: 15,
 				message: &DataGramMessage{
 					timeout: cfg.Timeout,
+					block:   cfg.Block,
 				},
 			},
 			status: ClInit,
@@ -126,6 +127,7 @@ func NewUdpClientFromConn(conn net.Conn, cfg *UdpConfig) *UdpClient {
 				minSize:    15,
 				message: &DataGramMessage{
 					timeout: cfg.Timeout,
+					block:   cfg.Block,
 				},
 			},
 			newTime: time.Now().Unix(),
