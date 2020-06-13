@@ -15,7 +15,8 @@ const (
 	LOG   = 01
 	STACK = 9
 	DEBUG = 10
-	CMD   = 11
+	LOCK  = 8
+	CMD   = 15
 	INFO  = 20
 	WARN  = 30
 	ERROR = 40
@@ -34,6 +35,7 @@ var levels = map[int]string{
 	DEBUG: "DEBUG",
 	STACK: "STACK",
 	CMD:   "CMD",
+	LOCK:  "LOCK",
 	INFO:  "INFO",
 	WARN:  "WARN",
 	ERROR: "ERROR",
@@ -121,6 +123,10 @@ func Debug(format string, v ...interface{}) {
 
 func Cmd(format string, v ...interface{}) {
 	Logger.Write(CMD, format, v...)
+}
+
+func Lock(format string, v ...interface{}) {
+	Logger.Write(LOCK, format, v...)
 }
 
 func Info(format string, v ...interface{}) {

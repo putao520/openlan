@@ -11,7 +11,8 @@ func main() {
 	s := _switch.NewSwitch(c)
 
 	libol.PreNotify()
-	s.Start()
+	s.Initialize()
+	_ = s.Start()
 	libol.SdNotify()
 	libol.Wait()
 	_ = s.Stop()

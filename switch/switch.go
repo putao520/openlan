@@ -52,55 +52,52 @@ type Apps struct {
 type Hook func(client libol.SocketClient, frame *libol.FrameMessage) error
 
 type Switch struct {
-	// public
-	Conf config.Switch
-	Apps Apps
-	Fire FireWall
 	// private
-	hooks      []Hook
-	http       *Http
-	server     libol.SocketServer
-	bridge     map[string]network.Bridger
-	worker     map[string]*NetworkWorker
-	lock       sync.RWMutex
-	uuid       string
-	newTime    int64
-	initialize bool
+	lock     sync.Mutex
+	cfg      config.Switch
+	apps     Apps
+	firewall FireWall
+	hooks    []Hook
+	http     *Http
+	server   libol.SocketServer
+	bridge   map[string]network.Bridger
+	worker   map[string]*NetworkWorker
+	uuid     string
+	newTime  int64
 }
 
 func NewSwitch(c config.Switch) *Switch {
 	server := GetSocketServer(c)
 	v := Switch{
-		Conf: c,
-		Fire: FireWall{
+		cfg: c,
+		firewall: FireWall{
 			Rules: make([]libol.FilterRule, 0, 32),
 		},
-		worker:     make(map[string]*NetworkWorker, 32),
-		bridge:     make(map[string]network.Bridger, 32),
-		server:     server,
-		newTime:    time.Now().Unix(),
-		initialize: false,
+		worker:  make(map[string]*NetworkWorker, 32),
+		bridge:  make(map[string]network.Bridger, 32),
+		server:  server,
+		newTime: time.Now().Unix(),
 	}
 	return &v
 }
 
-func (v *Switch) AddRules(source string, prefix string) {
-	libol.Info("Switch.AddRules %s, %s", source, prefix)
-	v.Fire.Rules = append(v.Fire.Rules, libol.FilterRule{
+func (v *Switch) addRules(source string, prefix string) {
+	libol.Info("Switch.addRules %s, %s", source, prefix)
+	v.firewall.Rules = append(v.firewall.Rules, libol.FilterRule{
 		Table:  "filter",
 		Chain:  "FORWARD",
 		Source: source,
 		Dest:   prefix,
 		Jump:   "ACCEPT",
 	})
-	v.Fire.Rules = append(v.Fire.Rules, libol.FilterRule{
+	v.firewall.Rules = append(v.firewall.Rules, libol.FilterRule{
 		Table:  "nat",
 		Chain:  "POSTROUTING",
 		Source: source,
 		Dest:   prefix,
 		Jump:   "MASQUERADE",
 	})
-	v.Fire.Rules = append(v.Fire.Rules, libol.FilterRule{
+	v.firewall.Rules = append(v.firewall.Rules, libol.FilterRule{
 		Table:  "nat",
 		Chain:  "POSTROUTING",
 		Dest:   source,
@@ -110,12 +107,14 @@ func (v *Switch) AddRules(source string, prefix string) {
 }
 
 func (v *Switch) Initialize() {
-	v.initialize = true
-	if v.Conf.Http != nil {
-		v.http = NewHttp(v, v.Conf)
+	v.lock.Lock()
+	defer v.lock.Unlock()
+
+	if v.cfg.Http != nil {
+		v.http = NewHttp(v, v.cfg)
 	}
-	crypt := v.Conf.Crypt
-	for _, nCfg := range v.Conf.Network {
+	crypt := v.cfg.Crypt
+	for _, nCfg := range v.cfg.Network {
 		name := nCfg.Name
 		brCfg := nCfg.Bridge
 
@@ -131,37 +130,37 @@ func (v *Switch) Initialize() {
 					continue
 				}
 				// MASQUERADE
-				v.AddRules(source, rt.Prefix)
+				v.addRules(source, rt.Prefix)
 			}
 		}
 		v.worker[name] = NewNetworkWorker(*nCfg, crypt)
 		v.bridge[name] = network.NewBridger(brCfg.Provider, brCfg.Name, brCfg.Mtu)
 	}
 
-	v.Apps.Auth = app.NewPointAuth(v, v.Conf)
-	v.Apps.Request = app.NewWithRequest(v, v.Conf)
-	v.Apps.Neighbor = app.NewNeighbors(v, v.Conf)
-	v.Apps.OnLines = app.NewOnline(v, v.Conf)
+	v.apps.Auth = app.NewPointAuth(v, v.cfg)
+	v.apps.Request = app.NewWithRequest(v, v.cfg)
+	v.apps.Neighbor = app.NewNeighbors(v, v.cfg)
+	v.apps.OnLines = app.NewOnline(v, v.cfg)
 
 	v.hooks = make([]Hook, 0, 64)
-	v.hooks = append(v.hooks, v.Apps.Auth.OnFrame)
-	v.hooks = append(v.hooks, v.Apps.Neighbor.OnFrame)
-	v.hooks = append(v.hooks, v.Apps.Request.OnFrame)
-	v.hooks = append(v.hooks, v.Apps.OnLines.OnFrame)
+	v.hooks = append(v.hooks, v.apps.Auth.OnFrame)
+	v.hooks = append(v.hooks, v.apps.Neighbor.OnFrame)
+	v.hooks = append(v.hooks, v.apps.Request.OnFrame)
+	v.hooks = append(v.hooks, v.apps.OnLines.OnFrame)
 	for i, h := range v.hooks {
 		libol.Debug("Switch.Initialize: k %d, func %p, %s", i, h, libol.FunName(h))
 	}
 
 	// Controller
-	ctrls.Load(v.Conf.ConfDir + "/ctrl.json")
+	ctrls.Load(v.cfg.ConfDir + "/ctrl.json")
 	if ctrls.Ctrl.Name == "" {
-		ctrls.Ctrl.Name = v.Conf.Alias
+		ctrls.Ctrl.Name = v.cfg.Alias
 	}
 	ctrls.Ctrl.Switcher = v
 
 	// FireWall
-	for _, rule := range v.Conf.FireWall {
-		v.Fire.Rules = append(v.Fire.Rules, libol.FilterRule{
+	for _, rule := range v.cfg.FireWall {
+		v.firewall.Rules = append(v.firewall.Rules, libol.FilterRule{
 			Table:    rule.Table,
 			Chain:    rule.Chain,
 			Source:   rule.Source,
@@ -174,12 +173,12 @@ func (v *Switch) Initialize() {
 			Output:   rule.Output,
 		})
 	}
-	libol.Info("Switch.Initialize total %d rules", len(v.Fire.Rules))
+	libol.Info("Switch.Initialize total %d rules", len(v.firewall.Rules))
 }
 
-func (v *Switch) OnHook(client libol.SocketClient, frame *libol.FrameMessage) error {
+func (v *Switch) onFrame(client libol.SocketClient, frame *libol.FrameMessage) error {
 	for _, h := range v.hooks {
-		libol.Log("Switch.onHook: h %p", h)
+		libol.Log("Switch.onFrame: h %p", h)
 		if h != nil {
 			if err := h(client, frame); err != nil {
 				return err
@@ -220,7 +219,7 @@ func (v *Switch) SignIn(client libol.SocketClient) error {
 func (v *Switch) ReadClient(client libol.SocketClient, data []byte) error {
 	libol.Log("Switch.ReadClient: %s %x", client.Addr(), data)
 	frame := libol.NewFrameMessage(data)
-	if err := v.OnHook(client, frame); err != nil {
+	if err := v.onFrame(client, frame); err != nil {
 		libol.Debug("Switch.ReadClient: %s dropping by %s", client.Addr(), err)
 		// send request to point login again.
 		_ = v.SignIn(client)
@@ -263,11 +262,7 @@ func (v *Switch) Start() error {
 	defer v.lock.Unlock()
 
 	libol.Debug("Switch.Start")
-	if !v.initialize {
-		v.Initialize()
-	}
-
-	for _, nCfg := range v.Conf.Network {
+	for _, nCfg := range v.cfg.Network {
 		if br, ok := v.bridge[nCfg.Name]; ok {
 			brCfg := nCfg.Bridge
 			br.Open(brCfg.Address)
@@ -288,7 +283,7 @@ func (v *Switch) Start() error {
 	}
 	go ctrls.Ctrl.Start()
 
-	v.Fire.Start()
+	v.firewall.Start()
 	return nil
 }
 
@@ -306,7 +301,7 @@ func (v *Switch) Stop() error {
 		}
 		v.leftClient(p.Client)
 	}
-	v.Fire.Stop()
+	v.firewall.Stop()
 	ctrls.Ctrl.Stop()
 	if v.http != nil {
 		v.http.Shutdown()
@@ -315,7 +310,7 @@ func (v *Switch) Stop() error {
 	for _, w := range v.worker {
 		w.Stop()
 	}
-	for _, nCfg := range v.Conf.Network {
+	for _, nCfg := range v.cfg.Network {
 		if br, ok := v.bridge[nCfg.Name]; ok {
 			brCfg := nCfg.Bridge
 			_ = br.Close()
@@ -327,7 +322,7 @@ func (v *Switch) Stop() error {
 }
 
 func (v *Switch) Alias() string {
-	return v.Conf.Alias
+	return v.cfg.Alias
 }
 
 func (v *Switch) UpTime() int64 {
@@ -339,8 +334,8 @@ func (v *Switch) Server() libol.SocketServer {
 }
 
 func (v *Switch) NewTap(tenant string) (network.Taper, error) {
-	v.lock.RLock()
-	defer v.lock.RUnlock()
+	v.lock.Lock()
+	defer v.lock.Unlock()
 	libol.Debug("Switch.NewTap")
 
 	br, ok := v.bridge[tenant]
@@ -412,7 +407,7 @@ func (v *Switch) OffClient(client libol.SocketClient) {
 }
 
 func (v *Switch) Config() *config.Switch {
-	return &v.Conf
+	return &v.cfg
 }
 
 func (v *Switch) leftClient(client libol.SocketClient) {

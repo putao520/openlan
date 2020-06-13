@@ -190,5 +190,5 @@ func Wait() {
 	signal.Notify(x, os.Interrupt, syscall.SIGINT)  //CTL+C
 	Info("Wait: ...")
 	n := <-x
-	Warn("Wait: !!! Signal %d received !!!", n)
+	Warn("Wait: ... Signal %d received ...", n)
 }

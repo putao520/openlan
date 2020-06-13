@@ -24,10 +24,10 @@ func NewPoint(config *config.Point) *Point {
 }
 
 func (p *Point) Initialize() {
-	p.worker.Listener.AddAddr = p.AddAddr
-	p.worker.Listener.DelAddr = p.DelAddr
-	p.worker.Listener.AddRoutes = p.AddRoutes
-	p.worker.Listener.DelRoutes = p.DelRoutes
+	p.worker.listener.AddAddr = p.AddAddr
+	p.worker.listener.DelAddr = p.DelAddr
+	p.worker.listener.AddRoutes = p.AddRoutes
+	p.worker.listener.DelRoutes = p.DelRoutes
 	p.MixPoint.Initialize()
 }
 
