@@ -303,7 +303,7 @@ func (t *socketServer) doOnClient(call ServerListener, client SocketClient) {
 	if call.OnClient != nil {
 		_ = call.OnClient(client)
 		if call.ReadAt != nil {
-			Go(func() {t.Read(client, call.ReadAt)})
+			Go(func() { t.Read(client, call.ReadAt) })
 		}
 	}
 }

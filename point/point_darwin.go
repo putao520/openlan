@@ -9,7 +9,7 @@ import (
 
 type Point struct {
 	MixPoint
-	BrName string
+	brName string
 	// private
 	addr   string
 	routes []*models.Route
@@ -17,7 +17,7 @@ type Point struct {
 
 func NewPoint(config *config.Point) *Point {
 	p := Point{
-		BrName:   config.Interface.Bridge,
+		brName:   config.Interface.Bridge,
 		MixPoint: NewMixPoint(config),
 	}
 	return &p
@@ -33,9 +33,6 @@ func (p *Point) Initialize() {
 
 func (p *Point) Start() {
 	libol.Info("Point.Start: Darwin.")
-	if !p.initialize {
-		p.Initialize()
-	}
 	p.worker.Start()
 }
 

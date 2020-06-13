@@ -31,7 +31,7 @@ func XDPListen(addr string) (net.Listener, error) {
 		return nil, err
 	}
 	x.connection = conn
-	go x.Loop()
+	Go(x.Loop)
 	return x, nil
 }
 

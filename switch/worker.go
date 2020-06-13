@@ -12,9 +12,9 @@ import (
 )
 
 type NetworkWorker struct {
-	Alias string
-	Conf  config.Network
 	// private
+	alias       string
+	cfg         config.Network
 	newTime     int64
 	startTime   int64
 	linksLock   sync.RWMutex
@@ -26,8 +26,8 @@ type NetworkWorker struct {
 
 func NewNetworkWorker(c config.Network, crypt *config.Crypt) *NetworkWorker {
 	w := NetworkWorker{
-		Alias:       c.Alias,
-		Conf:        c,
+		alias:       c.Alias,
+		cfg:         c,
 		newTime:     time.Now().Unix(),
 		startTime:   0,
 		links:       make(map[string]*point.Point),
@@ -41,22 +41,22 @@ func NewNetworkWorker(c config.Network, crypt *config.Crypt) *NetworkWorker {
 func (w *NetworkWorker) Initialize() {
 	w.initialized = true
 
-	for _, pass := range w.Conf.Password {
+	for _, pass := range w.cfg.Password {
 		user := models.User{
-			Name:     pass.Username + "@" + w.Conf.Name,
+			Name:     pass.Username + "@" + w.cfg.Name,
 			Password: pass.Password,
 		}
 		storage.User.Add(&user)
 	}
-	if w.Conf.Subnet.Netmask != "" {
+	if w.cfg.Subnet.Netmask != "" {
 		met := models.Network{
-			Name:    w.Conf.Name,
-			IpStart: w.Conf.Subnet.Start,
-			IpEnd:   w.Conf.Subnet.End,
-			Netmask: w.Conf.Subnet.Netmask,
+			Name:    w.cfg.Name,
+			IpStart: w.cfg.Subnet.Start,
+			IpEnd:   w.cfg.Subnet.End,
+			Netmask: w.cfg.Subnet.Netmask,
 			Routes:  make([]*models.Route, 0, 2),
 		}
-		for _, rt := range w.Conf.Routes {
+		for _, rt := range w.cfg.Routes {
 			if rt.NextHop == "" {
 				libol.Warn("NetworkWorker.Initialize %s no nexthop", rt.Prefix)
 				continue
@@ -79,8 +79,8 @@ func (w *NetworkWorker) String() string {
 }
 
 func (w *NetworkWorker) LoadLinks() {
-	if w.Conf.Links != nil {
-		for _, lin := range w.Conf.Links {
+	if w.cfg.Links != nil {
+		for _, lin := range w.cfg.Links {
 			lin.Default()
 			w.AddLink(lin)
 		}
@@ -88,7 +88,7 @@ func (w *NetworkWorker) LoadLinks() {
 }
 
 func (w *NetworkWorker) Start(v api.Switcher) {
-	libol.Info("NetworkWorker.Start: %s", w.Conf.Name)
+	libol.Info("NetworkWorker.Start: %s", w.cfg.Name)
 	if !w.initialized {
 		w.Initialize()
 	}
@@ -98,7 +98,7 @@ func (w *NetworkWorker) Start(v api.Switcher) {
 }
 
 func (w *NetworkWorker) Stop() {
-	libol.Info("NetworkWorker.Close: %s", w.Conf.Name)
+	libol.Info("NetworkWorker.Close: %s", w.cfg.Name)
 	for _, p := range w.links {
 		p.Stop()
 	}
@@ -113,10 +113,10 @@ func (w *NetworkWorker) UpTime() int64 {
 }
 
 func (w *NetworkWorker) AddLink(c *config.Point) {
-	c.Alias = w.Alias
-	c.Interface.Bridge = w.Conf.Bridge.Name //Reset bridge name.
+	c.Alias = w.alias
+	c.Interface.Bridge = w.cfg.Bridge.Name //Reset bridge name.
 	c.RequestAddr = false
-	c.Network = w.Conf.Name
+	c.Network = w.cfg.Name
 
 	libol.Go(func() {
 		p := point.NewPoint(c)

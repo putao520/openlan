@@ -2,19 +2,18 @@ package network
 
 import (
 	"github.com/danieldin95/openlan-go/libol"
-	"sync"
 )
 
 type UserSpaceTap struct {
-	lock   sync.RWMutex
-	writeQ chan []byte
-	readQ  chan []byte
-	bridge Bridger
-	tenant string
-	closed bool
-	config TapConfig
-	name   string
-	mtu    int
+	lock       libol.Locker
+	writeQueue chan []byte
+	readQueue  chan []byte
+	bridge     Bridger
+	tenant     string
+	closed     bool
+	config     TapConfig
+	name       string
+	ifMtu      int
 }
 
 func NewUserSpaceTap(tenant string, c TapConfig) (*UserSpaceTap, error) {
@@ -24,7 +23,7 @@ func NewUserSpaceTap(tenant string, c TapConfig) (*UserSpaceTap, error) {
 	tap := &UserSpaceTap{
 		tenant: tenant,
 		name:   c.Name,
-		mtu:    1514,
+		ifMtu:  1514,
 	}
 	Tapers.Add(tap)
 
@@ -48,52 +47,52 @@ func (t *UserSpaceTap) Name() string {
 }
 
 func (t *UserSpaceTap) Read(p []byte) (n int, err error) {
-	t.lock.RLock()
+	t.lock.Lock()
 	if t.closed {
-		t.lock.RUnlock()
+		t.lock.Unlock()
 		return 0, libol.NewErr("Close")
 	}
-	t.lock.RUnlock()
+	t.lock.Unlock()
 
-	result := <-t.readQ
+	result := <-t.readQueue
 	return copy(p, result), nil
 }
 
 func (t *UserSpaceTap) InRead(p []byte) (n int, err error) {
 	libol.Debug("UserSpaceTap.InRead: %s % x", t, p[:20])
-	t.lock.RLock()
+	t.lock.Lock()
 	if t.closed {
-		t.lock.RUnlock()
+		t.lock.Unlock()
 		return 0, libol.NewErr("Close")
 	}
-	t.lock.RUnlock()
+	t.lock.Unlock()
 
-	t.readQ <- p
+	t.readQueue <- p
 	return len(p), nil
 }
 
 func (t *UserSpaceTap) Write(p []byte) (n int, err error) {
 	libol.Debug("UserSpaceTap.Write: %s % x", t, p[:20])
-	t.lock.RLock()
+	t.lock.Lock()
 	if t.closed {
-		t.lock.RUnlock()
+		t.lock.Unlock()
 		return 0, libol.NewErr("Close")
 	}
-	t.lock.RUnlock()
+	t.lock.Unlock()
 
-	t.writeQ <- p
+	t.writeQueue <- p
 	return len(p), nil
 }
 
 func (t *UserSpaceTap) OutWrite() ([]byte, error) {
-	t.lock.RLock()
+	t.lock.Lock()
 	if t.closed {
-		t.lock.RUnlock()
+		t.lock.Unlock()
 		return nil, libol.NewErr("Close")
 	}
-	t.lock.RUnlock()
+	t.lock.Unlock()
 
-	return <-t.writeQ, nil
+	return <-t.writeQueue, nil
 }
 
 func (t *UserSpaceTap) Deliver() {
@@ -141,16 +140,16 @@ func (t *UserSpaceTap) Up() {
 	if t.closed {
 		Tapers.Add(t)
 	}
-	if t.writeQ == nil {
-		t.writeQ = make(chan []byte, 1024*32)
+	if t.writeQueue == nil {
+		t.writeQueue = make(chan []byte, 1024*32)
 	}
-	if t.readQ == nil {
-		t.readQ = make(chan []byte, 1024*16)
+	if t.readQueue == nil {
+		t.readQueue = make(chan []byte, 1024*16)
 	}
 	t.closed = false
 	t.lock.Unlock()
 
-	go t.Deliver()
+	libol.Go(t.Deliver)
 }
 
 func (t *UserSpaceTap) String() string {
@@ -158,9 +157,9 @@ func (t *UserSpaceTap) String() string {
 }
 
 func (t *UserSpaceTap) Mtu() int {
-	return t.mtu
+	return t.ifMtu
 }
 
 func (t *UserSpaceTap) SetMtu(mtu int) {
-	t.mtu = mtu
+	t.ifMtu = mtu
 }

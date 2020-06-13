@@ -3,17 +3,16 @@ package network
 import (
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/songgao/water"
-	"sync"
 )
 
 type KernelTap struct {
-	lock   sync.RWMutex
+	lock   libol.Locker
 	device *water.Interface
 	bridge Bridger
 	tenant string
 	name   string
 	config TapConfig
-	mtu    int
+	ifMtu  int
 }
 
 func NewKernelTap(tenant string, c TapConfig) (*KernelTap, error) {
@@ -26,7 +25,7 @@ func NewKernelTap(tenant string, c TapConfig) (*KernelTap, error) {
 		device: device,
 		name:   device.Name(),
 		config: c,
-		mtu:    1514,
+		ifMtu:  1514,
 	}
 
 	Tapers.Add(tap)
@@ -51,34 +50,34 @@ func (t *KernelTap) Name() string {
 }
 
 func (t *KernelTap) Read(p []byte) (n int, err error) {
-	t.lock.RLock()
+	t.lock.Lock()
 	if t.device == nil {
-		t.lock.RUnlock()
+		t.lock.Unlock()
 		return 0, libol.NewErr("Closed")
 	}
-	t.lock.RUnlock()
+	t.lock.Unlock()
 
 	return t.device.Read(p)
 }
 
 func (t *KernelTap) InRead(p []byte) (n int, err error) {
-	t.lock.RLock()
+	t.lock.Lock()
 	if t.device == nil {
-		t.lock.RUnlock()
+		t.lock.Unlock()
 		return 0, libol.NewErr("Closed")
 	}
-	t.lock.RUnlock()
+	t.lock.Unlock()
 
 	return 0, nil
 }
 
 func (t *KernelTap) Write(p []byte) (n int, err error) {
-	t.lock.RLock()
+	t.lock.Lock()
 	if t.device == nil {
-		t.lock.RUnlock()
+		t.lock.Unlock()
 		return 0, libol.NewErr("Closed")
 	}
-	t.lock.RUnlock()
+	t.lock.Unlock()
 
 	return t.device.Write(p)
 }
@@ -128,9 +127,9 @@ func (t *KernelTap) String() string {
 }
 
 func (t *KernelTap) Mtu() int {
-	return t.mtu
+	return t.ifMtu
 }
 
 func (t *KernelTap) SetMtu(mtu int) {
-	t.mtu = mtu
+	t.ifMtu = mtu
 }

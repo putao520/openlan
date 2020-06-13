@@ -25,7 +25,7 @@ func (p *_link) Init(size int) {
 func (p *_link) Add(m *point.Point) {
 	link := &models.Point{
 		Alias:   "",
-		Network: m.Tenant,
+		Network: m.Tenant(),
 		Server:  m.Addr(),
 		Uptime:  m.UpTime(),
 		Status:  m.State(),

@@ -11,11 +11,11 @@ type Learner struct {
 	Dest    []byte
 	Device  Taper
 	Uptime  int64
-	Newtime int64
+	NewTime int64
 }
 
 type VirtualBridge struct {
-	mtu      int
+	ifMtu    int
 	name     string
 	lock     sync.RWMutex
 	devices  map[string]Taper
@@ -23,14 +23,14 @@ type VirtualBridge struct {
 	done     chan bool
 	ticker   *time.Ticker
 	timeout  int
-	addr     string
+	address  string
 	device   Taper
 }
 
 func NewVirtualBridge(name string, mtu int) *VirtualBridge {
 	b := &VirtualBridge{
 		name:     name,
-		mtu:      mtu,
+		ifMtu:    mtu,
 		devices:  make(map[string]Taper, 1024),
 		learners: make(map[string]*Learner, 1024),
 		done:     make(chan bool),
@@ -51,9 +51,9 @@ func (b *VirtualBridge) Open(addr string) {
 			if err != nil {
 				libol.Error("VirtualBridge.Open.IpAddr %s:%s", err, out)
 			}
-			b.addr = addr
+			b.address = addr
 			b.device = tap
-			out, err = libol.IpAddrAdd(b.device.Name(), b.addr)
+			out, err = libol.IpAddrAdd(b.device.Name(), b.address)
 			if err != nil {
 				libol.Error("VirtualBridge.Open.IpAddr %s:%s", err, out)
 			}
@@ -62,12 +62,12 @@ func (b *VirtualBridge) Open(addr string) {
 	} else {
 		libol.Warn("VirtualBridge.Open: not support address")
 	}
-	go b.Start()
+	libol.Go(b.Start)
 }
 
 func (b *VirtualBridge) Close() error {
 	if b.device != nil {
-		out, err := libol.IpAddrDel(b.device.Name(), b.addr)
+		out, err := libol.IpAddrDel(b.device.Name(), b.address)
 		if err != nil {
 			libol.Error("VirtualBridge.Close.IpAddr %s:%s", err, out)
 		}
@@ -152,7 +152,7 @@ func (b *VirtualBridge) Expire() error {
 }
 
 func (b *VirtualBridge) Start() {
-	go func() {
+	libol.Go(func() {
 		for {
 			select {
 			case <-b.done:
@@ -162,7 +162,7 @@ func (b *VirtualBridge) Start() {
 				_ = b.Expire()
 			}
 		}
-	}()
+	})
 }
 
 func (b *VirtualBridge) Input(m *Framer) error {
@@ -204,7 +204,7 @@ func (b *VirtualBridge) Learn(m *Framer) {
 	learn := &Learner{
 		Device:  m.Source,
 		Uptime:  time.Now().Unix(),
-		Newtime: time.Now().Unix(),
+		NewTime: time.Now().Unix(),
 	}
 	learn.Dest = make([]byte, 6)
 	copy(learn.Dest, source)
@@ -273,5 +273,5 @@ func (b *VirtualBridge) Unicast(m *Framer) bool {
 }
 
 func (b *VirtualBridge) Mtu() int {
-	return b.mtu
+	return b.ifMtu
 }

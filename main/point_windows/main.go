@@ -12,6 +12,7 @@ import (
 func main() {
 	c := config.NewPoint()
 	p := point.NewPoint(c)
+	p.Initialize()
 	p.Start()
 	go func() {
 		for {

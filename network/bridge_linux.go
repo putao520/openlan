@@ -6,16 +6,16 @@ import (
 )
 
 type LinuxBridge struct {
-	addr   *netlink.Addr
-	mtu    int
-	name   string
-	device netlink.Link
+	address *netlink.Addr
+	ifMtu   int
+	name    string
+	device  netlink.Link
 }
 
 func NewLinuxBridge(name string, mtu int) *LinuxBridge {
 	b := &LinuxBridge{
-		name: name,
-		mtu:  mtu,
+		name:  name,
+		ifMtu: mtu,
 	}
 	return b
 }
@@ -60,7 +60,7 @@ func (b *LinuxBridge) Open(addr string) {
 		if err := netlink.AddrAdd(link, ipAddr); err != nil {
 			libol.Error("LinuxBridge.newBr.SetLinkIp %s : %s", b.name, err)
 		}
-		b.addr = ipAddr
+		b.address = ipAddr
 	}
 
 	b.device = link
@@ -69,8 +69,8 @@ func (b *LinuxBridge) Open(addr string) {
 func (b *LinuxBridge) Close() error {
 	var err error
 
-	if b.device != nil && b.addr != nil {
-		if err = netlink.AddrDel(b.device, b.addr); err != nil {
+	if b.device != nil && b.address != nil {
+		if err = netlink.AddrDel(b.device, b.address); err != nil {
 			libol.Error("LinuxBridge.Close.UnsetLinkIp %s : %s", b.name, err)
 		}
 	}
@@ -145,5 +145,5 @@ func (b *LinuxBridge) SetTimeout(value int) {
 }
 
 func (b *LinuxBridge) Mtu() int {
-	return b.mtu
+	return b.ifMtu
 }

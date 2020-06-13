@@ -274,7 +274,7 @@ func (v *Switch) Start() {
 		OnClose:  v.OnClose,
 		ReadAt:   v.ReadClient,
 	}
-	libol.Go(func() {v.server.Loop(call)})
+	libol.Go(func() { v.server.Loop(call) })
 	for _, w := range v.worker {
 		w.Start(v)
 	}

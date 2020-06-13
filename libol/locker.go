@@ -37,4 +37,3 @@ func (l *Locker) Unlock() {
 	}
 	l.Mutex.Unlock()
 }
-

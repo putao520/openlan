@@ -59,7 +59,7 @@ func NewPoint() (c *Point) {
 		RequestAddr: true,
 		Crypt:       &Crypt{},
 	}
-	flag.StringVar(&c.Alias, "alias", pd.Alias, "Alias for this point")
+	flag.StringVar(&c.Alias, "alias", pd.Alias, "alias for this point")
 	flag.StringVar(&c.Network, "net", pd.Network, "Network name")
 	flag.StringVar(&c.Addr, "conn", pd.Addr, "Virtual switch connect to")
 	flag.StringVar(&c.Username, "user", pd.Username, "Accessed username")

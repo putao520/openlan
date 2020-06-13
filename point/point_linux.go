@@ -10,8 +10,8 @@ import (
 
 type Point struct {
 	MixPoint
-	BrName string
 	// private
+	brName string
 	addr   string
 	routes []*models.Route
 	link   netlink.Link
@@ -20,7 +20,7 @@ type Point struct {
 
 func NewPoint(config *config.Point) *Point {
 	p := Point{
-		BrName:   config.Interface.Bridge,
+		brName:   config.Interface.Bridge,
 		MixPoint: NewMixPoint(config),
 	}
 	return &p
@@ -37,9 +37,6 @@ func (p *Point) Initialize() {
 
 func (p *Point) Start() {
 	libol.Info("Point.Start: linux.")
-	if !p.initialize {
-		p.Initialize()
-	}
 	p.worker.Start()
 }
 
@@ -133,14 +130,14 @@ func (p *Point) OnTap(w *TapWorker) error {
 		return err
 	}
 
-	if br := p.UpBr(p.BrName); br != nil {
+	if br := p.UpBr(p.brName); br != nil {
 		if err := netlink.LinkSetMaster(link, br); err != nil {
 			libol.Error("Point.OnTap.AddSlave: Switch dev %s: %s", name, err)
 		}
 
-		link, err = netlink.LinkByName(p.BrName)
+		link, err = netlink.LinkByName(p.brName)
 		if err != nil {
-			libol.Error("Point.OnTap: Get dev %s: %s", p.BrName, err)
+			libol.Error("Point.OnTap: Get dev %s: %s", p.brName, err)
 		}
 	}
 
@@ -185,7 +182,6 @@ func (p *Point) DelRoutes(routes []*models.Route) error {
 		if err != nil {
 			continue
 		}
-
 		nxt := net.ParseIP(route.NextHop)
 		rte := netlink.Route{LinkIndex: p.link.Attrs().Index, Dst: dst, Gw: nxt}
 		if err := netlink.RouteDel(&rte); err != nil {

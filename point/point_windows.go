@@ -9,8 +9,8 @@ import (
 
 type Point struct {
 	MixPoint
-	BrName string
 	// private
+	brName string
 	addr   string
 	routes []*models.Route
 	config *config.Point
@@ -18,7 +18,7 @@ type Point struct {
 
 func NewPoint(config *config.Point) *Point {
 	p := Point{
-		BrName:   config.Interface.Bridge,
+		brName:   config.Interface.Bridge,
 		MixPoint: NewMixPoint(config),
 	}
 	return &p
@@ -35,9 +35,6 @@ func (p *Point) Initialize() {
 
 func (p *Point) Start() {
 	libol.Info("Point.Start: Windows.")
-	if !p.initialize {
-		p.Initialize()
-	}
 	p.worker.Start()
 }
 

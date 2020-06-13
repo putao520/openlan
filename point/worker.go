@@ -571,6 +571,8 @@ func (a *TapWorker) Initialize() {
 }
 
 func (a *TapWorker) setEther(addr string) {
+	a.neighbor.Clear()
+	// format ip address.
 	addr = libol.IpAddrFormat(addr)
 	ifAddr := strings.SplitN(addr, "/", 2)[0]
 	a.ether.IpAddr = net.ParseIP(ifAddr).To4()
@@ -586,7 +588,6 @@ func (a *TapWorker) setEther(addr string) {
 		a.openAgain = true
 	}
 	a.ifAddr = addr
-	a.neighbor.Clear()
 }
 
 func (a *TapWorker) doTun() {
@@ -902,22 +903,22 @@ func GetTapCfg(c *config.Point) network.TapConfig {
 
 type Worker struct {
 	// private
-	ifAddr      string
-	listener    WorkerListener
-	http        *http.Http
-	tcpWorker   *SocketWorker
-	tapWorker   *TapWorker
-	config      *config.Point
-	uuid        string
-	network     *models.Network
-	routes      []PrefixRule
+	ifAddr    string
+	listener  WorkerListener
+	http      *http.Http
+	tcpWorker *SocketWorker
+	tapWorker *TapWorker
+	config    *config.Point
+	uuid      string
+	network   *models.Network
+	routes    []PrefixRule
 }
 
 func NewWorker(config *config.Point) (p *Worker) {
 	return &Worker{
-		ifAddr:      config.Interface.Address,
-		config:      config,
-		routes:      make([]PrefixRule, 0, 32),
+		ifAddr: config.Interface.Address,
+		config: config,
+		routes: make([]PrefixRule, 0, 32),
 	}
 }
 

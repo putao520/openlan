@@ -18,31 +18,27 @@ type Pointer interface {
 }
 
 type MixPoint struct {
-	// public
-	Tenant string
 	// private
-	uuid       string
-	worker     Worker
-	config     *config.Point
-	initialize bool
+	tenant string
+	uuid   string
+	worker Worker
+	config *config.Point
 }
 
 func NewMixPoint(config *config.Point) MixPoint {
 	p := MixPoint{
-		Tenant: config.Network,
+		tenant: config.Network,
 		worker: Worker{
 			ifAddr: config.Interface.Address,
 			config: config,
 		},
-		config:     config,
-		initialize: false,
+		config: config,
 	}
 	return p
 }
 
 func (p *MixPoint) Initialize() {
 	libol.Info("MixPoint.Initialize")
-	p.initialize = true
 	p.worker.SetUUID(p.UUID())
 	p.worker.Initialize()
 }
@@ -80,4 +76,8 @@ func (p *MixPoint) UpTime() int64 {
 
 func (p *MixPoint) IfAddr() string {
 	return p.worker.ifAddr
+}
+
+func (p *MixPoint) Tenant() string {
+	return p.tenant
 }
