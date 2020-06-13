@@ -34,7 +34,7 @@ var pd = Point{
 	Alias:    "",
 	Addr:     "openlan.net",
 	Protocol: "tls", // udp, kcp, tcp, tls, ws and wss etc.
-	Timeout:  120,
+	Timeout:  60,
 	Log: Log{
 		File:    "./point.log",
 		Verbose: libol.INFO,
@@ -114,7 +114,10 @@ func (c *Point) Default() {
 }
 
 func (c *Point) Load() error {
-	return libol.UnmarshalLoad(c, c.SaveFile)
+	if err := libol.FileExist(c.SaveFile); err == nil {
+		return libol.UnmarshalLoad(c, c.SaveFile)
+	}
+	return nil
 }
 
 func init() {

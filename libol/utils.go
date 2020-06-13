@@ -87,9 +87,16 @@ func MarshalSave(v interface{}, file string, pretty bool) error {
 	return nil
 }
 
-func UnmarshalLoad(v interface{}, file string) error {
+func FileExist(file string) error {
 	if _, err := os.Stat(file); os.IsNotExist(err) {
-		return NewErr("UnmarshalLoad: %s not exist", file)
+		return err
+	}
+	return nil
+}
+
+func UnmarshalLoad(v interface{}, file string) error {
+	if err := FileExist(file); err != nil {
+		return NewErr("UnmarshalLoad: %s %s", file, err)
 	}
 
 	contents, err := ioutil.ReadFile(file)
@@ -181,7 +188,7 @@ func Wait() {
 	signal.Notify(x, os.Interrupt, syscall.SIGKILL)
 	signal.Notify(x, os.Interrupt, syscall.SIGQUIT) //CTL+/
 	signal.Notify(x, os.Interrupt, syscall.SIGINT)  //CTL+C
-	Info("Wait...")
+	Info("Wait: ...")
 	n := <-x
-	Warn("Received %d, and Done !!!", n)
+	Warn("Wait: !!! Signal %d received !!!", n)
 }

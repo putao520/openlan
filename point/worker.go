@@ -66,10 +66,11 @@ type socketTimer struct {
 
 type socketTime struct {
 	last      int64 // record time last frame received or connected.
-	connected int64 // record last connected time
-	reconnect int64 // record time when triggered reconnected
+	connected int64 // record last connected time.
+	reconnect int64 // record time when triggered reconnected.
 	sleeps    int   // record times to control connecting delay.
 	closed    int64
+	live      int64 // record received pong frame time.
 }
 type SocketWorker struct {
 	// private
@@ -326,6 +327,7 @@ func (t *SocketWorker) onInstruct(data []byte) error {
 	case "ipad:":
 		return t.onIpAddr(resp)
 	case "pong:":
+		t.socketTime.live = time.Now().Unix()
 	case "sign=":
 		return t.onSignIn(resp)
 	case "left=":

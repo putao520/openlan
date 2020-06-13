@@ -296,26 +296,24 @@ func (v *Switch) Stop() error {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
-	libol.Debug("Switch.Stop")
-	v.Fire.Stop()
-	ctrls.Ctrl.Stop()
 	if v.bridge == nil {
 		return libol.NewErr("already closed")
 	}
+	libol.Debug("Switch.Stop")
+	for p := range storage.Point.List() {
+		if p == nil {
+			break
+		}
+		v.leftClient(p.Client)
+	}
+	v.Fire.Stop()
+	ctrls.Ctrl.Stop()
 	if v.http != nil {
 		v.http.Shutdown()
 		v.http = nil
 	}
 	for _, w := range v.worker {
 		w.Stop()
-	}
-	for p := range storage.Point.List() {
-		if p == nil {
-			break
-		}
-		if p.Client != nil {
-			v.LeftClient(p.Client)
-		}
 	}
 	for _, nCfg := range v.Conf.Network {
 		if br, ok := v.bridge[nCfg.Name]; ok {
@@ -417,7 +415,11 @@ func (v *Switch) Config() *config.Switch {
 	return &v.Conf
 }
 
-func (v *Switch) LeftClient(client libol.SocketClient) {
+func (v *Switch) leftClient(client libol.SocketClient) {
+	if client == nil {
+		return
+	}
+	libol.Info("Switch.leftClient: %s", client.String())
 	data := struct {
 		DateTime   int64  `json:"datetime"`
 		UUID       string `json:"uuid"`
@@ -433,12 +435,12 @@ func (v *Switch) LeftClient(client libol.SocketClient) {
 	}
 	body, err := json.Marshal(data)
 	if err != nil {
-		libol.Error("Switch.Leave: %s", err)
+		libol.Error("Switch.leftClient: %s", err)
 		return
 	}
-	libol.Cmd("Switch.Leave: left: %s", body)
+	libol.Cmd("Switch.leftClient: %s", body)
 	if err := client.WriteReq("left", string(body)); err != nil {
-		libol.Error("Switch.Leave: %s", err)
+		libol.Error("Switch.leftClient: %s", err)
 		return
 	}
 }
