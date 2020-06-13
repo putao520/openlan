@@ -8,7 +8,7 @@ import (
 
 type Interface struct {
 	Name     string `json:"name,omitempty" yaml:"name,omitempty"`
-	Mtu      int    `json:"mtu" yaml:"mtu"`
+	IfMtu    int    `json:"mtu" yaml:"mtu"`
 	Address  string `json:"address,omitempty" yaml:"address,omitempty"`
 	Bridge   string `json:"bridge,omitempty" yaml:"bridge,omitempty"`
 	Provider string `json:"provider,omitempty" yaml:"provider,omitempty"`
@@ -17,7 +17,7 @@ type Interface struct {
 type Point struct {
 	Alias       string    `json:"name,omitempty" yaml:"name,omitempty"`
 	Network     string    `json:"network,omitempty" yaml:"network,omitempty"`
-	Addr        string    `json:"connection" yaml:"connection"`
+	Connection  string    `json:"connection" yaml:"connection"`
 	Timeout     int       `json:"timeout"`
 	Username    string    `json:"username,omitempty" yaml:"username,omitempty"`
 	Password    string    `json:"password,omitempty" yaml:"password,omitempty"`
@@ -31,16 +31,16 @@ type Point struct {
 }
 
 var pd = Point{
-	Alias:    "",
-	Addr:     "openlan.net",
-	Protocol: "tls", // udp, kcp, tcp, tls, ws and wss etc.
-	Timeout:  60,
+	Alias:      "",
+	Connection: "openlan.net",
+	Protocol:   "tls", // udp, kcp, tcp, tls, ws and wss etc.
+	Timeout:    60,
 	Log: Log{
 		File:    "./point.log",
 		Verbose: libol.INFO,
 	},
 	Interface: Interface{
-		Mtu:      1518,
+		IfMtu:    1518,
 		Provider: "tap",
 		Name:     "",
 	},
@@ -61,7 +61,7 @@ func NewPoint() (c *Point) {
 	}
 	flag.StringVar(&c.Alias, "alias", pd.Alias, "alias for this point")
 	flag.StringVar(&c.Network, "net", pd.Network, "Network name")
-	flag.StringVar(&c.Addr, "conn", pd.Addr, "Virtual switch connect to")
+	flag.StringVar(&c.Connection, "conn", pd.Connection, "Virtual switch connect to")
 	flag.StringVar(&c.Username, "user", pd.Username, "Accessed username")
 	flag.StringVar(&c.Password, "pass", pd.Password, "Accessed password")
 	flag.StringVar(&c.Protocol, "proto", pd.Protocol, "Connection protocol")
@@ -90,7 +90,7 @@ func (c *Point) Right() {
 	if c.Alias == "" {
 		c.Alias = GetAlias()
 	}
-	RightAddr(&c.Addr, 10002)
+	RightAddr(&c.Connection, 10002)
 	if runtime.GOOS == "darwin" {
 		c.Interface.Provider = "tun"
 	}
@@ -99,11 +99,11 @@ func (c *Point) Right() {
 func (c *Point) Default() {
 	c.Right()
 	//reset zero value to default
-	if c.Addr == "" {
-		c.Addr = pd.Addr
+	if c.Connection == "" {
+		c.Connection = pd.Connection
 	}
-	if c.Interface.Mtu == 0 {
-		c.Interface.Mtu = pd.Interface.Mtu
+	if c.Interface.IfMtu == 0 {
+		c.Interface.IfMtu = pd.Interface.IfMtu
 	}
 	if c.Timeout == 0 {
 		c.Timeout = pd.Timeout

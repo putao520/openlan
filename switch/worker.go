@@ -117,12 +117,12 @@ func (w *NetworkWorker) AddLink(c *config.Point) {
 	c.Interface.Bridge = w.cfg.Bridge.Name //Reset bridge name.
 	c.RequestAddr = false
 	c.Network = w.cfg.Name
-
+	c.Interface.Address = w.cfg.Bridge.Address
 	libol.Go(func() {
 		p := point.NewPoint(c)
 		p.Initialize()
 		w.linksLock.Lock()
-		w.links[c.Addr] = p
+		w.links[c.Connection] = p
 		w.linksLock.Unlock()
 		storage.Link.Add(p)
 		p.Start()

@@ -72,7 +72,6 @@ func (p *Point) AddAddr(ipStr string) error {
 	}
 	libol.Info("Point.AddAddr: %s", ipStr)
 	p.addr = ipStr
-
 	return nil
 }
 
@@ -85,7 +84,6 @@ func (p *Point) DelAddr(ipStr string) error {
 	}
 	libol.Info("Point.DelAddr: %s", ipv4)
 	p.addr = ""
-
 	return nil
 }
 
@@ -93,7 +91,6 @@ func (p *Point) AddRoutes(routes []*models.Route) error {
 	if routes == nil {
 		return nil
 	}
-
 	_ = libol.MarshalSave(routes, ".routes.json", true)
 	for _, route := range routes {
 		out, err := libol.IpRouteAdd(p.IfName(), route.Prefix, route.NextHop)

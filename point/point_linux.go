@@ -49,7 +49,6 @@ func (p *Point) DelAddr(ipStr string) error {
 	if p.link == nil || ipStr == "" {
 		return nil
 	}
-
 	ipAddr, err := netlink.ParseAddr(ipStr)
 	if err != nil {
 		libol.Error("Point.AddAddr.ParseCIDR %s: %s", ipStr, err)
@@ -58,7 +57,6 @@ func (p *Point) DelAddr(ipStr string) error {
 	if err := netlink.AddrDel(p.link, ipAddr); err != nil {
 		libol.Warn("Point.DelAddr.UnsetLinkIp: %s", err)
 	}
-
 	libol.Info("Point.DelAddr: %s", ipStr)
 	p.addr = ""
 	return nil
@@ -68,7 +66,6 @@ func (p *Point) AddAddr(ipStr string) error {
 	if ipStr == "" || p.link == nil {
 		return nil
 	}
-
 	ipAddr, err := netlink.ParseAddr(ipStr)
 	if err != nil {
 		libol.Error("Point.AddAddr.ParseCIDR %s: %s", ipStr, err)
@@ -80,7 +77,6 @@ func (p *Point) AddAddr(ipStr string) error {
 	}
 	libol.Info("Point.AddAddr: %s", ipStr)
 	p.addr = ipStr
-
 	return nil
 }
 
@@ -88,7 +84,6 @@ func (p *Point) UpBr(name string) *netlink.Bridge {
 	if name == "" {
 		return nil
 	}
-
 	la := netlink.LinkAttrs{TxQLen: -1, Name: name}
 	br := &netlink.Bridge{LinkAttrs: la}
 	if link, err := netlink.LinkByName(name); link == nil {
@@ -98,13 +93,11 @@ func (p *Point) UpBr(name string) *netlink.Bridge {
 			libol.Warn("Point.UpBr.newBr: %s %s", name, err)
 		}
 	}
-
 	link, err := netlink.LinkByName(name)
 	if link == nil {
 		libol.Error("Point.UpBr: %s %s", name, err)
 		return nil
 	}
-
 	brCtl := libol.NewBrCtl(name)
 	if err := brCtl.Stp(true); err != nil {
 		libol.Error("Point.UpBr.Stp: %s", err)
@@ -112,7 +105,6 @@ func (p *Point) UpBr(name string) *netlink.Bridge {
 	if err := netlink.LinkSetUp(link); err != nil {
 		libol.Error("Point.UpBr.newBr.Up: %s", err)
 	}
-
 	return br
 }
 
@@ -129,20 +121,16 @@ func (p *Point) OnTap(w *TapWorker) error {
 		libol.Error("Point.OnTap.SetLinkUp: %s: %s", name, err)
 		return err
 	}
-
 	if br := p.UpBr(p.brName); br != nil {
 		if err := netlink.LinkSetMaster(link, br); err != nil {
 			libol.Error("Point.OnTap.AddSlave: Switch dev %s: %s", name, err)
 		}
-
 		link, err = netlink.LinkByName(p.brName)
 		if err != nil {
 			libol.Error("Point.OnTap: Get dev %s: %s", p.brName, err)
 		}
 	}
-
 	p.link = link
-
 	return nil
 }
 
@@ -156,7 +144,6 @@ func (p *Point) AddRoutes(routes []*models.Route) error {
 		if err != nil {
 			continue
 		}
-
 		nxt := net.ParseIP(route.NextHop)
 		rte := netlink.Route{LinkIndex: p.link.Attrs().Index, Dst: dst, Gw: nxt}
 		libol.Debug("Point.AddRoute: %s", rte)
@@ -166,9 +153,7 @@ func (p *Point) AddRoutes(routes []*models.Route) error {
 		}
 		libol.Info("Point.AddRoutes: route %s via %s", route.Prefix, route.NextHop)
 	}
-
 	p.routes = routes
-
 	return nil
 }
 
@@ -176,7 +161,6 @@ func (p *Point) DelRoutes(routes []*models.Route) error {
 	if routes == nil || p.link == nil {
 		return nil
 	}
-
 	for _, route := range routes {
 		_, dst, err := net.ParseCIDR(route.Prefix)
 		if err != nil {
@@ -190,8 +174,6 @@ func (p *Point) DelRoutes(routes []*models.Route) error {
 		}
 		libol.Info("Point.DelRoutes: route %s via %s", route.Prefix, route.NextHop)
 	}
-
 	p.routes = nil
-
 	return nil
 }

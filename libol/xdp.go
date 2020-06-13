@@ -87,7 +87,7 @@ func (x *XDP) Close() error {
 	return nil
 }
 
-// Addr returns the listener's network address.
+// returns the listener's network address.
 func (x *XDP) Addr() net.Addr {
 	return x.address
 }

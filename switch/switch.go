@@ -134,7 +134,7 @@ func (v *Switch) Initialize() {
 			}
 		}
 		v.worker[name] = NewNetworkWorker(*nCfg, crypt)
-		v.bridge[name] = network.NewBridger(brCfg.Provider, brCfg.Name, brCfg.Mtu)
+		v.bridge[name] = network.NewBridger(brCfg.Provider, brCfg.Name, brCfg.IfMtu)
 	}
 
 	v.apps.Auth = app.NewPointAuth(v, v.cfg)

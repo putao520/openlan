@@ -135,7 +135,7 @@ func (t *SocketWorker) Initialize() {
 		return
 	}
 	libol.Info("SocketWorker.Initialize")
-	t.client.SetMaxSize(t.pointCfg.Interface.Mtu)
+	t.client.SetMaxSize(t.pointCfg.Interface.IfMtu)
 	t.client.SetListener(libol.ClientListener{
 		OnConnected: func(client libol.SocketClient) error {
 			t.record.connected = time.Now().Unix()
@@ -274,9 +274,7 @@ func (t *SocketWorker) onLogin(resp string) error {
 			_ = t.listener.OnSuccess(t)
 		}
 		t.record.sleeps = 0
-		if t.pointCfg.RequestAddr {
-			_ = t.toNetwork(t.client)
-		}
+		_ = t.toNetwork(t.client)
 		t.eventQueue <- NewEvent(EventSuccess, "already success")
 		libol.Info("SocketWorker.onInstruct.toLogin: success")
 	} else {
@@ -287,6 +285,10 @@ func (t *SocketWorker) onLogin(resp string) error {
 }
 
 func (t *SocketWorker) onIpAddr(resp string) error {
+	if !t.pointCfg.RequestAddr {
+		libol.Info("SocketWorker.onIpAddr: not allowed")
+		return nil
+	}
 	n := &models.Network{}
 	if err := json.Unmarshal([]byte(resp), n); err != nil {
 		return libol.NewErr("SocketWorker.onInstruct: Invalid json data.")
@@ -636,7 +638,7 @@ func (a *TapWorker) onMiss(dest []byte) {
 	reply.SHwAddr = a.ether.HwAddr
 	reply.THwAddr = libol.ZEROED
 
-	buffer := make([]byte, 0, a.pointCfg.Interface.Mtu)
+	buffer := make([]byte, 0, a.pointCfg.Interface.IfMtu)
 	buffer = append(buffer, eth.Encode()...)
 	buffer = append(buffer, reply.Encode()...)
 
@@ -790,7 +792,7 @@ func (a *TapWorker) toArp(data []byte) bool {
 				reply.TIpAddr = arp.SIpAddr
 				reply.SHwAddr = a.ether.HwAddr
 				reply.THwAddr = arp.SHwAddr
-				buffer := make([]byte, 0, a.pointCfg.Interface.Mtu)
+				buffer := make([]byte, 0, a.pointCfg.Interface.IfMtu)
 				buffer = append(buffer, eth.Encode()...)
 				buffer = append(buffer, reply.Encode()...)
 				libol.Info("TapWorker.toArp: reply %x.", buffer)
@@ -864,24 +866,24 @@ func GetSocketClient(c *config.Point) libol.SocketClient {
 		kcpCfg := &libol.KcpConfig{
 			Block: config.GetBlock(c.Crypt),
 		}
-		return libol.NewKcpClient(c.Addr, kcpCfg)
+		return libol.NewKcpClient(c.Connection, kcpCfg)
 	case "tcp":
 		tcpCfg := &libol.TcpConfig{
 			Block: config.GetBlock(c.Crypt),
 		}
-		return libol.NewTcpClient(c.Addr, tcpCfg)
+		return libol.NewTcpClient(c.Connection, tcpCfg)
 	case "udp":
 		udpCfg := &libol.UdpConfig{
 			Block:   config.GetBlock(c.Crypt),
 			Timeout: time.Duration(c.Timeout) * time.Second,
 		}
-		return libol.NewUdpClient(c.Addr, udpCfg)
+		return libol.NewUdpClient(c.Connection, udpCfg)
 	default:
 		tcpCfg := &libol.TcpConfig{
 			Tls:   &tls.Config{InsecureSkipVerify: true},
 			Block: config.GetBlock(c.Crypt),
 		}
-		return libol.NewTcpClient(c.Addr, tcpCfg)
+		return libol.NewTcpClient(c.Connection, tcpCfg)
 	}
 }
 

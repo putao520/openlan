@@ -54,7 +54,6 @@ func (p *Point) AddAddr(ipStr string) error {
 		return err
 	}
 	libol.Info("Point.AddAddr: %s", ipStr)
-
 	// add directly route.
 	out, err = libol.IpRouteAdd(p.IfName(), ipStr, "")
 	if err != nil {
@@ -62,7 +61,6 @@ func (p *Point) AddAddr(ipStr string) error {
 	}
 	libol.Info("Point.AddAddr: route %s via %s", ipStr, p.IfName())
 	p.addr = ipStr
-
 	return nil
 }
 
@@ -73,7 +71,6 @@ func (p *Point) DelAddr(ipStr string) error {
 		libol.Warn("Point.DelAddr: %s, %s", err, out)
 	}
 	libol.Info("Point.DelAddr: route %s via %s", ipStr, p.IfName())
-
 	// delete point-to-point
 	ip4 := strings.SplitN(ipStr, "/", 2)[0]
 	out, err = libol.IpAddrDel(p.IfName(), ip4)
@@ -90,7 +87,6 @@ func (p *Point) AddRoutes(routes []*models.Route) error {
 	if routes == nil {
 		return nil
 	}
-
 	for _, route := range routes {
 		out, err := libol.IpRouteAdd(p.IfName(), route.Prefix, "")
 		if err != nil {

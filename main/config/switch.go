@@ -9,7 +9,7 @@ import (
 
 type Bridge struct {
 	Name     string `json:"name"`
-	Mtu      int    `json:"mtu"`
+	IfMtu    int    `json:"mtu"`
 	Address  string `json:"address,omitempty" yaml:"address,omitempty"`
 	Provider string `json:"provider"`
 }
@@ -47,8 +47,8 @@ func (n *Network) Right() {
 	if n.Bridge.Provider == "" {
 		n.Bridge.Provider = "linux"
 	}
-	if n.Bridge.Mtu == 0 {
-		n.Bridge.Mtu = 1518
+	if n.Bridge.IfMtu == 0 {
+		n.Bridge.IfMtu = 1518
 	}
 }
 
