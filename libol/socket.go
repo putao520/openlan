@@ -286,7 +286,7 @@ func (t *socketServer) ListClient() <-chan SocketClient {
 			}
 		})
 		list <- nil
-	}, t)
+	})
 	return list
 }
 
@@ -303,7 +303,7 @@ func (t *socketServer) doOnClient(call ServerListener, client SocketClient) {
 	if call.OnClient != nil {
 		_ = call.OnClient(client)
 		if call.ReadAt != nil {
-			Go(func() {t.Read(client, call.ReadAt)}, t)
+			Go(func() {t.Read(client, call.ReadAt)})
 		}
 	}
 }

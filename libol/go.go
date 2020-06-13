@@ -1,37 +1,42 @@
 package libol
 
+import (
+	"path"
+	"runtime"
+)
+
 type gos struct {
 	lock  Locker
 	total uint64
-	current map[interface{}]interface{}
 }
 
-var Gos = gos{
-	current: make(map[interface{}]interface{}, 32),
-}
+var Gos = gos{}
 
-func (t *gos) Add(call interface{}, obj interface{}) {
+func (t *gos) Add(call interface{}) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	t.total++
-	t.current[obj] = call
-	Debug("gos.Add %d %p %v", t.total, obj, call)
+	Debug("gos.Add %d %p %v", t.total, call)
 }
 
-func (t *gos) Del(obj interface{}) {
+func (t *gos) Del(call interface{}) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
-	if _, ok := t.current[obj]; ok {
-		t.total--
-		delete(t.current, obj)
-		Debug("gos.Del %d %p", t.total, obj)
-	}
+	t.total--
+	Debug("gos.Del %d %p", t.total, call)
 }
 
-func Go(call func(), obj interface{}) {
+func Go(call func()) {
+	name := "Go"
+	pc, _, line, ok := runtime.Caller(1)
+	if ok {
+		name = runtime.FuncForPC(pc).Name()
+	}
 	go func() {
-		Gos.Add(call, obj)
+		Gos.Add(call)
+		Info("Go.Add: %s:%d", path.Base(name), line)
 		call()
-		Gos.Del(obj)
+		Info("Go.Del: %s:%d", path.Base(name), line)
+		Gos.Del(call)
 	}()
 }

@@ -268,21 +268,21 @@ func (v *Switch) Start() {
 			br.Open(brCfg.Address)
 		}
 	}
-	libol.Go(v.server.Accept, v)
+	libol.Go(v.server.Accept)
 	call := libol.ServerListener{
 		OnClient: v.OnClient,
 		OnClose:  v.OnClose,
 		ReadAt:   v.ReadClient,
 	}
-	libol.Go(func() {v.server.Loop(call)}, v)
+	libol.Go(func() {v.server.Loop(call)})
 	for _, w := range v.worker {
 		w.Start(v)
 	}
 	if v.http != nil {
-		libol.Go(v.http.Start, v)
+		libol.Go(v.http.Start)
 	}
-	libol.Go(ctrls.Ctrl.Start, v)
-	libol.Go(v.firewall.Start, v)
+	libol.Go(ctrls.Ctrl.Start)
+	libol.Go(v.firewall.Start)
 }
 
 func (v *Switch) Stop() {
