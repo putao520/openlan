@@ -71,7 +71,7 @@ func NewSwitch(c config.Switch) *Switch {
 	v := Switch{
 		cfg: c,
 		firewall: FireWall{
-			Rules: make([]libol.FilterRule, 0, 32),
+			rules: make([]libol.FilterRule, 0, 32),
 		},
 		worker:  make(map[string]*NetworkWorker, 32),
 		bridge:  make(map[string]network.Bridger, 32),
@@ -83,21 +83,21 @@ func NewSwitch(c config.Switch) *Switch {
 
 func (v *Switch) addRules(source string, prefix string) {
 	libol.Info("Switch.addRules %s, %s", source, prefix)
-	v.firewall.Rules = append(v.firewall.Rules, libol.FilterRule{
+	v.firewall.rules = append(v.firewall.rules, libol.FilterRule{
 		Table:  "filter",
 		Chain:  "FORWARD",
 		Source: source,
 		Dest:   prefix,
 		Jump:   "ACCEPT",
 	})
-	v.firewall.Rules = append(v.firewall.Rules, libol.FilterRule{
+	v.firewall.rules = append(v.firewall.rules, libol.FilterRule{
 		Table:  "nat",
 		Chain:  "POSTROUTING",
 		Source: source,
 		Dest:   prefix,
 		Jump:   "MASQUERADE",
 	})
-	v.firewall.Rules = append(v.firewall.Rules, libol.FilterRule{
+	v.firewall.rules = append(v.firewall.rules, libol.FilterRule{
 		Table:  "nat",
 		Chain:  "POSTROUTING",
 		Dest:   source,
@@ -160,7 +160,7 @@ func (v *Switch) Initialize() {
 
 	// FireWall
 	for _, rule := range v.cfg.FireWall {
-		v.firewall.Rules = append(v.firewall.Rules, libol.FilterRule{
+		v.firewall.rules = append(v.firewall.rules, libol.FilterRule{
 			Table:    rule.Table,
 			Chain:    rule.Chain,
 			Source:   rule.Source,
@@ -173,7 +173,7 @@ func (v *Switch) Initialize() {
 			Output:   rule.Output,
 		})
 	}
-	libol.Info("Switch.Initialize total %d rules", len(v.firewall.Rules))
+	libol.Info("Switch.Initialize total %d rules", len(v.firewall.rules))
 }
 
 func (v *Switch) onFrame(client libol.SocketClient, frame *libol.FrameMessage) error {
@@ -257,7 +257,7 @@ func (v *Switch) OnClose(client libol.SocketClient) error {
 	return nil
 }
 
-func (v *Switch) Start() error {
+func (v *Switch) Start() {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
@@ -268,31 +268,29 @@ func (v *Switch) Start() error {
 			br.Open(brCfg.Address)
 		}
 	}
-	go v.server.Accept()
+	libol.Go(v.server.Accept, v)
 	call := libol.ServerListener{
 		OnClient: v.OnClient,
 		OnClose:  v.OnClose,
 		ReadAt:   v.ReadClient,
 	}
-	go v.server.Loop(call)
+	libol.Go(func() {v.server.Loop(call)}, v)
 	for _, w := range v.worker {
 		w.Start(v)
 	}
 	if v.http != nil {
-		go v.http.Start()
+		libol.Go(v.http.Start, v)
 	}
-	go ctrls.Ctrl.Start()
-
-	v.firewall.Start()
-	return nil
+	libol.Go(ctrls.Ctrl.Start, v)
+	libol.Go(v.firewall.Start, v)
 }
 
-func (v *Switch) Stop() error {
+func (v *Switch) Stop() {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
 	if v.bridge == nil {
-		return libol.NewErr("already closed")
+		return
 	}
 	libol.Debug("Switch.Stop")
 	for p := range storage.Point.List() {
@@ -318,7 +316,6 @@ func (v *Switch) Stop() error {
 		}
 	}
 	v.server.Close()
-	return nil
 }
 
 func (v *Switch) Alias() string {

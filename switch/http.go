@@ -55,11 +55,9 @@ func (h *Http) Initialize() {
 			WriteTimeout: 4 * time.Second,
 		}
 	}
-
 	if h.adminToken == "" {
 		_ = h.LoadToken()
 	}
-
 	if h.adminToken == "" {
 		h.adminToken = libol.GenToken(64)
 	}
@@ -160,22 +158,21 @@ func (h *Http) LoadToken() error {
 	return nil
 }
 
-func (h *Http) Start() error {
+func (h *Http) Start() {
 	h.Initialize()
 
 	libol.Info("Http.Start %s", h.listen)
 	if h.keyFile == "" || h.crtFile == "" {
 		if err := h.server.ListenAndServe(); err != nil {
 			libol.Error("Http.Start on %s: %s", h.listen, err)
-			return err
+			return
 		}
 	} else {
 		if err := h.server.ListenAndServeTLS(h.crtFile, h.keyFile); err != nil {
 			libol.Error("Http.Start on %s: %s", h.listen, err)
-			return err
+			return
 		}
 	}
-	return nil
 }
 
 func (h *Http) Shutdown() {

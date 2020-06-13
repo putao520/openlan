@@ -154,7 +154,7 @@ func (t *SocketWorker) Start() {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	_ = t.connect()
-	go t.Loop()
+	libol.Go(t.Loop, t)
 }
 
 func (t *SocketWorker) leave() {
@@ -388,7 +388,7 @@ func (t *SocketWorker) dispatch(ev socketEvent) {
 	switch ev.Type {
 	case EventConed:
 		if t.client != nil {
-			go t.Read()
+			libol.Go(t.Read, t)
 			_ = t.toLogin(t.client)
 		}
 	case EventSuccess:
@@ -828,9 +828,9 @@ func (a *TapWorker) close() {
 func (a *TapWorker) Start() {
 	a.lock.Lock()
 	defer a.lock.Unlock()
-	go a.Read()
-	go a.Loop()
-	go a.neighbor.Start()
+	libol.Go(a.Read, a)
+	libol.Go(a.Loop, a)
+	libol.Go(a.neighbor.Start, a)
 }
 
 func (a *TapWorker) Stop() {
@@ -975,7 +975,7 @@ func (p *Worker) Start() {
 	p.tapWorker.Start()
 	p.tcpWorker.Start()
 	if p.http != nil {
-		_ = p.http.Start()
+		libol.Go(p.http.Start, p)
 	}
 }
 

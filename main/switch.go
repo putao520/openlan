@@ -12,8 +12,8 @@ func main() {
 
 	libol.PreNotify()
 	s.Initialize()
-	_ = s.Start()
+	s.Start()
 	libol.SdNotify()
 	libol.Wait()
-	_ = s.Stop()
+	s.Stop()
 }

@@ -107,16 +107,15 @@ func (h *Http) LoadRouter() {
 	})
 }
 
-func (h *Http) Start() error {
+func (h *Http) Start() {
 	h.Initialize()
 	libol.Info("Http.Start %s", h.listen)
 	if h.keyFile == "" || h.crtFile == "" {
 		if err := h.server.ListenAndServe(); err != nil {
 			libol.Error("Http.Start on %s: %s", h.listen, err)
-			return err
+			return
 		}
 	}
-	return nil
 }
 
 func (h *Http) Shutdown() {

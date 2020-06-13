@@ -279,14 +279,14 @@ type socketServer struct {
 
 func (t *socketServer) ListClient() <-chan SocketClient {
 	list := make(chan SocketClient, 32)
-	go func() {
+	Go(func() {
 		t.clients.Iter(func(k string, v interface{}) {
 			if client, ok := v.(SocketClient); ok {
 				list <- client
 			}
 		})
 		list <- nil
-	}()
+	}, t)
 	return list
 }
 
@@ -303,7 +303,7 @@ func (t *socketServer) doOnClient(call ServerListener, client SocketClient) {
 	if call.OnClient != nil {
 		_ = call.OnClient(client)
 		if call.ReadAt != nil {
-			go t.Read(client, call.ReadAt)
+			Go(func() {t.Read(client, call.ReadAt)}, t)
 		}
 	}
 }
