@@ -284,7 +284,7 @@ func (s *DataGramMessage) Receive(conn net.Conn, data []byte, max, min int) (int
 	}
 	tmp := buf[hl : hl+int(size)]
 	if s.block != nil {
-		s.block.Encrypt(tmp, tmp)
+		s.block.Decrypt(tmp, tmp)
 	}
 	copy(data, tmp)
 	return len(tmp), nil

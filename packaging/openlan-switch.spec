@@ -1,5 +1,5 @@
 Name: openlan-switch
-Version: 5.2.7
+Version: 5.2.10
 Release: 1%{?dist}
 Summary: OpenLan's Project Software
 Group: Applications/Communications
@@ -40,10 +40,10 @@ firewall-cmd --permanent --zone=public --add-port=10000/tcp --permanent || {
   echo "YOU NEED ALLOW TCP PORT:10000."
 }
 firewall-cmd --permanent --zone=public --add-port=10002/udp --permanent || {
-  echo "YOU NEED ALLOW UDP PORT:10000."
+  echo "YOU NEED ALLOW UDP PORT:10002."
 }
 firewall-cmd --permanent --zone=public --add-port=10002/tcp --permanent || {
-  echo "YOU NEED ALLOW TCP PORT:10000."
+  echo "YOU NEED ALLOW TCP PORT:10002."
 }
 firewall-cmd --reload || :
 

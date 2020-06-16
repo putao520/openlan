@@ -149,18 +149,13 @@ func (t *TcpClient) Connect() error {
 	}
 	t.status = ClConnecting
 	t.lock.Unlock()
-
-	if t.tcpCfg != nil {
-		Info("TcpClient.Connect: tls://%s", t.address)
-	} else {
-		Info("TcpClient.Connect: tcp://%s", t.address)
-	}
-
 	var err error
 	var conn net.Conn
 	if t.tcpCfg.Tls != nil {
+		Info("TcpClient.Connect: tls://%s", t.address)
 		conn, err = tls.Dial("tcp", t.address, t.tcpCfg.Tls)
 	} else {
+		Info("TcpClient.Connect: tcp://%s", t.address)
 		conn, err = net.Dial("tcp", t.address)
 	}
 	if err == nil {
