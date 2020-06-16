@@ -335,8 +335,8 @@ func (t *socketServer) Loop(call ServerListener) {
 
 func (t *socketServer) Read(client SocketClient, ReadAt ReadClient) {
 	Log("socketServer.Read: %s", client.Addr())
-	data := make([]byte, MAXBUF)
 	for {
+		data := NewBuffer()
 		length, err := client.ReadMsg(data)
 		if err != nil {
 			Error("socketServer.Read: %s", err)
