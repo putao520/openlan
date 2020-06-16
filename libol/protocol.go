@@ -25,12 +25,14 @@ type Ether struct {
 	Len  int
 }
 
+const EtherLen = 14
+
 func NewEther(t uint16) (e *Ether) {
 	e = &Ether{
 		Type: t,
 		Src:  make([]byte, 6),
 		Dst:  make([]byte, 6),
-		Len:  14,
+		Len:  EtherLen,
 	}
 	return
 }

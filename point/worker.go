@@ -32,7 +32,7 @@ type SocketWorkerListener struct {
 	OnClose   func(w *SocketWorker) error
 	OnSuccess func(w *SocketWorker) error
 	OnIpAddr  func(w *SocketWorker, n *models.Network) error
-	ReadAt    func(p []byte) error
+	ReadAt    func(frame *libol.FrameMessage) error
 }
 
 var (
@@ -84,7 +84,7 @@ type SocketWorker struct {
 	ticker     *time.Ticker
 	pointCfg   *config.Point
 	eventQueue chan socketEvent
-	writeQueue chan []byte
+	writeQueue chan *libol.FrameMessage
 	jober      []jobTimer
 	record     recordTime
 }
@@ -107,7 +107,7 @@ func NewSocketWorker(client libol.SocketClient, c *config.Point) (t *SocketWorke
 		},
 		pointCfg:   c,
 		eventQueue: make(chan socketEvent, 32),
-		writeQueue: make(chan []byte, 1024),
+		writeQueue: make(chan *libol.FrameMessage, 1024),
 		jober:      make([]jobTimer, 0, 32),
 	}
 	t.user.Alias = c.Alias
@@ -315,12 +315,11 @@ func (t *SocketWorker) onSignIn(resp string) error {
 }
 
 // handle instruct from virtual switch
-func (t *SocketWorker) onInstruct(data []byte) error {
-	m := libol.NewFrameMessage(data)
-	if !m.IsControl() {
+func (t *SocketWorker) onInstruct(frame *libol.FrameMessage) error {
+	if !frame.IsControl() {
 		return nil
 	}
-	action, resp := m.CmdAndParams()
+	action, resp := frame.CmdAndParams()
 	libol.Cmd("SocketWorker.onInstruct %s %s", action, resp)
 	switch action {
 	case "logi:":
@@ -434,8 +433,7 @@ func (t *SocketWorker) Read() {
 			break
 		}
 		t.lock.Unlock()
-		data := make([]byte, libol.MAXBUF)
-		n, err := t.client.ReadMsg(data)
+		data, err := t.client.ReadMsg()
 		t.lock.Lock()
 		if err != nil {
 			libol.Error("SocketWorker.Read: %s", err)
@@ -443,13 +441,13 @@ func (t *SocketWorker) Read() {
 			break
 		}
 		t.record.last = time.Now().Unix()
-		libol.Log("SocketWorker.Read: %x", data[:n])
-		if n > 0 {
-			frame := data[:n]
-			if libol.IsControl(frame) {
-				_ = t.onInstruct(frame)
+		libol.Log("SocketWorker.Read: %x", data)
+		if data.Size() > 0 {
+			data.Decode()
+			if data.IsControl() {
+				_ = t.onInstruct(data)
 			} else if t.listener.ReadAt != nil {
-				_ = t.listener.ReadAt(frame)
+				_ = t.listener.ReadAt(data)
 			}
 		}
 		t.lock.Unlock()
@@ -469,8 +467,8 @@ func (t *SocketWorker) deadCheck() {
 	}
 }
 
-func (t *SocketWorker) DoWrite(data []byte) error {
-	libol.Log("SocketWorker.DoWrite: %x", data)
+func (t *SocketWorker) DoWrite(frame *libol.FrameMessage) error {
+	libol.Log("SocketWorker.DoWrite: %x", frame)
 	t.lock.Lock()
 	t.deadCheck()
 	if t.client == nil {
@@ -483,7 +481,7 @@ func (t *SocketWorker) DoWrite(data []byte) error {
 		return nil
 	}
 	t.lock.Unlock()
-	if err := t.client.WriteMsg(data); err != nil {
+	if err := t.client.WriteMsg(frame); err != nil {
 		t.eventQueue <- NewEvent(EventRecon, "from write")
 		return err
 	}
@@ -522,7 +520,7 @@ type TapWorkerListener struct {
 	OnOpen   func(w *TapWorker) error
 	OnClose  func(w *TapWorker)
 	FindDest func(dest []byte) []byte
-	ReadAt   func([]byte) error
+	ReadAt   func(frame *libol.FrameMessage) error
 }
 
 type TunEther struct {
@@ -541,7 +539,7 @@ type TapWorker struct {
 	deviceCfg  network.TapConfig
 	pointCfg   *config.Point
 	ifAddr     string
-	writeQueue chan []byte
+	writeQueue chan *libol.FrameMessage
 	done       chan bool
 }
 
@@ -552,7 +550,7 @@ func NewTapWorker(devCfg network.TapConfig, c *config.Point) (a *TapWorker) {
 		pointCfg:   c,
 		openAgain:  false,
 		done:       make(chan bool, 2),
-		writeQueue: make(chan []byte, 1024),
+		writeQueue: make(chan *libol.FrameMessage, 1024),
 	}
 	return
 }
@@ -638,13 +636,12 @@ func (a *TapWorker) onMiss(dest []byte) {
 	reply.SHwAddr = a.ether.HwAddr
 	reply.THwAddr = libol.ZEROED
 
-	buffer := make([]byte, 0, a.pointCfg.Interface.IfMtu)
-	buffer = append(buffer, eth.Encode()...)
-	buffer = append(buffer, reply.Encode()...)
-
-	libol.Debug("TapWorker.onMiss: %x.", buffer)
+	frame := libol.NewFrameMessage()
+	frame.Append(eth.Encode())
+	frame.Append(reply.Encode())
+	libol.Debug("TapWorker.onMiss: %x.", frame.Frame()[:64])
 	if a.listener.ReadAt != nil {
-		_ = a.listener.ReadAt(buffer)
+		_ = a.listener.ReadAt(frame)
 	}
 }
 
@@ -660,7 +657,12 @@ func (a *TapWorker) Read() {
 			break
 		}
 		a.lock.Unlock()
-		data := make([]byte, libol.MAXBUF)
+
+		frame := libol.NewFrameMessage()
+		data := frame.Frame()
+		if a.device.IsTun() {
+			data = data[libol.EtherLen:]
+		}
 		n, err := a.device.Read(data)
 		a.lock.Lock()
 		if err != nil || a.openAgain {
@@ -692,16 +694,16 @@ func (a *TapWorker) Read() {
 				continue
 			}
 			eth := a.newEth(libol.EthIp4, neb.HwAddr)
-			buffer := make([]byte, 0, libol.MAXBUF)
-			buffer = append(buffer, eth.Encode()...)
-			buffer = append(buffer, data[:n]...)
-			n += eth.Len
+			frame.Append(eth.Encode()) // Insert Ethernet Header.
+			n += libol.EtherLen
+			frame.SetSize(n)
 			if a.listener.ReadAt != nil {
-				_ = a.listener.ReadAt(buffer[:n])
+				_ = a.listener.ReadAt(frame)
 			}
 		} else {
+			frame.SetSize(n)
 			if a.listener.ReadAt != nil {
-				_ = a.listener.ReadAt(data[:n])
+				_ = a.listener.ReadAt(frame)
 			}
 		}
 		a.lock.Unlock()
@@ -721,9 +723,9 @@ func (a *TapWorker) Loop() {
 	}
 }
 
-func (a *TapWorker) DoWrite(data []byte) error {
+func (a *TapWorker) DoWrite(frame *libol.FrameMessage) error {
+	data := frame.Frame()
 	libol.Log("TapWorker.DoWrite: %x", data)
-
 	a.lock.Lock()
 	if a.device == nil {
 		a.lock.Unlock()
@@ -792,10 +794,10 @@ func (a *TapWorker) toArp(data []byte) bool {
 				reply.TIpAddr = arp.SIpAddr
 				reply.SHwAddr = a.ether.HwAddr
 				reply.THwAddr = arp.SHwAddr
-				buffer := make([]byte, 0, a.pointCfg.Interface.IfMtu)
-				buffer = append(buffer, eth.Encode()...)
-				buffer = append(buffer, reply.Encode()...)
-				libol.Info("TapWorker.toArp: reply %x.", buffer)
+				buffer := libol.NewFrameMessage()
+				buffer.Append(eth.Encode())
+				buffer.Append(reply.Encode())
+				libol.Info("TapWorker.toArp: reply %x.", buffer.Frame())
 				if a.listener.ReadAt != nil {
 					_ = a.listener.ReadAt(buffer)
 				}
@@ -843,8 +845,6 @@ func (a *TapWorker) Stop() {
 	a.neighbor.Stop()
 	a.close()
 }
-
-//TODO implement event queue and not listener
 
 type WorkerListener struct {
 	AddAddr   func(ipStr string) error
@@ -941,8 +941,8 @@ func (p *Worker) Initialize() {
 		OnClose:   p.OnClose,
 		OnSuccess: p.OnSuccess,
 		OnIpAddr:  p.OnIpAddr,
-		ReadAt: func(d []byte) error {
-			p.tapWorker.writeQueue <- d
+		ReadAt: func(frame *libol.FrameMessage) error {
+			p.tapWorker.writeQueue <- frame
 			return nil
 		},
 	}
@@ -960,8 +960,8 @@ func (p *Worker) Initialize() {
 			}
 			return nil
 		},
-		ReadAt: func(d []byte) error {
-			p.tcpWorker.writeQueue <- d
+		ReadAt: func(frame *libol.FrameMessage) error {
+			p.tcpWorker.writeQueue <- frame
 			return nil
 		},
 		FindDest: p.FindDest,

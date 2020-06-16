@@ -34,8 +34,8 @@ type SocketClient interface {
 	RemoteAddr() string
 	Connect() error
 	Close()
-	WriteMsg(data []byte) error
-	ReadMsg(data []byte) (int, error)
+	WriteMsg(frame *FrameMessage) error
+	ReadMsg() (*FrameMessage, error)
 	WriteReq(action string, body string) error
 	WriteResp(action string, body string) error
 	State() string
@@ -78,7 +78,7 @@ func (t *dataStream) IsOk() bool {
 	return t.connection != nil
 }
 
-func (t *dataStream) WriteMsg(data []byte) error {
+func (t *dataStream) WriteMsg(frame *FrameMessage) error {
 	if err := t.connecter(); err != nil {
 		t.sts.Dropped++
 		return err
@@ -86,7 +86,7 @@ func (t *dataStream) WriteMsg(data []byte) error {
 	if t.message == nil { // default is stream message
 		t.message = &StreamMessage{}
 	}
-	n, err := t.message.Send(t.connection, data)
+	n, err := t.message.Send(t.connection, frame)
 	if err != nil {
 		t.sts.SendError++
 		return err
@@ -95,35 +95,35 @@ func (t *dataStream) WriteMsg(data []byte) error {
 	return nil
 }
 
-func (t *dataStream) ReadMsg(data []byte) (int, error) {
+func (t *dataStream) ReadMsg() (*FrameMessage, error) {
 	Log("dataStream.ReadMsg: %s", t)
 	if !t.IsOk() {
-		return -1, NewErr("%s: not okay", t)
+		return nil, NewErr("%s: not okay", t)
 	}
 	if t.message == nil { // default is stream message
 		t.message = &StreamMessage{}
 	}
-	size, err := t.message.Receive(t.connection, data, t.maxSize, t.minSize)
+	frame, err := t.message.Receive(t.connection, t.maxSize, t.minSize)
 	if err != nil {
-		return size, err
+		return nil, err
 	}
-	t.sts.RecvOkay += uint64(size)
+	t.sts.RecvOkay += uint64(len(frame.frame))
 
-	return size, nil
+	return frame, nil
 }
 
 func (t *dataStream) WriteReq(action string, body string) error {
 	m := NewControlMessage(action, "= ", body)
-	data := m.Encode()
-	Cmd("dataStream.WriteReq: %s", data)
-	return t.WriteMsg(data)
+	frame := m.Encode()
+	Cmd("dataStream.WriteReq: %s", frame.frame)
+	return t.WriteMsg(frame)
 }
 
 func (t *dataStream) WriteResp(action string, body string) error {
 	m := NewControlMessage(action, ": ", body)
-	data := m.Encode()
-	Cmd("dataStream.WriteRsp: %s", data)
-	return t.WriteMsg(data)
+	frame := m.Encode()
+	Cmd("dataStream.WriteRsp: %s", frame.frame)
+	return t.WriteMsg(frame)
 }
 
 type socketClient struct {
@@ -246,10 +246,10 @@ type ServerSts struct {
 type ServerListener struct {
 	OnClient func(client SocketClient) error
 	OnClose  func(client SocketClient) error
-	ReadAt   func(client SocketClient, p []byte) error
+	ReadAt   func(client SocketClient, f *FrameMessage) error
 }
 
-type ReadClient func(client SocketClient, p []byte) error
+type ReadClient func(client SocketClient, f *FrameMessage) error
 
 type SocketServer interface {
 	Listen() (err error)
@@ -336,20 +336,19 @@ func (t *socketServer) Loop(call ServerListener) {
 func (t *socketServer) Read(client SocketClient, ReadAt ReadClient) {
 	Log("socketServer.Read: %s", client.Addr())
 	for {
-		data := make([]byte, MAXBUF)
-		length, err := client.ReadMsg(data)
+		frame, err := client.ReadMsg()
 		if err != nil {
 			Error("socketServer.Read: %s", err)
 			t.OffClient(client)
 			break
 		}
-		if length <= 0 {
+		if frame.size <= 0 {
 			continue
 		}
 		t.sts.RecvCount++
-		Log("socketServer.Read: length: %d ", length)
-		Log("socketServer.Read: data  : %x", data[:length])
-		if err := ReadAt(client, data[:length]); err != nil {
+		Log("socketServer.Read: length: %d ", frame.size)
+		Log("socketServer.Read: frame  : %x", frame)
+		if err := ReadAt(client, frame); err != nil {
 			Error("socketServer.Read: readAt %s", err)
 			break
 		}

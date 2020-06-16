@@ -14,17 +14,9 @@ const (
 	HSIZE  = 0x04
 )
 
-func GetHeaderLen() int {
-	return HSIZE
-}
-
 var MAGIC = []byte{0xff, 0xff}
 
-func GetMagic() []byte {
-	return MAGIC
-}
-
-func IsControl(data []byte) bool {
+func isControl(data []byte) bool {
 	if len(data) < 6 {
 		return false
 	}
@@ -38,28 +30,30 @@ type FrameMessage struct {
 	control bool
 	action  string
 	params  string
+	buffer  []byte
+	size    int
+	total   int
 	frame   []byte
-	rawData []byte
 }
 
-func NewFrameMessage(data []byte) *FrameMessage {
+func NewFrameMessage() *FrameMessage {
 	m := FrameMessage{
 		control: false,
 		action:  "",
 		params:  "",
-		rawData: data,
+		size:    0,
+		buffer:  make([]byte, HSIZE+MAXBUF),
 	}
-	m.Decode()
+	m.frame = m.buffer[HSIZE:]
+	m.total = len(m.frame)
 	return &m
 }
 
 func (m *FrameMessage) Decode() bool {
-	m.control = IsControl(m.rawData)
+	m.control = isControl(m.frame)
 	if m.control {
-		m.action = string(m.rawData[6:11])
-		m.params = string(m.rawData[12:])
-	} else {
-		m.frame = m.rawData
+		m.action = string(m.frame[6:11])
+		m.params = string(m.frame[12:])
 	}
 	return m.control
 }
@@ -68,16 +62,32 @@ func (m *FrameMessage) IsControl() bool {
 	return m.control
 }
 
-func (m *FrameMessage) Data() []byte {
+func (m *FrameMessage) Frame() []byte {
 	return m.frame
 }
 
 func (m *FrameMessage) String() string {
-	return fmt.Sprintf("control: %t, rawData: %x", m.control, m.rawData[:20])
+	return fmt.Sprintf("control: %t, frame: %x", m.control, m.frame[:20])
 }
 
 func (m *FrameMessage) CmdAndParams() (string, string) {
 	return m.action, m.params
+}
+
+func (m *FrameMessage) Append(data []byte) {
+	add := len(data)
+	if m.total-m.size >= add {
+		copy(m.frame[m.size:], data)
+		m.size += add
+	}
+}
+
+func (m *FrameMessage) Size() int {
+	return m.size
+}
+
+func (m *FrameMessage) SetSize(v int) {
+	m.size = v
 }
 
 type ControlMessage struct {
@@ -97,18 +107,20 @@ func NewControlMessage(action string, opr string, body string) *ControlMessage {
 		params:   body,
 		operator: opr,
 	}
-
 	return &c
 }
 
-func (c *ControlMessage) Encode() []byte {
+func (c *ControlMessage) Encode() *FrameMessage {
 	p := fmt.Sprintf("%s%s%s", c.action[:4], c.operator[:2], c.params)
-	return append(ZEROED[:6], p...)
+	frame := NewFrameMessage()
+	frame.Append(ZEROED[:6])
+	frame.Append([]byte(p))
+	return frame
 }
 
 type Messager interface {
-	Send(conn net.Conn, data []byte) (int, error)
-	Receive(conn net.Conn, data []byte, max, min int) (int, error)
+	Send(conn net.Conn, frame *FrameMessage) (int, error)
+	Receive(conn net.Conn, max, min int) (*FrameMessage, error)
 }
 
 type StreamMessage struct {
@@ -153,19 +165,17 @@ func (s *StreamMessage) writeFull(conn net.Conn, buf []byte) error {
 	return nil
 }
 
-func (s *StreamMessage) Send(conn net.Conn, data []byte) (int, error) {
-	size := len(data)
-	buf := make([]byte, HSIZE+size)
-	copy(buf[0:2], MAGIC)
-	binary.BigEndian.PutUint16(buf[2:4], uint16(size))
+func (s *StreamMessage) Send(conn net.Conn, frame *FrameMessage) (int, error) {
+	frame.buffer[0] = MAGIC[0]
+	frame.buffer[1] = MAGIC[1]
+	binary.BigEndian.PutUint16(frame.buffer[2:4], uint16(frame.size))
 	if s.block != nil {
-		s.block.Encrypt(data, data)
+		s.block.Encrypt(frame.frame, frame.frame)
 	}
-	copy(buf[HSIZE:], data)
-	if err := s.writeFull(conn, buf); err != nil {
+	if err := s.writeFull(conn, frame.buffer[:frame.size+4]); err != nil {
 		return 0, err
 	}
-	return size, nil
+	return frame.size, nil
 }
 
 func (s *StreamMessage) read(conn net.Conn, tmp []byte) (int, error) {
@@ -203,30 +213,29 @@ func (s *StreamMessage) readFull(conn net.Conn, buf []byte) error {
 	return nil
 }
 
-func (s *StreamMessage) Receive(conn net.Conn, data []byte, max, min int) (int, error) {
-	hl := GetHeaderLen()
-	buf := make([]byte, hl+max)
-	h := buf[:hl]
+func (s *StreamMessage) Receive(conn net.Conn, max, min int) (*FrameMessage, error) {
+	frame := NewFrameMessage()
+	h := frame.buffer[:4]
 	if err := s.readFull(conn, h); err != nil {
-		return 0, err
+		return nil, err
 	}
-	magic := GetMagic()
-	if !bytes.Equal(h[0:2], magic) {
-		return 0, NewErr("%s: wrong magic", conn.RemoteAddr())
+	if !bytes.Equal(h[:2], MAGIC[:2]) {
+		return nil, NewErr("%s: wrong magic", conn.RemoteAddr())
 	}
-	size := binary.BigEndian.Uint16(h[2:4])
-	if int(size) > max || int(size) < min {
-		return 0, NewErr("%s: wrong size(%d)", conn.RemoteAddr(), size)
+	size := int(binary.BigEndian.Uint16(h[2:4]))
+	if size > max || size < min {
+		return nil, NewErr("%s: wrong size %d", conn.RemoteAddr(), size)
 	}
-	tmp := buf[hl : hl+int(size)]
+	tmp := frame.buffer[4 : 4+size]
 	if err := s.readFull(conn, tmp); err != nil {
-		return 0, err
+		return nil, err
 	}
 	if s.block != nil {
 		s.block.Decrypt(tmp, tmp)
 	}
-	copy(data, tmp)
-	return len(tmp), nil
+	frame.size = size
+	frame.frame = tmp
+	return frame, nil
 }
 
 type DataGramMessage struct {
@@ -234,58 +243,55 @@ type DataGramMessage struct {
 	block   kcp.BlockCrypt
 }
 
-func (s *DataGramMessage) Send(conn net.Conn, data []byte) (int, error) {
-	size := len(data)
-	buf := make([]byte, HSIZE+size)
-	copy(buf[0:2], MAGIC)
-	binary.BigEndian.PutUint16(buf[2:4], uint16(size))
+func (s *DataGramMessage) Send(conn net.Conn, frame *FrameMessage) (int, error) {
+	frame.buffer[0] = MAGIC[0]
+	frame.buffer[1] = MAGIC[1]
+	binary.BigEndian.PutUint16(frame.buffer[2:4], uint16(frame.size))
 	if s.block != nil {
-		s.block.Encrypt(data, data)
+		s.block.Encrypt(frame.frame, frame.frame)
 	}
-	copy(buf[HSIZE:], data)
-	Log("DataGramMessage.Send: %s %x", conn.RemoteAddr(), data)
+	Log("DataGramMessage.Send: %s %x", conn.RemoteAddr(), frame)
 	if s.timeout != 0 {
 		err := conn.SetWriteDeadline(time.Now().Add(s.timeout))
 		if err != nil {
 			return 0, err
 		}
 	}
-	if _, err := conn.Write(buf); err != nil {
+	if _, err := conn.Write(frame.buffer[:4+frame.size]); err != nil {
 		return 0, err
 	}
-	return size, nil
+	return frame.size, nil
 }
 
-func (s *DataGramMessage) Receive(conn net.Conn, data []byte, max, min int) (int, error) {
-	hl := GetHeaderLen()
-	buf := make([]byte, hl+max)
+func (s *DataGramMessage) Receive(conn net.Conn, max, min int) (*FrameMessage, error) {
+	frame := NewFrameMessage()
 	Debug("DataGramMessage.Receive %s %d", conn.RemoteAddr(), s.timeout)
 	if s.timeout != 0 {
 		err := conn.SetReadDeadline(time.Now().Add(s.timeout))
 		if err != nil {
-			return 0, err
+			return nil, err
 		}
 	}
-	n, err := conn.Read(buf)
+	n, err := conn.Read(frame.buffer)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	Log("DataGramMessage.Receive: %s %x", conn.RemoteAddr(), buf[:n])
-	if n <= hl {
-		return 0, NewErr("%s: small frame", conn.RemoteAddr())
+	Log("DataGramMessage.Receive: %s %x", conn.RemoteAddr(), frame.buffer)
+	if n <= 4 {
+		return nil, NewErr("%s: small frame", conn.RemoteAddr())
 	}
-	magic := GetMagic()
-	if !bytes.Equal(buf[0:2], magic) {
-		return 0, NewErr("%s: wrong magic", conn.RemoteAddr())
+	if !bytes.Equal(frame.buffer[:2], MAGIC[:2]) {
+		return nil, NewErr("%s: wrong magic", conn.RemoteAddr())
 	}
-	size := binary.BigEndian.Uint16(buf[2:4])
-	if int(size) > max || int(size) < min {
-		return 0, NewErr("%s: wrong size(%d)", conn.RemoteAddr(), size)
+	size := int(binary.BigEndian.Uint16(frame.buffer[2:4]))
+	if size > max || size < min {
+		return nil, NewErr("%s: wrong size %d", conn.RemoteAddr(), size)
 	}
-	tmp := buf[hl : hl+int(size)]
+	tmp := frame.buffer[4 : 4+size]
 	if s.block != nil {
 		s.block.Decrypt(tmp, tmp)
 	}
-	copy(data, tmp)
-	return len(tmp), nil
+	frame.size = size
+	frame.frame = tmp
+	return frame, nil
 }

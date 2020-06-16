@@ -34,7 +34,7 @@ func (o *Online) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) e
 	if frame.IsControl() {
 		return nil
 	}
-	data := frame.Data()
+	data := frame.Frame()
 	eth, err := libol.NewEtherFromFrame(data)
 	if err != nil {
 		libol.Warn("Online.OnFrame %s", err)

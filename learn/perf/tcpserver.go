@@ -197,7 +197,7 @@ func main() {
 	flag.StringVar(&mode, "mode", mode, "client or server.")
 	flag.Parse()
 
-	p := libol.Prof{File: "tcpserver-"+mode+".prof"}
+	p := libol.Prof{File: "tcpserver-" + mode + ".prof"}
 	p.Start()
 	defer p.Stop()
 	if mode == "server" {

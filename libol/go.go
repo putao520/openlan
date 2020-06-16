@@ -43,7 +43,6 @@ func Go(call func()) {
 	}()
 }
 
-
 type Prof struct {
 	File string
 }

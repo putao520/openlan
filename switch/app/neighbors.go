@@ -30,7 +30,7 @@ func (e *Neighbors) OnFrame(client libol.SocketClient, frame *libol.FrameMessage
 	if frame.IsControl() {
 		return nil
 	}
-	data := frame.Data()
+	data := frame.Frame()
 	eth, err := libol.NewEtherFromFrame(data)
 	if err != nil {
 		libol.Warn("Neighbors.OnFrame %s", err)

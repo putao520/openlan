@@ -216,9 +216,9 @@ func (v *Switch) SignIn(client libol.SocketClient) error {
 	return nil
 }
 
-func (v *Switch) ReadClient(client libol.SocketClient, data []byte) error {
-	libol.Log("Switch.ReadClient: %s %x", client.Addr(), data)
-	frame := libol.NewFrameMessage(data)
+func (v *Switch) ReadClient(client libol.SocketClient, frame *libol.FrameMessage) error {
+	libol.Log("Switch.ReadClient: %s %x", client.Addr(), frame.Frame())
+	frame.Decode()
 	if err := v.onFrame(client, frame); err != nil {
 		libol.Debug("Switch.ReadClient: %s dropping by %s", client.Addr(), err)
 		// send request to point login again.
@@ -236,7 +236,7 @@ func (v *Switch) ReadClient(client libol.SocketClient, data []byte) error {
 		if point == nil || dev == nil {
 			return libol.NewErr("Tap devices is nil")
 		}
-		if _, err := dev.Write(data); err != nil {
+		if _, err := dev.Write(frame.Frame()); err != nil {
 			libol.Error("Switch.ReadClient: %s", err)
 			return err
 		}
@@ -377,19 +377,20 @@ func (v *Switch) DelLink(tenant, addr string) {
 	//TODO
 }
 
-func (v *Switch) ReadTap(dev network.Taper, readAt func(p []byte) error) {
+func (v *Switch) ReadTap(dev network.Taper, readAt func(f *libol.FrameMessage) error) {
 	defer dev.Close()
 	libol.Info("Switch.ReadTap: %s", dev.Name())
 
 	for {
-		data := make([]byte, libol.MAXBUF)
-		n, err := dev.Read(data)
+		frame := libol.NewFrameMessage()
+		n, err := dev.Read(frame.Frame())
 		if err != nil {
 			libol.Error("Switch.ReadTap: %s", err)
 			break
 		}
-		libol.Log("Switch.ReadTap: %x\n", data[:n])
-		if err := readAt(data[:n]); err != nil {
+		frame.SetSize(n)
+		libol.Log("Switch.ReadTap: %x\n", frame.Frame()[:n])
+		if err := readAt(frame); err != nil {
 			libol.Error("Switch.ReadTap: do-recv %s %s", dev.Name(), err)
 			break
 		}
