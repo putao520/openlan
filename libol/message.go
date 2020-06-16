@@ -14,10 +14,6 @@ const (
 	HSIZE  = 0x04
 )
 
-func NewBuffer() []byte {
-	return make([]byte, MAXBUF)
-}
-
 func GetHeaderLen() int {
 	return HSIZE
 }

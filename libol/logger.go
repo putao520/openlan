@@ -12,10 +12,10 @@ import (
 
 const (
 	PRINT = 00
-	LOG   = 01
-	STACK = 9
+	LOCK  = 01
+	LOG   = 05
+	STACK = 06
 	DEBUG = 10
-	LOCK  = 8
 	CMD   = 15
 	INFO  = 20
 	WARN  = 30

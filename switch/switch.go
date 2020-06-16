@@ -382,7 +382,7 @@ func (v *Switch) ReadTap(dev network.Taper, readAt func(p []byte) error) {
 	libol.Info("Switch.ReadTap: %s", dev.Name())
 
 	for {
-		data := libol.NewBuffer()
+		data := make([]byte, libol.MAXBUF)
 		n, err := dev.Read(data)
 		if err != nil {
 			libol.Error("Switch.ReadTap: %s", err)

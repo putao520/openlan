@@ -434,7 +434,7 @@ func (t *SocketWorker) Read() {
 			break
 		}
 		t.lock.Unlock()
-		data := libol.NewBuffer()
+		data := make([]byte, libol.MAXBUF)
 		n, err := t.client.ReadMsg(data)
 		t.lock.Lock()
 		if err != nil {
@@ -660,7 +660,7 @@ func (a *TapWorker) Read() {
 			break
 		}
 		a.lock.Unlock()
-		data := libol.NewBuffer()
+		data := make([]byte, libol.MAXBUF)
 		n, err := a.device.Read(data)
 		a.lock.Lock()
 		if err != nil || a.openAgain {
@@ -673,7 +673,7 @@ func (a *TapWorker) Read() {
 			a.lock.Unlock()
 			continue
 		}
-		libol.Log("TapWorker.Read: %x", data[:n])
+		libol.Debug("TapWorker.Read: %x", data[:n])
 		if a.device.IsTun() {
 			iph, err := libol.NewIpv4FromFrame(data)
 			if err != nil {
@@ -692,9 +692,9 @@ func (a *TapWorker) Read() {
 				continue
 			}
 			eth := a.newEth(libol.EthIp4, neb.HwAddr)
-			buffer := libol.NewBuffer()
+			buffer := make([]byte, 0, libol.MAXBUF)
 			buffer = append(buffer, eth.Encode()...)
-			buffer = append(buffer, data[0:n]...)
+			buffer = append(buffer, data[:n]...)
 			n += eth.Len
 			if a.listener.ReadAt != nil {
 				_ = a.listener.ReadAt(buffer[:n])

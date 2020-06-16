@@ -16,7 +16,7 @@ func (t *gos) Add(call interface{}) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	t.total++
-	Debug("gos.Add %d %p %v", t.total, call)
+	Debug("gos.Add %d %p", t.total, call)
 }
 
 func (t *gos) Del(call interface{}) {
