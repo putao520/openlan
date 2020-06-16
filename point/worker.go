@@ -567,7 +567,11 @@ func (a *TapWorker) Initialize() {
 		timeout:   5 * 60,
 	}
 	a.open()
-	a.doTun()
+	if a.device.IsTun() {
+		a.setEther(a.pointCfg.Interface.Address)
+		a.ether.HwAddr = libol.GenEthAddr(6)
+		libol.Info("TapWorker.doTun: src %x", a.ether.HwAddr)
+	}
 }
 
 func (a *TapWorker) setEther(addr string) {
@@ -588,15 +592,6 @@ func (a *TapWorker) setEther(addr string) {
 		a.openAgain = true
 	}
 	a.ifAddr = addr
-}
-
-func (a *TapWorker) doTun() {
-	if a.device == nil || !a.device.IsTun() {
-		return
-	}
-	a.setEther(a.pointCfg.Interface.Address)
-	a.ether.HwAddr = libol.GenEthAddr(6)
-	libol.Info("TapWorker.doTun: src %x", a.ether.HwAddr)
 }
 
 func (a *TapWorker) open() {
@@ -627,7 +622,7 @@ func (a *TapWorker) newEth(t uint16, dst []byte) *libol.Ether {
 
 // process if ethernet destination is missed
 func (a *TapWorker) onMiss(dest []byte) {
-	libol.Debug("TapWorker.onMiss: %x.", dest)
+	libol.Debug("TapWorker.onMiss: %v.", dest)
 	eth := a.newEth(libol.EthArp, libol.BROADED)
 	reply := libol.NewArp()
 	reply.OpCode = libol.ArpRequest
@@ -643,6 +638,31 @@ func (a *TapWorker) onMiss(dest []byte) {
 	if a.listener.ReadAt != nil {
 		_ = a.listener.ReadAt(frame)
 	}
+}
+
+func (a *TapWorker) onFrame(frame *libol.FrameMessage, data []byte) error {
+	size := len(data)
+	if a.device.IsTun() {
+		iph, err := libol.NewIpv4FromFrame(data)
+		if err != nil {
+			return err
+		}
+		dest := iph.Destination
+		if a.listener.FindDest != nil {
+			dest = a.listener.FindDest(dest)
+		}
+		neb := a.neighbor.GetByBytes(dest)
+		if neb == nil {
+			a.onMiss(dest)
+			return libol.NewErr("onMiss neighbor %v", dest)
+		}
+		eth := a.newEth(libol.EthIp4, neb.HwAddr)
+		frame.Append(eth.Encode()) // insert ethernet header.
+		frame.SetSize(size + eth.Len)
+	} else {
+		frame.SetSize(size)
+	}
+	return nil
 }
 
 func (a *TapWorker) Read() {
@@ -670,41 +690,18 @@ func (a *TapWorker) Read() {
 				libol.Warn("TapWorker.Read: %s", err)
 			}
 			a.open()
-			// clear openAgain flags
-			a.openAgain = false
+			a.openAgain = false // clear openAgain flags
 			a.lock.Unlock()
 			continue
 		}
 		libol.Debug("TapWorker.Read: %x", data[:n])
-		if a.device.IsTun() {
-			iph, err := libol.NewIpv4FromFrame(data)
-			if err != nil {
-				libol.Error("TapWorker.Read: %s", err)
-				a.lock.Unlock()
-				continue
-			}
-			dest := iph.Destination
-			if a.listener.FindDest != nil {
-				dest = a.listener.FindDest(dest)
-			}
-			neb := a.neighbor.GetByBytes(dest)
-			if neb == nil {
-				a.onMiss(dest)
-				a.lock.Unlock()
-				continue
-			}
-			eth := a.newEth(libol.EthIp4, neb.HwAddr)
-			frame.Append(eth.Encode()) // Insert Ethernet Header.
-			n += libol.EtherLen
-			frame.SetSize(n)
-			if a.listener.ReadAt != nil {
-				_ = a.listener.ReadAt(frame)
-			}
-		} else {
-			frame.SetSize(n)
-			if a.listener.ReadAt != nil {
-				_ = a.listener.ReadAt(frame)
-			}
+		if err := a.onFrame(frame, data[:n]); err != nil {
+			a.lock.Unlock()
+			libol.Warn("TapWorker.Read: %s", err)
+			continue
+		}
+		if a.listener.ReadAt != nil {
+			_ = a.listener.ReadAt(frame)
 		}
 		a.lock.Unlock()
 	}
@@ -794,12 +791,12 @@ func (a *TapWorker) toArp(data []byte) bool {
 				reply.TIpAddr = arp.SIpAddr
 				reply.SHwAddr = a.ether.HwAddr
 				reply.THwAddr = arp.SHwAddr
-				buffer := libol.NewFrameMessage()
-				buffer.Append(eth.Encode())
-				buffer.Append(reply.Encode())
-				libol.Info("TapWorker.toArp: reply %x.", buffer.Frame())
+				frame := libol.NewFrameMessage()
+				frame.Append(eth.Encode())
+				frame.Append(reply.Encode())
+				libol.Info("TapWorker.toArp: reply %v on %x.", reply.SIpAddr, reply.SHwAddr)
 				if a.listener.ReadAt != nil {
-					_ = a.listener.ReadAt(buffer)
+					_ = a.listener.ReadAt(frame)
 				}
 			}
 		case libol.ArpReply:
@@ -810,7 +807,7 @@ func (a *TapWorker) toArp(data []byte) bool {
 					NewTime: time.Now().Unix(),
 					Uptime:  time.Now().Unix(),
 				})
-				libol.Info("TapWorker.toArp: recv %x on %x.", arp.SHwAddr, arp.SIpAddr)
+				libol.Info("TapWorker.toArp: recv %x on %v.", arp.SHwAddr, arp.SIpAddr)
 			}
 		default:
 			libol.Warn("TapWorker.toArp: not op %x.", arp.OpCode)
@@ -1055,7 +1052,7 @@ func (p *Worker) FindDest(dest []byte) []byte {
 			if rt.Type == 0x00 {
 				break
 			}
-			libol.Debug("Worker.FindDest %x to %v", dest, rt.NextHop)
+			libol.Debug("Worker.FindDest %v to %v", dest, rt.NextHop)
 			return rt.NextHop.To4()
 		}
 	}
