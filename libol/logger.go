@@ -105,6 +105,13 @@ var Logger = _Log{
 	Errors:   list.New(),
 }
 
+func HasLog(level int) bool {
+	if level >= Logger.Level {
+		return true
+	}
+	return false
+}
+
 func Print(format string, v ...interface{}) {
 	Logger.Write(PRINT, format, v...)
 }

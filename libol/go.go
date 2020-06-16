@@ -1,8 +1,10 @@
 package libol
 
 import (
+	"os"
 	"path"
 	"runtime"
+	"runtime/pprof"
 )
 
 type gos struct {
@@ -39,4 +41,24 @@ func Go(call func()) {
 		Info("Go.Del: %s:%d", path.Base(name), line)
 		Gos.Del(call)
 	}()
+}
+
+
+type Prof struct {
+	File string
+}
+
+func (p *Prof) Start() {
+	f, err := os.Create(p.File)
+	if err != nil {
+		Warn("Prof.Start %s", err)
+		return
+	}
+	if err := pprof.StartCPUProfile(f); err != nil {
+		Warn("Prof.Start %s", err)
+	}
+}
+
+func (p *Prof) Stop() {
+	pprof.StopCPUProfile()
 }

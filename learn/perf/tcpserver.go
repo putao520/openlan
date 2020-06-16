@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"flag"
 	"fmt"
-	"github.com/danieldin95/lightstar/libstar"
+	"github.com/danieldin95/openlan-go/libol"
 	"github.com/songgao/water"
 	"net"
 )
@@ -197,19 +197,13 @@ func main() {
 	flag.StringVar(&mode, "mode", mode, "client or server.")
 	flag.Parse()
 
-	//f, err := os.Create("tcpserver-cpu.prof")
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//if err := pprof.StartCPUProfile(f); err != nil {
-	//	log.Fatal(err)
-	//}
-	//defer pprof.StopCPUProfile()
-
+	p := libol.Prof{File: "tcpserver-"+mode+".prof"}
+	p.Start()
+	defer p.Stop()
 	if mode == "server" {
 		go Server(address)
 	} else if mode == "client" {
 		go Client(address)
 	}
-	libstar.Wait()
+	libol.Wait()
 }

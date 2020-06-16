@@ -80,6 +80,7 @@ type Switch struct {
 	Log       Log         `json:"log" yaml:"log"`
 	Cert      Cert        `json:"cert"`
 	Crypt     *Crypt      `json:"crypt"`
+	Prof      string      `json:"prof"`
 	Network   []*Network  `json:"network"`
 	FireWall  []FlowRules `json:"firewall"`
 	ConfDir   string      `json:"-" yaml:"-"`
@@ -103,6 +104,7 @@ var sd = Switch{
 func NewSwitch() (c Switch) {
 	flag.IntVar(&c.Log.Verbose, "log:level", sd.Log.Verbose, "Configure log level")
 	flag.StringVar(&c.ConfDir, "conf:dir", sd.ConfDir, "Configure virtual switch directory")
+	flag.StringVar(&c.Prof, "prof", sd.Prof, "Configure file for CPU prof")
 	flag.Parse()
 
 	c.SaveFile = fmt.Sprintf("%s/switch.json", c.ConfDir)
