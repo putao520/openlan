@@ -187,7 +187,9 @@ func (h *Http) IsAuth(w http.ResponseWriter, r *http.Request) bool {
 	token, pass, ok := r.BasicAuth()
 	libol.Debug("Http.IsAuth token: %s, pass: %s", token, pass)
 
-	if len(r.URL.Path) > 4 {
+	if path.Ext(r.URL.Path) == ".ico" {
+		return true
+	} else if len(r.URL.Path) > 4 {
 		if !ok || token != h.adminToken {
 			return false
 		}
