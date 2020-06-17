@@ -785,16 +785,16 @@ func (a *TapWorker) toArp(data []byte) bool {
 		case libol.ArpRequest:
 			if bytes.Equal(arp.TIpAddr, a.ether.IpAddr) {
 				eth := a.newEth(libol.EthArp, arp.SHwAddr)
-				reply := libol.NewArp()
-				reply.OpCode = libol.ArpReply
-				reply.SIpAddr = a.ether.IpAddr
-				reply.TIpAddr = arp.SIpAddr
-				reply.SHwAddr = a.ether.HwAddr
-				reply.THwAddr = arp.SHwAddr
+				rep := libol.NewArp()
+				rep.OpCode = libol.ArpReply
+				rep.SIpAddr = a.ether.IpAddr
+				rep.TIpAddr = arp.SIpAddr
+				rep.SHwAddr = a.ether.HwAddr
+				rep.THwAddr = arp.SHwAddr
 				frame := libol.NewFrameMessage()
 				frame.Append(eth.Encode())
-				frame.Append(reply.Encode())
-				libol.Info("TapWorker.toArp: reply %v on %x.", reply.SIpAddr, reply.SHwAddr)
+				frame.Append(rep.Encode())
+				libol.Info("TapWorker.toArp: reply %v on %x.", rep.SIpAddr, rep.SHwAddr)
 				if a.listener.ReadAt != nil {
 					_ = a.listener.ReadAt(frame)
 				}
@@ -807,7 +807,7 @@ func (a *TapWorker) toArp(data []byte) bool {
 					NewTime: time.Now().Unix(),
 					Uptime:  time.Now().Unix(),
 				})
-				libol.Info("TapWorker.toArp: recv %x on %v.", arp.SHwAddr, arp.SIpAddr)
+				libol.Info("TapWorker.toArp: recv %v on %x.", arp.SIpAddr, arp.SHwAddr)
 			}
 		default:
 			libol.Warn("TapWorker.toArp: not op %x.", arp.OpCode)
