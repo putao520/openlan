@@ -26,7 +26,7 @@ type Point struct {
 	Log         Log       `json:"log" yaml:"log"`
 	Http        *Http     `json:"http,omitempty" yaml:"http,omitempty"`
 	Crypt       *Crypt    `json:"crypt"`
-	Prof        string     `json:"prof" yaml:"prof"`
+	Prof        string    `json:"prof" yaml:"prof"`
 	RequestAddr bool      `json:"-" yaml:"-"`
 	SaveFile    string    `json:"-" yaml:"-"`
 }

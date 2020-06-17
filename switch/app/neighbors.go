@@ -30,24 +30,17 @@ func (e *Neighbors) OnFrame(client libol.SocketClient, frame *libol.FrameMessage
 	if frame.IsControl() {
 		return nil
 	}
-	data := frame.Frame()
-	eth, err := libol.NewEtherFromFrame(data)
+	proto, err := frame.Proto()
 	if err != nil {
 		libol.Warn("Neighbors.OnFrame %s", err)
 		return err
 	}
+	eth := proto.Eth
 	libol.Log("Neighbors.OnFrame 0x%04x", eth.Type)
 	if !eth.IsArp() {
-		if eth.IsVlan() {
-			//TODO
-		}
 		return nil
 	}
-	arp, err := libol.NewArpFromFrame(data[eth.Len:])
-	if err != nil {
-		libol.Error("Neighbors.OnFrame %s.", err)
-		return nil
-	}
+	arp := proto.Arp
 	if arp.IsIP4() {
 		if arp.OpCode == libol.ArpRequest ||
 			arp.OpCode == libol.ArpReply {

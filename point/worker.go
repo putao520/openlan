@@ -50,6 +50,10 @@ type socketEvent struct {
 	Time   int64
 }
 
+func (e socketEvent) String() string {
+	return e.Type + " " + e.Reason
+}
+
 func NewEvent(typ, reason string) socketEvent {
 	return socketEvent{
 		Time:   time.Now().Unix(),
@@ -519,7 +523,7 @@ func (t *SocketWorker) SetUUID(v string) {
 type TapWorkerListener struct {
 	OnOpen   func(w *TapWorker) error
 	OnClose  func(w *TapWorker)
-	FindDest func(dest []byte) []byte
+	FindNext func(dest []byte) []byte
 	ReadAt   func(frame *libol.FrameMessage) error
 }
 
@@ -579,7 +583,7 @@ func (a *TapWorker) Initialize() {
 	if a.device.IsTun() {
 		a.setEther(a.pointCfg.Interface.Address)
 		a.ether.HwAddr = libol.GenEthAddr(6)
-		libol.Info("TapWorker.doTun: src %x", a.ether.HwAddr)
+		libol.Info("TapWorker.Initialize: src %x", a.ether.HwAddr)
 	}
 }
 
@@ -664,8 +668,8 @@ func (a *TapWorker) onFrame(frame *libol.FrameMessage, data []byte) int {
 			return 0
 		}
 		dest := iph.Destination
-		if a.listener.FindDest != nil {
-			dest = a.listener.FindDest(dest)
+		if a.listener.FindNext != nil {
+			dest = a.listener.FindNext(dest)
 		}
 		neb := a.neighbor.GetByBytes(dest)
 		if neb == nil {
@@ -977,7 +981,7 @@ func (p *Worker) Initialize() {
 			p.tcpWorker.writeQueue <- frame
 			return nil
 		},
-		FindDest: p.FindDest,
+		FindNext: p.FindNext,
 	}
 	p.tapWorker.Initialize()
 
@@ -1062,13 +1066,13 @@ func (p *Worker) Worker() *SocketWorker {
 	return nil
 }
 
-func (p *Worker) FindDest(dest []byte) []byte {
+func (p *Worker) FindNext(dest []byte) []byte {
 	for _, rt := range p.routes {
 		if rt.Destination.Contains(dest) {
 			if rt.Type == 0x00 {
 				break
 			}
-			libol.Debug("Worker.FindDest %v to %v", dest, rt.NextHop)
+			libol.Debug("Worker.FindNext %v to %v", dest, rt.NextHop)
 			return rt.NextHop.To4()
 		}
 	}

@@ -34,37 +34,25 @@ func (o *Online) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) e
 	if frame.IsControl() {
 		return nil
 	}
-	data := frame.Frame()
-	eth, err := libol.NewEtherFromFrame(data)
+	proto, err := frame.Proto()
 	if err != nil {
 		libol.Warn("Online.OnFrame %s", err)
 		return err
 	}
-	data = data[eth.Len:]
+	eth := proto.Eth
 	if eth.IsIP4() {
-		ip, err := libol.NewIpv4FromFrame(data)
-		if err != nil {
-			libol.Warn("Online.OnFrame %s", err)
-			return err
-		}
-		data = data[ip.Len:]
+		ip := proto.Ip4
 		line := models.NewLine(eth.Type)
 		line.IpSource = ip.Source
 		line.IpDest = ip.Destination
 		line.IpProtocol = ip.Protocol
 		switch ip.Protocol {
 		case libol.IpTcp:
-			tcp, err := libol.NewTcpFromFrame(data)
-			if err != nil {
-				libol.Warn("Online.OnFrame %s", err)
-			}
+			tcp := proto.Tcp
 			line.PortDest = tcp.Destination
 			line.PortSource = tcp.Source
 		case libol.IpUdp:
-			udp, err := libol.NewUdpFromFrame(data)
-			if err != nil {
-				libol.Warn("Online.OnFrame %s", err)
-			}
+			udp := proto.Udp
 			line.PortDest = udp.Destination
 			line.PortSource = udp.Source
 		default:
@@ -87,7 +75,6 @@ func (o *Online) AddLine(line *models.Line) {
 		if o.lineList.Len() >= o.max {
 			if e := o.lineList.Front(); e != nil {
 				lastLine := e.Value.(*models.Line)
-
 				o.lineList.Remove(e)
 				delete(o.lines, lastLine.String())
 				storage.Online.Del(lastLine.String())

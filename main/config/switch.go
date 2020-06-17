@@ -73,7 +73,7 @@ type FlowRules struct {
 
 type Switch struct {
 	Alias     string      `json:"alias"`
-	Protocol  string      `json:"protocol"` // tcp/tls/kcp.
+	Protocol  string      `json:"protocol"` // tcp/tls, udp/kcp.
 	Listen    string      `json:"listen"`
 	Timeout   int         `json:"timeout"`
 	Http      *Http       `json:"http,omitempty" yaml:"http,omitempty"`
@@ -83,6 +83,7 @@ type Switch struct {
 	Prof      string      `json:"prof"`
 	Network   []*Network  `json:"network"`
 	FireWall  []FlowRules `json:"firewall"`
+	Trace     bool        `json:"trace"`
 	ConfDir   string      `json:"-" yaml:"-"`
 	TokenFile string      `json:"-" yaml:"-"`
 	SaveFile  string      `json:"-" yaml:"-"`

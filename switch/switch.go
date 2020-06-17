@@ -137,18 +137,19 @@ func (v *Switch) Initialize() {
 		v.bridge[name] = network.NewBridger(brCfg.Provider, brCfg.Name, brCfg.IfMtu)
 	}
 
+	v.hooks = make([]Hook, 0, 64)
 	v.apps.Auth = app.NewPointAuth(v, v.cfg)
 	v.apps.Request = app.NewWithRequest(v, v.cfg)
-	v.apps.Neighbor = app.NewNeighbors(v, v.cfg)
-	v.apps.OnLines = app.NewOnline(v, v.cfg)
-
-	v.hooks = make([]Hook, 0, 64)
 	v.hooks = append(v.hooks, v.apps.Auth.OnFrame)
-	v.hooks = append(v.hooks, v.apps.Neighbor.OnFrame)
 	v.hooks = append(v.hooks, v.apps.Request.OnFrame)
-	v.hooks = append(v.hooks, v.apps.OnLines.OnFrame)
+	if v.cfg.Trace {
+		v.apps.Neighbor = app.NewNeighbors(v, v.cfg)
+		v.apps.OnLines = app.NewOnline(v, v.cfg)
+		v.hooks = append(v.hooks, v.apps.Neighbor.OnFrame)
+		v.hooks = append(v.hooks, v.apps.OnLines.OnFrame)
+	}
 	for i, h := range v.hooks {
-		libol.Debug("Switch.Initialize: k %d, func %p, %s", i, h, libol.FunName(h))
+		libol.Info("Switch.Initialize: id %d, func %s", i, libol.FunName(h))
 	}
 
 	// Controller

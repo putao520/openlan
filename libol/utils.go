@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"path"
 	"reflect"
 	"runtime"
 	"strings"
@@ -112,7 +113,8 @@ func UnmarshalLoad(v interface{}, file string) error {
 }
 
 func FunName(i interface{}) string {
-	return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
+	name := runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
+	return path.Base(name)
 }
 
 func Netmask2Len(s string) int {
