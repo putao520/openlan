@@ -39,23 +39,21 @@ func (o *Online) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) e
 		libol.Warn("Online.OnFrame %s", err)
 		return err
 	}
-	eth := proto.Eth
-	if eth.IsIP4() {
+	if proto.Ip4 != nil {
 		ip := proto.Ip4
-		line := models.NewLine(eth.Type)
+		line := models.NewLine(libol.EthIp4)
 		line.IpSource = ip.Source
 		line.IpDest = ip.Destination
 		line.IpProtocol = ip.Protocol
-		switch ip.Protocol {
-		case libol.IpTcp:
+		if proto.Tcp != nil {
 			tcp := proto.Tcp
 			line.PortDest = tcp.Destination
 			line.PortSource = tcp.Source
-		case libol.IpUdp:
+		} else if proto.Udp != nil {
 			udp := proto.Udp
 			line.PortDest = udp.Destination
 			line.PortSource = udp.Source
-		default:
+		} else {
 			line.PortDest = 0
 			line.PortSource = 0
 		}
