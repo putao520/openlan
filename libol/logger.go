@@ -17,6 +17,7 @@ const (
 	STACK = 06
 	DEBUG = 10
 	CMD   = 15
+	CMD1  = 16
 	INFO  = 20
 	WARN  = 30
 	ERROR = 40
@@ -32,10 +33,11 @@ type Message struct {
 var levels = map[int]string{
 	PRINT: "PRINT",
 	LOG:   "LOG",
+	LOCK:  "LOCK",
 	DEBUG: "DEBUG",
 	STACK: "STACK",
 	CMD:   "CMD",
-	LOCK:  "LOCK",
+	CMD1:  "CMD1",
 	INFO:  "INFO",
 	WARN:  "WARN",
 	ERROR: "ERROR",
@@ -53,7 +55,7 @@ type _Log struct {
 func (l *_Log) Write(level int, format string, v ...interface{}) {
 	str, ok := levels[level]
 	if !ok {
-		str = "NiL"
+		str = "NULL"
 	}
 	if level >= l.Level {
 		log.Printf(fmt.Sprintf("%s %s", str, format), v...)
@@ -120,6 +122,10 @@ func Log(format string, v ...interface{}) {
 	Logger.Write(LOG, format, v...)
 }
 
+func Lock(format string, v ...interface{}) {
+	Logger.Write(LOCK, format, v...)
+}
+
 func Stack(format string, v ...interface{}) {
 	Logger.Write(STACK, format, v...)
 }
@@ -132,8 +138,8 @@ func Cmd(format string, v ...interface{}) {
 	Logger.Write(CMD, format, v...)
 }
 
-func Lock(format string, v ...interface{}) {
-	Logger.Write(LOCK, format, v...)
+func Cmd1(format string, v ...interface{}) {
+	Logger.Write(CMD1, format, v...)
 }
 
 func Info(format string, v ...interface{}) {

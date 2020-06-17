@@ -564,7 +564,16 @@ func (a *TapWorker) Initialize() {
 		neighbors: make(map[uint32]*Neighbor, 1024),
 		done:      make(chan bool),
 		ticker:    time.NewTicker(5 * time.Second),
-		timeout:   5 * 60,
+		timeout:   3 * 60,
+		interval:  60,
+		listener: NeighborListener{
+			Interval: func(dest []byte) {
+				a.OnArpAlive(dest)
+			},
+			Expire: func(dest []byte) {
+				a.OnArpAlive(dest)
+			},
+		},
 	}
 	a.open()
 	if a.device.IsTun() {
@@ -620,6 +629,12 @@ func (a *TapWorker) newEth(t uint16, dst []byte) *libol.Ether {
 	return eth
 }
 
+func (a *TapWorker) OnArpAlive(dest []byte) {
+	a.lock.Lock()
+	defer a.lock.Unlock()
+	a.onMiss(dest)
+}
+
 // process if ethernet destination is missed
 func (a *TapWorker) onMiss(dest []byte) {
 	libol.Debug("TapWorker.onMiss: %v.", dest)
@@ -640,12 +655,13 @@ func (a *TapWorker) onMiss(dest []byte) {
 	}
 }
 
-func (a *TapWorker) onFrame(frame *libol.FrameMessage, data []byte) error {
+func (a *TapWorker) onFrame(frame *libol.FrameMessage, data []byte) int {
 	size := len(data)
 	if a.device.IsTun() {
 		iph, err := libol.NewIpv4FromFrame(data)
 		if err != nil {
-			return err
+			libol.Warn("TapWorker.onFrame: %s", err)
+			return 0
 		}
 		dest := iph.Destination
 		if a.listener.FindDest != nil {
@@ -654,15 +670,15 @@ func (a *TapWorker) onFrame(frame *libol.FrameMessage, data []byte) error {
 		neb := a.neighbor.GetByBytes(dest)
 		if neb == nil {
 			a.onMiss(dest)
-			return libol.NewErr("onMiss neighbor %v", dest)
+			libol.Debug("TapWorker.onFrame: onMiss neighbor %v", dest)
+			return 0
 		}
 		eth := a.newEth(libol.EthIp4, neb.HwAddr)
 		frame.Append(eth.Encode()) // insert ethernet header.
-		frame.SetSize(size + eth.Len)
-	} else {
-		frame.SetSize(size)
+		size += eth.Len
 	}
-	return nil
+	frame.SetSize(size)
+	return size
 }
 
 func (a *TapWorker) Read() {
@@ -695,9 +711,8 @@ func (a *TapWorker) Read() {
 			continue
 		}
 		libol.Debug("TapWorker.Read: %x", data[:n])
-		if err := a.onFrame(frame, data[:n]); err != nil {
+		if size := a.onFrame(frame, data[:n]); size == 0 {
 			a.lock.Unlock()
-			libol.Warn("TapWorker.Read: %s", err)
 			continue
 		}
 		if a.listener.ReadAt != nil {
@@ -794,12 +809,13 @@ func (a *TapWorker) toArp(data []byte) bool {
 				frame := libol.NewFrameMessage()
 				frame.Append(eth.Encode())
 				frame.Append(rep.Encode())
-				libol.Info("TapWorker.toArp: reply %v on %x.", rep.SIpAddr, rep.SHwAddr)
+				libol.Cmd1("TapWorker.toArp: reply %v on %x.", rep.SIpAddr, rep.SHwAddr)
 				if a.listener.ReadAt != nil {
 					_ = a.listener.ReadAt(frame)
 				}
 			}
 		case libol.ArpReply:
+			// TODO learn by request.
 			if bytes.Equal(arp.THwAddr, a.ether.HwAddr) {
 				a.neighbor.Add(&Neighbor{
 					HwAddr:  arp.SHwAddr,
@@ -807,7 +823,7 @@ func (a *TapWorker) toArp(data []byte) bool {
 					NewTime: time.Now().Unix(),
 					Uptime:  time.Now().Unix(),
 				})
-				libol.Info("TapWorker.toArp: recv %v on %x.", arp.SIpAddr, arp.SHwAddr)
+				libol.Cmd1("TapWorker.toArp: recv %v on %x.", arp.SIpAddr, arp.SHwAddr)
 			}
 		default:
 			libol.Warn("TapWorker.toArp: not op %x.", arp.OpCode)

@@ -7,6 +7,11 @@ import (
 	"time"
 )
 
+type NeighborListener struct {
+	Interval func(dest []byte)
+	Expire   func(dest []byte)
+}
+
 type Neighbor struct {
 	HwAddr  []byte
 	IpAddr  []byte
@@ -20,17 +25,18 @@ type Neighbors struct {
 	done      chan bool
 	ticker    *time.Ticker
 	timeout   int64
+	interval  int64
+	listener  NeighborListener
 }
 
 func (n *Neighbors) Expire() {
-	deletes := make([]uint32, 0, 1024)
-
 	n.lock.Lock()
 	defer n.lock.Unlock()
+	deletes := make([]uint32, 0, 1024)
 	//collect need deleted.
 	for index, learn := range n.neighbors {
 		now := time.Now().Unix()
-		if now-learn.Uptime > n.timeout {
+		if now-learn.Uptime >= n.timeout {
 			deletes = append(deletes, index)
 		}
 	}
@@ -44,6 +50,28 @@ func (n *Neighbors) Expire() {
 	}
 }
 
+func (n *Neighbors) Interval() {
+	n.lock.Lock()
+	defer n.lock.Unlock()
+	intervals := make([]uint32, 0, 1024)
+	//collect need keepalive.
+	for index, learn := range n.neighbors {
+		now := time.Now().Unix()
+		if now-learn.Uptime >= n.interval {
+			intervals = append(intervals, index)
+		}
+	}
+	libol.Debug("Neighbors.Interval keepalive %d", len(intervals))
+	//execute delete.
+	for _, d := range intervals {
+		if l, ok := n.neighbors[d]; ok {
+			if n.listener.Interval != nil {
+				n.listener.Interval(l.IpAddr)
+			}
+		}
+	}
+}
+
 func (n *Neighbors) Start() {
 	for {
 		select {
@@ -51,6 +79,7 @@ func (n *Neighbors) Start() {
 			return
 		case t := <-n.ticker.C:
 			libol.Log("Neighbors.Ticker: at %s", t)
+			n.Interval()
 			n.Expire()
 		}
 	}
