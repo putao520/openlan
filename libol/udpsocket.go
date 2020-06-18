@@ -148,14 +148,15 @@ func (c *UdpClient) Connect() error {
 
 	Info("UdpClient.Connect: udp://%s", c.address)
 	conn, err := net.Dial("udp", c.address)
-	if err == nil {
-		c.lock.Lock()
-		c.connection = conn
-		c.status = ClConnected
-		c.lock.Unlock()
-		if c.listener.OnConnected != nil {
-			_ = c.listener.OnConnected(c)
-		}
+	if err != nil {
+		return err
+	}
+	c.lock.Lock()
+	c.connection = conn
+	c.status = ClConnected
+	c.lock.Unlock()
+	if c.listener.OnConnected != nil {
+		_ = c.listener.OnConnected(c)
 	}
 	return nil
 }

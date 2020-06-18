@@ -26,9 +26,11 @@ func NewNeighbors(m Master, c config.Switch) (e *Neighbors) {
 }
 
 func (e *Neighbors) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) error {
-	libol.Log("Neighbors.OnFrame %s.", frame)
 	if frame.IsControl() {
 		return nil
+	}
+	if libol.HasLog(libol.LOG) {
+		libol.Log("Neighbors.OnFrame %s.", frame)
 	}
 	proto, err := frame.Proto()
 	if err != nil {
@@ -36,7 +38,6 @@ func (e *Neighbors) OnFrame(client libol.SocketClient, frame *libol.FrameMessage
 		return err
 	}
 	eth := proto.Eth
-	libol.Log("Neighbors.OnFrame 0x%04x", eth.Type)
 	if !eth.IsArp() {
 		return nil
 	}

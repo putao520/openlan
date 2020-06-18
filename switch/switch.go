@@ -181,7 +181,9 @@ func (v *Switch) Initialize() {
 
 func (v *Switch) onFrame(client libol.SocketClient, frame *libol.FrameMessage) error {
 	for _, h := range v.hooks {
-		libol.Log("Switch.onFrame: h %p", h)
+		if libol.HasLog(libol.LOG) {
+			libol.Log("Switch.onFrame: %s", libol.FunName(h))
+		}
 		if h != nil {
 			if err := h(client, frame); err != nil {
 				return err
@@ -220,7 +222,9 @@ func (v *Switch) SignIn(client libol.SocketClient) error {
 }
 
 func (v *Switch) ReadClient(client libol.SocketClient, frame *libol.FrameMessage) error {
-	libol.Log("Switch.ReadClient: %s %x", client.Addr(), frame.Frame())
+	if libol.HasLog(libol.LOG) {
+		libol.Log("Switch.ReadClient: %s %x", client.Addr(), frame.Frame())
+	}
 	frame.Decode()
 	if err := v.onFrame(client, frame); err != nil {
 		libol.Debug("Switch.ReadClient: %s dropping by %s", client.Addr(), err)
@@ -235,11 +239,11 @@ func (v *Switch) ReadClient(client libol.SocketClient, frame *libol.FrameMessage
 	private := client.Private()
 	if private != nil {
 		point := private.(*models.Point)
-		dev := point.Device
-		if point == nil || dev == nil {
+		device := point.Device
+		if point == nil || device == nil {
 			return libol.NewErr("Tap devices is nil")
 		}
-		if _, err := dev.Write(frame.Frame()); err != nil {
+		if _, err := device.Write(frame.Frame()); err != nil {
 			libol.Error("Switch.ReadClient: %s", err)
 			return err
 		}
@@ -380,21 +384,23 @@ func (v *Switch) DelLink(tenant, addr string) {
 	//TODO
 }
 
-func (v *Switch) ReadTap(dev network.Taper, readAt func(f *libol.FrameMessage) error) {
-	defer dev.Close()
-	libol.Info("Switch.ReadTap: %s", dev.Name())
+func (v *Switch) ReadTap(device network.Taper, readAt func(f *libol.FrameMessage) error) {
+	defer device.Close()
+	libol.Info("Switch.ReadTap: %s", device.Name())
 
 	for {
 		frame := libol.NewFrameMessage()
-		n, err := dev.Read(frame.Frame())
+		n, err := device.Read(frame.Frame())
 		if err != nil {
 			libol.Error("Switch.ReadTap: %s", err)
 			break
 		}
 		frame.SetSize(n)
-		libol.Log("Switch.ReadTap: %x\n", frame.Frame()[:n])
+		if libol.HasLog(libol.LOG) {
+			libol.Log("Switch.ReadTap: %x\n", frame.Frame()[:n])
+		}
 		if err := readAt(frame); err != nil {
-			libol.Error("Switch.ReadTap: do-recv %s %s", dev.Name(), err)
+			libol.Error("Switch.ReadTap: do-recv %s %s", device.Name(), err)
 			break
 		}
 	}

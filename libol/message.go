@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	MAXBUF = 4096
-	HSIZE  = 0x04
+	MaxBuf = 4096
+	HlSize = 0x04
 )
 
 var MAGIC = []byte{0xff, 0xff}
@@ -91,9 +91,9 @@ func NewFrameMessage() *FrameMessage {
 		action:  "",
 		params:  "",
 		size:    0,
-		buffer:  make([]byte, HSIZE+MAXBUF),
+		buffer:  make([]byte, HlSize+MaxBuf),
 	}
-	m.frame = m.buffer[HSIZE:]
+	m.frame = m.buffer[HlSize:]
 	m.total = len(m.frame)
 	return &m
 }
@@ -105,6 +105,10 @@ func (m *FrameMessage) Decode() bool {
 		m.params = string(m.frame[12:])
 	}
 	return m.control
+}
+
+func (m *FrameMessage) IsEthernet() bool {
+	return !m.control
 }
 
 func (m *FrameMessage) IsControl() bool {
@@ -207,16 +211,22 @@ func (s *StreamMessage) writeFull(conn net.Conn, buf []byte) error {
 	offset := 0
 	size := len(buf)
 	left := size - offset
-	Log("writeFull: %s %d", conn.RemoteAddr(), size)
-	Log("writeFull: %s Data %x", conn.RemoteAddr(), buf)
+	if HasLog(LOG) {
+		Log("writeFull: %s %d", conn.RemoteAddr(), size)
+		Log("writeFull: %s Data %x", conn.RemoteAddr(), buf)
+	}
 	for left > 0 {
 		tmp := buf[offset:]
-		Log("writeFull: tmp %s %d", conn.RemoteAddr(), len(tmp))
+		if HasLog(LOG) {
+			Log("writeFull: tmp %s %d", conn.RemoteAddr(), len(tmp))
+		}
 		n, err := s.write(conn, tmp)
 		if err != nil {
 			return err
 		}
-		Log("writeFull: %s snd %d, size %d", conn.RemoteAddr(), n, size)
+		if HasLog(LOG) {
+			Log("writeFull: %s snd %d, size %d", conn.RemoteAddr(), n, size)
+		}
 		offset += n
 		left = size - offset
 	}
@@ -256,7 +266,9 @@ func (s *StreamMessage) readFull(conn net.Conn, buf []byte) error {
 	}
 	offset := 0
 	left := len(buf)
-	Log("readFull: %s %d", conn.RemoteAddr(), len(buf))
+	if HasLog(LOG) {
+		Log("readFull: %s %d", conn.RemoteAddr(), len(buf))
+	}
 	for left > 0 {
 		tmp := make([]byte, left)
 		n, err := s.read(conn, tmp)
@@ -267,7 +279,9 @@ func (s *StreamMessage) readFull(conn net.Conn, buf []byte) error {
 		offset += n
 		left -= n
 	}
-	Log("readFull: Data %s %x", conn.RemoteAddr(), buf)
+	if HasLog(LOG) {
+		Log("readFull: Data %s %x", conn.RemoteAddr(), buf)
+	}
 	return nil
 }
 
@@ -308,7 +322,9 @@ func (s *DataGramMessage) Send(conn net.Conn, frame *FrameMessage) (int, error) 
 	if s.block != nil {
 		s.block.Encrypt(frame.frame, frame.frame)
 	}
-	Log("DataGramMessage.Send: %s %x", conn.RemoteAddr(), frame)
+	if HasLog(DEBUG) {
+		Debug("DataGramMessage.Send: %s %x", conn.RemoteAddr(), frame)
+	}
 	if s.timeout != 0 {
 		err := conn.SetWriteDeadline(time.Now().Add(s.timeout))
 		if err != nil {
@@ -323,7 +339,9 @@ func (s *DataGramMessage) Send(conn net.Conn, frame *FrameMessage) (int, error) 
 
 func (s *DataGramMessage) Receive(conn net.Conn, max, min int) (*FrameMessage, error) {
 	frame := NewFrameMessage()
-	Debug("DataGramMessage.Receive %s %d", conn.RemoteAddr(), s.timeout)
+	if HasLog(DEBUG) {
+		Debug("DataGramMessage.Receive %s %d", conn.RemoteAddr(), s.timeout)
+	}
 	if s.timeout != 0 {
 		err := conn.SetReadDeadline(time.Now().Add(s.timeout))
 		if err != nil {
@@ -334,7 +352,9 @@ func (s *DataGramMessage) Receive(conn net.Conn, max, min int) (*FrameMessage, e
 	if err != nil {
 		return nil, err
 	}
-	Log("DataGramMessage.Receive: %s %x", conn.RemoteAddr(), frame.buffer)
+	if HasLog(DEBUG) {
+		Debug("DataGramMessage.Receive: %s %x", conn.RemoteAddr(), frame.buffer)
+	}
 	if n <= 4 {
 		return nil, NewErr("%s: small frame", conn.RemoteAddr())
 	}

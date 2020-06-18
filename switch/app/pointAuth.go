@@ -23,7 +23,9 @@ func NewPointAuth(m Master, c config.Switch) (p *PointAuth) {
 }
 
 func (p *PointAuth) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) error {
-	libol.Log("PointAuth.OnFrame %s.", frame)
+	if libol.HasLog(libol.LOG) {
+		libol.Log("PointAuth.OnFrame %s.", frame)
+	}
 	if frame.IsControl() {
 		action, params := frame.CmdAndParams()
 		libol.Debug("PointAuth.OnFrame: %s", action)
@@ -99,27 +101,24 @@ func (p *PointAuth) onAuth(client libol.SocketClient, user *models.User) error {
 	}
 
 	libol.Info("PointAuth.onAuth: %s", client)
-	dev, err := p.master.NewTap(user.Network)
+	d, err := p.master.NewTap(user.Network)
 	if err != nil {
 		return err
 	}
-	m := models.NewPoint(client, dev)
+	m := models.NewPoint(client, d)
 	m.Alias = user.Alias
 	m.UUID = user.UUID
 	m.Network = user.Network
 	if m.UUID == "" {
 		m.UUID = user.Alias
 	}
-
 	// free point has same uuid.
 	if om := storage.Point.GetByUUID(m.UUID); om != nil {
 		p.master.OffClient(om.Client)
 	}
-
 	client.SetPrivate(m)
 	storage.Point.Add(m)
-	libol.Go(func() { p.master.ReadTap(dev, client.WriteMsg) })
-
+	libol.Go(func() { p.master.ReadTap(d, client.WriteMsg) })
 	return nil
 }
 

@@ -22,10 +22,10 @@ func NewWithRequest(m Master, c config.Switch) (r *WithRequest) {
 }
 
 func (r *WithRequest) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) error {
-	libol.Log("WithRequest.OnFrame %s.", frame)
-	if !frame.IsControl() {
+	if frame.IsEthernet() {
 		return nil
 	}
+	libol.Log("WithRequest.OnFrame %s.", frame)
 	action, body := frame.CmdAndParams()
 	libol.Cmd("WithRequest.OnFrame: %s %s", action, body)
 	switch action {

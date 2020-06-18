@@ -6,7 +6,7 @@ import (
 )
 
 type Master interface {
-	ReadTap(dev network.Taper, readAt func(f *libol.FrameMessage) error)
+	ReadTap(device network.Taper, readAt func(f *libol.FrameMessage) error)
 	NewTap(tenant string) (network.Taper, error)
 	UUID() string
 	OffClient(client libol.SocketClient)

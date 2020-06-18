@@ -96,7 +96,9 @@ func (t *dataStream) WriteMsg(frame *FrameMessage) error {
 }
 
 func (t *dataStream) ReadMsg() (*FrameMessage, error) {
-	Log("dataStream.ReadMsg: %s", t)
+	if HasLog(LOG) {
+		Log("dataStream.ReadMsg: %s", t)
+	}
 	if !t.IsOk() {
 		return nil, NewErr("%s: not okay", t)
 	}
@@ -346,8 +348,10 @@ func (t *socketServer) Read(client SocketClient, ReadAt ReadClient) {
 			continue
 		}
 		t.sts.RecvCount++
-		Log("socketServer.Read: length: %d ", frame.size)
-		Log("socketServer.Read: frame  : %x", frame)
+		if HasLog(LOG) {
+			Log("socketServer.Read: length: %d ", frame.size)
+			Log("socketServer.Read: frame  : %x", frame)
+		}
 		if err := ReadAt(client, frame); err != nil {
 			Error("socketServer.Read: readAt %s", err)
 			break

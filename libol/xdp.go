@@ -24,7 +24,7 @@ func XDPListen(addr string) (net.Listener, error) {
 		address:  udpAddr,
 		sessions: NewSafeStrMap(1024),
 		accept:   make(chan *XDPConn, 2),
-		bufSize:  MAXBUF,
+		bufSize:  MaxBuf,
 	}
 	conn, err := net.ListenUDP("udp", udpAddr)
 	if err != nil {

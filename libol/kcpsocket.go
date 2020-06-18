@@ -156,17 +156,18 @@ func (c *KcpClient) Connect() error {
 
 	Info("KcpClient.Connect: kcp://%s", c.address)
 	conn, err := kcp.DialWithOptions(c.address, c.kcpCfg.Block, c.kcpCfg.DataShards, c.kcpCfg.DataShards)
-	if err == nil {
-		conn.SetStreamMode(true)
-		conn.SetWriteDelay(false)
-		conn.SetACKNoDelay(false)
-		c.lock.Lock()
-		c.connection = conn
-		c.status = ClConnected
-		c.lock.Unlock()
-		if c.listener.OnConnected != nil {
-			_ = c.listener.OnConnected(c)
-		}
+	if err != nil {
+		return err
+	}
+	conn.SetStreamMode(true)
+	conn.SetWriteDelay(false)
+	conn.SetACKNoDelay(false)
+	c.lock.Lock()
+	c.connection = conn
+	c.status = ClConnected
+	c.lock.Unlock()
+	if c.listener.OnConnected != nil {
+		_ = c.listener.OnConnected(c)
 	}
 	return nil
 }

@@ -158,16 +158,17 @@ func (t *TcpClient) Connect() error {
 		Info("TcpClient.Connect: tcp://%s", t.address)
 		conn, err = net.Dial("tcp", t.address)
 	}
-	if err == nil {
-		t.lock.Lock()
-		t.connection = conn
-		t.status = ClConnected
-		t.lock.Unlock()
-		if t.listener.OnConnected != nil {
-			_ = t.listener.OnConnected(t)
-		}
+	if err != nil {
+		return err
 	}
-	return err
+	t.lock.Lock()
+	t.connection = conn
+	t.status = ClConnected
+	t.lock.Unlock()
+	if t.listener.OnConnected != nil {
+		_ = t.listener.OnConnected(t)
+	}
+	return nil
 }
 
 func (t *TcpClient) Close() {

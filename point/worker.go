@@ -444,8 +444,10 @@ func (t *SocketWorker) Read() {
 			t.lock.Unlock()
 			break
 		}
+		if libol.HasLog(libol.DEBUG) {
+			libol.Debug("SocketWorker.Read: %x", data)
+		}
 		t.record.last = time.Now().Unix()
-		libol.Log("SocketWorker.Read: %x", data)
 		if data.Size() > 0 {
 			data.Decode()
 			if data.IsControl() {
@@ -472,7 +474,9 @@ func (t *SocketWorker) deadCheck() {
 }
 
 func (t *SocketWorker) DoWrite(frame *libol.FrameMessage) error {
-	libol.Log("SocketWorker.DoWrite: %x", frame)
+	if libol.HasLog(libol.DEBUG) {
+		libol.Debug("SocketWorker.DoWrite: %x", frame)
+	}
 	t.lock.Lock()
 	t.deadCheck()
 	if t.client == nil {
@@ -714,7 +718,9 @@ func (a *TapWorker) Read() {
 			a.lock.Unlock()
 			continue
 		}
-		libol.Debug("TapWorker.Read: %x", data[:n])
+		if libol.HasLog(libol.DEBUG) {
+			libol.Debug("TapWorker.Read: %x", data[:n])
+		}
 		if size := a.onFrame(frame, data[:n]); size == 0 {
 			a.lock.Unlock()
 			continue
@@ -741,7 +747,9 @@ func (a *TapWorker) Loop() {
 
 func (a *TapWorker) DoWrite(frame *libol.FrameMessage) error {
 	data := frame.Frame()
-	libol.Log("TapWorker.DoWrite: %x", data)
+	if libol.HasLog(libol.DEBUG) {
+		libol.Debug("TapWorker.DoWrite: %x", data)
+	}
 	a.lock.Lock()
 	if a.device == nil {
 		a.lock.Unlock()
@@ -1068,13 +1076,16 @@ func (p *Worker) Worker() *SocketWorker {
 
 func (p *Worker) FindNext(dest []byte) []byte {
 	for _, rt := range p.routes {
-		if rt.Destination.Contains(dest) {
-			if rt.Type == 0x00 {
-				break
-			}
-			libol.Debug("Worker.FindNext %v to %v", dest, rt.NextHop)
-			return rt.NextHop.To4()
+		if !rt.Destination.Contains(dest) {
+			continue
 		}
+		if rt.Type == 0x00 {
+			break
+		}
+		if libol.HasLog(libol.DEBUG) {
+			libol.Debug("Worker.FindNext %v to %v", dest, rt.NextHop)
+		}
+		return rt.NextHop.To4()
 	}
 	return dest
 }
