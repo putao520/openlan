@@ -83,6 +83,7 @@ func NewSwitch(c config.Switch) *Switch {
 
 func (v *Switch) addRules(source string, prefix string) {
 	libol.Info("Switch.addRules %s, %s", source, prefix)
+	// allowed between source and prefix on filter.
 	v.firewall.rules = append(v.firewall.rules, libol.FilterRule{
 		Table:  "filter",
 		Chain:  "FORWARD",
@@ -90,6 +91,14 @@ func (v *Switch) addRules(source string, prefix string) {
 		Dest:   prefix,
 		Jump:   "ACCEPT",
 	})
+	v.firewall.rules = append(v.firewall.rules, libol.FilterRule{
+		Table:  "filter",
+		Chain:  "FORWARD",
+		Source: prefix,
+		Dest:   source,
+		Jump:   "ACCEPT",
+	})
+	// enable masquerade between source and prefix.
 	v.firewall.rules = append(v.firewall.rules, libol.FilterRule{
 		Table:  "nat",
 		Chain:  "POSTROUTING",
@@ -100,8 +109,8 @@ func (v *Switch) addRules(source string, prefix string) {
 	v.firewall.rules = append(v.firewall.rules, libol.FilterRule{
 		Table:  "nat",
 		Chain:  "POSTROUTING",
-		Dest:   source,
 		Source: prefix,
+		Dest:   source,
 		Jump:   "MASQUERADE",
 	})
 }
