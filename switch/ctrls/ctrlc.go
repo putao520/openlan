@@ -97,6 +97,9 @@ func (cc *CtrlC) Wait() {
 var Ctrl = &CtrlC{}
 
 func Load(path string) {
+	if err := libol.FileExist(path); err != nil {
+		return
+	}
 	if err := libol.UnmarshalLoad(Ctrl, path); err != nil {
 		libol.Warn("ctrls.Load: %s", err)
 		return

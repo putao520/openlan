@@ -83,7 +83,7 @@ type Switch struct {
 	Prof      string      `json:"prof"`
 	Network   []*Network  `json:"network"`
 	FireWall  []FlowRules `json:"firewall"`
-	Trace     bool        `json:"trace"`
+	Inspect   string      `json:"inspect"`
 	ConfDir   string      `json:"-" yaml:"-"`
 	TokenFile string      `json:"-" yaml:"-"`
 	SaveFile  string      `json:"-" yaml:"-"`

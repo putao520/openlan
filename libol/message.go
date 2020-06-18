@@ -26,14 +26,52 @@ func isControl(data []byte) bool {
 	return false
 }
 
-type Ip4Protocol struct {
-	Err  error
+type Ip4Proto struct {
+	// public
 	Eth  *Ether
 	Vlan *Vlan
 	Arp  *Arp
 	Ip4  *Ipv4
 	Udp  *Udp
 	Tcp  *Tcp
+	// private
+	err   error
+	frame []byte
+}
+
+func (i *Ip4Proto) Decode() error {
+	data := i.frame
+	if i.Eth, i.err = NewEtherFromFrame(data); i.err != nil {
+		return i.err
+	}
+	data = data[i.Eth.Len:]
+	if i.Eth.IsVlan() {
+		if i.Vlan, i.err = NewVlanFromFrame(data); i.err != nil {
+			return i.err
+		}
+		data = data[i.Vlan.Len:]
+	}
+	if i.Eth.IsIP4() {
+		if i.Ip4, i.err = NewIpv4FromFrame(data); i.err != nil {
+			return i.err
+		}
+		data = data[i.Ip4.Len:]
+		switch i.Ip4.Protocol {
+		case IpTcp:
+			if i.Tcp, i.err = NewTcpFromFrame(data); i.err != nil {
+				return i.err
+			}
+		case IpUdp:
+			if i.Udp, i.err = NewUdpFromFrame(data); i.err != nil {
+				return i.err
+			}
+		}
+	} else if i.Eth.IsArp() {
+		if i.Arp, i.err = NewArpFromFrame(data); i.err != nil {
+			return i.err
+		}
+	}
+	return nil
 }
 
 type FrameMessage struct {
@@ -44,7 +82,7 @@ type FrameMessage struct {
 	size    int
 	total   int
 	frame   []byte
-	proto   *Ip4Protocol
+	proto   *Ip4Proto
 }
 
 func NewFrameMessage() *FrameMessage {
@@ -101,44 +139,13 @@ func (m *FrameMessage) SetSize(v int) {
 	m.size = v
 }
 
-func (m *FrameMessage) Proto() (*Ip4Protocol, error) {
+func (m *FrameMessage) Proto() (*Ip4Proto, error) {
 	if m.proto != nil {
-		return m.proto, m.proto.Err
+		return m.proto, m.proto.err
 	}
-	data := m.frame
-	p := new(Ip4Protocol)
-	if p.Eth, p.Err = NewEtherFromFrame(data); p.Err != nil {
-		return nil, p.Err
-	}
-	data = data[p.Eth.Len:]
-	if p.Eth.IsVlan() {
-		if p.Vlan, p.Err = NewVlanFromFrame(data); p.Err != nil {
-			return nil, p.Err
-		}
-		data = data[p.Vlan.Len:]
-	}
-	if p.Eth.IsIP4() {
-		if p.Ip4, p.Err = NewIpv4FromFrame(data); p.Err != nil {
-			return nil, p.Err
-		}
-		data = data[p.Ip4.Len:]
-		switch p.Ip4.Protocol {
-		case IpTcp:
-			if p.Tcp, p.Err = NewTcpFromFrame(data); p.Err != nil {
-				return nil, p.Err
-			}
-		case IpUdp:
-			if p.Udp, p.Err = NewUdpFromFrame(data); p.Err != nil {
-				return nil, p.Err
-			}
-		}
-	} else if p.Eth.IsArp() {
-		if p.Arp, p.Err = NewArpFromFrame(data); p.Err != nil {
-			return nil, p.Err
-		}
-	}
-	m.proto = p
-	return m.proto, m.proto.Err
+	m.proto = &Ip4Proto{frame: m.frame}
+	err := m.proto.Decode()
+	return m.proto, err
 }
 
 type ControlMessage struct {

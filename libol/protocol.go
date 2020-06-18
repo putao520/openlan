@@ -25,7 +25,13 @@ type Ether struct {
 	Len  int
 }
 
-const EtherLen = 14
+const (
+	EtherLen = 14
+	VlanLen  = 4
+	TcpLen   = 20
+	Ipv4Len  = 20
+	UdpLen   = 8
+)
 
 func NewEther(t uint16) (e *Ether) {
 	e = &Ether{
@@ -97,7 +103,7 @@ func NewVlan(tci uint16, vid uint16) (n *Vlan) {
 	n = &Vlan{
 		Tci: tci,
 		Vid: vid,
-		Len: 4,
+		Len: VlanLen,
 	}
 
 	return
@@ -105,14 +111,14 @@ func NewVlan(tci uint16, vid uint16) (n *Vlan) {
 
 func NewVlanFromFrame(frame []byte) (n *Vlan, err error) {
 	n = &Vlan{
-		Len: 4,
+		Len: VlanLen,
 	}
 	err = n.Decode(frame)
 	return
 }
 
 func (n *Vlan) Decode(frame []byte) error {
-	if len(frame) < 4 {
+	if len(frame) < VlanLen {
 		return NewErr("Vlan.Decode: too small header")
 	}
 
@@ -293,8 +299,6 @@ func IpProto2Str(proto uint8) string {
 	}
 }
 
-const Ipv4Len = 20
-
 type Ipv4 struct {
 	Version        uint8 //4bite v4: 0100, v6: 0110
 	HeaderLen      uint8 //4bit 15*4
@@ -387,7 +391,14 @@ func (i *Ipv4) IsIP4() bool {
 	return i.Version == Ipv4Ver
 }
 
-const TcpLen = 20
+const (
+	TcpUrg = 0x20
+	TcpAck = 0x10
+	TcpPsh = 0x08
+	TcpRst = 0x04
+	TcpSyn = 0x02
+	TcpFin = 0x01
+)
 
 type Tcp struct {
 	Source         uint16
@@ -460,7 +471,9 @@ func (t *Tcp) Encode() []byte {
 	return buffer[:t.Len]
 }
 
-const UdpLen = 8
+func (t *Tcp) HasFlag(flag uint8) bool {
+	return t.ControlBits&flag == flag
+}
 
 type Udp struct {
 	Source      uint16

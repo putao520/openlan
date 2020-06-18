@@ -139,13 +139,15 @@ func (v *Switch) Initialize() {
 
 	v.hooks = make([]Hook, 0, 64)
 	v.apps.Auth = app.NewPointAuth(v, v.cfg)
-	v.apps.Request = app.NewWithRequest(v, v.cfg)
 	v.hooks = append(v.hooks, v.apps.Auth.OnFrame)
+	v.apps.Request = app.NewWithRequest(v, v.cfg)
 	v.hooks = append(v.hooks, v.apps.Request.OnFrame)
-	if v.cfg.Trace {
+	if strings.Contains(v.cfg.Inspect, "neighbor") {
 		v.apps.Neighbor = app.NewNeighbors(v, v.cfg)
-		v.apps.OnLines = app.NewOnline(v, v.cfg)
 		v.hooks = append(v.hooks, v.apps.Neighbor.OnFrame)
+	}
+	if strings.Contains(v.cfg.Inspect, "online") {
+		v.apps.OnLines = app.NewOnline(v, v.cfg)
 		v.hooks = append(v.hooks, v.apps.OnLines.OnFrame)
 	}
 	for i, h := range v.hooks {
