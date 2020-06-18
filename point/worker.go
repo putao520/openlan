@@ -584,7 +584,7 @@ func (a *TapWorker) Initialize() {
 		},
 	}
 	a.open()
-	if a.device.IsTun() {
+	if a.device != nil && a.device.IsTun() {
 		a.setEther(a.pointCfg.Interface.Address)
 		a.ether.HwAddr = libol.GenEthAddr(6)
 		libol.Info("TapWorker.Initialize: src %x", a.ether.HwAddr)
@@ -618,13 +618,13 @@ func (a *TapWorker) open() {
 			time.Sleep(5 * time.Second) // sleep 5s and release cpu.
 		}
 	}
-	dev, err := network.NewKernelTap(a.pointCfg.Network, a.deviceCfg)
+	device, err := network.NewKernelTap(a.pointCfg.Network, a.deviceCfg)
 	if err != nil {
 		libol.Error("TapWorker.open: %s", err)
 		return
 	}
-	libol.Info("TapWorker.open: >>>> %s <<<<", dev.Name())
-	a.device = dev
+	libol.Info("TapWorker.open: >>>> %s <<<<", device.Name())
+	a.device = device
 	if a.listener.OnOpen != nil {
 		_ = a.listener.OnOpen(a)
 	}

@@ -138,17 +138,9 @@ func NewTcpClientFromConn(conn net.Conn, cfg *TcpConfig) *TcpClient {
 }
 
 func (t *TcpClient) Connect() error {
-	t.lock.Lock()
-	if t.connection != nil || t.status == ClTerminal || t.status == ClUnAuth {
-		t.lock.Unlock()
+	if !t.retry() {
 		return nil
 	}
-	if t.connection != nil {
-		_ = t.connection.Close()
-		t.connection = nil
-	}
-	t.status = ClConnecting
-	t.lock.Unlock()
 	var err error
 	var conn net.Conn
 	if t.tcpCfg.Tls != nil {

@@ -159,6 +159,18 @@ func (s *socketClient) State() string {
 	return ""
 }
 
+func (s *socketClient) retry() bool {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	if s.connection != nil ||
+		s.status == ClTerminal ||
+		s.status == ClUnAuth {
+		return false
+	}
+	s.status = ClConnecting
+	return true
+}
+
 func (s *socketClient) Status() uint8 {
 	s.lock.RLock()
 	defer s.lock.RUnlock()

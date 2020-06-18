@@ -138,14 +138,9 @@ func NewUdpClientFromConn(conn net.Conn, cfg *UdpConfig) *UdpClient {
 }
 
 func (c *UdpClient) Connect() error {
-	c.lock.Lock()
-	if c.connection != nil || c.status == ClTerminal || c.status == ClUnAuth {
-		c.lock.Unlock()
+	if !c.retry() {
 		return nil
 	}
-	c.status = ClConnecting
-	c.lock.Unlock()
-
 	Info("UdpClient.Connect: udp://%s", c.address)
 	conn, err := net.Dial("udp", c.address)
 	if err != nil {

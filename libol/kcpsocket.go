@@ -49,7 +49,11 @@ func NewKcpServer(listen string, cfg *KcpConfig) *KcpServer {
 }
 
 func (k *KcpServer) Listen() (err error) {
-	k.listener, err = kcp.ListenWithOptions(k.address, k.kcpCfg.Block, k.kcpCfg.DataShards, k.kcpCfg.ParityShards)
+	k.listener, err = kcp.ListenWithOptions(
+		k.address,
+		k.kcpCfg.Block,
+		k.kcpCfg.DataShards,
+		k.kcpCfg.ParityShards)
 	if err != nil {
 		k.listener = nil
 		return err
@@ -146,16 +150,15 @@ func NewKcpClientFromConn(conn net.Conn, cfg *KcpConfig) *KcpClient {
 }
 
 func (c *KcpClient) Connect() error {
-	c.lock.Lock()
-	if c.connection != nil || c.status == ClTerminal || c.status == ClUnAuth {
-		c.lock.Unlock()
+	if !c.retry() {
 		return nil
 	}
-	c.status = ClConnecting
-	c.lock.Unlock()
-
 	Info("KcpClient.Connect: kcp://%s", c.address)
-	conn, err := kcp.DialWithOptions(c.address, c.kcpCfg.Block, c.kcpCfg.DataShards, c.kcpCfg.DataShards)
+	conn, err := kcp.DialWithOptions(
+		c.address,
+		c.kcpCfg.Block,
+		c.kcpCfg.DataShards,
+		c.kcpCfg.DataShards)
 	if err != nil {
 		return err
 	}

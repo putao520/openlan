@@ -56,13 +56,10 @@ linux/rpm: env
 	@cp -rf ~/rpmbuild/RPMS/x86_64/openlan-*.rpm $(BD)
 
 ## cross build for windows
-windows: windows/point windows/switch
+windows: windows/point
 
 windows/point: env
 	GOOS=windows GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point.exe ./main/point_windows
-
-windows/switch: env
-	GOOS=windows GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch.exe ./main/switch.go
 
 windows/zip: env windows
 	@pushd $(BD)
@@ -71,7 +68,6 @@ windows/zip: env windows
 
 	@cp -rvf $(SD)/packaging/resource/point.json.example $(WD)/point.json
 	@cp -rvf $(BD)/openlan-point.exe $(WD)
-	@cp -rvf $(BD)/openlan-switch.exe $(WD)
 
 	zip -r $(WD).zip $(WD) > /dev/null
 	@popd
@@ -84,7 +80,6 @@ osx: darwin
 
 darwin: env
 	GOOS=darwin GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point.darwin ./main/point_darwin
-	GOOS=darwin GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch.darwin ./main/switch.go
 
 darwin/zip: env darwin
 	@pushd $(BD)
@@ -93,7 +88,6 @@ darwin/zip: env darwin
 
 	@cp -rvf $(SD)/packaging/resource/point.json.example $(XD)/point.json
 	@cp -rvf $(BD)/openlan-point.darwin $(XD)
-	@cp -rvf $(BD)/openlan-switch.darwin $(XD)
 
 	zip -r $(XD).zip $(XD) > /dev/null
 	popd
