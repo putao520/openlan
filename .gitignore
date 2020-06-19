@@ -18,3 +18,5 @@
 /build/
 /py/build/
 /py/dist/
+/core/build/
+/core/cmake-build-debug/

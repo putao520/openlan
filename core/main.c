@@ -2,7 +2,11 @@
 #include "tcp_server.h"
 
 int main(int argc, char *argv[]) {
-    printf("Hello, World!\n");
-    start_tcp_server(9090);
+    int port = 9090;
+    if (argc > 1) {
+        sscanf(argv[1], "%d", &port);
+    }
+    printf("Listen on %d!\n", port);
+    start_tcp_server(port);
     return 0;
 }

@@ -3,4 +3,4 @@ project(core C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_executable(core main.c tcp_server.c tcp_server.h)
+add_executable(core main.c tcp_server.c tcp_server.h tun.c tun.h types.h)
