@@ -13,10 +13,8 @@
 #include <assert.h>
 #include <pthread.h>
 
-#include "../include/types.h"
 #include "../include/tuntap.h"
-#include "../include/epoll.h"
-#include "../include/tcp_server.h"
+#include "../include/socket.h"
 
 int non_blocking(int fd) {
     int flags = fcntl(fd, F_GETFL, 0);
@@ -67,18 +65,12 @@ void *read_client(void *argv) {
             break;
         }
         read_size = ntohs(*(uint16_t *)(buf + 2));
-//      printf("read %d\n", read_size);
-//
         memset(buf, 0, sizeof buf);
         buf_size = recv_full(conn->socket_fd, buf, read_size);
         if (buf_size != 0) {
             printf("ERROR: on read %d != %d\n", read_size, buf_size);
             break;
         }
-//        for (i = 0; i < buf_size; i ++) {
-//            printf("%02x ", buf[i]);
-//        }
-//        printf("\n");
         write_tap(conn->device_fd, buf, read_size);
     }
 }
@@ -107,7 +99,7 @@ void *read_device(void *argv) {
     }
 }
 
-int start_tcp_server(int port) {
+int start_tcp_server(uint16_t port) {
     struct sockaddr_in server_addr;
 
     bzero(&server_addr, sizeof(struct sockaddr_in));
@@ -140,8 +132,8 @@ int start_tcp_server(int port) {
     printf("open device on %s with %d\n", dev_name, tap_fd);
 
     connection_t conn = {
-        socket_fd: conn_fd,
-        device_fd: tap_fd,
+        .socket_fd = conn_fd,
+        .device_fd = tap_fd,
     };
     pthread_t client_thread;
     pthread_t device_thread;
@@ -169,6 +161,62 @@ finish:
     close(server_fd);
     close(tap_fd);
     printf("exit from %d\n", server_fd);
+    return 0;
+}
 
+int start_tcp_client(const char *addr, uint16_t port) {
+    int ret = 0;
+    int socket_fd = 0;
+    struct sockaddr_in server_addr;
+
+    socket_fd = socket(PF_INET, SOCK_STREAM, 0);
+    if (socket_fd < 0) {
+        printf("ERROR: open socket %d", socket_fd);
+        return socket_fd;
+    }
+
+    bzero(&server_addr, sizeof (server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(port);
+    server_addr.sin_addr.s_addr = inet_addr(addr);
+
+    ret = connect(socket_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
+    if(ret ==-1) {
+        printf("connect() error\n");
+        return ret;
+    }
+    char dev_name[1024] = {0};
+    int tap_fd = 0;
+
+    tap_fd = create_tap(dev_name);
+    printf("open device on %s with %d\n", dev_name, tap_fd);
+
+    connection_t conn = {
+            .socket_fd = socket_fd,
+            .device_fd = tap_fd,
+    };
+    pthread_t client_thread;
+    pthread_t device_thread;
+
+    if(pthread_create(&client_thread, NULL, read_client, &conn)) {
+        fprintf(stderr, "Error creating thread\n");
+        return 1;
+    }
+    if(pthread_create(&device_thread, NULL, read_device, &conn)) {
+        fprintf(stderr, "Error creating thread\n");
+        return 1;
+    }
+    if(pthread_join(client_thread, NULL)) {
+        fprintf(stderr, "Error joining thread\n");
+        return 2;
+    }
+    if(pthread_join(device_thread, NULL)) {
+        fprintf(stderr, "Error joining thread\n");
+        return 2;
+    }
+
+finish:
+    close(socket_fd);
+    close(tap_fd);
     return 0;
 }
