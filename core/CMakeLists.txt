@@ -3,5 +3,8 @@ project(core C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_executable(core main.c src/socket.c include/socket.h src/tuntap.c include/tuntap.h include/types.h src/epoll.c include/epoll.h)
+include_directories(include)
+
+add_executable(core main.c src/socket.c include/socket.h src/tuntap.c include/tuntap.h include/types.h src/control.c include/control.h)
+
 target_link_libraries(core pthread)

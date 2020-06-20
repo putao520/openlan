@@ -13,8 +13,8 @@
 #include <assert.h>
 #include <pthread.h>
 
-#include "../include/tuntap.h"
-#include "../include/socket.h"
+#include <tuntap.h>
+#include <socket.h>
 
 int non_blocking(int fd) {
     int flags = fcntl(fd, F_GETFL, 0);
@@ -66,7 +66,7 @@ void *read_client(void *argv) {
             printf("ERROR: on read %d != %d\n", read_size, buf_size);
             break;
         }
-        write_tap(conn->device_fd, buf, read_size);
+        write(conn->device_fd, buf, read_size);
     }
 }
 
@@ -80,7 +80,7 @@ void *read_device(void *argv) {
     conn = (peer_t *) argv;
 
     for(;;) {
-        read_size = read_tap(conn->device_fd, buf + 4, sizeof (buf));
+        read_size = read(conn->device_fd, buf + 4, sizeof (buf));
         if (read_size <= 0) {
             continue;
         }

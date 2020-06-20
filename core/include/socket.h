@@ -5,7 +5,7 @@
 #ifndef CORE_SOCKET_H
 #define CORE_SOCKET_H
 
-#include "../include/types.h"
+#include "types.h"
 
 typedef struct {
     int socket_fd;
