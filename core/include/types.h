@@ -5,16 +5,16 @@
 #ifndef CORE_TYPES_H
 #define CORE_TYPES_H
 
-#ifndef uint8
-#define uint8  unsigned char
+#ifndef uint8_t
+#define uint8_t  unsigned char
 #endif
 
-#ifndef uint16
-#define uint16  unsigned short
+#ifndef uint16_t
+#define uint16_t  unsigned short
 #endif
 
-#ifndef uint32
-#define uint32  unsigned int
+#ifndef uint32_t
+#define uint32_t  unsigned int
 #endif
 
 #endif //CORE_TYPES_H
