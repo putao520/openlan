@@ -25,9 +25,13 @@ func (r *WithRequest) OnFrame(client libol.SocketClient, frame *libol.FrameMessa
 	if frame.IsEthernet() {
 		return nil
 	}
-	libol.Log("WithRequest.OnFrame %s.", frame)
+	if libol.HasLog(libol.DEBUG) {
+		libol.Log("WithRequest.OnFrame %s.", frame)
+	}
 	action, body := frame.CmdAndParams()
-	libol.Cmd("WithRequest.OnFrame: %s %s", action, body)
+	if libol.HasLog(libol.CMD) {
+		libol.Cmd("WithRequest.OnFrame: %s %s", action, body)
+	}
 	switch action {
 	case "neig=":
 		r.OnNeighbor(client, body)

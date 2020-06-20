@@ -324,7 +324,9 @@ func (t *SocketWorker) onInstruct(frame *libol.FrameMessage) error {
 		return nil
 	}
 	action, resp := frame.CmdAndParams()
-	libol.Cmd("SocketWorker.onInstruct %s %s", action, resp)
+	if libol.HasLog(libol.CMD) {
+		libol.Cmd("SocketWorker.onInstruct %s %s", action, resp)
+	}
 	switch action {
 	case "logi:":
 		return t.onLogin(resp)

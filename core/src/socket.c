@@ -45,19 +45,14 @@ int send_full(int fd, char *buf, ssize_t size) {
     return 0;
 }
 
-typedef struct {
-    int socket_fd;
-    int device_fd;
-}connection_t;
-
 void *read_client(void *argv) {
     uint16_t buf_size = 0;
     uint16_t read_size = 0;
     uint8_t buf[4096];
-    connection_t *conn = NULL;
+    peer_t *conn = NULL;
 
     assert(NULL != argv);
-    conn = (connection_t *) argv;
+    conn = (peer_t *) argv;
 
     for(;;) {
         buf_size = recv_full(conn->socket_fd, buf, 4);
@@ -79,10 +74,10 @@ void *read_device(void *argv) {
     uint16_t write_size = 0;
     uint16_t read_size = 0;
     uint8_t buf[4096];
-    connection_t *conn = NULL;
+    peer_t *conn = NULL;
 
     assert(NULL != argv);
-    conn = (connection_t *) argv;
+    conn = (peer_t *) argv;
 
     for(;;) {
         read_size = read_tap(conn->device_fd, buf + 4, sizeof (buf));
@@ -96,6 +91,28 @@ void *read_device(void *argv) {
             printf("ERROR: write to conn %d:%d", write_size, read_size);
             break;
         }
+    }
+}
+
+int start_peer(peer_t *peer) {
+    pthread_t client;
+    pthread_t device;
+
+    if(pthread_create(&client, NULL, read_client, &peer)) {
+        fprintf(stderr, "Error creating thread\n");
+        return 1;
+    }
+    if(pthread_create(&device, NULL, read_device, &peer)) {
+        fprintf(stderr, "Error creating thread\n");
+        return 1;
+    }
+    if(pthread_join(client, NULL)) {
+        fprintf(stderr, "Error joining thread\n");
+        return 2;
+    }
+    if(pthread_join(device, NULL)) {
+        fprintf(stderr, "Error joining thread\n");
+        return 2;
     }
 }
 
@@ -131,30 +148,11 @@ int start_tcp_server(uint16_t port) {
     tap_fd = create_tap(dev_name);
     printf("open device on %s with %d\n", dev_name, tap_fd);
 
-    connection_t conn = {
+    peer_t peer = {
         .socket_fd = conn_fd,
         .device_fd = tap_fd,
     };
-    pthread_t client_thread;
-    pthread_t device_thread;
-
-    if(pthread_create(&client_thread, NULL, read_client, &conn)) {
-        fprintf(stderr, "Error creating thread\n");
-        return 1;
-    }
-    if(pthread_create(&device_thread, NULL, read_device, &conn)) {
-        fprintf(stderr, "Error creating thread\n");
-        return 1;
-    }
-
-    if(pthread_join(client_thread, NULL)) {
-        fprintf(stderr, "Error joining thread\n");
-        return 2;
-    }
-    if(pthread_join(device_thread, NULL)) {
-        fprintf(stderr, "Error joining thread\n");
-        return 2;
-    }
+   start_peer(&peer);
 
 finish:
     close(conn_fd);
@@ -191,29 +189,11 @@ int start_tcp_client(const char *addr, uint16_t port) {
     tap_fd = create_tap(dev_name);
     printf("open device on %s with %d\n", dev_name, tap_fd);
 
-    connection_t conn = {
+    peer_t peer = {
             .socket_fd = socket_fd,
             .device_fd = tap_fd,
     };
-    pthread_t client_thread;
-    pthread_t device_thread;
-
-    if(pthread_create(&client_thread, NULL, read_client, &conn)) {
-        fprintf(stderr, "Error creating thread\n");
-        return 1;
-    }
-    if(pthread_create(&device_thread, NULL, read_device, &conn)) {
-        fprintf(stderr, "Error creating thread\n");
-        return 1;
-    }
-    if(pthread_join(client_thread, NULL)) {
-        fprintf(stderr, "Error joining thread\n");
-        return 2;
-    }
-    if(pthread_join(device_thread, NULL)) {
-        fprintf(stderr, "Error joining thread\n");
-        return 2;
-    }
+    start_peer(&peer);
 
 finish:
     close(socket_fd);

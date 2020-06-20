@@ -7,6 +7,11 @@
 
 #include "../include/types.h"
 
+typedef struct {
+    int socket_fd;
+    int device_fd;
+} peer_t;
+
 int start_tcp_server(uint16_t port);
 int start_tcp_client(const char *addr, uint16_t port);
 
