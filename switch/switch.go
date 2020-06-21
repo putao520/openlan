@@ -264,6 +264,7 @@ func (v *Switch) ReadClient(client libol.SocketClient, frame *libol.FrameMessage
 func (v *Switch) OnClose(client libol.SocketClient) error {
 	libol.Info("Switch.OnClose: %s", client.Addr())
 
+	// TODO support free list for device.
 	uuid := storage.Point.GetUUID(client.Addr())
 	if storage.Point.GetAddr(uuid) == client.Addr() { // not has newer
 		storage.Network.FreeAddr(uuid)
@@ -351,6 +352,7 @@ func (v *Switch) NewTap(tenant string) (network.Taper, error) {
 	defer v.lock.Unlock()
 	libol.Debug("Switch.NewTap")
 
+	// TODO support free list for device.
 	br, ok := v.bridge[tenant]
 	if !ok {
 		return nil, libol.NewErr("Not found bridge %s", tenant)
@@ -369,6 +371,10 @@ func (v *Switch) NewTap(tenant string) (network.Taper, error) {
 }
 
 func (v *Switch) FreeTap(dev network.Taper) error {
+	v.lock.Lock()
+	defer v.lock.Unlock()
+	libol.Debug("Switch.FreeTap %s", dev.Name())
+
 	br, ok := v.bridge[dev.Tenant()]
 	if !ok {
 		return libol.NewErr("Not found bridge %s", dev.Tenant())

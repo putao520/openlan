@@ -31,6 +31,8 @@ pkg: linux/rpm windows/zip darwin/zip
 
 clean:
 	rm -rvf ./build
+	rm -rvf ./core/build
+	rm -rvf ./core/cmake-build-debug
 
 ## prepare environment
 env:

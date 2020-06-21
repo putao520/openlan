@@ -1,5 +1,5 @@
 //
-// Created by albert on 6/19/2020.
+// Created by daniel on 6/19/2020.
 //
 
 #ifndef CORE_SOCKET_H
