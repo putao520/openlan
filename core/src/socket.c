@@ -1,13 +1,11 @@
 //
-// Created by albert on 6/19/2020.
+// Created by daniel on 6/19/2020.
 //
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <strings.h>
 #include <memory.h>
 #include <fcntl.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <assert.h>
