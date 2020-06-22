@@ -3,26 +3,26 @@ package storage
 import (
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/models"
-	"github.com/danieldin95/openlan-go/point"
+	pp "github.com/danieldin95/openlan-go/point"
 )
 
-type _link struct {
+type link struct {
 	Links  *libol.SafeStrMap
 	Listen Listen
 }
 
-var Link = _link{
+var Link = link{
 	Links: libol.NewSafeStrMap(1024),
 	Listen: Listen{
 		listener: libol.NewSafeStrMap(32),
 	},
 }
 
-func (p *_link) Init(size int) {
+func (p *link) Init(size int) {
 	p.Links = libol.NewSafeStrMap(size)
 }
 
-func (p *_link) Add(m *point.Point) {
+func (p *link) Add(m *pp.Point) {
 	link := &models.Point{
 		Alias:   "",
 		Network: m.Tenant(),
@@ -38,7 +38,7 @@ func (p *_link) Add(m *point.Point) {
 	_ = p.Listen.AddV(m.Addr(), link)
 }
 
-func (p *_link) Get(key string) *models.Point {
+func (p *link) Get(key string) *models.Point {
 	ret := p.Links.Get(key)
 	if ret != nil {
 		v := ret.(*models.Point)
@@ -48,12 +48,12 @@ func (p *_link) Get(key string) *models.Point {
 	return nil
 }
 
-func (p *_link) Del(key string) {
+func (p *link) Del(key string) {
 	p.Links.Del(key)
 	p.Listen.DelV(key)
 }
 
-func (p *_link) List() <-chan *models.Point {
+func (p *link) List() <-chan *models.Point {
 	c := make(chan *models.Point, 128)
 	go func() {
 		p.Links.Iter(func(k string, v interface{}) {

@@ -46,7 +46,8 @@ func NewNeighborSchema(n *Neighbor) schema.Neighbor {
 
 func NewOnLineSchema(l *Line) schema.OnLine {
 	return schema.OnLine{
-		Uptime:     l.UpTime(),
+		HitTime:    l.LastTime(),
+		UpTime:     l.UpTime(),
 		EthType:    l.EthType,
 		IpSource:   l.IpSource.String(),
 		IpDest:     l.IpDest.String(),

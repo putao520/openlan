@@ -8,29 +8,29 @@ import (
 	"net"
 )
 
-type _network struct {
+type network struct {
 	Networks *libol.SafeStrMap
 	AddrUUID *libol.SafeStrStr // TODO with network
 	UUIDAddr *libol.SafeStrStr // TODO with network
 }
 
-var Network = _network{
+var Network = network{
 	Networks: libol.NewSafeStrMap(1024),
 	AddrUUID: libol.NewSafeStrStr(1024),
 	UUIDAddr: libol.NewSafeStrStr(1024),
 }
 
-func (w *_network) Add(n *models.Network) {
-	libol.Debug("_network.Add %v", *n)
+func (w *network) Add(n *models.Network) {
+	libol.Debug("network.Add %v", *n)
 	_ = w.Networks.Set(n.Name, n)
 }
 
-func (w *_network) Del(name string) {
-	libol.Debug("_network.Del %s", name)
+func (w *network) Del(name string) {
+	libol.Debug("network.Del %s", name)
 	w.Networks.Del(name)
 }
 
-func (w *_network) Get(name string) *models.Network {
+func (w *network) Get(name string) *models.Network {
 	if v := w.Networks.Get(name); v != nil {
 		return v.(*models.Network)
 	}
@@ -39,7 +39,7 @@ func (w *_network) Get(name string) *models.Network {
 
 //TODO add/del route
 
-func (w *_network) List() <-chan *models.Network {
+func (w *network) List() <-chan *models.Network {
 	c := make(chan *models.Network, 128)
 
 	go func() {
@@ -52,7 +52,7 @@ func (w *_network) List() <-chan *models.Network {
 	return c
 }
 
-func (w *_network) ListLease() <-chan *schema.Lease {
+func (w *network) ListLease() <-chan *schema.Lease {
 	c := make(chan *schema.Lease, 128)
 
 	go func() {
@@ -68,14 +68,14 @@ func (w *_network) ListLease() <-chan *schema.Lease {
 	return c
 }
 
-func (w *_network) AddUsedAddr(uuid, ipStr string) {
+func (w *network) AddUsedAddr(uuid, ipStr string) {
 	if ipStr != "" {
 		_ = w.AddrUUID.Set(ipStr, uuid)
 		_ = w.UUIDAddr.Set(uuid, ipStr)
 	}
 }
 
-func (w *_network) GetFreeAddr(uuid string, n *models.Network) (ip string, mask string) {
+func (w *network) GetFreeAddr(uuid string, n *models.Network) (ip string, mask string) {
 	if n == nil || uuid == "" {
 		return "", ""
 	}
@@ -108,7 +108,7 @@ func (w *_network) GetFreeAddr(uuid string, n *models.Network) (ip string, mask 
 	return ipStr, netmask
 }
 
-func (w *_network) FreeAddr(uuid string) {
+func (w *network) FreeAddr(uuid string) {
 	if addr, ok := w.UUIDAddr.GetEx(uuid); ok {
 		w.UUIDAddr.Del(uuid)
 		w.AddrUUID.Del(addr)

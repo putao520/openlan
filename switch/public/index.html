@@ -224,7 +224,7 @@
             <table class="table-display">
                 <thead>
                 <tr>
-                    <th>UpTime</th>
+                    <th>LastTime</th>
                     <th>Source</th>
                     <th>Destination Address</th>
                     <th>Protocol</th>
@@ -235,7 +235,7 @@
                 <tbody>
                 {{ range .OnLines }}
                     <tr>
-                        <td>{{ prettyTime .Uptime }}</td>
+                        <td>{{ prettyTime .HitTime }}</td>
                         <td>{{ .IpSource }}</td>
                         <td>{{ .IpDest }}</td>
                         <td>{{ .IpProto }}</td>

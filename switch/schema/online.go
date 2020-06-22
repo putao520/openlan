@@ -1,7 +1,8 @@
 package schema
 
 type OnLine struct {
-	Uptime     int64  `json:"uptime"`
+	HitTime    int64  `json:"hittime"`
+	UpTime     int64  `json:"uptime"`
 	EthType    uint16 `json:"ethType"`
 	IpSource   string `json:"ipSource"`
 	IpDest     string `json:"ipDestination"`

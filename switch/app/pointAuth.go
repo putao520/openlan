@@ -65,20 +65,19 @@ func (p *PointAuth) handleLogin(client libol.SocketClient, data string) error {
 		return libol.NewErr("Invalid json data.")
 	}
 
+	// to support lower version
+	if user.Network == "" {
+		if strings.Contains(user.Name, "@") {
+			user.Network = strings.SplitN(user.Name, "@", 2)[1]
+		} else {
+			user.Network = "default"
+		}
+	}
 	name := user.Name
-	if name != "" && user.Network != "" { // reset username if haven't tenant.
-		if !strings.Contains(name, "@") {
-			name = name + "@" + user.Network
-		}
+	if !strings.Contains(name, "@") {
+		name = name + "@" + user.Network
 	}
-	if user.Network == "" { // reset tenant by username if tenant is ''.
-		if strings.Contains(name, "@") {
-			user.Network = strings.SplitN(name, "@", 2)[1]
-		}
-	}
-	if user.Token != "" {
-		name = user.Token
-	}
+
 	libol.Info("PointAuth.handleLogin: %s on %s", name, user.Alias)
 	nowUser := storage.User.Get(name)
 	if nowUser != nil {

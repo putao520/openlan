@@ -35,5 +35,9 @@ func (l *Line) String() string {
 }
 
 func (l *Line) UpTime() int64 {
+	return time.Now().Unix() - l.NewTime
+}
+
+func (l *Line) LastTime() int64 {
 	return time.Now().Unix() - l.HitTime
 }
