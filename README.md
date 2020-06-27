@@ -6,7 +6,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/danieldin95/openlan-go)](https://goreportcard.com/report/lightstar-dev/openlan-go)
 [![GPL 3.0 License](https://img.shields.io/badge/License-GPL%203.0-blue.svg)](LICENSE)
 
-OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立基于租户的虚拟以太网络。
+OpenLAN提供一种局域网数据报文在广域网的传输实现，并能够建立多个用户空间的虚拟以太网络。
 
 ## 分支接入
 
@@ -47,11 +47,11 @@ OpenLAN旨在解决局域网数据报文在广域网的传输问题，并建立�
                 192.168.1.11/24           192.168.1.12/24             192.168.1.13/24
 
  
-# 客户端接入
-接入点Point工作在用户侧，每个Point通过接入vSwitch可以实现节点间的互联互通。目前接入点已经稳定工作在Linux、Windows及MacOS系统下。 
+# 客户端用户拨入
+客户端拨入软件(Point)工作在用户或者企业一侧，每个Point通过拨入公网侧的虚拟交换(OpenLAN Switch)可以实现多点间的跨互联网互通。 
 
 # 服务端虚拟交换
-每个接入虚拟交换vSwitch的Point就像工作在一个物理的交换机下的主机，多个虚拟交换之间通过Link可以实现Point的跨区域互通。虚拟交换需要安装在Linux的发布系统中，例如：CentOS或者Ubuntu。
+每个拨入虚拟交换(OpenLAN Switch)的Point就像工作在一个物理的交换机下的主机，多个虚拟交换之间通过配置Link(服务端之间主动拨入对方)可以实现跨区域互通。
 
 ## 在Windows系统中
 ### 首先安装虚拟网卡驱动 tap-windows6
