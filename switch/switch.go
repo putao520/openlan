@@ -183,6 +183,9 @@ func (v *Switch) Initialize() {
 		})
 	}
 	libol.Info("Switch.Initialize total %d rules", len(v.firewall.rules))
+	for _, w := range v.worker {
+		w.Initialize()
+	}
 }
 
 func (v *Switch) onFrame(client libol.SocketClient, frame *libol.FrameMessage) error {

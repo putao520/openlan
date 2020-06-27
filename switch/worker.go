@@ -16,35 +16,33 @@ import (
 
 type NetworkWorker struct {
 	// private
-	alias       string
-	cfg         config.Network
-	newTime     int64
-	startTime   int64
-	linksLock   sync.RWMutex
-	links       map[string]*point.Point
-	uuid        string
-	initialized bool
-	crypt       *config.Crypt
-	bridge      network.Bridger
+	alias     string
+	cfg       config.Network
+	newTime   int64
+	startTime int64
+	linksLock sync.RWMutex
+	links     map[string]*point.Point
+	uuid      string
+	crypt     *config.Crypt
+	bridge    network.Bridger
 }
 
 func NewNetworkWorker(c config.Network, crypt *config.Crypt) *NetworkWorker {
-	w := NetworkWorker{
-		alias:       c.Alias,
-		cfg:         c,
-		newTime:     time.Now().Unix(),
-		startTime:   0,
-		links:       make(map[string]*point.Point),
-		initialized: false,
-		crypt:       crypt,
+	return &NetworkWorker{
+		alias:     c.Alias,
+		cfg:       c,
+		newTime:   time.Now().Unix(),
+		startTime: 0,
+		links:     make(map[string]*point.Point),
+		crypt:     crypt,
 	}
+}
 
-	return &w
+func (w *NetworkWorker) String() string {
+	return w.cfg.Name
 }
 
 func (w *NetworkWorker) Initialize() {
-	w.initialized = true
-
 	for _, pass := range w.cfg.Password {
 		user := models.User{
 			Name:     pass.Username + "@" + w.cfg.Name,
@@ -52,36 +50,30 @@ func (w *NetworkWorker) Initialize() {
 		}
 		storage.User.Add(&user)
 	}
-	if w.cfg.Subnet.Netmask != "" {
-		met := models.Network{
-			Name:    w.cfg.Name,
-			IpStart: w.cfg.Subnet.Start,
-			IpEnd:   w.cfg.Subnet.End,
-			Netmask: w.cfg.Subnet.Netmask,
-			Routes:  make([]*models.Route, 0, 2),
-		}
-		for _, rt := range w.cfg.Routes {
-			if rt.NextHop == "" {
-				libol.Warn("NetworkWorker.Initialize %s no nexthop", rt.Prefix)
-				continue
-			}
-			met.Routes = append(met.Routes, &models.Route{
-				Prefix:  rt.Prefix,
-				NextHop: rt.NextHop,
-			})
-		}
-		storage.Network.Add(&met)
+	met := models.Network{
+		Name:    w.cfg.Name,
+		IpStart: w.cfg.Subnet.Start,
+		IpEnd:   w.cfg.Subnet.End,
+		Netmask: w.cfg.Subnet.Netmask,
+		Routes:  make([]*models.Route, 0, 2),
 	}
+	for _, rt := range w.cfg.Routes {
+		if rt.NextHop == "" {
+			libol.Warn("NetworkWorker.Initialize: %s %s not next-hop", w, rt.Prefix)
+			continue
+		}
+		met.Routes = append(met.Routes, &models.Route{
+			Prefix:  rt.Prefix,
+			NextHop: rt.NextHop,
+		})
+	}
+	storage.Network.Add(&met)
 	brCfg := w.cfg.Bridge
 	w.bridge = network.NewBridger(brCfg.Provider, brCfg.Name, brCfg.IfMtu)
 }
 
 func (w *NetworkWorker) ID() string {
 	return w.uuid
-}
-
-func (w *NetworkWorker) String() string {
-	return w.ID()
 }
 
 func (w *NetworkWorker) LoadLinks() {
@@ -101,24 +93,24 @@ func (w *NetworkWorker) UnLoadLinks() {
 
 func (w *NetworkWorker) LoadRoutes() {
 	// install routes
-	libol.Debug("NetworkWorker.LoadRoute: %v", w.cfg.Routes)
+	libol.Debug("NetworkWorker.LoadRoute: %s %v", w, w.cfg.Routes)
 	link, err := netlink.LinkByName(w.bridge.Name())
 	if w.cfg.Bridge.Address == "" || err != nil {
 		return
 	}
-	for _, route := range w.cfg.Routes {
-		_, dst, err := net.ParseCIDR(route.Prefix)
+	for _, rt := range w.cfg.Routes {
+		_, dst, err := net.ParseCIDR(rt.Prefix)
 		if err != nil {
 			continue
 		}
-		nxt := net.ParseIP(route.NextHop)
+		nxt := net.ParseIP(rt.NextHop)
 		rte := netlink.Route{LinkIndex: link.Attrs().Index, Dst: dst, Gw: nxt, Priority: 100}
-		libol.Debug("NetworkWorker.LoadRoute: %s", rte)
+		libol.Debug("NetworkWorker.LoadRoute: %s %s", w, rte)
 		if err := netlink.RouteAdd(&rte); err != nil {
-			libol.Warn("NetworkWorker.LoadRoute: %s", err)
+			libol.Warn("NetworkWorker.LoadRoute: %s %s", w, err)
 			continue
 		}
-		libol.Info("NetworkWorker.LoadRoute: route %s via %s", route.Prefix, route.NextHop)
+		libol.Info("NetworkWorker.LoadRoute: %s %s via %s", w, rt.Prefix, rt.NextHop)
 	}
 }
 
@@ -127,27 +119,24 @@ func (w *NetworkWorker) UnLoadRoutes() {
 	if w.cfg.Bridge.Address == "" || err != nil {
 		return
 	}
-	for _, route := range w.cfg.Routes {
-		_, dst, err := net.ParseCIDR(route.Prefix)
+	for _, rt := range w.cfg.Routes {
+		_, dst, err := net.ParseCIDR(rt.Prefix)
 		if err != nil {
 			continue
 		}
-		nxt := net.ParseIP(route.NextHop)
+		nxt := net.ParseIP(rt.NextHop)
 		rte := netlink.Route{LinkIndex: link.Attrs().Index, Dst: dst, Gw: nxt}
-		libol.Debug("NetworkWorker.UnLoadRoute: %s", rte)
+		libol.Debug("NetworkWorker.UnLoadRoute: %s %s", w, rte)
 		if err := netlink.RouteDel(&rte); err != nil {
-			libol.Warn("NetworkWorker.UnLoadRoute: %s", err)
+			libol.Warn("NetworkWorker.UnLoadRoute: %s %s", w, err)
 			continue
 		}
-		libol.Info("NetworkWorker.UnLoadRoute: route %s via %s", route.Prefix, route.NextHop)
+		libol.Info("NetworkWorker.UnLoadRoute: %s %s via %s", w, rt.Prefix, rt.NextHop)
 	}
 }
 
 func (w *NetworkWorker) Start(v api.Switcher) {
-	libol.Info("NetworkWorker.Start: %s", w.cfg.Name)
-	if !w.initialized {
-		w.Initialize()
-	}
+	libol.Info("NetworkWorker.Start: %s", w)
 	brCfg := w.cfg.Bridge
 	w.bridge.Open(brCfg.Address)
 	w.uuid = v.UUID()
@@ -157,7 +146,7 @@ func (w *NetworkWorker) Start(v api.Switcher) {
 }
 
 func (w *NetworkWorker) Stop() {
-	libol.Info("NetworkWorker.Close: %s", w.cfg.Name)
+	libol.Info("NetworkWorker.Close: %s", w)
 	w.UnLoadRoutes()
 	w.UnLoadLinks()
 	w.startTime = 0
