@@ -4,9 +4,12 @@ import (
 	"github.com/danieldin95/openlan-go/libol"
 	"github.com/danieldin95/openlan-go/main/config"
 	"github.com/danieldin95/openlan-go/models"
+	"github.com/danieldin95/openlan-go/network"
 	"github.com/danieldin95/openlan-go/point"
 	"github.com/danieldin95/openlan-go/switch/api"
 	"github.com/danieldin95/openlan-go/switch/storage"
+	"github.com/vishvananda/netlink"
+	"net"
 	"sync"
 	"time"
 )
@@ -22,6 +25,7 @@ type NetworkWorker struct {
 	uuid        string
 	initialized bool
 	crypt       *config.Crypt
+	bridge      network.Bridger
 }
 
 func NewNetworkWorker(c config.Network, crypt *config.Crypt) *NetworkWorker {
@@ -68,6 +72,8 @@ func (w *NetworkWorker) Initialize() {
 		}
 		storage.Network.Add(&met)
 	}
+	brCfg := w.cfg.Bridge
+	w.bridge = network.NewBridger(brCfg.Provider, brCfg.Name, brCfg.IfMtu)
 }
 
 func (w *NetworkWorker) ID() string {
@@ -87,22 +93,75 @@ func (w *NetworkWorker) LoadLinks() {
 	}
 }
 
+func (w *NetworkWorker) UnLoadLinks() {
+	for _, p := range w.links {
+		p.Stop()
+	}
+}
+
+func (w *NetworkWorker) LoadRoutes() {
+	// install routes
+	libol.Debug("NetworkWorker.LoadRoute: %v", w.cfg.Routes)
+	link, err := netlink.LinkByName(w.bridge.Name())
+	if w.cfg.Bridge.Address == "" || err != nil {
+		return
+	}
+	for _, route := range w.cfg.Routes {
+		_, dst, err := net.ParseCIDR(route.Prefix)
+		if err != nil {
+			continue
+		}
+		nxt := net.ParseIP(route.NextHop)
+		rte := netlink.Route{LinkIndex: link.Attrs().Index, Dst: dst, Gw: nxt, Priority: 100}
+		libol.Debug("NetworkWorker.LoadRoute: %s", rte)
+		if err := netlink.RouteAdd(&rte); err != nil {
+			libol.Warn("NetworkWorker.LoadRoute: %s", err)
+			continue
+		}
+		libol.Info("NetworkWorker.LoadRoute: route %s via %s", route.Prefix, route.NextHop)
+	}
+}
+
+func (w *NetworkWorker) UnLoadRoutes() {
+	link, err := netlink.LinkByName(w.bridge.Name())
+	if w.cfg.Bridge.Address == "" || err != nil {
+		return
+	}
+	for _, route := range w.cfg.Routes {
+		_, dst, err := net.ParseCIDR(route.Prefix)
+		if err != nil {
+			continue
+		}
+		nxt := net.ParseIP(route.NextHop)
+		rte := netlink.Route{LinkIndex: link.Attrs().Index, Dst: dst, Gw: nxt}
+		libol.Debug("NetworkWorker.UnLoadRoute: %s", rte)
+		if err := netlink.RouteDel(&rte); err != nil {
+			libol.Warn("NetworkWorker.UnLoadRoute: %s", err)
+			continue
+		}
+		libol.Info("NetworkWorker.UnLoadRoute: route %s via %s", route.Prefix, route.NextHop)
+	}
+}
+
 func (w *NetworkWorker) Start(v api.Switcher) {
 	libol.Info("NetworkWorker.Start: %s", w.cfg.Name)
 	if !w.initialized {
 		w.Initialize()
 	}
+	brCfg := w.cfg.Bridge
+	w.bridge.Open(brCfg.Address)
 	w.uuid = v.UUID()
 	w.startTime = time.Now().Unix()
 	w.LoadLinks()
+	w.LoadRoutes()
 }
 
 func (w *NetworkWorker) Stop() {
 	libol.Info("NetworkWorker.Close: %s", w.cfg.Name)
-	for _, p := range w.links {
-		p.Stop()
-	}
+	w.UnLoadRoutes()
+	w.UnLoadLinks()
 	w.startTime = 0
+	_ = w.bridge.Close()
 }
 
 func (w *NetworkWorker) UpTime() int64 {

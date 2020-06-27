@@ -60,7 +60,6 @@ type Switch struct {
 	hooks    []Hook
 	http     *Http
 	server   libol.SocketServer
-	bridge   map[string]network.Bridger
 	worker   map[string]*NetworkWorker
 	uuid     string
 	newTime  int64
@@ -74,7 +73,6 @@ func NewSwitch(c config.Switch) *Switch {
 			rules: make([]libol.FilterRule, 0, 32),
 		},
 		worker:  make(map[string]*NetworkWorker, 32),
-		bridge:  make(map[string]network.Bridger, 32),
 		server:  server,
 		newTime: time.Now().Unix(),
 	}
@@ -143,7 +141,6 @@ func (v *Switch) Initialize() {
 			}
 		}
 		v.worker[name] = NewNetworkWorker(*nCfg, crypt)
-		v.bridge[name] = network.NewBridger(brCfg.Provider, brCfg.Name, brCfg.IfMtu)
 	}
 
 	v.hooks = make([]Hook, 0, 64)
@@ -279,12 +276,6 @@ func (v *Switch) Start() {
 	defer v.lock.Unlock()
 
 	libol.Debug("Switch.Start")
-	for _, nCfg := range v.cfg.Network {
-		if br, ok := v.bridge[nCfg.Name]; ok {
-			brCfg := nCfg.Bridge
-			br.Open(brCfg.Address)
-		}
-	}
 	libol.Go(v.server.Accept)
 	call := libol.ServerListener{
 		OnClient: v.OnClient,
@@ -306,9 +297,6 @@ func (v *Switch) Stop() {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
-	if v.bridge == nil {
-		return
-	}
 	libol.Debug("Switch.Stop")
 	for p := range storage.Point.List() {
 		if p == nil {
@@ -324,13 +312,6 @@ func (v *Switch) Stop() {
 	}
 	for _, w := range v.worker {
 		w.Stop()
-	}
-	for _, nCfg := range v.cfg.Network {
-		if br, ok := v.bridge[nCfg.Name]; ok {
-			brCfg := nCfg.Bridge
-			_ = br.Close()
-			delete(v.bridge, brCfg.Name)
-		}
 	}
 	v.server.Close()
 }
@@ -353,10 +334,11 @@ func (v *Switch) NewTap(tenant string) (network.Taper, error) {
 	libol.Debug("Switch.NewTap")
 
 	// TODO support free list for device.
-	br, ok := v.bridge[tenant]
+	w, ok := v.worker[tenant]
 	if !ok {
 		return nil, libol.NewErr("Not found bridge %s", tenant)
 	}
+	br := w.bridge
 	dev, err := network.NewTaper(br.Type(), tenant, network.TapConfig{Type: network.TAP})
 	if err != nil {
 		libol.Error("Switch.NewTap: %s", err)
@@ -375,10 +357,11 @@ func (v *Switch) FreeTap(dev network.Taper) error {
 	defer v.lock.Unlock()
 	libol.Debug("Switch.FreeTap %s", dev.Name())
 
-	br, ok := v.bridge[dev.Tenant()]
+	w, ok := v.worker[dev.Tenant()]
 	if !ok {
 		return libol.NewErr("Not found bridge %s", dev.Tenant())
 	}
+	br := w.bridge
 	_ = br.DelSlave(dev)
 	libol.Info("Switch.FreeTap: %s", dev.Name())
 	return nil
