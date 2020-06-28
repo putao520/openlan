@@ -10,6 +10,7 @@ import (
 	"github.com/danieldin95/openlan-go/switch/storage"
 	"github.com/vishvananda/netlink"
 	"net"
+	"strings"
 	"sync"
 	"time"
 )
@@ -94,11 +95,15 @@ func (w *NetworkWorker) UnLoadLinks() {
 func (w *NetworkWorker) LoadRoutes() {
 	// install routes
 	libol.Debug("NetworkWorker.LoadRoute: %s %v", w, w.cfg.Routes)
+	ifAddr := strings.SplitN(w.cfg.Bridge.Address, "/", 2)[0]
 	link, err := netlink.LinkByName(w.bridge.Name())
-	if w.cfg.Bridge.Address == "" || err != nil {
+	if ifAddr == "" || err != nil {
 		return
 	}
 	for _, rt := range w.cfg.Routes {
+		if ifAddr == rt.NextHop { // route's next-hop is local not install again.
+			continue
+		}
 		_, dst, err := net.ParseCIDR(rt.Prefix)
 		if err != nil {
 			continue

@@ -52,8 +52,7 @@ func (n *Network) Right() {
 	if n.Bridge.IfMtu == 0 {
 		n.Bridge.IfMtu = 1518
 	}
-	source := n.Bridge.Address
-	ifAddr := strings.SplitN(source, "/", 2)[0]
+	ifAddr := strings.SplitN(n.Bridge.Address, "/", 2)[0]
 	for i := range n.Routes {
 		if n.Routes[i].Metric == 0 {
 			n.Routes[i].Metric = 666
