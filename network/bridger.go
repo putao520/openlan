@@ -11,4 +11,6 @@ type Bridger interface {
 	Input(m *Framer) error
 	SetTimeout(value int)
 	Mtu() int
+	Stp(enable bool) error
+	Delay(value int) error
 }

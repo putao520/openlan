@@ -152,6 +152,16 @@ func (w *NetworkWorker) Start(v api.Switcher) {
 	libol.Info("NetworkWorker.Start: %s", w)
 	brCfg := w.cfg.Bridge
 	w.bridge.Open(brCfg.Address)
+	if brCfg.Stp == "on" {
+		if err := w.bridge.Stp(true); err != nil {
+			libol.Warn("NetworkWorker.Start: Stp %s", err)
+		}
+	} else {
+		_ = w.bridge.Stp(false)
+	}
+	if err := w.bridge.Delay(brCfg.Delay); err != nil {
+		libol.Warn("NetworkWorker.Start: Delay %s", err)
+	}
 	w.uuid = v.UUID()
 	w.startTime = time.Now().Unix()
 	w.LoadLinks()

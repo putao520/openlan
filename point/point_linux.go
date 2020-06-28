@@ -101,13 +101,6 @@ func (p *Point) UpBr(name string) *netlink.Bridge {
 	if err := netlink.LinkSetUp(link); err != nil {
 		libol.Error("Point.UpBr.LinkUp: %s", err)
 	}
-	brCtl := libol.NewBrCtl(name)
-	if err := brCtl.Stp(true); err != nil {
-		libol.Error("Point.UpBr.Stp: %s", err)
-	}
-	if err := brCtl.Delay(2); err != nil {
-		libol.Error("Point.UpBr.Delay: %s", err)
-	}
 	return br
 }
 

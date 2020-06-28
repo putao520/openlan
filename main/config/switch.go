@@ -13,6 +13,8 @@ type Bridge struct {
 	IfMtu    int    `json:"mtu"`
 	Address  string `json:"address,omitempty" yaml:"address,omitempty"`
 	Provider string `json:"provider"`
+	Stp      string `json:"stp"`
+	Delay    int    `json:"delay"`
 }
 
 type IpSubnet struct {
@@ -51,6 +53,12 @@ func (n *Network) Right() {
 	}
 	if n.Bridge.IfMtu == 0 {
 		n.Bridge.IfMtu = 1518
+	}
+	if n.Bridge.Delay == 0 {
+		n.Bridge.Delay = 2
+	}
+	if n.Bridge.Stp == "" {
+		n.Bridge.Stp = "on"
 	}
 	ifAddr := strings.SplitN(n.Bridge.Address, "/", 2)[0]
 	for i := range n.Routes {

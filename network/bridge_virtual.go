@@ -49,13 +49,13 @@ func (b *VirtualBridge) Open(addr string) {
 		} else {
 			out, err := libol.IpLinkUp(tap.Name())
 			if err != nil {
-				libol.Error("VirtualBridge.Open.IpAddr %s:%s", err, out)
+				libol.Error("VirtualBridge.Open: IpAddr %s:%s", err, out)
 			}
 			b.address = addr
 			b.device = tap
 			out, err = libol.IpAddrAdd(b.device.Name(), b.address)
 			if err != nil {
-				libol.Error("VirtualBridge.Open.IpAddr %s:%s", err, out)
+				libol.Error("VirtualBridge.Open: IpAddr %s:%s", err, out)
 			}
 			libol.Info("VirtualBridge.Open %s", tap.Name())
 		}
@@ -69,7 +69,7 @@ func (b *VirtualBridge) Close() error {
 	if b.device != nil {
 		out, err := libol.IpAddrDel(b.device.Name(), b.address)
 		if err != nil {
-			libol.Error("VirtualBridge.Close.IpAddr %s:%s", err, out)
+			libol.Error("VirtualBridge.Close: IpAddr %s:%s", err, out)
 		}
 	}
 	b.ticker.Stop()
@@ -158,7 +158,7 @@ func (b *VirtualBridge) Start() {
 			case <-b.done:
 				return
 			case t := <-b.ticker.C:
-				libol.Debug("VirtualBridge.Expire Tick at %s", t)
+				libol.Debug("VirtualBridge.Start: Tick at %s", t)
 				_ = b.Expire()
 			}
 		}
@@ -274,4 +274,12 @@ func (b *VirtualBridge) Unicast(m *Framer) bool {
 
 func (b *VirtualBridge) Mtu() int {
 	return b.ifMtu
+}
+
+func (b *VirtualBridge) Stp(enable bool) error {
+	return libol.NewErr("operation not support")
+}
+
+func (b *VirtualBridge) Delay(value int) error {
+	return libol.NewErr("operation not support")
 }
