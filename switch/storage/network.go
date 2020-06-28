@@ -68,13 +68,6 @@ func (w *network) ListLease() <-chan *schema.Lease {
 	return c
 }
 
-func (w *network) AddUsedAddr(uuid, ipStr string) {
-	if ipStr != "" {
-		_ = w.AddrUUID.Set(ipStr, uuid)
-		_ = w.UUIDAddr.Set(uuid, ipStr)
-	}
-}
-
 func (w *network) GetFreeAddr(uuid string, n *models.Network) (ip string, mask string) {
 	if n == nil || uuid == "" {
 		return "", ""
@@ -105,7 +98,14 @@ func (w *network) GetFreeAddr(uuid string, n *models.Network) (ip string, mask s
 	return ipStr, netmask
 }
 
-func (w *network) FreeAddr(uuid string) {
+func (w *network) AddUsedAddr(uuid, ipStr string) {
+	if ipStr != "" {
+		_ = w.AddrUUID.Set(ipStr, uuid)
+		_ = w.UUIDAddr.Set(uuid, ipStr)
+	}
+}
+
+func (w *network) DelUsedAddr(uuid string) {
 	// TODO record free address for alias and wait timeout to release.
 	if addr, ok := w.UUIDAddr.GetEx(uuid); ok {
 		w.UUIDAddr.Del(uuid)

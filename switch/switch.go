@@ -263,7 +263,7 @@ func (v *Switch) OnClose(client libol.SocketClient) error {
 	// already not need support free list for device.
 	uuid := storage.Point.GetUUID(client.Addr())
 	if storage.Point.GetAddr(uuid) == client.Addr() { // not has newer
-		storage.Network.FreeAddr(uuid)
+		storage.Network.DelUsedAddr(uuid)
 	}
 	storage.Point.Del(client.Addr())
 
