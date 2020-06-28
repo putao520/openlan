@@ -1,0 +1,30 @@
+{
+  "name": "example",
+  "bridge": {
+    "address": "172.32.100.40/24"
+  },
+  "subnet": {
+    "start": "172.32.100.250",
+    "end": "172.32.100.254",
+    "netmask": "255.255.255.0"
+  },
+  "routes": [
+    {
+      "prefix": "172.32.10.0/24"
+    }
+  ],
+  "password": [
+    {
+      "username": "hi",
+      "password": "12345"
+    }
+  ],
+  "links": [
+    {
+      "protocol": "tls",
+      "connection": "hi.openlan.net",
+      "username": "hi",
+      "password": "12345"
+    }
+  ]
+}

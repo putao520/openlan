@@ -1,5 +1,5 @@
 Name: openlan-switch
-Version: 5.2.14
+Version: 5.2.15
 Release: 1%{?dist}
 Summary: OpenLan's Project Software
 Group: Applications/Communications
@@ -24,6 +24,8 @@ cp %_source_dir/build/openlan-switch %{buildroot}/usr/bin
 mkdir -p %{buildroot}/etc/openlan/switch
 cp %_source_dir/packaging/resource/ctrl.json.example %{buildroot}/etc/openlan/switch
 cp %_source_dir/packaging/resource/switch.json.example %{buildroot}/etc/openlan/switch
+mkdir -p %{buildroot}/etc/openlan/switch/network
+cp %_source_dir/packaging/resource/network.json.example %{buildroot}/etc/openlan/switch/network
 mkdir -p %{buildroot}/etc/sysconfig/openlan
 cp %_source_dir/packaging/resource/switch.cfg %{buildroot}/etc/sysconfig/openlan
 

@@ -1,35 +1,60 @@
 #!/bin/bash
 
-PHY=em1
-BR="br-${PHY}"
-ADDR=192.168.40.100
-NETMASK=255.255.255.0
-GATEWAY=192.168.40.1
-DNS1=192.168.40.1
+## Check enviroment
+if [ -z "$PHY" ]; then
+  echo "Enviroment variable(PHY) is NULL"
+  exit
+fi
+if [ -z "$ADDR" ]; then
+  echo "Enviroment variable(ADDR) is NULL"
+  exit
+fi
+if [ -z "$PREFIX" ]; then
+  echo "Enviroment variable(PREFIX) is NULL"
+  exit
+fi
 
-## Bridge Interface
+## Set variable
+phy="$PHY"
+addr="$ADDR"
+prefix="$PREFIX"
+br=br-"$PHY"
+gw="$GATEWAY"
+dns1="$DNS1"
 
-cat > /etc/sysconfig/network-scripts/ifcfg-${BR} << EOF
-TYPE="Bridge"
-DEVICE="${BR}"
-BOOTPROTO="none"
-IPADDR="${ADDR}"
-NETMASK="${NETMASK}"
-GATEWAY="${GATEWAY}"
-DNS1="${DNS1}"
-ONBOOT="yes"
-NM_CONTROLLED="no"
-EOF
+## Configure script
+brCfg=/etc/sysconfig/network-scripts/ifcfg-"$br"
+phyCfg=/etc/sysconfig/network-scripts/ifcfg-"$phy"
 
-## Physical Interface
+## Generate bridge configure
+echo "## Generate by OpenLAN script" > $brCfg
+echo "STP=yes" >> $brCfg
+echo "DELAY=2" >> $brCfg
+echo "TYPE=Bridge" >> $brCfg
+echo "DEVICE=$br" >> $brCfg
+echo "BOOTPROTO=none" >> $brCfg
+if [ -n "$addr" ]; then
+  echo "IPADDR=$addr" >> $brCfg
+fi
+if [ -n "$prefix" ]; then
+  echo "PREFIX=$prefix" >> $brCfg
+fi
+if [ -n "$gateway" ]; then
+  echo "GATEWAY=$gw" >> $brCfg
+fi
+if [ -n "$dns1" ]; then
+  echo "DNS1=$dns1" >> $brCfg
+fi
+echo "ONBOOT=yes" >> $brCfg
+echo "NM_CONTROLLED=no" >> $brCfg
 
-cat > /etc/sysconfig/network-scripts/ifcfg-${PHY} << EOF
-TYPE="Ethernet"
-DEVICE="${PHY}"
-BOOTPROTO="none"
-ONBOOT="yes"
-NM_CONTROLLED="no"
-BRIDGE="${BR}"
-EOF
+## Generate physical configure
+echo "## Generate by OpenLAN script" > $phyCfg
+echo "TYPE=Ethernet" >> $phyCfg
+echo "DEVICE=$phy" >> $phyCfg
+echo "BOOTPROTO=none" >> $phyCfg
+echo "ONBOOT=yes" >> $phyCfg
+echo "NM_CONTROLLED=no" >> $phyCfg
+echo "BRIDGE=$br" >> $phyCfg
+ifdown "$br"; ifdown "$phy"; ifup "$br"; ifup "$phy";
 
-ifdown ${BR}; ifdown ${PHY}; ifup ${BR}; ifup ${PHY};

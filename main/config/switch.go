@@ -56,7 +56,7 @@ func (n *Network) Right() {
 	ifAddr := strings.SplitN(source, "/", 2)[0]
 	for i := range n.Routes {
 		if n.Routes[i].Metric == 0 {
-			n.Routes[i].Metric = 250
+			n.Routes[i].Metric = 666
 		}
 		if n.Routes[i].NextHop == "" {
 			n.Routes[i].NextHop = ifAddr
