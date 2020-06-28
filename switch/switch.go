@@ -125,14 +125,10 @@ func (v *Switch) Initialize() {
 		name := nCfg.Name
 		brCfg := nCfg.Bridge
 
-		if brCfg.Address != "" {
-			source := brCfg.Address
-			ifAddr := strings.SplitN(source, "/", 2)[0]
-			for i, rt := range nCfg.Routes {
-				if rt.NextHop == "" {
-					nCfg.Routes[i].NextHop = ifAddr
-				}
-				rt = nCfg.Routes[i]
+		source := brCfg.Address
+		ifAddr := strings.SplitN(source, "/", 2)[0]
+		if ifAddr != "" {
+			for _, rt := range nCfg.Routes {
 				if rt.NextHop != ifAddr {
 					continue
 				}

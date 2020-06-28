@@ -103,8 +103,12 @@ func (w *NetworkWorker) LoadRoutes() {
 		if err != nil {
 			continue
 		}
-		nxt := net.ParseIP(rt.NextHop)
-		rte := netlink.Route{LinkIndex: link.Attrs().Index, Dst: dst, Gw: nxt, Priority: 100}
+		next := net.ParseIP(rt.NextHop)
+		rte := netlink.Route{
+			LinkIndex: link.Attrs().Index,
+			Dst:       dst, Gw: next,
+			Priority: rt.Metric,
+		}
 		libol.Debug("NetworkWorker.LoadRoute: %s %s", w, rte)
 		if err := netlink.RouteAdd(&rte); err != nil {
 			libol.Warn("NetworkWorker.LoadRoute: %s %s", w, err)
@@ -124,8 +128,12 @@ func (w *NetworkWorker) UnLoadRoutes() {
 		if err != nil {
 			continue
 		}
-		nxt := net.ParseIP(rt.NextHop)
-		rte := netlink.Route{LinkIndex: link.Attrs().Index, Dst: dst, Gw: nxt}
+		next := net.ParseIP(rt.NextHop)
+		rte := netlink.Route{
+			LinkIndex: link.Attrs().Index,
+			Dst:       dst,
+			Gw:        next,
+		}
 		libol.Debug("NetworkWorker.UnLoadRoute: %s %s", w, rte)
 		if err := netlink.RouteDel(&rte); err != nil {
 			libol.Warn("NetworkWorker.UnLoadRoute: %s %s", w, err)

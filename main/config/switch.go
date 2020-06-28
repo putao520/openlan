@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/danieldin95/openlan-go/libol"
 	"path/filepath"
+	"strings"
 )
 
 type Bridge struct {
@@ -23,6 +24,7 @@ type IpSubnet struct {
 type PrefixRoute struct {
 	Prefix  string `json:"prefix"`
 	NextHop string `json:"nexthop"`
+	Metric  int    `json:"metric"`
 }
 
 type Password struct {
@@ -49,6 +51,16 @@ func (n *Network) Right() {
 	}
 	if n.Bridge.IfMtu == 0 {
 		n.Bridge.IfMtu = 1518
+	}
+	source := n.Bridge.Address
+	ifAddr := strings.SplitN(source, "/", 2)[0]
+	for i := range n.Routes {
+		if n.Routes[i].Metric == 0 {
+			n.Routes[i].Metric = 250
+		}
+		if n.Routes[i].NextHop == "" {
+			n.Routes[i].NextHop = ifAddr
+		}
 	}
 }
 

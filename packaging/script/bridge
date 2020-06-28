@@ -10,26 +10,26 @@ DNS1=192.168.40.1
 ## Bridge Interface
 
 cat > /etc/sysconfig/network-scripts/ifcfg-${BR} << EOF
-DEVICE=${BR}
-BOOTPROTO=static
-IPADDR=${ADDR}
-NETMASK=${NETMASK}
-GATEWAY=${GATEWAY}
-DNS1=${DNS1}
-ONBOOT=yes
-TYPE=Bridge
-NM_CONTROLLED=no
+TYPE="Bridge"
+DEVICE="${BR}"
+BOOTPROTO="none"
+IPADDR="${ADDR}"
+NETMASK="${NETMASK}"
+GATEWAY="${GATEWAY}"
+DNS1="${DNS1}"
+ONBOOT="yes"
+NM_CONTROLLED="no"
 EOF
 
 ## Physical Interface
 
 cat > /etc/sysconfig/network-scripts/ifcfg-${PHY} << EOF
-DEVICE=${PHY}
-TYPE=Ethernet
-BOOTPROTO=none
-ONBOOT=yes
-NM_CONTROLLED=no
-BRIDGE=${BR}
+TYPE="Ethernet"
+DEVICE="${PHY}"
+BOOTPROTO="none"
+ONBOOT="yes"
+NM_CONTROLLED="no"
+BRIDGE="${BR}"
 EOF
 
-ifdown ${BR}; ifdown ${PHY}; ifup ${BR}; ifup ${PHY}; 
+ifdown ${BR}; ifdown ${PHY}; ifup ${BR}; ifup ${PHY};
