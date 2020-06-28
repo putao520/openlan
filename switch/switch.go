@@ -260,7 +260,7 @@ func (v *Switch) ReadClient(client libol.SocketClient, frame *libol.FrameMessage
 func (v *Switch) OnClose(client libol.SocketClient) error {
 	libol.Info("Switch.OnClose: %s", client.Addr())
 
-	// TODO support free list for device.
+	// already not need support free list for device.
 	uuid := storage.Point.GetUUID(client.Addr())
 	if storage.Point.GetAddr(uuid) == client.Addr() { // not has newer
 		storage.Network.FreeAddr(uuid)
@@ -275,6 +275,11 @@ func (v *Switch) Start() {
 	defer v.lock.Unlock()
 
 	libol.Debug("Switch.Start")
+	// firstly, start network.
+	for _, w := range v.worker {
+		w.Start(v)
+	}
+	// start server for accessing
 	libol.Go(v.server.Accept)
 	call := libol.ServerListener{
 		OnClient: v.OnClient,
@@ -282,9 +287,6 @@ func (v *Switch) Start() {
 		ReadAt:   v.ReadClient,
 	}
 	libol.Go(func() { v.server.Loop(call) })
-	for _, w := range v.worker {
-		w.Start(v)
-	}
 	if v.http != nil {
 		libol.Go(v.http.Start)
 	}
@@ -297,6 +299,8 @@ func (v *Switch) Stop() {
 	defer v.lock.Unlock()
 
 	libol.Debug("Switch.Stop")
+	ctrls.Ctrl.Stop()
+	// firstly, notify leave to point.
 	for p := range storage.Point.List() {
 		if p == nil {
 			break
@@ -304,15 +308,15 @@ func (v *Switch) Stop() {
 		v.leftClient(p.Client)
 	}
 	v.firewall.Stop()
-	ctrls.Ctrl.Stop()
 	if v.http != nil {
 		v.http.Shutdown()
 		v.http = nil
 	}
+	v.server.Close()
+	// stop network.
 	for _, w := range v.worker {
 		w.Stop()
 	}
-	v.server.Close()
 }
 
 func (v *Switch) Alias() string {
@@ -332,7 +336,8 @@ func (v *Switch) NewTap(tenant string) (network.Taper, error) {
 	defer v.lock.Unlock()
 	libol.Debug("Switch.NewTap")
 
-	// TODO support free list for device.
+	// already not need support free list for device.
+	// dropped firstly packages during 15s because of forwarding delay.
 	w, ok := v.worker[tenant]
 	if !ok {
 		return nil, libol.NewErr("Not found bridge %s", tenant)
@@ -374,11 +379,11 @@ func (v *Switch) UUID() string {
 }
 
 func (v *Switch) AddLink(tenant string, c *config.Point) {
-	//TODO
+	//TODO dynamic configure
 }
 
 func (v *Switch) DelLink(tenant, addr string) {
-	//TODO
+	//TODO dynamic configure
 }
 
 func (v *Switch) ReadTap(device network.Taper, readAt func(f *libol.FrameMessage) error) {

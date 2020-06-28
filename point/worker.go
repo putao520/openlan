@@ -89,7 +89,7 @@ type SocketWorker struct {
 	pointCfg   *config.Point
 	eventQueue chan socketEvent
 	writeQueue chan *libol.FrameMessage
-	jober      []jobTimer
+	jobber     []jobTimer
 	record     recordTime
 }
 
@@ -112,7 +112,7 @@ func NewSocketWorker(client libol.SocketClient, c *config.Point) (t *SocketWorke
 		pointCfg:   c,
 		eventQueue: make(chan socketEvent, 32),
 		writeQueue: make(chan *libol.FrameMessage, 1024),
-		jober:      make([]jobTimer, 0, 32),
+		jobber:     make([]jobTimer, 0, 32),
 	}
 	t.user.Alias = c.Alias
 	t.user.Network = c.Network
@@ -227,14 +227,14 @@ func (t *SocketWorker) reconnect() {
 		return
 	}
 	t.record.reconnect = time.Now().Unix()
-	t.jober = append(t.jober, jobTimer{
+	t.jobber = append(t.jobber, jobTimer{
 		Time: time.Now().Unix() + t.sleepIdle(),
 		Call: func() error {
-			libol.Debug("SocketWorker.reconnect: on jober")
+			libol.Debug("SocketWorker.reconnect: on jobber")
 			if t.record.connected < t.record.reconnect { // already connected after.
 				return t.connect()
 			} else {
-				libol.Info("SocketWorker.reconnect: dissed by waked up")
+				libol.Cmd("SocketWorker.reconnect: dissed by already")
 			}
 			return nil
 		},
@@ -375,18 +375,18 @@ func (t *SocketWorker) doTicker() error {
 		}
 	}
 
-	// travel jober and execute expired.
+	// travel jobber and execute expired.
 	now := time.Now().Unix()
 	newTimer := make([]jobTimer, 0, 32)
-	for _, t := range t.jober {
+	for _, t := range t.jobber {
 		if now >= t.Time {
 			_ = t.Call()
 		} else {
 			newTimer = append(newTimer, t)
 		}
 	}
-	t.jober = newTimer
-	libol.Debug("SocketWorker.doTicker %d", len(t.jober))
+	t.jobber = newTimer
+	libol.Debug("SocketWorker.doTicker %d", len(t.jobber))
 	return nil
 }
 

@@ -83,7 +83,7 @@ func (w *network) GetFreeAddr(uuid string, n *models.Network) (ip string, mask s
 	ipStr := ""
 	netmask := n.Netmask
 	if addr, ok := w.UUIDAddr.GetEx(uuid); ok {
-		return addr, netmask
+		return addr, netmask // how to resolve conflict with new point?.
 	}
 	sIp := net.ParseIP(n.IpStart)
 	eIp := net.ParseIP(n.IpEnd)
@@ -101,14 +101,12 @@ func (w *network) GetFreeAddr(uuid string, n *models.Network) (ip string, mask s
 			break
 		}
 	}
-	if ipStr != "" {
-		_ = w.AddrUUID.Set(ipStr, uuid)
-		_ = w.UUIDAddr.Set(uuid, ipStr)
-	}
+	w.AddUsedAddr(ipStr, uuid)
 	return ipStr, netmask
 }
 
 func (w *network) FreeAddr(uuid string) {
+	// TODO record free address for alias and wait timeout to release.
 	if addr, ok := w.UUIDAddr.GetEx(uuid); ok {
 		w.UUIDAddr.Del(uuid)
 		w.AddrUUID.Del(addr)
