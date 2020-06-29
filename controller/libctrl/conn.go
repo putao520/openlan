@@ -134,11 +134,16 @@ func (cn *CtrlConn) queue() {
 	for {
 		select {
 		case m := <-cn.SendQ:
+			// to keep conn is consistent, require read lock
+			cn.Lock.RLock()
 			if err := cn.write(m); err != nil {
+				cn.Lock.RUnlock()
 				libol.Error("CtrlConn.queue: write %s", err)
 				return
 			}
+			cn.Lock.RUnlock()
 		case m := <-cn.RecvQ:
+			// to avoid require lock from caller, no read lock.
 			if err := cn.dispatch(m); err != nil {
 				libol.Error("CtrlConn.queue: %s", err)
 			}
@@ -170,9 +175,6 @@ func (cn *CtrlConn) loop() {
 }
 
 func (cn *CtrlConn) write(m Message) error {
-	cn.Lock.Lock()
-	defer cn.Lock.Unlock()
-
 	if cn.Conn == nil {
 		return libol.NewErr("conn is null")
 	}
@@ -195,6 +197,7 @@ func (cn *CtrlConn) read() {
 	libol.Stack("CtrlConn.read %s", cn)
 	for {
 		m := Message{}
+		// read message from socket, no require lock.
 		if cn.Conn != nil {
 			if cn.Timeout != 0 {
 				dt := time.Now().Add(cn.Timeout)
@@ -235,7 +238,6 @@ func (cn *CtrlConn) Stop() {
 func (cn *CtrlConn) Send(m Message) {
 	cn.Lock.RLock()
 	defer cn.Lock.RUnlock()
-
 	if cn.SendQ == nil {
 		return
 	}
@@ -250,26 +252,21 @@ func (cn *CtrlConn) Send(m Message) {
 func (cn *CtrlConn) SendWait(m Message) error {
 	cn.Lock.RLock()
 	defer cn.Lock.RUnlock()
-	if err := Codec.Send(cn.Conn, &m); err != nil {
-		return err
-	}
-	return nil
+	return cn.write(m)
 }
 
-func (cn *CtrlConn) string() string {
+func (cn *CtrlConn) String() string {
+	cn.Lock.RLock()
+	defer cn.Lock.RUnlock()
 	if cn.Conn != nil {
 		return cn.Conn.LocalAddr().String()
 	}
 	return ""
 }
 
-func (cn *CtrlConn) String() string {
+func (cn *CtrlConn) Host() string {
 	cn.Lock.RLock()
 	defer cn.Lock.RUnlock()
-	return cn.string()
-}
-
-func (cn *CtrlConn) Host() string {
 	if cn.Conn == nil {
 		return ""
 	}
@@ -280,6 +277,8 @@ func (cn *CtrlConn) Host() string {
 }
 
 func (cn *CtrlConn) Address() string {
+	cn.Lock.RLock()
+	defer cn.Lock.RUnlock()
 	if cn.Conn == nil {
 		return ""
 	}
