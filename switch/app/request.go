@@ -14,11 +14,10 @@ type WithRequest struct {
 	master Master
 }
 
-func NewWithRequest(m Master, c config.Switch) (r *WithRequest) {
-	r = &WithRequest{
+func NewWithRequest(m Master, c config.Switch) *WithRequest {
+	return &WithRequest{
 		master: m,
 	}
-	return
 }
 
 func (r *WithRequest) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) error {

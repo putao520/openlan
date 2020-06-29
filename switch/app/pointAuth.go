@@ -15,11 +15,10 @@ type PointAuth struct {
 	master  Master
 }
 
-func NewPointAuth(m Master, c config.Switch) (p *PointAuth) {
-	p = &PointAuth{
+func NewPointAuth(m Master, c config.Switch) *PointAuth {
+	return &PointAuth{
 		master: m,
 	}
-	return
 }
 
 func (p *PointAuth) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) error {

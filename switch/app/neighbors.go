@@ -5,24 +5,19 @@ import (
 	"github.com/danieldin95/openlan-go/models"
 	"github.com/danieldin95/openlan-go/switch/storage"
 	"net"
-	"sync"
 	"time"
 
 	"github.com/danieldin95/openlan-go/libol"
 )
 
 type Neighbors struct {
-	lock      sync.RWMutex
-	neighbors map[string]*models.Neighbor
-	master    Master
+	master Master
 }
 
-func NewNeighbors(m Master, c config.Switch) (e *Neighbors) {
-	e = &Neighbors{
-		neighbors: make(map[string]*models.Neighbor, 1024*10),
-		master:    m,
+func NewNeighbors(m Master, c config.Switch) *Neighbors {
+	return &Neighbors{
+		master: m,
 	}
-	return
 }
 
 func (e *Neighbors) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) error {
@@ -43,8 +38,7 @@ func (e *Neighbors) OnFrame(client libol.SocketClient, frame *libol.FrameMessage
 	}
 	arp := proto.Arp
 	if arp.IsIP4() {
-		if arp.OpCode == libol.ArpRequest ||
-			arp.OpCode == libol.ArpReply {
+		if arp.OpCode == libol.ArpRequest || arp.OpCode == libol.ArpReply {
 			n := models.NewNeighbor(arp.SHwAddr, arp.SIpAddr, client)
 			e.AddNeighbor(n)
 		}
@@ -53,30 +47,20 @@ func (e *Neighbors) OnFrame(client libol.SocketClient, frame *libol.FrameMessage
 }
 
 func (e *Neighbors) AddNeighbor(neb *models.Neighbor) {
-	e.lock.Lock()
-	defer e.lock.Unlock()
-
-	if n, ok := e.neighbors[neb.IpAddr.String()]; ok {
+	if n := storage.Neighbor.Get(neb.IpAddr.String()); n != nil {
 		libol.Log("Neighbors.AddNeighbor: update %s.", neb)
-		n.IpAddr = neb.IpAddr
 		n.Client = neb.Client
 		n.HitTime = time.Now().Unix()
-		storage.Neighbor.Update(neb)
 	} else {
 		libol.Log("Neighbors.AddNeighbor: new %s.", neb)
-		e.neighbors[neb.IpAddr.String()] = neb
 		storage.Neighbor.Add(neb)
 	}
 }
 
 func (e *Neighbors) DelNeighbor(ipAddr net.IP) {
-	e.lock.RLock()
-	defer e.lock.RUnlock()
-
 	libol.Info("Neighbors.DelNeighbor %s.", ipAddr)
-	if n := e.neighbors[ipAddr.String()]; n != nil {
+	if n := storage.Neighbor.Get(ipAddr.String()); n != nil {
 		storage.Neighbor.Del(ipAddr.String())
-		delete(e.neighbors, ipAddr.String())
 	}
 }
 

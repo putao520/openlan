@@ -11,22 +11,21 @@ import (
 )
 
 type Online struct {
-	max      int
 	lock     sync.RWMutex
+	max      int
 	lines    map[string]*models.Line
 	lineList *list.List
 	master   Master
 }
 
-func NewOnline(m Master, c config.Switch) (o *Online) {
+func NewOnline(m Master, c config.Switch) *Online {
 	max := 64
-	o = &Online{
+	return &Online{
 		max:      max,
 		lines:    make(map[string]*models.Line, max),
 		lineList: list.New(),
 		master:   m,
 	}
-	return
 }
 
 func (o *Online) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) error {
