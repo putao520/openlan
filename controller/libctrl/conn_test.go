@@ -30,7 +30,7 @@ func TestCtl_Conn_Open_Ctrl(t *testing.T) {
 		t.Error(err)
 	}
 	fmt.Println(m)
-	conn := Conn{
+	conn := CtrlConn{
 		Conn: to,
 	}
 	conn.Open()

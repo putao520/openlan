@@ -6,7 +6,7 @@ import (
 )
 
 type CtrlC struct {
-	Conn *libctrl.Conn
+	Conn *libctrl.CtrlConn
 }
 
 func (cc *CtrlC) register() {
@@ -16,7 +16,7 @@ func (cc *CtrlC) register() {
 	cc.Conn.Listener("neighbor", &Neighbor{cc: cc})
 	cc.Conn.Listener("switch", &Switch{cc: cc})
 
-	cc.Conn.Oner.Close = func(con *libctrl.Conn) {
+	cc.Conn.Caller.Close = func(con *libctrl.CtrlConn) {
 		// Clear points.
 		ds := make([]string, 0, 32)
 		Storager.Point.Iter(func(k string, v interface{}) {
@@ -32,7 +32,7 @@ func (cc *CtrlC) register() {
 		// Remove switch.
 		Storager.Switch.Del(cc.Conn.Id)
 	}
-	cc.Conn.Oner.Open = func(con *libctrl.Conn) {
+	cc.Conn.Caller.Open = func(con *libctrl.CtrlConn) {
 		// Get all include point, link and etc.
 		con.Send(libctrl.Message{Resource: "switch"})
 		con.Send(libctrl.Message{Resource: "point"})
@@ -40,7 +40,7 @@ func (cc *CtrlC) register() {
 		con.Send(libctrl.Message{Resource: "neighbor"})
 		con.Send(libctrl.Message{Resource: "online"})
 	}
-	cc.Conn.Oner.Ticker = func(con *libctrl.Conn) {
+	cc.Conn.Caller.Ticker = func(con *libctrl.CtrlConn) {
 		con.Send(libctrl.Message{Resource: "switch"})
 		con.Send(libctrl.Message{Resource: "point"})
 		con.Send(libctrl.Message{Resource: "link"})

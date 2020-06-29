@@ -9,61 +9,69 @@ import (
 	"time"
 )
 
-type ConnOner struct {
-	Close  func(con *Conn)
-	Open   func(con *Conn)
-	CmdCtl func(con *Conn, m Message)
-	Ticker func(con *Conn)
+// Callback process from connection
+type ConnCaller struct {
+	Close  func(con *CtrlConn)
+	Open   func(con *CtrlConn)
+	CmdCtl func(con *CtrlConn, m Message)
+	Ticker func(con *CtrlConn)
 }
 
-type Conn struct {
-	Lock   sync.RWMutex
-	Conn   *websocket.Conn
-	Wait   *libstar.WaitOne
-	Ticker *time.Ticker
-	Done   chan bool
-	SendQ  chan Message
-	RecvQ  chan Message
-	Listen *libol.SafeStrMap
-	Id     string
-	Oner   ConnOner
+type ConnStats struct {
+	Get  int64 `json:"get"`
+	Add  int64 `json:"add"`
+	Del  int64 `json:"del"`
+	Mod  int64 `json:"mod"`
+	Send int64 `json:"send"`
+	Recv int64 `json:"recv"`
 }
 
-func (cn *Conn) Listener(name string, call Listener) {
+type CtrlConn struct {
+	Lock    sync.RWMutex      `json:"-"`
+	Conn    *websocket.Conn   `json:"-"`
+	Wait    *libstar.WaitOne  `json:"-"`
+	Ticker  *time.Ticker      `json:"-"`
+	Done    chan bool         `json:"-"`
+	SendC   int               `json:"sendc"`
+	SendQ   chan Message      `json:"-"`
+	RecvQ   chan Message      `json:"-"`
+	Listen  *libol.SafeStrMap `json:"-"`
+	Id      string            `json:"id"`
+	Caller  ConnCaller        `json:"-"`
+	Timeout time.Duration     `json:"timeout"`
+	Sts     ConnStats         `json:"statistics"`
+}
+
+func (cn *CtrlConn) Listener(name string, call Listener) {
 	if cn.Listen == nil {
 		cn.Listen = libol.NewSafeStrMap(32)
 	}
 	_ = cn.Listen.Set(strings.ToUpper(name), call)
 }
 
-func (cn *Conn) Open() {
-	libol.Stack("Conn.Open %s", cn)
+func (cn *CtrlConn) Open() {
+	libol.Stack("CtrlConn.Open %s", cn)
 	cn.Lock.Lock()
 	if cn.Ticker == nil {
 		cn.Ticker = time.NewTicker(5 * time.Second)
 	}
-	if cn.SendQ == nil {
-		cn.SendQ = make(chan Message, 1024)
-	}
-	if cn.RecvQ == nil {
-		cn.RecvQ = make(chan Message, 1024)
-	}
-	if cn.Done == nil {
-		cn.Done = make(chan bool, 2)
-	}
+	cn.SendC = 0
+	cn.SendQ = make(chan Message, 1024)
+	cn.RecvQ = make(chan Message, 1024)
+	cn.Done = make(chan bool, 2)
 	if cn.Listen == nil {
 		cn.Listen = libol.NewSafeStrMap(32)
 	}
 	cn.Lock.Unlock()
-	if cn.Oner.Open != nil {
-		cn.Oner.Open(cn)
+	if cn.Caller.Open != nil {
+		cn.Caller.Open(cn)
 	}
 }
 
-func (cn *Conn) Close() {
-	libol.Stack("Conn.Close %s", cn)
-	if cn.Oner.Close != nil {
-		cn.Oner.Close(cn)
+func (cn *CtrlConn) Close() {
+	libol.Info("CtrlConn.Close: %s", cn)
+	if cn.Caller.Close != nil {
+		cn.Caller.Close(cn)
 	}
 	cn.Lock.Lock()
 	defer cn.Lock.Unlock()
@@ -75,120 +83,171 @@ func (cn *Conn) Close() {
 	}
 	_ = cn.Conn.Close()
 	cn.Conn = nil
+	// close sendQ
+	close(cn.SendQ)
 	cn.SendQ = nil
-	cn.RecvQ = nil
+	libol.Info("CtrlConn.Close: conn is null")
 }
 
-func (cn *Conn) dispatch(m Message) error {
-	libol.Cmd("Conn.dispatch %s %s", cn.Id, &m)
-	if cn.Oner.CmdCtl != nil {
-		cn.Oner.CmdCtl(cn, m)
+func (cn *CtrlConn) dispatch(m Message) error {
+	libol.Cmd("CtrlConn.dispatch %s %s", cn.Id, &m)
+	if cn.Caller.CmdCtl != nil {
+		cn.Caller.CmdCtl(cn, m)
 	}
 	value := cn.Listen.Get(m.Resource)
-	if value != nil {
-		if call, ok := value.(Listener); ok {
-			switch m.Action {
-			case "GET":
-				return call.GetCtl(cn.Id, m)
-			case "ADD":
-				return call.AddCtl(cn.Id, m)
-			case "DEL":
-				return call.DelCtl(cn.Id, m)
-			case "MOD":
-				return call.ModCtl(cn.Id, m)
-			}
+	if value == nil {
+		libol.Debug("CtrlConn.dispatch: noCall %s", m.Resource)
+		return nil
+	}
+	if call, ok := value.(Listener); ok {
+		switch m.Action {
+		case "GET":
+			cn.Sts.Get++
+			return call.GetCtl(cn.Id, m)
+		case "ADD":
+			cn.Sts.Add++
+			return call.AddCtl(cn.Id, m)
+		case "DEL":
+			cn.Sts.Del++
+			return call.DelCtl(cn.Id, m)
+		case "MOD":
+			cn.Sts.Mod++
+			return call.ModCtl(cn.Id, m)
+		default:
+			libol.Error("CtrlConn.dispatch: noOpr %s", m.Resource)
 		}
-		libol.Error("Conn.dispatch unknown %s", m.Resource)
 	}
 	return nil
 }
 
-func (cn *Conn) once() error {
+func (cn *CtrlConn) once() error {
 	cn.Lock.Lock()
 	defer cn.Lock.Unlock()
 	return nil
 }
 
-func (cn *Conn) loop() {
-	libol.Stack("Conn.Loop %s", cn)
+func (cn *CtrlConn) queue() {
+	libol.Stack("CtrlConn.Loop %s", cn)
 	defer func() {
-		cn.Close()
-		libol.Stack("Conn.loop exit")
+		libol.Warn("CtrlConn.queue exit")
 	}()
 	for {
 		select {
 		case m := <-cn.SendQ:
-			cn.write(m)
+			if err := cn.write(m); err != nil {
+				libol.Error("CtrlConn.queue: write %s", err)
+				return
+			}
 		case m := <-cn.RecvQ:
 			if err := cn.dispatch(m); err != nil {
-				libol.Error("Conn.Loop %s", err)
+				libol.Error("CtrlConn.queue: %s", err)
 			}
+		}
+	}
+}
+
+func (cn *CtrlConn) loop() {
+	libol.Stack("CtrlConn.Loop %s", cn)
+	defer func() {
+		cn.Close()
+		libol.Warn("CtrlConn.loop exit")
+	}()
+	for {
+		select {
 		case <-cn.Done:
-			libol.Debug("Conn.Loop %s Done", cn)
+			libol.Warn("CtrlConn.loop: recv done")
 			return
 		case <-cn.Ticker.C:
 			if err := cn.once(); err != nil {
-				libol.Error("Conn.Loop %s", err)
+				libol.Error("CtrlConn.loop %s", err)
 				return
 			}
-			if cn.Oner.Ticker != nil {
-				cn.Oner.Ticker(cn)
+			if cn.Caller.Ticker != nil {
+				cn.Caller.Ticker(cn)
 			}
 		}
 	}
 }
 
-func (cn *Conn) write(m Message) {
+func (cn *CtrlConn) write(m Message) error {
 	cn.Lock.Lock()
 	defer cn.Lock.Unlock()
 
-	libol.Cmd("Conn.write %s", m)
-	if err := Codec.Send(cn.Conn, &m); err != nil {
-		libol.Error("Conn.Send %s", err)
-		cn.Stop()
+	if cn.Conn == nil {
+		return libol.NewErr("conn is null")
 	}
+	libol.Cmd("CtrlConn.write %s", m)
+	if cn.Timeout != 0 {
+		dt := time.Now().Add(cn.Timeout)
+		if err := cn.Conn.SetWriteDeadline(dt); err != nil {
+			return err
+		}
+	}
+	if err := Codec.Send(cn.Conn, &m); err != nil {
+		return err
+	}
+	cn.SendC--
+	cn.Sts.Send++
+	return nil
 }
 
-func (cn *Conn) read() {
-	libol.Stack("Conn.read %s", cn)
+func (cn *CtrlConn) read() {
+	libol.Stack("CtrlConn.read %s", cn)
 	for {
 		m := Message{}
 		if cn.Conn != nil {
+			if cn.Timeout != 0 {
+				dt := time.Now().Add(cn.Timeout)
+				if err := cn.Conn.SetReadDeadline(dt); err != nil {
+					break
+				}
+			}
 			err := Codec.Receive(cn.Conn, &m)
 			if err != nil {
-				libol.Error("Conn.read %s", err)
+				libol.Error("CtrlConn.read %s", err)
 				break
 			}
-			libol.Cmd("Conn.Read %s", &m)
-			cn.RecvQ <- m
+			cn.Sts.Recv++
+			libol.Cmd("CtrlConn.Read %s", &m)
+			if cn.RecvQ != nil {
+				cn.RecvQ <- m
+			}
 		}
 	}
 	cn.Stop()
-	libol.Stack("Conn.read exit")
+	libol.Warn("CtrlConn.read exit")
 }
 
-func (cn *Conn) Start() {
-	libol.Stack("Conn.Start %s", cn)
-	go cn.loop()
-	go cn.read()
+func (cn *CtrlConn) Start() {
+	libol.Info("CtrlConn.Start %s", cn)
+	libol.Go(cn.loop)
+	libol.Go(cn.queue)
+	libol.Go(cn.read)
 }
 
-func (cn *Conn) Stop() {
-	libol.Stack("Conn.Stop %s", cn)
+func (cn *CtrlConn) Stop() {
+	libol.Info("CtrlConn.Stop %s", cn)
 	if cn.Done != nil {
 		cn.Done <- true
 	}
 }
 
-func (cn *Conn) Send(m Message) {
+func (cn *CtrlConn) Send(m Message) {
 	cn.Lock.RLock()
 	defer cn.Lock.RUnlock()
-	if cn.SendQ != nil {
-		cn.SendQ <- m
+
+	if cn.SendQ == nil {
+		return
 	}
+	if cn.SendC >= 1024 {
+		libol.Warn("CtrlConn.Send: queue already fully")
+		return
+	}
+	cn.SendC++
+	cn.SendQ <- m
 }
 
-func (cn *Conn) SendWait(m Message) error {
+func (cn *CtrlConn) SendWait(m Message) error {
 	cn.Lock.RLock()
 	defer cn.Lock.RUnlock()
 	if err := Codec.Send(cn.Conn, &m); err != nil {
@@ -197,20 +256,20 @@ func (cn *Conn) SendWait(m Message) error {
 	return nil
 }
 
-func (cn *Conn) string() string {
+func (cn *CtrlConn) string() string {
 	if cn.Conn != nil {
 		return cn.Conn.LocalAddr().String()
 	}
 	return ""
 }
 
-func (cn *Conn) String() string {
+func (cn *CtrlConn) String() string {
 	cn.Lock.RLock()
 	defer cn.Lock.RUnlock()
 	return cn.string()
 }
 
-func (cn *Conn) Host() string {
+func (cn *CtrlConn) Host() string {
 	if cn.Conn == nil {
 		return ""
 	}
@@ -220,7 +279,7 @@ func (cn *Conn) Host() string {
 	return ""
 }
 
-func (cn *Conn) Address() string {
+func (cn *CtrlConn) Address() string {
 	if cn.Conn == nil {
 		return ""
 	}

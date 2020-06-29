@@ -351,13 +351,14 @@ func (t *socketServer) Read(client SocketClient, ReadAt ReadClient) {
 	Log("socketServer.Read: %s", client.Addr())
 	for {
 		frame, err := client.ReadMsg()
-		if err != nil {
-			Error("socketServer.Read: %s", err)
+		if err != nil || frame.size <= 0 {
+			if frame != nil {
+				Error("socketServer.Read: frame %d", frame.size)
+			} else {
+				Error("socketServer.Read: %d %s", err)
+			}
 			t.OffClient(client)
 			break
-		}
-		if frame.size <= 0 {
-			continue
 		}
 		t.sts.RecvCount++
 		if HasLog(LOG) {

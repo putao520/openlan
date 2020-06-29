@@ -9,11 +9,11 @@ import (
 )
 
 type CtrlC struct {
-	Url      string `json:"url"`
-	Name     string `json:"name"`
-	Password string `json:"password"`
-	Conn     *libctrl.Conn
-	Switcher Switcher
+	Url      string            `json:"url"`
+	Name     string            `json:"name"`
+	Password string            `json:"password"`
+	Conn     *libctrl.CtrlConn `json:"connection"`
+	Switcher Switcher          `json:"-"`
 }
 
 func (cc *CtrlC) Register() {
@@ -24,12 +24,13 @@ func (cc *CtrlC) Register() {
 
 func (cc *CtrlC) Handle() {
 	// Handle command
-	if cc.Conn != nil {
-		cc.Conn.Listener("point", &Point{cc: cc})
-		cc.Conn.Listener("neighbor", &Neighbor{cc: cc})
-		cc.Conn.Listener("online", &OnLine{cc: cc})
-		cc.Conn.Listener("switch", &Switch{cc: cc})
+	if cc.Conn == nil {
+		return
 	}
+	cc.Conn.Listener("point", &Point{cc: cc})
+	cc.Conn.Listener("neighbor", &Neighbor{cc: cc})
+	cc.Conn.Listener("online", &OnLine{cc: cc})
+	cc.Conn.Listener("switch", &Switch{cc: cc})
 }
 
 func (cc *CtrlC) Open() error {
@@ -47,9 +48,10 @@ func (cc *CtrlC) Open() error {
 	if err != nil {
 		return err
 	}
-	cc.Conn = &libctrl.Conn{
-		Conn: to,
-		Wait: libstar.NewWaitOne(1),
+	cc.Conn = &libctrl.CtrlConn{
+		Conn:    to,
+		Wait:    libstar.NewWaitOne(1),
+		Timeout: 120 * time.Second,
 	}
 	return nil
 }

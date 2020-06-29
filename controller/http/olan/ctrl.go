@@ -32,7 +32,7 @@ func (w Ctrl) Handle(ws *websocket.Conn) {
 	}
 	libol.Info("Ctrl.Handle accept %s", id)
 	cc := ctrlc.CtrlC{
-		Conn: &libctrl.Conn{
+		Conn: &libctrl.CtrlConn{
 			Id:   id,
 			Conn: ws,
 			Wait: libstar.NewWaitOne(1),
