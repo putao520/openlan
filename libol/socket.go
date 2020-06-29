@@ -353,9 +353,9 @@ func (t *socketServer) Read(client SocketClient, ReadAt ReadClient) {
 		frame, err := client.ReadMsg()
 		if err != nil || frame.size <= 0 {
 			if frame != nil {
-				Error("socketServer.Read: frame %d", frame.size)
+				Error("socketServer.Read: %s %d", err, frame.size)
 			} else {
-				Error("socketServer.Read: %d %s", err)
+				Error("socketServer.Read: %s", err)
 			}
 			t.OffClient(client)
 			break
