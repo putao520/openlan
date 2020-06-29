@@ -21,14 +21,11 @@ func NewLinuxBridge(name string, mtu int) *LinuxBridge {
 }
 
 func (b *LinuxBridge) Open(addr string) {
-	var link netlink.Link
-
 	libol.Debug("LinuxBridge.Open: %s", b.name)
 
 	la := netlink.LinkAttrs{TxQLen: -1, Name: b.name}
 	br := &netlink.Bridge{LinkAttrs: la}
-
-	link, _ = netlink.LinkByName(b.name)
+	link, _ := netlink.LinkByName(b.name)
 	if link == nil {
 		err := netlink.LinkAdd(br)
 		if err != nil {
@@ -41,6 +38,9 @@ func (b *LinuxBridge) Open(addr string) {
 			return
 		}
 	}
+	if err := netlink.LinkSetUp(link); err != nil {
+		libol.Error("LinuxBridge.Open: %s", err)
+	}
 	libol.Info("LinuxBridge.Open %s", b.name)
 	if addr != "" {
 		ipAddr, err := netlink.ParseAddr(addr)
@@ -52,7 +52,6 @@ func (b *LinuxBridge) Open(addr string) {
 		}
 		b.address = ipAddr
 	}
-
 	b.device = link
 }
 
