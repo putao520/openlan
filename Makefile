@@ -46,9 +46,11 @@ linux/ctrl: env
 
 linux/point: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point ./main/point_linux
+	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point.i386 ./main/point_linux
 
 linux/switch: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch ./main/switch.go
+	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch.i386 ./main/switch.go
 
 linux/rpm: env
 	@./packaging/spec.sh
