@@ -5,7 +5,7 @@
 SHELL := /bin/bash
 
 .ONESHELL:
-.PHONY: linux linux/rpm darwin darwin/zip windows windows/zip test
+.PHONY: linux linux-rpm darwin darwin-zip windows windows-zip test
 
 ## version
 LSB = $(shell lsb_release -i -s)$(shell lsb_release -r -s)
@@ -24,12 +24,16 @@ LD = openlan-$(LSB)-$(VER)
 WD = openlan-Windows-$(VER)
 XD = openlan-Darwin-$(VER)
 
+help: ## show make targets
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {sub("\\\\n",sprintf("\n%22c"," "), $$2);\
+		printf " \033[36m%-20s\033[0m  %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+
 ## all platform
-all: linux windows darwin
+all: linux windows darwin ## build all platform binary
 
-pkg: linux/rpm windows/zip darwin/zip
+pkg: linux-rpm windows-zip darwin-zip ## build all plaftorm packages
 
-clean:
+clean: ## clean cache
 	rm -rvf ./build
 	rm -rvf ./core/build
 	rm -rvf ./core/cmake-build-debug
@@ -39,20 +43,20 @@ env:
 	@mkdir -p $(BD)
 
 ## linux platform
-linux: linux/point linux/switch linux/ctrl
+linux: linux-point linux-switch linux-ctrl ## build linux binary
 
-linux/ctrl: env
+linux-ctrl: env
 	cd controller && make linux
 
-linux/point: env
+linux-point: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point ./main/point_linux
 	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point.i386 ./main/point_linux
 
-linux/switch: env
+linux-switch: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch ./main/switch.go
 	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch.i386 ./main/switch.go
 
-linux/rpm: env
+linux-rpm: env
 	@./packaging/spec.sh
 	rpmbuild -ba packaging/openlan-ctrl.spec
 	rpmbuild -ba packaging/openlan-point.spec
@@ -60,12 +64,12 @@ linux/rpm: env
 	@cp -rf ~/rpmbuild/RPMS/x86_64/openlan-*.rpm $(BD)
 
 ## cross build for windows
-windows: windows/point
+windows: windows-point ## build windows binary
 
-windows/point: env
+windows-point: env
 	GOOS=windows GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point.exe ./main/point_windows
 
-windows/zip: env windows
+windows-zip: env windows ## build windows packages
 	@pushd $(BD)
 	@rm -rf $(WD) && mkdir -p $(WD)
 	@rm -rf $(WD).zip
@@ -74,18 +78,19 @@ windows/zip: env windows
 	@cp -rvf $(BD)/openlan-point.exe $(WD)
 
 	zip -r $(WD).zip $(WD) > /dev/null
+	@rm -rf $(WD)
 	@popd
 
-windows/syso:
-	rsrc -manifest main/point_windows/main.manifest -ico main/point_windows/main.ico  -o main/point_windows/main.syso
+windows-syso: ## build windows syso
+	rsrc -manifest main/point_windows-main.manifest -ico main/point_windows-main.ico  -o main/point_windows-main.syso
 
 ## cross build for osx
 osx: darwin
 
-darwin: env
+darwin: env ## build darwin binary
 	GOOS=darwin GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point.darwin ./main/point_darwin
 
-darwin/zip: env darwin
+darwin-zip: env darwin ## build darwin packages
 	@pushd $(BD)
 	@rm -rf $(XD) && mkdir -p $(XD)
 	@rm -rf $(XD).zip
@@ -94,9 +99,10 @@ darwin/zip: env darwin
 	@cp -rvf $(BD)/openlan-point.darwin $(XD)
 
 	zip -r $(XD).zip $(XD) > /dev/null
+	@rm -rf $(XD)
 	popd
 
 ## unit test
-test:
+test: ## execute unit test
 	go test -v -mod=vendor -bench=. github.com/danieldin95/openlan-go/point
 	go test -v -mod=vendor -bench=. github.com/danieldin95/openlan-go/libol

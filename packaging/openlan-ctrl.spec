@@ -1,5 +1,5 @@
 Name: openlan-ctrl
-Version: 5.2.16
+Version: 5.2.17
 Release: 1%{?dist}
 Summary: OpenLan's Controller Software
 Group: Applications/Communications
@@ -14,7 +14,7 @@ BuildRequires: go
 OpenLan's Project Software
 
 %build
-cd %_source_dir && make linux/ctrl
+cd %_source_dir && make linux-ctrl
 
 %install
 mkdir -p %{buildroot}/usr/bin

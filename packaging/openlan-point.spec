@@ -1,5 +1,5 @@
 Name: openlan-point
-Version: 5.2.16
+Version: 5.2.17
 Release: 1%{?dist}
 Summary: OpenLan's Project Software
 Group: Applications/Communications
@@ -15,7 +15,7 @@ Requires: iproute
 OpenLan's Project Point Software
 
 %build
-cd %_source_dir && make linux/point
+cd %_source_dir && make linux-point
 
 %install
 
