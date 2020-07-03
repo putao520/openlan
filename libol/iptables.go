@@ -1,8 +1,7 @@
 package libol
 
 import (
-	"fmt"
-	"os/exec"
+	"github.com/moby/libnetwork/iptables"
 	"runtime"
 )
 
@@ -19,34 +18,53 @@ type FilterRule struct {
 	Jump     string
 }
 
-func IPTables(rule FilterRule, action string) (string, error) {
+func (rule FilterRule) Args() []string {
+	var args []string
+	if rule.Source != "" {
+		args = append(args, "-s", rule.Source)
+	}
+	if rule.Input != "" {
+		args = append(args, "-i", rule.Input)
+	}
+	if rule.Dest != "" {
+		args = append(args, "-d", rule.Dest)
+	}
+	if rule.Output != "" {
+		args = append(args, "-o", rule.Output)
+	}
+	if rule.Jump != "" {
+		args = append(args, "-j", rule.Jump)
+	}
+	if rule.ToSource != "" {
+		args = append(args, "--to-source", rule.ToSource)
+	}
+	if rule.ToDest != "" {
+		args = append(args, "--to-destination", rule.ToDest)
+	}
+	return args
+}
+
+func FilterRuleCmd(rule FilterRule, opr string) ([]byte, error) {
+	Debug("FilterRuleCmd: %s, %v", opr, rule)
+	table := iptables.Table(rule.Table)
+	chain := rule.Chain
 	switch runtime.GOOS {
 	case "linux":
-		args := []string{"-t", rule.Table, action, rule.Chain}
-		if rule.Source != "" {
-			args = append(args, "-s", rule.Source)
+		args := rule.Args()
+		fullArgs := append([]string{"-t", rule.Table, opr, rule.Chain}, args...)
+		if opr == "-I" || opr == "-A" {
+			if iptables.Exists(table, chain, args...) {
+				return nil, nil
+			}
 		}
-		if rule.Input != "" {
-			args = append(args, "-i", rule.Input)
-		}
-		if rule.Dest != "" {
-			args = append(args, "-d", rule.Dest)
-		}
-		if rule.Output != "" {
-			args = append(args, "-o", rule.Output)
-		}
-		if rule.Jump != "" {
-			args = append(args, "-j", rule.Jump)
-		}
-		if rule.ToSource != "" {
-			args = append(args, "--to-source", rule.ToSource)
-		}
-		if rule.ToDest != "" {
-			args = append(args, "--to-destination", rule.ToDest)
-		}
-		ret, err := exec.Command("/usr/sbin/iptables", args...).CombinedOutput()
-		return fmt.Sprintf("%v: %s", args, ret), err
+		return iptables.Raw(fullArgs...)
 	default:
-		return "", NewErr("iptables %s not support", runtime.GOOS)
+		return nil, NewErr("iptables notSupport %s", runtime.GOOS)
+	}
+}
+
+func init() {
+	if err := iptables.FirewalldInit(); err != nil {
+		Error("iptables.init %s", err)
 	}
 }
