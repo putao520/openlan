@@ -22,11 +22,11 @@ type ConnStats struct {
 	Add    int64 `json:"add"`
 	Del    int64 `json:"del"`
 	Mod    int64 `json:"mod"`
-	Write  int64 `json:"write"`
-	Send   int64 `json:"send"`
-	Recv   int64 `json:"recv"`
-	Action int64 `json:"action"`
-	Drop   int64 `json:"drop"`
+	Write  int64 `json:"write"`  // Write to socket buffer.
+	Send   int64 `json:"send"`   // Send into Queue.
+	Recv   int64 `json:"recv"`   // Receive from socket buffer.
+	Action int64 `json:"action"` // Already action dispatch.
+	Drop   int64 `json:"drop"`   // Dropped when Queue is fully.
 }
 
 type CtrlConn struct {
@@ -35,7 +35,7 @@ type CtrlConn struct {
 	Wait    *libstar.WaitOne  `json:"-"`
 	Ticker  *time.Ticker      `json:"-"`
 	Done    chan bool         `json:"-"`
-	SendC   int               `json:"sendC"`
+	SendC   int               `json:"sendC"` // Count for Queue and avoid blocking.
 	SendQ   chan Message      `json:"-"`
 	RecvQ   chan Message      `json:"-"`
 	Listen  *libol.SafeStrMap `json:"-"`
@@ -257,7 +257,9 @@ func (cn *CtrlConn) Send(m Message) {
 func (cn *CtrlConn) SendWait(m Message) error {
 	cn.Lock.Lock()
 	defer cn.Lock.Unlock()
-	return cn.write(m)
+	err := cn.write(m)
+	cn.Sts.Write++
+	return err
 }
 
 func (cn *CtrlConn) String() string {

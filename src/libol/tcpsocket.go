@@ -16,7 +16,7 @@ type TcpConfig struct {
 // Server Implement
 
 type TcpServer struct {
-	socketServer
+	*socketServer
 	tcpCfg   *TcpConfig
 	listener net.Listener
 }
@@ -107,7 +107,7 @@ func NewTcpClient(addr string, cfg *TcpConfig) *TcpClient {
 			status: ClInit,
 		},
 	}
-	t.connecter = t.Connect
+	t.connector = t.Connect
 	return t
 }
 
@@ -127,7 +127,7 @@ func NewTcpClientFromConn(conn net.Conn, cfg *TcpConfig) *TcpClient {
 			newTime: time.Now().Unix(),
 		},
 	}
-	t.connecter = t.Connect
+	t.connector = t.Connect
 	return t
 }
 

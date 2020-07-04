@@ -64,7 +64,7 @@ type dataStream struct {
 	sts        ClientSts
 	maxSize    int
 	minSize    int
-	connecter  func() error
+	connector  func() error
 }
 
 func (t *dataStream) String() string {
@@ -79,7 +79,7 @@ func (t *dataStream) IsOk() bool {
 }
 
 func (t *dataStream) WriteMsg(frame *FrameMessage) error {
-	if err := t.connecter(); err != nil {
+	if err := t.connector(); err != nil {
 		t.sts.Dropped++
 		return err
 	}
@@ -181,6 +181,7 @@ func (s *socketClient) UpTime() int64 {
 	return time.Now().Unix() - s.newTime
 }
 
+// Get server address for client or remote address from server.
 func (s *socketClient) Addr() string {
 	return s.address
 }
@@ -229,6 +230,7 @@ func (s *socketClient) SetListener(listener ClientListener) {
 	s.listener = listener
 }
 
+// Get actual local address
 func (s *socketClient) LocalAddr() string {
 	if s.connection != nil {
 		return s.connection.LocalAddr().String()
@@ -236,6 +238,7 @@ func (s *socketClient) LocalAddr() string {
 	return ""
 }
 
+// Get actual remote address
 func (s *socketClient) RemoteAddr() string {
 	if s.connection != nil {
 		return s.connection.RemoteAddr().String()
@@ -291,14 +294,14 @@ type socketServer struct {
 	timeout    int64 // sec for read and write timeout
 }
 
-func NewSocketServer(listen string) socketServer {
-	return socketServer{
+func NewSocketServer(listen string) *socketServer {
+	return &socketServer{
 		address:    listen,
 		sts:        ServerSts{},
 		maxClient:  1024,
 		clients:    NewSafeStrMap(1024),
-		onClients:  make(chan SocketClient, 4),
-		offClients: make(chan SocketClient, 8),
+		onClients:  make(chan SocketClient, 1024),
+		offClients: make(chan SocketClient, 1024),
 	}
 }
 

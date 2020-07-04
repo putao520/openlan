@@ -21,7 +21,7 @@ var defaultKcpConfig = KcpConfig{
 }
 
 type KcpServer struct {
-	socketServer
+	*socketServer
 	kcpCfg   *KcpConfig
 	listener *kcp.Listener
 }
@@ -117,7 +117,7 @@ func NewKcpClient(addr string, cfg *KcpConfig) *KcpClient {
 			status: ClInit,
 		},
 	}
-	c.connecter = c.Connect
+	c.connector = c.Connect
 	return c
 }
 
@@ -139,7 +139,7 @@ func NewKcpClientFromConn(conn net.Conn, cfg *KcpConfig) *KcpClient {
 			newTime: time.Now().Unix(),
 		},
 	}
-	c.connecter = c.Connect
+	c.connector = c.Connect
 	return c
 }
 

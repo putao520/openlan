@@ -16,7 +16,7 @@ var defaultUdpConfig = UdpConfig{
 }
 
 type UdpServer struct {
-	socketServer
+	*socketServer
 	udpCfg   *UdpConfig
 	listener net.Listener
 }
@@ -104,7 +104,7 @@ func NewUdpClient(addr string, cfg *UdpConfig) *UdpClient {
 			status: ClInit,
 		},
 	}
-	c.connecter = c.Connect
+	c.connector = c.Connect
 	return c
 }
 
@@ -127,7 +127,7 @@ func NewUdpClientFromConn(conn net.Conn, cfg *UdpConfig) *UdpClient {
 			newTime: time.Now().Unix(),
 		},
 	}
-	c.connecter = c.Connect
+	c.connector = c.Connect
 	return c
 }
 
