@@ -4,8 +4,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/cli/config"
+	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/point"
 )
 

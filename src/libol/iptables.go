@@ -5,7 +5,7 @@ import (
 	"runtime"
 )
 
-type FilterRule struct {
+type IPTableRule struct {
 	Table    string
 	Chain    string
 	Input    string
@@ -18,7 +18,7 @@ type FilterRule struct {
 	Jump     string
 }
 
-func (rule FilterRule) Args() []string {
+func (rule IPTableRule) Args() []string {
 	var args []string
 	if rule.Source != "" {
 		args = append(args, "-s", rule.Source)
@@ -44,8 +44,8 @@ func (rule FilterRule) Args() []string {
 	return args
 }
 
-func FilterRuleCmd(rule FilterRule, opr string) ([]byte, error) {
-	Debug("FilterRuleCmd: %s, %v", opr, rule)
+func IPTableCmd(rule IPTableRule, opr string) ([]byte, error) {
+	Debug("IPTableCmd: %s, %v", opr, rule)
 	table := iptables.Table(rule.Table)
 	chain := rule.Chain
 	switch runtime.GOOS {
@@ -59,12 +59,12 @@ func FilterRuleCmd(rule FilterRule, opr string) ([]byte, error) {
 		}
 		return iptables.Raw(fullArgs...)
 	default:
-		return nil, NewErr("iptables notSupport %s", runtime.GOOS)
+		return nil, NewErr("IPTable notSupport %s", runtime.GOOS)
 	}
 }
 
-func init() {
+func IPTableInit() {
 	if err := iptables.FirewalldInit(); err != nil {
-		Error("iptables.init %s", err)
+		Error("IPTables.init %s", err)
 	}
 }

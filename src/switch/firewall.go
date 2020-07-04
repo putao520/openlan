@@ -7,12 +7,12 @@ import (
 
 type FireWall struct {
 	lock  libol.Locker
-	rules []libol.FilterRule
+	rules []libol.IPTableRule
 }
 
 func (f *FireWall) install() {
 	for _, rule := range f.rules {
-		if ret, err := libol.FilterRuleCmd(rule, "-I"); err != nil {
+		if ret, err := libol.IPTableCmd(rule, "-I"); err != nil {
 			libol.Warn("FireWall.install %s", ret)
 		}
 	}
@@ -33,7 +33,7 @@ func (f *FireWall) Start() {
 
 func (f *FireWall) uninstall() {
 	for _, rule := range f.rules {
-		if ret, err := libol.FilterRuleCmd(rule, "-D"); err != nil {
+		if ret, err := libol.IPTableCmd(rule, "-D"); err != nil {
 			libol.Warn("FireWall.uninstall %s", ret)
 		}
 	}
@@ -44,4 +44,8 @@ func (f *FireWall) Stop() {
 	defer f.lock.Unlock()
 	libol.Info("FireWall.Stop")
 	f.uninstall()
+}
+
+func init() {
+	libol.IPTableInit()
 }

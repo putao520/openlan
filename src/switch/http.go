@@ -3,8 +3,8 @@ package _switch
 import (
 	"context"
 	"fmt"
-	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/cli/config"
+	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
 	"github.com/danieldin95/openlan-go/src/switch/api"
 	"github.com/danieldin95/openlan-go/src/switch/schema"

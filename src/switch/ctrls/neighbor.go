@@ -2,9 +2,9 @@ package ctrls
 
 import (
 	"encoding/json"
+	"github.com/danieldin95/openlan-go/src/controller/libctrl"
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
-	"github.com/danieldin95/openlan-go/src/controller/libctrl"
 	"github.com/danieldin95/openlan-go/src/switch/storage"
 )
 

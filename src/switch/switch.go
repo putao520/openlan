@@ -2,8 +2,8 @@ package _switch
 
 import (
 	"encoding/json"
-	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/cli/config"
+	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
 	"github.com/danieldin95/openlan-go/src/network"
 	"github.com/danieldin95/openlan-go/src/switch/app"
@@ -70,7 +70,7 @@ func NewSwitch(c config.Switch) *Switch {
 	v := Switch{
 		cfg: c,
 		firewall: FireWall{
-			rules: make([]libol.FilterRule, 0, 32),
+			rules: make([]libol.IPTableRule, 0, 32),
 		},
 		worker:  make(map[string]*NetworkWorker, 32),
 		server:  server,
@@ -82,14 +82,14 @@ func NewSwitch(c config.Switch) *Switch {
 func (v *Switch) addRules(source string, prefix string) {
 	libol.Info("Switch.addRules %s, %s", source, prefix)
 	// allowed between source and prefix on filter.
-	v.firewall.rules = append(v.firewall.rules, libol.FilterRule{
+	v.firewall.rules = append(v.firewall.rules, libol.IPTableRule{
 		Table:  "filter",
 		Chain:  "FORWARD",
 		Source: source,
 		Dest:   prefix,
 		Jump:   "ACCEPT",
 	})
-	v.firewall.rules = append(v.firewall.rules, libol.FilterRule{
+	v.firewall.rules = append(v.firewall.rules, libol.IPTableRule{
 		Table:  "filter",
 		Chain:  "FORWARD",
 		Source: prefix,
@@ -97,14 +97,14 @@ func (v *Switch) addRules(source string, prefix string) {
 		Jump:   "ACCEPT",
 	})
 	// enable masquerade between source and prefix.
-	v.firewall.rules = append(v.firewall.rules, libol.FilterRule{
+	v.firewall.rules = append(v.firewall.rules, libol.IPTableRule{
 		Table:  "nat",
 		Chain:  "POSTROUTING",
 		Source: source,
 		Dest:   prefix,
 		Jump:   "MASQUERADE",
 	})
-	v.firewall.rules = append(v.firewall.rules, libol.FilterRule{
+	v.firewall.rules = append(v.firewall.rules, libol.IPTableRule{
 		Table:  "nat",
 		Chain:  "POSTROUTING",
 		Source: prefix,
@@ -165,7 +165,7 @@ func (v *Switch) Initialize() {
 
 	// FireWall
 	for _, rule := range v.cfg.FireWall {
-		v.firewall.rules = append(v.firewall.rules, libol.FilterRule{
+		v.firewall.rules = append(v.firewall.rules, libol.IPTableRule{
 			Table:    rule.Table,
 			Chain:    rule.Chain,
 			Source:   rule.Source,
