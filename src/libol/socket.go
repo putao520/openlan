@@ -363,7 +363,7 @@ func (t *socketServer) Read(client SocketClient, ReadAt ReadClient) {
 		t.sts.RecvCount++
 		if HasLog(LOG) {
 			Log("socketServer.Read: length: %d ", frame.size)
-			Log("socketServer.Read: frame  : %x", frame)
+			Log("socketServer.Read: frame : %x", frame)
 		}
 		if err := ReadAt(client, frame); err != nil {
 			Error("socketServer.Read: readAt %s", err)

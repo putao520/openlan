@@ -24,6 +24,7 @@ type ConnStats struct {
 	Mod  int64 `json:"mod"`
 	Send int64 `json:"send"`
 	Recv int64 `json:"recv"`
+	Drop int64 `json:"drop"`
 }
 
 type CtrlConn struct {
@@ -32,7 +33,7 @@ type CtrlConn struct {
 	Wait    *libstar.WaitOne  `json:"-"`
 	Ticker  *time.Ticker      `json:"-"`
 	Done    chan bool         `json:"-"`
-	SendC   int               `json:"sendc"`
+	SendC   int               `json:"sendC"`
 	SendQ   chan Message      `json:"-"`
 	RecvQ   chan Message      `json:"-"`
 	Listen  *libol.SafeStrMap `json:"-"`
@@ -242,7 +243,8 @@ func (cn *CtrlConn) Send(m Message) {
 		return
 	}
 	if cn.SendC >= 1024 {
-		libol.Warn("CtrlConn.Send: queue already fully")
+		cn.Sts.Drop++
+		libol.Debug("CtrlConn.Send: queue already fully")
 		return
 	}
 	cn.SendC++
