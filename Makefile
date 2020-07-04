@@ -105,5 +105,5 @@ darwin-zip: env darwin ## build darwin packages
 
 ## unit test
 test: ## execute unit test
-	go test -v -mod=vendor -bench=. github.com/danieldin95/openlan-go/point
-	go test -v -mod=vendor -bench=. github.com/danieldin95/openlan-go/libol
+	go test -v -mod=vendor -bench=. github.com/danieldin95/openlan-go/src/point
+	go test -v -mod=vendor -bench=. github.com/danieldin95/openlan-go/src/libol
