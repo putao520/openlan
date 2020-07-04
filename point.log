@@ -1,0 +1,13 @@
+2020/07/03 23:49:31 INFO MixPoint.Initialize
+2020/07/03 23:49:31 INFO Worker.Initialize
+2020/07/03 23:49:31 INFO SocketWorker.Initialize
+2020/07/03 23:49:31 INFO TapWorker.Initialize
+2020/07/03 23:49:31 INFO TapWorker.open: >>>> tap0 <<<<
+2020/07/03 23:49:31 INFO Point.OnTap
+2020/07/03 23:49:31 INFO Point.Start: linux.
+2020/07/03 23:49:31 WARN SocketWorker.connect openlan.net:10002:0
+2020/07/03 23:49:31 INFO TcpClient.Connect: tls://openlan.net:10002
+2020/07/03 23:49:31 INFO Go.Add: point.(*TapWorker).Start:863
+2020/07/03 23:49:31 INFO Go.Add: point.(*TapWorker).Start:864
+2020/07/03 23:49:31 INFO TapWorker.Read
+2020/07/03 23:49:31 INFO Go.Add: point.(*TapWorker).Start:865

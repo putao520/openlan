@@ -12,7 +12,7 @@ LSB = $(shell lsb_release -i -s)$(shell lsb_release -r -s)
 VER = $(shell cat VERSION)
 
 ## declare flags
-MOD = github.com/danieldin95/openlan-go/libol
+MOD = github.com/danieldin95/openlan-go/src/libol
 LDFLAGS += -X $(MOD).Commit=$(shell git rev-list -1 HEAD)
 LDFLAGS += -X $(MOD).Date=$(shell date +%FT%T%z)
 LDFLAGS += -X $(MOD).Version=$(VER)
@@ -46,15 +46,16 @@ env:
 linux: linux-point linux-switch linux-ctrl ## build linux binary
 
 linux-ctrl: env
-	cd controller && make linux
+	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-ctrl ./src/cli/ctrl
+	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-ctrl ./src/cli/ctrl
 
 linux-point: env
-	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point ./main/point_linux
-	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point.i386 ./main/point_linux
+	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point ./src/cli/point_linux
+	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point.i386 ./src/cli/point_linux
 
 linux-switch: env
-	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch ./main/switch.go
-	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch.i386 ./main/switch.go
+	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch ./src/cli/switch
+	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch.i386 ./src/cli/switch
 
 linux-rpm: env
 	@./packaging/spec.sh
@@ -67,7 +68,7 @@ linux-rpm: env
 windows: windows-point ## build windows binary
 
 windows-point: env
-	GOOS=windows GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point.exe ./main/point_windows
+	GOOS=windows GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point.exe ./src/cli/point_windows
 
 windows-zip: env windows ## build windows packages
 	@pushd $(BD)
@@ -82,13 +83,13 @@ windows-zip: env windows ## build windows packages
 	@popd
 
 windows-syso: ## build windows syso
-	rsrc -manifest main/point_windows-main.manifest -ico main/point_windows-main.ico  -o main/point_windows-main.syso
+	rsrc -manifest main/point_windows-main.manifest -ico ./src/cli/point_windows-main.ico  -o ./src/cli/point_windows-main.syso
 
 ## cross build for osx
 osx: darwin
 
 darwin: env ## build darwin binary
-	GOOS=darwin GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point.darwin ./main/point_darwin
+	GOOS=darwin GOARCH=amd64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point.darwin ./src/cli/point_darwin
 
 darwin-zip: env darwin ## build darwin packages
 	@pushd $(BD)
