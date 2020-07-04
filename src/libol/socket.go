@@ -291,6 +291,17 @@ type socketServer struct {
 	timeout    int64 // sec for read and write timeout
 }
 
+func NewSocketServer(listen string) socketServer {
+	return socketServer{
+		address:    listen,
+		sts:        ServerSts{},
+		maxClient:  1024,
+		clients:    NewSafeStrMap(1024),
+		onClients:  make(chan SocketClient, 4),
+		offClients: make(chan SocketClient, 8),
+	}
+}
+
 func (t *socketServer) ListClient() <-chan SocketClient {
 	list := make(chan SocketClient, 32)
 	Go(func() {

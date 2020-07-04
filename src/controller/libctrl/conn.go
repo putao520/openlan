@@ -137,11 +137,11 @@ func (cn *CtrlConn) queue() {
 	for {
 		select {
 		case m := <-cn.SendQ:
-			// to keep conn is consistent, require read lock
 			if err := cn.write(m); err != nil {
 				libol.Error("CtrlConn.queue: write %s", err)
 				return
 			}
+			// to keep SendC is consistent, require lock
 			cn.Lock.Lock()
 			cn.SendC--
 			cn.Sts.Write++

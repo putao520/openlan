@@ -258,6 +258,10 @@ func (t *SocketWorker) toLogin(client libol.SocketClient) error {
 
 // network request
 func (t *SocketWorker) toNetwork(client libol.SocketClient) error {
+	if !t.pointCfg.RequestAddr && t.network.IfAddr == "" {
+		libol.Info("SocketWorker.toNetwork: notNeed")
+		return nil
+	}
 	body, err := json.Marshal(t.network)
 	if err != nil {
 		libol.Error("SocketWorker.toNetwork: %s", err)

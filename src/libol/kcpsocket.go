@@ -31,15 +31,8 @@ func NewKcpServer(listen string, cfg *KcpConfig) *KcpServer {
 		cfg = &defaultKcpConfig
 	}
 	k := &KcpServer{
-		kcpCfg: cfg,
-		socketServer: socketServer{
-			address:    listen,
-			sts:        ServerSts{},
-			maxClient:  1024,
-			clients:    NewSafeStrMap(1024),
-			onClients:  make(chan SocketClient, 4),
-			offClients: make(chan SocketClient, 8),
-		},
+		kcpCfg:       cfg,
+		socketServer: NewSocketServer(listen),
 	}
 	k.close = k.Close
 	if err := k.Listen(); err != nil {

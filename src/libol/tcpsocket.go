@@ -23,15 +23,8 @@ type TcpServer struct {
 
 func NewTcpServer(listen string, cfg *TcpConfig) *TcpServer {
 	t := &TcpServer{
-		tcpCfg: cfg,
-		socketServer: socketServer{
-			address:    listen,
-			sts:        ServerSts{},
-			maxClient:  1024,
-			clients:    NewSafeStrMap(1024),
-			onClients:  make(chan SocketClient, 4),
-			offClients: make(chan SocketClient, 8),
-		},
+		tcpCfg:       cfg,
+		socketServer: NewSocketServer(listen),
 	}
 	t.close = t.Close
 	if err := t.Listen(); err != nil {
@@ -165,7 +158,7 @@ func (t *TcpClient) Connect() error {
 }
 
 func (t *TcpClient) Close() {
-	Info("TcpClient.Close: %s %p", t.address, t.connection)
+	Info("TcpClient.Close: %s %v", t.address, t.IsOk())
 	t.lock.Lock()
 	if t.connection != nil {
 		if t.status != ClTerminal {

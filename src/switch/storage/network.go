@@ -94,7 +94,7 @@ func (w *network) GetFreeAddr(uuid string, n *models.Network) (ip string, mask s
 			break
 		}
 	}
-	w.AddUsedAddr(ipStr, uuid)
+	w.AddUsedAddr(uuid, ipStr)
 	return ipStr, netmask
 }
 
