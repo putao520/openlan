@@ -51,7 +51,7 @@ func (cc *CtrlC) Open() error {
 	cc.Conn = &libctrl.CtrlConn{
 		Conn:    to,
 		Wait:    libstar.NewWaitOne(1),
-		Timeout: 120 * time.Second,
+		Timeout: 2 * time.Minute,
 	}
 	return nil
 }

@@ -83,9 +83,7 @@ func (b *VirtualBridge) AddSlave(dev Taper) error {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	b.devices[dev.Name()] = dev
-
 	libol.Info("VirtualBridge.AddSlave: %s %s", dev.Name(), b.name)
-
 	return nil
 }
 
@@ -95,9 +93,7 @@ func (b *VirtualBridge) DelSlave(dev Taper) error {
 	if _, ok := b.devices[dev.Name()]; ok {
 		delete(b.devices, dev.Name())
 	}
-
 	libol.Info("VirtualBridge.DelSlave: %s %s", dev.Name(), b.name)
-
 	return nil
 }
 

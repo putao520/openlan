@@ -99,6 +99,7 @@ func (w *network) GetFreeAddr(uuid string, n *models.Network) (ip string, mask s
 }
 
 func (w *network) AddUsedAddr(uuid, ipStr string) {
+	libol.Info("network.AddUsedAddr %s %s", uuid, ipStr)
 	if ipStr != "" {
 		_ = w.AddrUUID.Set(ipStr, uuid)
 		_ = w.UUIDAddr.Set(uuid, ipStr)
@@ -106,8 +107,10 @@ func (w *network) AddUsedAddr(uuid, ipStr string) {
 }
 
 func (w *network) DelUsedAddr(uuid string) {
+	libol.Info("network.DelUsedAddr %s", uuid)
 	// TODO record free address for alias and wait timeout to release.
 	if addr, ok := w.UUIDAddr.GetEx(uuid); ok {
+		libol.Info("network.DelUsedAddr %s %s", uuid, addr)
 		w.UUIDAddr.Del(uuid)
 		w.AddrUUID.Del(addr)
 	}

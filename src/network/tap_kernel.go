@@ -27,9 +27,7 @@ func NewKernelTap(tenant string, c TapConfig) (*KernelTap, error) {
 		config: c,
 		ifMtu:  1514,
 	}
-
 	Tapers.Add(tap)
-
 	return tap, nil
 }
 
@@ -85,11 +83,10 @@ func (t *KernelTap) Write(p []byte) (n int, err error) {
 func (t *KernelTap) Close() error {
 	t.lock.Lock()
 	defer t.lock.Unlock()
-
+	libol.Info("KernelTap.Close %s", t.name)
 	if t.device == nil {
 		return nil
 	}
-
 	Tapers.Del(t.name)
 	if t.bridge != nil {
 		_ = t.bridge.DelSlave(t)
@@ -110,7 +107,7 @@ func (t *KernelTap) Slave(bridge Bridger) {
 func (t *KernelTap) Up() {
 	t.lock.Lock()
 	defer t.lock.Unlock()
-
+	libol.Info("KernelTap.Up %s", t.name)
 	if t.device == nil {
 		device, err := WaterNew(t.config)
 		if err != nil {

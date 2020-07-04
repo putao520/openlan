@@ -68,10 +68,9 @@ func (b *LinuxBridge) Close() error {
 
 func (b *LinuxBridge) AddSlave(dev Taper) error {
 	name := dev.Name()
-
 	link, err := netlink.LinkByName(name)
 	if err != nil {
-		libol.Error("LinuxBridge.AddSlave: Get dev %s: %s", name, err)
+		libol.Error("LinuxBridge.AddSlave: Get %s: %s", name, err)
 		return err
 	}
 	if err := netlink.LinkSetUp(link); err != nil {
@@ -81,7 +80,7 @@ func (b *LinuxBridge) AddSlave(dev Taper) error {
 	la := netlink.LinkAttrs{TxQLen: -1, Name: b.name}
 	br := &netlink.Bridge{LinkAttrs: la}
 	if err := netlink.LinkSetMaster(link, br); err != nil {
-		libol.Error("LinuxBridge.AddSlave: Switch dev %s: %s", name, err)
+		libol.Error("LinuxBridge.AddSlave: master %s: %s", name, err)
 		return err
 	}
 	dev.Slave(b)
@@ -91,16 +90,13 @@ func (b *LinuxBridge) AddSlave(dev Taper) error {
 
 func (b *LinuxBridge) DelSlave(dev Taper) error {
 	name := dev.Name()
-
 	link, err := netlink.LinkByName(name)
 	if err != nil {
-		libol.Error("LinuxBridge.DelSlave: Get dev %s: %s", name, err)
+		libol.Error("LinuxBridge.DelSlave: Get %s: %s", name, err)
 		return err
 	}
-	la := netlink.LinkAttrs{TxQLen: -1, Name: b.name}
-	br := &netlink.Bridge{LinkAttrs: la}
-	if err := netlink.LinkSetMaster(link, br); err != nil {
-		libol.Error("LinuxBridge.DelSlave: Switch dev %s: %s", name, err)
+	if err := netlink.LinkSetNoMaster(link); err != nil {
+		libol.Error("LinuxBridge.DelSlave: noMaster %s: %s", name, err)
 		return err
 	}
 	libol.Info("LinuxBridge.DelSlave: %s %s", name, b.name)

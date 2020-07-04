@@ -18,13 +18,15 @@ type ConnCaller struct {
 }
 
 type ConnStats struct {
-	Get  int64 `json:"get"`
-	Add  int64 `json:"add"`
-	Del  int64 `json:"del"`
-	Mod  int64 `json:"mod"`
-	Send int64 `json:"send"`
-	Recv int64 `json:"recv"`
-	Drop int64 `json:"drop"`
+	Get    int64 `json:"get"`
+	Add    int64 `json:"add"`
+	Del    int64 `json:"del"`
+	Mod    int64 `json:"mod"`
+	Write  int64 `json:"write"`
+	Send   int64 `json:"send"`
+	Recv   int64 `json:"recv"`
+	Action int64 `json:"action"`
+	Drop   int64 `json:"drop"`
 }
 
 type CtrlConn struct {
@@ -136,18 +138,20 @@ func (cn *CtrlConn) queue() {
 		select {
 		case m := <-cn.SendQ:
 			// to keep conn is consistent, require read lock
-			cn.Lock.RLock()
 			if err := cn.write(m); err != nil {
-				cn.Lock.RUnlock()
 				libol.Error("CtrlConn.queue: write %s", err)
 				return
 			}
-			cn.Lock.RUnlock()
+			cn.Lock.Lock()
+			cn.SendC--
+			cn.Sts.Write++
+			cn.Lock.Unlock()
 		case m := <-cn.RecvQ:
 			// to avoid require lock from caller, no read lock.
 			if err := cn.dispatch(m); err != nil {
 				libol.Error("CtrlConn.queue: %s", err)
 			}
+			cn.Sts.Action++
 		}
 	}
 }
@@ -189,8 +193,6 @@ func (cn *CtrlConn) write(m Message) error {
 	if err := Codec.Send(cn.Conn, &m); err != nil {
 		return err
 	}
-	cn.SendC--
-	cn.Sts.Send++
 	return nil
 }
 
@@ -237,8 +239,8 @@ func (cn *CtrlConn) Stop() {
 }
 
 func (cn *CtrlConn) Send(m Message) {
-	cn.Lock.RLock()
-	defer cn.Lock.RUnlock()
+	cn.Lock.Lock()
+	defer cn.Lock.Unlock()
 	if cn.SendQ == nil {
 		return
 	}
@@ -248,12 +250,13 @@ func (cn *CtrlConn) Send(m Message) {
 		return
 	}
 	cn.SendC++
+	cn.Sts.Send++
 	cn.SendQ <- m
 }
 
 func (cn *CtrlConn) SendWait(m Message) error {
-	cn.Lock.RLock()
-	defer cn.Lock.RUnlock()
+	cn.Lock.Lock()
+	defer cn.Lock.Unlock()
 	return cn.write(m)
 }
 

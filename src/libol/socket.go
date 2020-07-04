@@ -233,14 +233,14 @@ func (s *socketClient) LocalAddr() string {
 	if s.connection != nil {
 		return s.connection.LocalAddr().String()
 	}
-	return s.address
+	return ""
 }
 
 func (s *socketClient) RemoteAddr() string {
 	if s.connection != nil {
 		return s.connection.RemoteAddr().String()
 	}
-	return s.address
+	return ""
 }
 
 func (s *socketClient) SetTimeout(v int64) {
@@ -312,7 +312,7 @@ func (t *socketServer) OffClient(client SocketClient) {
 }
 
 func (t *socketServer) doOnClient(call ServerListener, client SocketClient) {
-	Debug("socketServer.doOnClient: %s", client.Addr())
+	Info("socketServer.doOnClient: %s", client)
 	_ = t.clients.Set(client.RemoteAddr(), client)
 	if call.OnClient != nil {
 		_ = call.OnClient(client)
@@ -323,7 +323,7 @@ func (t *socketServer) doOnClient(call ServerListener, client SocketClient) {
 }
 
 func (t *socketServer) doOffClient(call ServerListener, client SocketClient) {
-	Debug("socketServer.doOffClient: %s", client.Addr())
+	Info("socketServer.doOffClient: %s", client)
 	if _, ok := t.clients.GetEx(client.RemoteAddr()); ok {
 		t.sts.CloseCount++
 		if call.OnClose != nil {
@@ -348,14 +348,14 @@ func (t *socketServer) Loop(call ServerListener) {
 }
 
 func (t *socketServer) Read(client SocketClient, ReadAt ReadClient) {
-	Log("socketServer.Read: %s", client.Addr())
+	Log("socketServer.Read: %s", client)
 	for {
 		frame, err := client.ReadMsg()
 		if err != nil || frame.size <= 0 {
 			if frame != nil {
-				Error("socketServer.Read: %s %d", err, frame.size)
+				Error("socketServer.Read: %s %d", client, frame.size)
 			} else {
-				Error("socketServer.Read: %s", err)
+				Error("socketServer.Read: %s %s", client, err)
 			}
 			t.OffClient(client)
 			break

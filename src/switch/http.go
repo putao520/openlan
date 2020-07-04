@@ -51,8 +51,8 @@ func (h *Http) Initialize() {
 		h.server = &http.Server{
 			Addr:         h.listen,
 			Handler:      r,
-			ReadTimeout:  2 * time.Second,
-			WriteTimeout: 4 * time.Second,
+			ReadTimeout:  5 * time.Minute,
+			WriteTimeout: 10 * time.Minute,
 		}
 	}
 	if h.adminToken == "" {

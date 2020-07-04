@@ -77,13 +77,13 @@ func (p *PointAuth) handleLogin(client libol.SocketClient, data string) error {
 		name = name + "@" + user.Network
 	}
 
-	libol.Info("PointAuth.handleLogin: %s on %s", name, user.Alias)
+	libol.Info("PointAuth.handleLogin: %s %s on %s", client, name, user.Alias)
 	nowUser := storage.User.Get(name)
 	if nowUser != nil {
 		if nowUser.Password == user.Password {
 			p.success++
 			client.SetStatus(libol.ClAuth)
-			libol.Info("PointAuth.handleLogin: %s auth", client.Addr())
+			libol.Info("PointAuth.handleLogin: %s auth", client)
 			_ = p.onAuth(client, user)
 			return nil
 		}
@@ -99,11 +99,12 @@ func (p *PointAuth) onAuth(client libol.SocketClient, user *models.User) error {
 	}
 
 	libol.Info("PointAuth.onAuth: %s", client)
-	d, err := p.master.NewTap(user.Network)
+	dev, err := p.master.NewTap(user.Network)
 	if err != nil {
 		return err
 	}
-	m := models.NewPoint(client, d)
+	libol.Info("PointAuth.onAuth: %s on %s", client, dev.Name())
+	m := models.NewPoint(client, dev)
 	m.Alias = user.Alias
 	m.UUID = user.UUID
 	m.Network = user.Network
@@ -112,11 +113,12 @@ func (p *PointAuth) onAuth(client libol.SocketClient, user *models.User) error {
 	}
 	// free point has same uuid.
 	if om := storage.Point.GetByUUID(m.UUID); om != nil {
+		libol.Info("PointAuth.onAuth: %s OffClient %s", client, om.Client)
 		p.master.OffClient(om.Client)
 	}
 	client.SetPrivate(m)
 	storage.Point.Add(m)
-	libol.Go(func() { p.master.ReadTap(d, client.WriteMsg) })
+	libol.Go(func() { p.master.ReadTap(dev, client.WriteMsg) })
 	return nil
 }
 

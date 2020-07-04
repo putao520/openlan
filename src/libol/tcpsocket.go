@@ -85,6 +85,7 @@ func (t *TcpServer) Accept() {
 			Error("TcpServer.Accept: %s", err)
 			return
 		}
+		Info("TcpServer.Accept: %s", conn.RemoteAddr())
 		t.sts.AcceptCount++
 		t.onClients <- NewTcpClientFromConn(conn, t.tcpCfg)
 	}
@@ -164,12 +165,12 @@ func (t *TcpClient) Connect() error {
 }
 
 func (t *TcpClient) Close() {
+	Info("TcpClient.Close: %s %p", t.address, t.connection)
 	t.lock.Lock()
 	if t.connection != nil {
 		if t.status != ClTerminal {
 			t.status = ClClosed
 		}
-		Info("TcpClient.Close: %s", t.address)
 		_ = t.connection.Close()
 		t.connection = nil
 		t.private = nil
@@ -177,6 +178,7 @@ func (t *TcpClient) Close() {
 		if t.listener.OnClose != nil {
 			_ = t.listener.OnClose(t)
 		}
+		Info("TcpClient.Close: %s %d", t.address, t.status)
 	} else {
 		t.lock.Unlock()
 	}

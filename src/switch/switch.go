@@ -258,8 +258,7 @@ func (v *Switch) ReadClient(client libol.SocketClient, frame *libol.FrameMessage
 }
 
 func (v *Switch) OnClose(client libol.SocketClient) error {
-	libol.Info("Switch.OnClose: %s", client.Addr())
-
+	libol.Info("Switch.OnClose: %s", client)
 	// already not need support free list for device.
 	uuid := storage.Point.GetUUID(client.Addr())
 	if storage.Point.GetAddr(uuid) == client.Addr() { // not has newer
