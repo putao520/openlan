@@ -71,6 +71,7 @@ func (k *UdpServer) Accept() {
 			Error("TcpServer.Accept: %s", err)
 			return
 		}
+		Info("UdpServer.Accept: %s", conn.RemoteAddr())
 		k.sts.AcceptCount++
 		k.onClients <- NewUdpClientFromConn(conn, k.udpCfg)
 	}
@@ -150,6 +151,7 @@ func (c *UdpClient) Connect() error {
 }
 
 func (c *UdpClient) Close() {
+	Info("UdpClient.Close: %s %v", c.address, c.IsOk())
 	c.lock.Lock()
 	if c.connection != nil {
 		if c.status != ClTerminal {

@@ -83,6 +83,7 @@ func (k *KcpServer) Accept() {
 			return
 		}
 		k.sts.AcceptCount++
+		Info("KcpServer.Accept: %s", conn.RemoteAddr())
 		conn.SetStreamMode(true)
 		conn.SetWriteDelay(false)
 		conn.SetACKNoDelay(false)
@@ -169,6 +170,7 @@ func (c *KcpClient) Connect() error {
 }
 
 func (c *KcpClient) Close() {
+	Info("KcpClient.Close: %s %v", c.address, c.IsOk())
 	c.lock.Lock()
 	if c.connection != nil {
 		if c.status != ClTerminal {
