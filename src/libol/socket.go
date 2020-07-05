@@ -40,6 +40,7 @@ type SocketClient interface {
 	WriteResp(action string, body string) error
 	State() string
 	UpTime() int64
+	AliveTime() int64
 	String() string
 	Terminal()
 	Private() interface{}
@@ -130,13 +131,14 @@ func (t *dataStream) WriteResp(action string, body string) error {
 
 type socketClient struct {
 	dataStream
-	lock     sync.RWMutex
-	listener ClientListener
-	address  string
-	newTime  int64
-	private  interface{}
-	status   uint8
-	timeout  int64 // sec for read and write timeout
+	lock          sync.RWMutex
+	listener      ClientListener
+	address       string
+	newTime       int64
+	connectedTime int64
+	private       interface{}
+	status        uint8
+	timeout       int64 // sec for read and write timeout
 }
 
 func (s *socketClient) State() string {
@@ -179,6 +181,13 @@ func (s *socketClient) Status() uint8 {
 
 func (s *socketClient) UpTime() int64 {
 	return time.Now().Unix() - s.newTime
+}
+
+func (s *socketClient) AliveTime() int64 {
+	if s.connectedTime == 0 {
+		return 0
+	}
+	return time.Now().Unix() - s.connectedTime
 }
 
 // Get server address for client or remote address from server.
@@ -248,6 +257,14 @@ func (s *socketClient) RemoteAddr() string {
 
 func (s *socketClient) SetTimeout(v int64) {
 	s.timeout = v
+}
+
+func (s *socketClient) SetConnection(conn net.Conn) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.connection = conn
+	s.status = ClConnected
+	s.connectedTime = time.Now().Unix()
 }
 
 // Socket Server

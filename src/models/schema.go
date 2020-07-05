@@ -8,30 +8,32 @@ import (
 func NewPointSchema(p *Point) schema.Point {
 	client, dev := p.Client, p.Device
 	return schema.Point{
-		Uptime:  p.Uptime,
-		UUID:    p.UUID,
-		Alias:   p.Alias,
-		User:    p.User,
-		Address: client.Addr(),
-		Device:  dev.Name(),
-		RxBytes: client.Sts().RecvOkay,
-		TxBytes: client.Sts().SendOkay,
-		ErrPkt:  client.Sts().SendError,
-		State:   client.State(),
-		Network: p.Network,
+		Uptime:    p.Uptime,
+		UUID:      p.UUID,
+		Alias:     p.Alias,
+		User:      p.User,
+		Address:   client.Addr(),
+		Device:    dev.Name(),
+		RxBytes:   client.Sts().RecvOkay,
+		TxBytes:   client.Sts().SendOkay,
+		ErrPkt:    client.Sts().SendError,
+		State:     client.State(),
+		Network:   p.Network,
+		AliveTime: client.AliveTime(),
 	}
 }
 
 func NewLinkSchema(p *Point) schema.Link {
 	client, dev := p.Client, p.Device
 	return schema.Link{
-		UUID:    p.UUID,
-		User:    p.User,
-		Uptime:  client.UpTime(),
-		Device:  dev.Name(),
-		Address: client.Addr(),
-		State:   client.State(),
-		Network: p.Network,
+		UUID:      p.UUID,
+		User:      p.User,
+		Uptime:    client.UpTime(),
+		Device:    dev.Name(),
+		Address:   client.Addr(),
+		State:     client.State(),
+		Network:   p.Network,
+		AliveTime: client.AliveTime(),
 	}
 }
 

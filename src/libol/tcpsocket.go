@@ -124,7 +124,8 @@ func NewTcpClientFromConn(conn net.Conn, cfg *TcpConfig) *TcpClient {
 					block: cfg.Block,
 				},
 			},
-			newTime: time.Now().Unix(),
+			newTime:       time.Now().Unix(),
+			connectedTime: time.Now().Unix(),
 		},
 	}
 	t.connector = t.Connect
@@ -147,10 +148,7 @@ func (t *TcpClient) Connect() error {
 	if err != nil {
 		return err
 	}
-	t.lock.Lock()
-	t.connection = conn
-	t.status = ClConnected
-	t.lock.Unlock()
+	t.SetConnection(conn)
 	if t.listener.OnConnected != nil {
 		_ = t.listener.OnConnected(t)
 	}

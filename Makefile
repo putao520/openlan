@@ -29,7 +29,7 @@ help: ## show make targets
 		printf " \033[36m%-20s\033[0m  %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 ## all platform
-all: linux windows darwin ## build all platform binary
+bin: linux windows darwin ## build all platform binary
 
 pkg: linux-rpm windows-zip darwin-zip ## build all plaftorm packages
 
@@ -57,7 +57,7 @@ linux-switch: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch ./src/cli/switch
 	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch.i386 ./src/cli/switch
 
-linux-rpm: env
+linux-rpm: env ## build rpm packages
 	@./packaging/spec.sh
 	rpmbuild -ba packaging/openlan-ctrl.spec
 	rpmbuild -ba packaging/openlan-point.spec

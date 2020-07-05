@@ -1044,7 +1044,7 @@ func (p *Worker) Device() network.Taper {
 func (p *Worker) UpTime() int64 {
 	client := p.Client()
 	if client != nil {
-		return client.UpTime()
+		return client.AliveTime()
 	}
 	return 0
 }

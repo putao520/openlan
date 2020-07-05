@@ -124,7 +124,8 @@ func NewUdpClientFromConn(conn net.Conn, cfg *UdpConfig) *UdpClient {
 					block:   cfg.Block,
 				},
 			},
-			newTime: time.Now().Unix(),
+			newTime:       time.Now().Unix(),
+			connectedTime: time.Now().Unix(),
 		},
 	}
 	c.connector = c.Connect
@@ -140,10 +141,7 @@ func (c *UdpClient) Connect() error {
 	if err != nil {
 		return err
 	}
-	c.lock.Lock()
-	c.connection = conn
-	c.status = ClConnected
-	c.lock.Unlock()
+	c.SetConnection(conn)
 	if c.listener.OnConnected != nil {
 		_ = c.listener.OnConnected(c)
 	}

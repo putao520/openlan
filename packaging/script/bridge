@@ -39,7 +39,7 @@ fi
 if [ -n "$prefix" ]; then
   echo "PREFIX=$prefix" >> $brCfg
 fi
-if [ -n "$gateway" ]; then
+if [ -n "$gw" ]; then
   echo "GATEWAY=$gw" >> $brCfg
 fi
 if [ -n "$dns1" ]; then

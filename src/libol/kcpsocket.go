@@ -136,7 +136,8 @@ func NewKcpClientFromConn(conn net.Conn, cfg *KcpConfig) *KcpClient {
 					timeout: cfg.Timeout,
 				},
 			},
-			newTime: time.Now().Unix(),
+			newTime:       time.Now().Unix(),
+			connectedTime: time.Now().Unix(),
 		},
 	}
 	c.connector = c.Connect
@@ -159,10 +160,7 @@ func (c *KcpClient) Connect() error {
 	conn.SetStreamMode(true)
 	conn.SetWriteDelay(false)
 	conn.SetACKNoDelay(false)
-	c.lock.Lock()
-	c.connection = conn
-	c.status = ClConnected
-	c.lock.Unlock()
+	c.SetConnection(conn)
 	if c.listener.OnConnected != nil {
 		_ = c.listener.OnConnected(c)
 	}
