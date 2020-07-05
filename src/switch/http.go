@@ -146,14 +146,12 @@ func (h *Http) LoadToken() error {
 		libol.Info("Http.LoadToken: file:%s does not exist", h.adminFile)
 		return nil
 	}
-
 	contents, err := ioutil.ReadFile(h.adminFile)
 	if err != nil {
 		libol.Error("Http.LoadToken: file:%s %s", h.adminFile, err)
 		return err
 
 	}
-
 	h.adminToken = string(contents)
 	return nil
 }
@@ -279,6 +277,7 @@ func (h *Http) ParseFiles(w http.ResponseWriter, name string, data interface{}) 
 	tmpl, err := template.New(file).Funcs(template.FuncMap{
 		"prettyTime":  libol.PrettyTime,
 		"prettyBytes": libol.PrettyBytes,
+		"getIpAddr":   libol.GetIPAddr,
 	}).ParseFiles(name)
 	if err != nil {
 		_, _ = fmt.Fprintf(w, "template.ParseFiles %s", err)

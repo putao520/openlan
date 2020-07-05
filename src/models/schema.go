@@ -3,7 +3,6 @@ package models
 import (
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/switch/schema"
-	"strings"
 )
 
 func NewPointSchema(p *Point) schema.Point {
@@ -12,6 +11,7 @@ func NewPointSchema(p *Point) schema.Point {
 		Uptime:  p.Uptime,
 		UUID:    p.UUID,
 		Alias:   p.Alias,
+		User:    p.User,
 		Address: client.Addr(),
 		Device:  dev.Name(),
 		RxBytes: client.Sts().RecvOkay,
@@ -26,11 +26,11 @@ func NewLinkSchema(p *Point) schema.Link {
 	client, dev := p.Client, p.Device
 	return schema.Link{
 		UUID:    p.UUID,
+		User:    p.User,
 		Uptime:  client.UpTime(),
 		Device:  dev.Name(),
 		Address: client.Addr(),
 		State:   client.State(),
-		IpAddr:  strings.Split(client.Addr(), ":")[0],
 		Network: p.Network,
 	}
 }

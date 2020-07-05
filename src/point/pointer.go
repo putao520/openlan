@@ -15,11 +15,11 @@ type Pointer interface {
 	Device() network.Taper
 	UpTime() int64
 	UUID() string
+	User() string
 }
 
 type MixPoint struct {
 	// private
-	tenant string
 	uuid   string
 	worker Worker
 	config *config.Point
@@ -27,7 +27,6 @@ type MixPoint struct {
 
 func NewMixPoint(config *config.Point) MixPoint {
 	p := MixPoint{
-		tenant: config.Network,
 		worker: Worker{
 			ifAddr: config.Interface.Address,
 			config: config,
@@ -79,5 +78,15 @@ func (p *MixPoint) IfAddr() string {
 }
 
 func (p *MixPoint) Tenant() string {
-	return p.tenant
+	if p.config != nil {
+		return p.config.Network
+	}
+	return ""
+}
+
+func (p *MixPoint) User() string {
+	if p.config != nil {
+		return p.config.Username
+	}
+	return ""
 }

@@ -168,7 +168,6 @@ func PrettyBytes(b uint64) string {
 		v := float64(_v%_m) / float64(_m)
 		return _v / _m, int(v * 100) //move two decimal to integer
 	}
-
 	if b < 1024 {
 		return fmt.Sprintf("%dB", b)
 	}
@@ -182,6 +181,10 @@ func PrettyBytes(b uint64) string {
 	}
 	g, d := split(m, 1024)
 	return fmt.Sprintf("%d.%02dG", g, d)
+}
+
+func GetIPAddr(addr string) string {
+	return strings.Split(addr, ":")[0]
 }
 
 func Wait() {

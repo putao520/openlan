@@ -130,7 +130,7 @@
                     <th>Network</th>
                     <th>Alias</th>
                     <th>Address</th>
-                    <th>Device</th>
+                    <th>User</th>
                     <th>r/t|Traffic</th>
                     <th>State</th>
                 </tr>
@@ -140,10 +140,10 @@
                 <tr>
                     <td>{{ .UUID }}</td>
                     <td>{{ prettyTime .Uptime }}</td>
-                    <td>{{ .Network }}</td>
+                    <td>{{ .Device }}.{{ .Network }}</td>
                     <td>{{ .Alias }}</td>
-                    <td>{{ .Address }}</td>
-                    <td>{{ .Device }}</td>
+                    <td><a href="https://{{ getIpAddr .Address }}:10000">{{ .Address }}</a></td>
+                    <td>{{ .User }}</td>
                     <td>{{ prettyBytes .RxBytes }}/{{ prettyBytes .TxBytes }}</td>
                     <td><span class="{{ .State }}">{{ .State }}</span></td>
                 </tr>
@@ -165,7 +165,7 @@
                     <th>UUID</th>
                     <th>UpTime</th>
                     <th>Network</th>
-                    <th>Device</th>
+                    <th>User</th>
                     <th>Address</th>
                     <th>State</th>
                 </tr>
@@ -175,9 +175,9 @@
                     <tr>
                         <td>{{ .UUID }}</td>
                         <td>{{ prettyTime .Uptime }}</td>
-                        <td>{{ .Network }}</td>
-                        <td>{{ .Device }}</td>
-                        <td><a href="https://{{ .IpAddr }}:10000">{{ .Address }}</a></td>
+                        <td>{{ .Device }}.{{ .Network }}</td>
+                        <td>{{ .User }}</td>
+                        <td><a href="https://{{ getIpAddr .Address }}:10000">{{ .Address }}</a></td>
                         <td><span class="{{ .State }}">{{ .State }}</span></td>
                     </tr>
                 {{ end }}
@@ -198,7 +198,7 @@
                     <th>UpTime</th>
                     <th>Ethernet</th>
                     <th>IP Address</th>
-                    <th>On Client</th>
+                    <th>Client</th>
                 </tr>
                 </thead>
                 <tbody>

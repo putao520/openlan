@@ -105,6 +105,7 @@ func (p *PointAuth) onAuth(client libol.SocketClient, user *models.User) error {
 	}
 	libol.Info("PointAuth.onAuth: %s on %s", client, dev.Name())
 	m := models.NewPoint(client, dev)
+	m.User = user.Name
 	m.Alias = user.Alias
 	m.UUID = user.UUID
 	m.Network = user.Network
