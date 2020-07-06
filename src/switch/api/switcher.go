@@ -22,9 +22,9 @@ func NewWorkerSchema(s Switcher) schema.Worker {
 		protocol = cfg.Protocol
 	}
 	return schema.Worker{
-		UUID:   s.UUID(),
-		Uptime: s.UpTime(),
-		Alias:  s.Alias(),
+		UUID:     s.UUID(),
+		Uptime:   s.UpTime(),
+		Alias:    s.Alias(),
 		Protocol: protocol,
 	}
 }
