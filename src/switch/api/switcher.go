@@ -17,9 +17,14 @@ type Switcher interface {
 }
 
 func NewWorkerSchema(s Switcher) schema.Worker {
+	protocol := ""
+	if cfg := s.Config(); cfg != nil {
+		protocol = cfg.Protocol
+	}
 	return schema.Worker{
 		UUID:   s.UUID(),
 		Uptime: s.UpTime(),
 		Alias:  s.Alias(),
+		Protocol: protocol,
 	}
 }

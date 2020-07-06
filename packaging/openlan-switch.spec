@@ -38,13 +38,13 @@ cp -R %_source_dir/packaging/script %{buildroot}/var/openlan
 cp -R %_source_dir/src/switch/public %{buildroot}/var/openlan
 
 %pre
-firewall-cmd --permanent --zone=public --add-port=10000/tcp --permanent || {
+/usr/bin/firewall-cmd --permanent --zone=public --add-port=10000/tcp --permanent || {
   echo "YOU NEED ALLOW TCP PORT:10000."
 }
-firewall-cmd --permanent --zone=public --add-port=10002/udp --permanent || {
+/usr/bin/firewall-cmd --permanent --zone=public --add-port=10002/udp --permanent || {
   echo "YOU NEED ALLOW UDP PORT:10002."
 }
-firewall-cmd --permanent --zone=public --add-port=10002/tcp --permanent || {
+/usr/bin/firewall-cmd --permanent --zone=public --add-port=10002/tcp --permanent || {
   echo "YOU NEED ALLOW TCP PORT:10002."
 }
 firewall-cmd --reload || :

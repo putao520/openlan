@@ -31,8 +31,8 @@ mkdir -p %{buildroot}/usr/lib/systemd/system
 cp %_source_dir/packaging/resource/openlan-ctrl.service %{buildroot}/usr/lib/systemd/system
 
 %pre
-firewall-cmd --permanent --zone=public --add-port=10088/tcp || {
-  echo "You need allowed TCP port 10088 manually."
+/usr/bin/firewall-cmd --permanent --zone=public --add-port=10088/tcp || {
+  echo "YOU NEED ALLOW TCP PORT:10088."
 }
 firewall-cmd --reload || :
 

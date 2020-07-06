@@ -92,12 +92,20 @@
             <table class="table-list">
                 <tbody>
                     <tr>
+                        <td>Project:</td>
+                        <td><a href="https://github.com/danieldin95/openlan-go">openlan-go</a></td>
+                    </tr>
+                    <tr>
                         <td>UUID:</td>
                         <td>{{ .Worker.UUID }}</td>
                     </tr>
                     <tr>
                         <td>UpTime:</td>
                         <td>{{ prettyTime .Worker.Uptime }}</td>
+                    </tr>
+                    <tr>
+                        <td>Protocol:</td>
+                        <td>{{ .Worker.Protocol }}</td>
                     </tr>
                     <tr>
                         <td>Alias:</td>
@@ -129,7 +137,7 @@
                     <th>Alive</th>
                     <th>Network</th>
                     <th>Alias</th>
-                    <th>Address</th>
+                    <th>Connection</th>
                     <th>User</th>
                     <th>r/t|Traffic</th>
                     <th>State</th>
@@ -166,7 +174,7 @@
                     <th>Alive</th>
                     <th>Network</th>
                     <th>User</th>
-                    <th>Address</th>
+                    <th>Connection</th>
                     <th>State</th>
                 </tr>
                 </thead>

@@ -212,7 +212,7 @@ func (h *Http) PubFile(w http.ResponseWriter, r *http.Request) {
 func (h *Http) getIndex(body *schema.Index) *schema.Index {
 	body.Version = schema.NewVersionSchema()
 	body.Worker = api.NewWorkerSchema(h.switcher)
-
+	// display accessed point.
 	pointList := make([]*models.Point, 0, 128)
 	for p := range storage.Point.List() {
 		if p == nil {
@@ -221,12 +221,12 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 		pointList = append(pointList, p)
 	}
 	sort.SliceStable(pointList, func(i, j int) bool {
-		return pointList[i].UUID > pointList[j].UUID
+		return pointList[i].Client.Addr() > pointList[j].Client.Addr()
 	})
 	for _, p := range pointList {
 		body.Points = append(body.Points, models.NewPointSchema(p))
 	}
-
+	// display neighbor.
 	neighborList := make([]*models.Neighbor, 0, 128)
 	for n := range storage.Neighbor.List() {
 		if n == nil {
@@ -240,7 +240,7 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 	for _, n := range neighborList {
 		body.Neighbors = append(body.Neighbors, models.NewNeighborSchema(n))
 	}
-
+	// display links.
 	linkList := make([]*models.Point, 0, 128)
 	for p := range storage.Link.List() {
 		if p == nil {
@@ -249,12 +249,12 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 		linkList = append(linkList, p)
 	}
 	sort.SliceStable(linkList, func(i, j int) bool {
-		return linkList[i].UUID > linkList[j].UUID
+		return linkList[i].Client.Addr() > linkList[j].Client.Addr()
 	})
 	for _, p := range linkList {
 		body.Links = append(body.Links, models.NewLinkSchema(p))
 	}
-
+	// display online flow.
 	lineList := make([]*models.Line, 0, 128)
 	for l := range storage.Online.List() {
 		if l == nil {
