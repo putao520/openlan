@@ -33,7 +33,7 @@ func (p *PointAuth) OnFrame(client libol.SocketClient, frame *libol.FrameMessage
 			if err := p.handleLogin(client, params); err != nil {
 				libol.Error("PointAuth.OnFrame: %s", err)
 				_ = client.WriteResp("login", err.Error())
-				client.Close()
+				//client.Close()
 				return err
 			}
 			_ = client.WriteResp("login", "okay.")
