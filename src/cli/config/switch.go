@@ -150,6 +150,10 @@ func (c *Switch) Right() {
 	if c.Cert.Dir != "" {
 		c.Cert.CrtFile = fmt.Sprintf("%s/crt.pem", c.Cert.Dir)
 		c.Cert.KeyFile = fmt.Sprintf("%s/private.key", c.Cert.Dir)
+		// default is tls if cert configured
+		if c.Protocol == "" {
+			c.Protocol = "tls"
+		}
 	}
 }
 
