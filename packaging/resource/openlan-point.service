@@ -6,7 +6,7 @@ After=network.target
 Type=notify
 RemainAfterExit=yes
 EnvironmentFile=/etc/sysconfig/openlan/point.cfg
-ExecStart=/usr/bin/openlan-point $OPTIONS &
+ExecStart=/usr/bin/openlan-point $OPTIONS
 ExecStop=/usr/bin/kill `/usr/sbin/pidof openlan-point`
 
 [Install]

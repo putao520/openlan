@@ -26,7 +26,6 @@ func GenToken(n int) string {
 	for i := range buffer {
 		buffer[i] = letters[rand.Int63()%int64(size)]
 	}
-
 	return string(buffer)
 }
 
@@ -34,15 +33,12 @@ func GenEthAddr(n int) []byte {
 	if n == 0 {
 		n = 6
 	}
-
 	data := make([]byte, n)
 	rand.Seed(time.Now().UnixNano())
 	for i := range data {
 		data[i] = byte(rand.Uint32() & 0xFF)
 	}
-
 	data[0] &= 0xfe
-
 	return data
 }
 
@@ -52,17 +48,13 @@ func Marshal(v interface{}, pretty bool) (string, error) {
 		Error("Marshal error: %s", err)
 		return "", err
 	}
-
 	if !pretty {
 		return string(str), nil
 	}
-
 	var out bytes.Buffer
-
 	if err := json.Indent(&out, str, "", "  "); err != nil {
 		return string(str), nil
 	}
-
 	return out.String(), nil
 }
 
@@ -73,18 +65,15 @@ func MarshalSave(v interface{}, file string, pretty bool) error {
 		Error("MarshalSave: %s", err)
 		return err
 	}
-
 	str, err := Marshal(v, true)
 	if err != nil {
 		Error("MarshalSave error: %s", err)
 		return err
 	}
-
 	if _, err := f.Write([]byte(str)); err != nil {
 		Error("MarshalSave: %s", err)
 		return err
 	}
-
 	return nil
 }
 
@@ -99,16 +88,13 @@ func UnmarshalLoad(v interface{}, file string) error {
 	if err := FileExist(file); err != nil {
 		return NewErr("UnmarshalLoad: %s %s", file, err)
 	}
-
 	contents, err := ioutil.ReadFile(file)
 	if err != nil {
 		return NewErr("UnmarshalLoad: %s %s", file, err)
 	}
-
 	if err := json.Unmarshal([]byte(contents), v); err != nil {
 		return NewErr("UnmarshalLoad: %s", err)
 	}
-
 	return nil
 }
 
@@ -120,7 +106,6 @@ func FunName(i interface{}) string {
 func Netmask2Len(s string) int {
 	mask := net.IPMask(net.ParseIP(s).To4())
 	prefixSize, _ := mask.Size()
-
 	return prefixSize
 }
 
@@ -143,21 +128,14 @@ func IpAddrFormat(ipAddr string) string {
 	return address + "/" + netmask
 }
 
-func IsNotJSON(s string) bool {
-	if len(s) > 0 {
-		return s[0] != '[' && s[0] != '{'
-	}
-	return true
-}
-
 func PrettyTime(t int64) string {
-	mins := t / 60
-	if mins < 60 {
-		return fmt.Sprintf("%dm%ds", mins, t%60)
+	min := t / 60
+	if min < 60 {
+		return fmt.Sprintf("%dm%ds", min, t%60)
 	}
-	hours := mins / 60
+	hours := min / 60
 	if hours < 24 {
-		return fmt.Sprintf("%dh%dm", hours, mins%60)
+		return fmt.Sprintf("%dh%dm", hours, min%60)
 	}
 	days := hours / 24
 	return fmt.Sprintf("%dd%dh", days, hours%24)
