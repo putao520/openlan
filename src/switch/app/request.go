@@ -84,6 +84,7 @@ func (r *WithRequest) GetLease(ifAddr string, p *models.Point, n *models.Network
 		}
 		if lease == nil || lease.Address != ipAddr {
 			lease = storage.Network.AddLease(uuid, ipAddr)
+			lease.Alias = alias
 		}
 	}
 	if lease != nil {
