@@ -64,6 +64,9 @@ func (r *WithRequest) OnNeighbor(client libol.SocketClient, data string) {
 }
 
 func (r *WithRequest) GetLease(ifAddr string, p *models.Point, n *models.Network) *schema.Lease {
+	if n == nil {
+		return nil
+	}
 	uuid := p.UUID
 	alias := p.Alias
 	network := n.Name
@@ -98,15 +101,26 @@ func (r *WithRequest) OnIpAddr(client libol.SocketClient, data string) {
 	libol.Info("WithRequest.OnIpAddr: %s from %s", data, client)
 	recv := models.NewNetwork("", "")
 	if err := json.Unmarshal([]byte(data), recv); err != nil {
-		libol.Error("WithRequest.OnIpAddr: Invalid json data.")
+		libol.Error("WithRequest.OnIpAddr: invalid json data.")
 		return
 	}
 	if recv.Name == "" {
 		recv.Name = recv.Tenant
 	}
+	if recv.Name == "" {
+		recv.Name = "default"
+	}
 	n := storage.Network.Get(recv.Name)
+	if n == nil {
+		libol.Error("WithRequest.OnIpAddr: invalid network %s.", recv.Name)
+		return
+	}
 	libol.Cmd("WithRequest.OnIpAddr: find %s", n)
 	p := storage.Point.Get(client.Addr())
+	if p == nil {
+		libol.Error("WithRequest.OnIpAddr: invalid point %s.", client)
+		return
+	}
 	lease := r.GetLease(recv.IfAddr, p, n)
 	if recv.IfAddr == "" { // If not configure interface address, and try to alloc it.
 		if lease != nil {

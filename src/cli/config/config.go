@@ -43,7 +43,7 @@ func RightAddr(listen *string, port int) {
 
 func GetAlias() string {
 	if hostname, err := os.Hostname(); err == nil {
-		return hostname
+		return strings.ToLower(hostname)
 	}
 	return libol.GenToken(13)
 }
