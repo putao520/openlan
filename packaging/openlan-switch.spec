@@ -1,5 +1,5 @@
 Name: openlan-switch
-Version: 5.2.17
+Version: 5.2.18
 Release: 1%{?dist}
 Summary: OpenLan's Project Software
 Group: Applications/Communications
@@ -23,7 +23,7 @@ cp %_source_dir/build/openlan-switch %{buildroot}/usr/bin
 
 mkdir -p %{buildroot}/etc/openlan/switch
 cp %_source_dir/packaging/resource/ctrl.json.example %{buildroot}/etc/openlan/switch
-cp %_source_dir/packaging/resource/switch.json.example %{buildroot}/etc/openlan/switch
+cp %_source_dir/packaging/resource/switch.json*.example %{buildroot}/etc/openlan/switch
 mkdir -p %{buildroot}/etc/openlan/switch/network
 cp %_source_dir/packaging/resource/network.json.example %{buildroot}/etc/openlan/switch/network
 mkdir -p %{buildroot}/etc/sysconfig/openlan
@@ -48,6 +48,11 @@ cp -R %_source_dir/src/switch/public %{buildroot}/var/openlan
   echo "YOU NEED ALLOW TCP PORT:10002."
 }
 firewall-cmd --reload || :
+
+%post
+if [ ! -e "/etc/openlan/switch/switch.json" ]; then
+    cp -rvf /etc/openlan/switch/switch.json.example /etc/openlan/switch/switch.json
+fi
 
 %files
 %defattr(-,root,root)

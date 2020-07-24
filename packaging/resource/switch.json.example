@@ -1,5 +1,4 @@
 {
-  "alias": "who.openlan.net",
   "cert": {
     "dir": "/var/openlan/ca"
   },
@@ -12,29 +11,5 @@
   "crypt": {
     "algo": "xor",
     "secret": "123456"
-  },
-  "network": [
-    {
-      "name": "default",
-      "bridge": {
-        "address": "192.168.100.40/24"
-      },
-      "subnet": {
-        "start": "192.168.100.250",
-        "end": "192.168.100.254",
-        "netmask": "255.255.255.0"
-      },
-      "routes": [
-        {
-          "prefix": "192.168.10.0/24"
-        }
-      ],
-      "password": [
-        {
-          "username": "hi",
-          "password": "12345"
-        }
-      ]
-    }
-  ]
+  }
 }

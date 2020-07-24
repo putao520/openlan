@@ -63,38 +63,63 @@ func (r *WithRequest) OnNeighbor(client libol.SocketClient, data string) {
 	}
 }
 
+func (r *WithRequest) GetLease(ifAddr string, p *models.Point, n *models.Network) *schema.Lease {
+	uuid := p.UUID
+	alias := p.Alias
+	network := n.Name
+	lease := storage.Network.GetLeaseByAlias(alias) // try by alias firstly
+	if ifAddr == "" {
+		if lease == nil { // now to alloc it.
+			lease = storage.Network.NewLease(uuid, network)
+			if lease != nil {
+				lease.Alias  = alias
+			}
+		} else {
+			lease.UUID = uuid
+		}
+	} else {
+		ipAddr := strings.SplitN(ifAddr, "/", 2)[0]
+		if lease != nil && lease.Address == ipAddr {
+			lease.UUID = uuid
+		}
+		if lease == nil || lease.Address != ipAddr {
+			lease = storage.Network.AddLease(uuid, ipAddr)
+		}
+	}
+	if lease != nil {
+		lease.Network = network
+		lease.Client = p.Client.Addr()
+	}
+	return lease
+}
 func (r *WithRequest) OnIpAddr(client libol.SocketClient, data string) {
+	var resp *models.Network
 	libol.Info("WithRequest.OnIpAddr: %s from %s", data, client)
-
-	rcvNet := models.NewNetwork("", "")
-	if err := json.Unmarshal([]byte(data), rcvNet); err != nil {
+	recv := models.NewNetwork("", "")
+	if err := json.Unmarshal([]byte(data), recv); err != nil {
 		libol.Error("WithRequest.OnIpAddr: Invalid json data.")
 		return
 	}
-	if rcvNet.Name == "" {
-		rcvNet.Name = rcvNet.Tenant
+	if recv.Name == "" {
+		recv.Name = recv.Tenant
 	}
-	net := storage.Network.Get(rcvNet.Name)
-	libol.Cmd("WithRequest.OnIpAddr: find %s", net)
-	uuid := storage.Point.GetUUID(client.Addr())
-
-	var resp *models.Network
-	if rcvNet.IfAddr == "" {
-		ipStr, netmask := storage.Network.GetFreeAddr(uuid, net)
-		if ipStr != "" {
+	n := storage.Network.Get(recv.Name)
+	libol.Cmd("WithRequest.OnIpAddr: find %s", n)
+	p := storage.Point.Get(client.Addr())
+	lease := r.GetLease(recv.IfAddr, p, n)
+	if recv.IfAddr == "" { // If not configure interface address, and try to alloc it.
+		if lease != nil {
 			resp = &models.Network{
-				Name:    net.Name,
-				IfAddr:  ipStr,
-				IpStart: ipStr,
-				IpEnd:   ipStr,
-				Netmask: netmask,
-				Routes:  net.Routes,
+				Name:    n.Name,
+				IfAddr:  lease.Address,
+				IpStart: n.IpStart,
+				IpEnd:   n.IpEnd,
+				Netmask: n.Netmask,
+				Routes:  n.Routes,
 			}
 		}
 	} else {
-		ipAddr := strings.SplitN(rcvNet.IfAddr, "/", 2)[0]
-		storage.Network.AddUsedAddr(uuid, ipAddr)
-		resp = rcvNet
+		resp = recv
 	}
 	if resp != nil {
 		libol.Cmd("WithRequest.OnIpAddr: resp %s", resp)
@@ -103,7 +128,7 @@ func (r *WithRequest) OnIpAddr(client libol.SocketClient, data string) {
 		}
 		libol.Info("WithRequest.OnIpAddr: %s for %s", resp.IfAddr, client)
 	} else {
-		libol.Error("WithRequest.OnIpAddr: %s no free address", rcvNet.Name)
+		libol.Error("WithRequest.OnIpAddr: %s no free address", recv.Name)
 		_ = client.WriteResp("ipaddr", "no free address")
 	}
 }

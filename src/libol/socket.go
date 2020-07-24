@@ -355,13 +355,14 @@ func (t *socketServer) doOnClient(call ServerListener, client SocketClient) {
 
 func (t *socketServer) doOffClient(call ServerListener, client SocketClient) {
 	Info("socketServer.doOffClient: %s", client)
-	if _, ok := t.clients.GetEx(client.RemoteAddr()); ok {
+	addr := client.RemoteAddr()
+	if _, ok := t.clients.GetEx(addr); ok {
 		t.sts.CloseCount++
 		if call.OnClose != nil {
 			_ = call.OnClose(client)
 		}
 		client.Close()
-		t.clients.Del(client.RemoteAddr())
+		t.clients.Del(addr)
 	}
 }
 

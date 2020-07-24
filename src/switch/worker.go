@@ -44,6 +44,7 @@ func (w *NetworkWorker) String() string {
 }
 
 func (w *NetworkWorker) Initialize() {
+	brCfg := w.cfg.Bridge
 	for _, pass := range w.cfg.Password {
 		user := models.User{
 			Name:     pass.Username + "@" + w.cfg.Name,
@@ -51,7 +52,7 @@ func (w *NetworkWorker) Initialize() {
 		}
 		storage.User.Add(&user)
 	}
-	met := models.Network{
+	n := models.Network{
 		Name:    w.cfg.Name,
 		IpStart: w.cfg.Subnet.Start,
 		IpEnd:   w.cfg.Subnet.End,
@@ -63,13 +64,19 @@ func (w *NetworkWorker) Initialize() {
 			libol.Warn("NetworkWorker.Initialize: %s %s not next-hop", w, rt.Prefix)
 			continue
 		}
-		met.Routes = append(met.Routes, &models.Route{
+		n.Routes = append(n.Routes, &models.Route{
 			Prefix:  rt.Prefix,
 			NextHop: rt.NextHop,
 		})
 	}
-	storage.Network.Add(&met)
-	brCfg := w.cfg.Bridge
+	storage.Network.Add(&n)
+	for _, ht := range w.cfg.Hosts {
+		lease := storage.Network.AddLease(ht.Hostname, ht.Address)
+		if lease != nil {
+			lease.Type = "static"
+			lease.Network = w.cfg.Name
+		}
+	}
 	w.bridge = network.NewBridger(brCfg.Provider, brCfg.Name, brCfg.IfMtu)
 }
 

@@ -29,6 +29,11 @@ type PrefixRoute struct {
 	Metric  int    `json:"metric"`
 }
 
+type HostLease struct {
+	Hostname string `json:"hostname"`
+	Address  string `json:"address"`
+}
+
 type Password struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -38,9 +43,10 @@ type Network struct {
 	Alias    string        `json:"-"`
 	Name     string        `json:"name" yaml:"name"`
 	Bridge   Bridge        `json:"bridge" yaml:"bridge"`
-	Links    []*Point      `json:"links" yaml:"links"`
-	Routes   []PrefixRoute `json:"routes"`
 	Subnet   IpSubnet      `json:"subnet"`
+	Links    []*Point      `json:"links" yaml:"links"`
+	Hosts    []HostLease   `json:"hosts"`
+	Routes   []PrefixRoute `json:"routes"`
 	Password []Password    `json:"password"`
 }
 
