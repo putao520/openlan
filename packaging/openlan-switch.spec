@@ -19,6 +19,8 @@ cd %_source_dir && make linux-switch
 
 %install
 mkdir -p %{buildroot}/usr/bin
+cp %_source_dir/packaging/script/curl %{buildroot}/usr/bin/openlan-curl
+cp %_source_dir/packaging/script/check %{buildroot}/usr/bin/openlan-check
 cp %_source_dir/build/openlan-switch %{buildroot}/usr/bin
 
 mkdir -p %{buildroot}/etc/openlan/switch
