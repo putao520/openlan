@@ -555,6 +555,7 @@ type TapWorker struct {
 	ifAddr     string
 	writeQueue chan *libol.FrameMessage
 	done       chan bool
+	recvIpAddr chan string
 }
 
 func NewTapWorker(devCfg network.TapConfig, c *config.Point) (a *TapWorker) {
@@ -565,6 +566,7 @@ func NewTapWorker(devCfg network.TapConfig, c *config.Point) (a *TapWorker) {
 		openAgain:  false,
 		done:       make(chan bool, 2),
 		writeQueue: make(chan *libol.FrameMessage, 1024),
+		recvIpAddr: make(chan string, 1024),
 	}
 	return
 }
@@ -617,9 +619,13 @@ func (a *TapWorker) setEther(addr string) {
 	a.ifAddr = addr
 }
 
+func (a *TapWorker) OnIpAddr(addr string) {
+	a.recvIpAddr <- addr
+}
+
 func (a *TapWorker) open() {
 	if a.device != nil {
-		_ = a.device.Close()
+		a.close()
 		if !a.openAgain {
 			time.Sleep(5 * time.Second) // sleep 5s and release cpu.
 		}
@@ -702,23 +708,19 @@ func (a *TapWorker) Read() {
 	for {
 		a.lock.Lock()
 		if a.device == nil {
-			a.close()
 			a.lock.Unlock()
 			break
 		}
-		a.lock.Unlock()
-
 		frame := libol.NewFrameMessage()
 		data := frame.Frame()
 		if a.device.IsTun() {
 			data = data[libol.EtherLen:]
 		}
+		a.lock.Unlock()
 		n, err := a.device.Read(data)
 		a.lock.Lock()
-		if err != nil || a.openAgain {
-			if err != nil {
-				libol.Warn("TapWorker.Read: %s", err)
-			}
+		if err != nil || a.openAgain || a.device == nil {
+			libol.Warn("TapWorker.Read: %s", err)
 			a.open()
 			a.openAgain = false // clear openAgain flags
 			a.lock.Unlock()
@@ -747,6 +749,10 @@ func (a *TapWorker) Loop() {
 			return
 		case d := <-a.writeQueue:
 			_ = a.DoWrite(d)
+		case addr := <-a.recvIpAddr:
+			a.lock.Lock()
+			a.setEther(addr)
+			a.lock.Unlock()
 		}
 	}
 }
@@ -764,30 +770,27 @@ func (a *TapWorker) DoWrite(frame *libol.FrameMessage) error {
 	if a.device.IsTun() {
 		// proxy arp request.
 		if a.toArp(data) {
-			libol.Debug("TapWorker.Loop: Arp proxy.")
+			libol.Debug("TapWorker.DoWrite: Arp proxy.")
 			a.lock.Unlock()
 			return nil
 		}
 		eth, err := libol.NewEtherFromFrame(data)
 		if err != nil {
-			libol.Error("TapWorker.Loop: %s", err)
+			libol.Error("TapWorker.DoWrite: %s", err)
 			a.lock.Unlock()
 			return nil
 		}
 		if eth.IsIP4() {
 			data = data[14:]
 		} else {
-			libol.Debug("TapWorker.Loop: 0x%04x not IPv4", eth.Type)
+			libol.Debug("TapWorker.DoWrite: 0x%04x not IPv4", eth.Type)
 			a.lock.Unlock()
 			return nil
 		}
 	}
 	a.lock.Unlock()
 	if _, err := a.device.Write(data); err != nil {
-		libol.Error("TapWorker.Loop: %s", err)
-		a.lock.Lock()
-		a.close()
-		a.lock.Unlock()
+		libol.Error("TapWorker.DoWrite: %s", err)
 		return err
 	}
 	return nil
@@ -1104,7 +1107,7 @@ func (p *Worker) OnIpAddr(w *SocketWorker, n *models.Network) error {
 	}
 	prefix := libol.Netmask2Len(n.Netmask)
 	ipStr := fmt.Sprintf("%s/%d", n.IfAddr, prefix)
-	p.tapWorker.setEther(ipStr)
+	p.tapWorker.OnIpAddr(ipStr)
 	if p.listener.AddAddr != nil {
 		_ = p.listener.AddAddr(ipStr)
 	}

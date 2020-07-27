@@ -55,6 +55,10 @@ func (p *Point) OnTap(w *TapWorker) error {
 	return nil
 }
 
+func (p *Point) Trim(out []byte) string {
+	return strings.TrimSpace(string(out))
+}
+
 func (p *Point) AddAddr(ipStr string) error {
 	if ipStr == "" {
 		return nil
@@ -67,7 +71,7 @@ func (p *Point) AddAddr(ipStr string) error {
 	}
 	out, err := libol.IpAddrAdd(p.IfName(), ipStr)
 	if err != nil {
-		libol.Warn("Point.AddAddr: %s, %s", err, out)
+		libol.Warn("Point.AddAddr: %s, %s", err, p.Trim(out))
 		return err
 	}
 	libol.Info("Point.AddAddr: %s", ipStr)
@@ -79,7 +83,7 @@ func (p *Point) DelAddr(ipStr string) error {
 	ipv4 := strings.Split(ipStr, "/")[0]
 	out, err := libol.IpAddrDel(p.IfName(), ipv4)
 	if err != nil {
-		libol.Warn("Point.DelAddr: %s, %s", err, out)
+		libol.Warn("Point.DelAddr: %s, %s", err, p.Trim(out))
 		return err
 	}
 	libol.Info("Point.DelAddr: %s", ipv4)
@@ -95,7 +99,7 @@ func (p *Point) AddRoutes(routes []*models.Route) error {
 	for _, route := range routes {
 		out, err := libol.IpRouteAdd(p.IfName(), route.Prefix, route.NextHop)
 		if err != nil {
-			libol.Warn("Point.AddRoutes: %s, %s", err, out)
+			libol.Warn("Point.AddRoutes: %s, %s", err, p.Trim(out))
 			continue
 		}
 		libol.Info("Point.AddRoutes: route %s via %s", route.Prefix, route.NextHop)
@@ -108,7 +112,7 @@ func (p *Point) DelRoutes(routes []*models.Route) error {
 	for _, route := range routes {
 		out, err := libol.IpRouteDel(p.IfName(), route.Prefix, route.NextHop)
 		if err != nil {
-			libol.Warn("Point.DelRoutes: %s, %s", err, out)
+			libol.Warn("Point.DelRoutes: %s, %s", err, p.Trim(out))
 			continue
 		}
 		libol.Info("Point.DelRoutes: route %s via %s", route.Prefix, route.NextHop)
