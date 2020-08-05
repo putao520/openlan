@@ -116,7 +116,6 @@ type Switch struct {
 }
 
 var sd = Switch{
-	Alias:   "",
 	Timeout: 5 * 60,
 	Log: Log{
 		File:    "./openlan-switch.log",
@@ -130,8 +129,9 @@ var sd = Switch{
 
 func NewSwitch() (c Switch) {
 	if runtime.GOOS == "linux" {
-		pd.Log.File = "/var/log/openlan-switch.log"
+		sd.Log.File = "/var/log/openlan-switch.log"
 	}
+	flag.StringVar(&c.Log.File, "log:file", sd.Log.File, "Configure log file")
 	flag.IntVar(&c.Log.Verbose, "log:level", sd.Log.Verbose, "Configure log level")
 	flag.StringVar(&c.ConfDir, "conf:dir", sd.ConfDir, "Configure virtual switch directory")
 	flag.StringVar(&c.Prof, "prof", sd.Prof, "Configure file for CPU prof")

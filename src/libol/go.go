@@ -3,6 +3,7 @@ package libol
 import (
 	"os"
 	"path"
+	"reflect"
 	"runtime"
 	"runtime/pprof"
 )
@@ -29,16 +30,14 @@ func (t *gos) Del(call interface{}) {
 }
 
 func Go(call func()) {
-	name := "Go"
-	pc, _, line, ok := runtime.Caller(1)
-	if ok {
-		name = runtime.FuncForPC(pc).Name()
-	}
+	ptr := reflect.ValueOf(call).Pointer()
+	name := runtime.FuncForPC(ptr).Name()
 	go func() {
+		defer Catch("Go.func")
 		Gos.Add(call)
-		Info("Go.Add: %s:%d", path.Base(name), line)
+		Info("Go.Add: %s", path.Base(name))
 		call()
-		Info("Go.Del: %s:%d", path.Base(name), line)
+		Info("Go.Del: %s", path.Base(name))
 		Gos.Del(call)
 	}()
 }

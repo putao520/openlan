@@ -15,7 +15,7 @@ type Interface struct {
 }
 
 type Point struct {
-	Alias       string    `json:"name,omitempty" yaml:"name,omitempty"`
+	Alias       string    `json:"alias,omitempty" yaml:"alias,omitempty"`
 	Network     string    `json:"network,omitempty" yaml:"network,omitempty"`
 	Connection  string    `json:"connection" yaml:"connection"`
 	Timeout     int       `json:"timeout"`

@@ -409,7 +409,6 @@ func (t *SocketWorker) dispatch(ev socketEvent) {
 }
 
 func (t *SocketWorker) Loop() {
-	defer libol.Info("SocketWorker.Loop exit")
 	for {
 		select {
 		case e := <-t.eventQueue:
@@ -434,7 +433,6 @@ func (t *SocketWorker) isStopped() bool {
 }
 
 func (t *SocketWorker) Read() {
-	libol.Info("SocketWorker.Read: %s", t.client)
 	for {
 		t.lock.Lock()
 		if t.isStopped() || !t.client.IsOk() {
@@ -467,7 +465,6 @@ func (t *SocketWorker) Read() {
 	if !t.isStopped() {
 		t.eventQueue <- NewEvent(EventRecon, "from read")
 	}
-	libol.Info("SocketWorker.Read: exit")
 }
 
 func (t *SocketWorker) deadCheck() {
@@ -702,9 +699,6 @@ func (a *TapWorker) onFrame(frame *libol.FrameMessage, data []byte) int {
 }
 
 func (a *TapWorker) Read() {
-	defer libol.Catch("TapWorker.Read")
-
-	libol.Info("TapWorker.Read")
 	for {
 		a.lock.Lock()
 		if a.device == nil {
@@ -738,11 +732,9 @@ func (a *TapWorker) Read() {
 		}
 		a.lock.Unlock()
 	}
-	libol.Info("TapWorker.Read: exit")
 }
 
 func (a *TapWorker) Loop() {
-	defer libol.Info("TapWorker.Loop exit")
 	for {
 		select {
 		case <-a.done:

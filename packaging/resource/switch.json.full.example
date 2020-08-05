@@ -5,9 +5,6 @@
   "http": {
     "public": "/var/openlan/public"
   },
-  "log": {
-    "file": "/var/log/openlan-switch.log"
-  },
   "crypt": {
     "algo": "xor",
     "secret": "123456"
