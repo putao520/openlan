@@ -2,20 +2,25 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{{ .Worker.Alias }} | OpenLAN Switch</title>
+    <title>{{ .Worker.Alias }} - OpenLAN</title>
     <style type="text/css">
         @media
-        (min-device-width : 320px)
-        and (max-device-width : 860px) {
+        (max-device-width : 1024px) {
             .container {
                 width: 100%;
                 margin: 0 auto;
             }
         }
         @media
-        (min-device-width : 860px) {
+        (min-device-width : 1280px) {
             .container {
-                width: 70%;
+                width: 95%;
+            }
+        }
+        @media
+        (min-device-width : 1480px) {
+            .container {
+                width: 80%;
             }
         }
         body {
@@ -23,7 +28,6 @@
             background: #fdfcf8;
         }
         .container {
-            min-width: 800px;
             margin: 0 auto;
         }
         .container a {

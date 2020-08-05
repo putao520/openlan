@@ -62,5 +62,6 @@ echo "BOOTPROTO=\"none\"" >> $phyCfg
 echo "ONBOOT=\"yes\"" >> $phyCfg
 echo "NM_CONTROLLED=\"no\"" >> $phyCfg
 echo "BRIDGE=\"$br\"" >> $phyCfg
+echo "BRIDGING_OPTS=\"path_cost=4\"" >> $phyCfg # 4: 1G, 2: 10G, 19: 100Mb and 100: 1Mb.
 
 ifdown "$br"; ifdown "$phy"; ifup "$br"; ifup "$phy";

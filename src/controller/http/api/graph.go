@@ -52,7 +52,7 @@ func (g Graph) GET(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			return
 		}
-		vn, ok := nn[p.Switch]
+		sn, ok := nn[p.Switch]
 		if !ok {
 			return
 		}
@@ -68,10 +68,9 @@ func (g Graph) GET(w http.ResponseWriter, r *http.Request) {
 			graphs.Nodes = append(graphs.Nodes, pn)
 			i += 1
 		}
-		vn.SymbolSize += 1
 		graphs.Links = append(graphs.Links, &schema.Link{
 			Source: pn.Id,
-			Target: vn.Id,
+			Target: sn.Id,
 		})
 	})
 	ResponseJson(w, graphs)

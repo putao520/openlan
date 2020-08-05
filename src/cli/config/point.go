@@ -37,7 +37,7 @@ var pd = Point{
 	Protocol:   "tls", // udp, kcp, tcp, tls, ws and wss etc.
 	Timeout:    60,
 	Log: Log{
-		File:    "./point.log",
+		File:    "./openlan-point.log",
 		Verbose: libol.INFO,
 	},
 	Interface: Interface{
@@ -60,6 +60,9 @@ func NewPoint() (c *Point) {
 		RequestAddr: true,
 		Crypt:       &Crypt{},
 	}
+	if runtime.GOOS == "linux" {
+		pd.Log.File = "/var/log/openlan-point.log"
+	}
 	flag.StringVar(&c.Alias, "alias", pd.Alias, "alias for this point")
 	flag.StringVar(&c.Network, "net", pd.Network, "Network name")
 	flag.StringVar(&c.Connection, "conn", pd.Connection, "Virtual switch connect to")
@@ -79,7 +82,6 @@ func NewPoint() (c *Point) {
 	flag.StringVar(&c.Crypt.Algo, "crypt:algo", pd.Crypt.Algo, "Crypt algorithm")
 	flag.StringVar(&c.Prof, "prof", pd.Prof, "Configure file for CPU prof")
 	flag.Parse()
-
 	if err := c.Load(); err != nil {
 		libol.Warn("NewPoint.load %s", err)
 	}

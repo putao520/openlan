@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/danieldin95/openlan-go/src/libol"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -128,11 +129,13 @@ var sd = Switch{
 }
 
 func NewSwitch() (c Switch) {
+	if runtime.GOOS == "linux" {
+		pd.Log.File = "/var/log/openlan-switch.log"
+	}
 	flag.IntVar(&c.Log.Verbose, "log:level", sd.Log.Verbose, "Configure log level")
 	flag.StringVar(&c.ConfDir, "conf:dir", sd.ConfDir, "Configure virtual switch directory")
 	flag.StringVar(&c.Prof, "prof", sd.Prof, "Configure file for CPU prof")
 	flag.Parse()
-
 	c.SaveFile = fmt.Sprintf("%s/switch.json", c.ConfDir)
 	if err := c.Load(); err != nil {
 		libol.Error("NewSwitch.load %s", err)
