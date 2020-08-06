@@ -120,7 +120,15 @@ func (p *PointAuth) onAuth(client libol.SocketClient, user *models.User) error {
 	}
 	client.SetPrivate(m)
 	storage.Point.Add(m)
-	libol.Go(func() { p.master.ReadTap(dev, client.WriteMsg) })
+	libol.Go(func() {
+		p.master.ReadTap(dev, func(f *libol.FrameMessage) error {
+			if err := client.WriteMsg(f); err != nil {
+				p.master.OffClient(client)
+				return err
+			}
+			return nil
+		})
+	})
 	return nil
 }
 

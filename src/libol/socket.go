@@ -139,6 +139,8 @@ type socketClient struct {
 	private       interface{}
 	status        uint8
 	timeout       int64 // sec for read and write timeout
+	remoteAddr    string
+	localAddr     string
 }
 
 func (s *socketClient) State() string {
@@ -241,30 +243,32 @@ func (s *socketClient) SetListener(listener ClientListener) {
 
 // Get actual local address
 func (s *socketClient) LocalAddr() string {
-	if s.connection != nil {
-		return s.connection.LocalAddr().String()
-	}
-	return ""
+	return s.localAddr
 }
 
 // Get actual remote address
 func (s *socketClient) RemoteAddr() string {
-	if s.connection != nil {
-		return s.connection.RemoteAddr().String()
-	}
-	return ""
+	return s.remoteAddr
 }
 
 func (s *socketClient) SetTimeout(v int64) {
 	s.timeout = v
 }
 
+func (s *socketClient) updateConn(conn net.Conn) {
+	if conn != nil {
+		s.connection = conn
+		s.connectedTime = time.Now().Unix()
+		s.localAddr = conn.LocalAddr().String()
+		s.remoteAddr = conn.RemoteAddr().String()
+	}
+}
+
 func (s *socketClient) SetConnection(conn net.Conn) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	s.connection = conn
+	s.updateConn(conn)
 	s.status = ClConnected
-	s.connectedTime = time.Now().Unix()
 }
 
 // Socket Server
@@ -299,6 +303,7 @@ type SocketServer interface {
 	SetTimeout(v int64)
 }
 
+// TODO keepalive to release zombie connections.
 type socketServer struct {
 	lock       sync.RWMutex
 	sts        ServerSts

@@ -116,7 +116,6 @@ func NewUdpClientFromConn(conn net.Conn, cfg *UdpConfig) *UdpClient {
 		socketClient: socketClient{
 			address: conn.RemoteAddr().String(),
 			dataStream: dataStream{
-				connection: conn,
 				maxSize:    1514,
 				minSize:    15,
 				message: &DataGramMessage{
@@ -125,9 +124,9 @@ func NewUdpClientFromConn(conn net.Conn, cfg *UdpConfig) *UdpClient {
 				},
 			},
 			newTime:       time.Now().Unix(),
-			connectedTime: time.Now().Unix(),
 		},
 	}
+	c.updateConn(conn)
 	c.connector = c.Connect
 	return c
 }

@@ -117,7 +117,6 @@ func NewTcpClientFromConn(conn net.Conn, cfg *TcpConfig) *TcpClient {
 		socketClient: socketClient{
 			address: conn.RemoteAddr().String(),
 			dataStream: dataStream{
-				connection: conn,
 				maxSize:    1514,
 				minSize:    15,
 				message: &StreamMessage{
@@ -125,9 +124,9 @@ func NewTcpClientFromConn(conn net.Conn, cfg *TcpConfig) *TcpClient {
 				},
 			},
 			newTime:       time.Now().Unix(),
-			connectedTime: time.Now().Unix(),
 		},
 	}
+	t.updateConn(conn)
 	t.connector = t.Connect
 	return t
 }

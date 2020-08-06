@@ -409,7 +409,7 @@ func (v *Switch) ReadTap(device network.Taper, readAt func(f *libol.FrameMessage
 			libol.Log("Switch.ReadTap: %x\n", frame.Frame()[:n])
 		}
 		if err := readAt(frame); err != nil {
-			libol.Error("Switch.ReadTap: do-recv %s %s", device.Name(), err)
+			libol.Error("Switch.ReadTap: readAt %s %s", device.Name(), err)
 			break
 		}
 	}
