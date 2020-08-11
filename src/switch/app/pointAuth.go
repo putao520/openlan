@@ -63,7 +63,6 @@ func (p *PointAuth) handleLogin(client libol.SocketClient, data string) error {
 	if err := json.Unmarshal([]byte(data), user); err != nil {
 		return libol.NewErr("Invalid json data.")
 	}
-
 	// to support lower version
 	if user.Network == "" {
 		if strings.Contains(user.Name, "@") {
@@ -83,7 +82,7 @@ func (p *PointAuth) handleLogin(client libol.SocketClient, data string) error {
 		if nowUser.Password == user.Password {
 			p.success++
 			client.SetStatus(libol.ClAuth)
-			libol.Info("PointAuth.handleLogin: %s auth", client)
+			libol.Info("PointAuth.handleLogin: %s success", client)
 			_ = p.onAuth(client, user)
 			return nil
 		}

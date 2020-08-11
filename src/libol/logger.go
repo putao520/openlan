@@ -58,7 +58,7 @@ func (l *_Log) Write(level int, format string, v ...interface{}) {
 		str = "NULL"
 	}
 	if level >= l.Level {
-		log.Printf(fmt.Sprintf("%s %s", str, format), v...)
+		log.Printf(fmt.Sprintf("[%s] %s", str, format), v...)
 	}
 	if level >= INFO {
 		l.Save(str, format, v...)
@@ -68,9 +68,8 @@ func (l *_Log) Write(level int, format string, v ...interface{}) {
 func (l *_Log) Save(level string, format string, v ...interface{}) {
 	m := fmt.Sprintf(format, v...)
 	if l.FileLog != nil {
-		l.FileLog.Println(level + " " + m)
+		l.FileLog.Println("["+ level + "] " + m)
 	}
-
 	l.Lock.Lock()
 	defer l.Lock.Unlock()
 	if l.Errors.Len() >= 1024 {
@@ -181,7 +180,7 @@ func Close() {
 
 func Catch(name string) {
 	if err := recover(); err != nil {
-		Fatal("%s Panic: >>> %s <<<", name, err)
-		Fatal("%s Stack: >>> %s <<<", name, debug.Stack())
+		Fatal("%s [PANIC] >>> %s <<<", name, err)
+		Fatal("%s [STACK] >>> %s <<<", name, debug.Stack())
 	}
 }

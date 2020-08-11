@@ -33,6 +33,10 @@ bin: linux windows darwin ## build all platform binary
 
 pkg: linux-rpm windows-zip darwin-zip ## build all plaftorm packages
 
+## upgrade
+upgrade:
+	ansible-playbook ./misc/playbook/upgrade.yaml -e "version=$(VER)" 
+
 clean: ## clean cache
 	rm -rvf ./build
 	rm -rvf ./core/build

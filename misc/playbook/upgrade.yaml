@@ -1,0 +1,22 @@
+---
+- hosts: openlan
+  remote_user: root
+  vars:
+    version: 0.8.20
+
+  tasks:
+  - name: download openlan-switch-{{ version }} 
+    copy: src=/root/rpmbuild/RPMS/x86_64/openlan-switch-{{ version }}-1.el7.x86_64.rpm dest=/tmp
+
+  - name: remove openlan-switch
+    yum: state=absent name=openlan-switch
+    ignore_errors: yes
+
+  - name: upgrade openlan-switch
+    yum: state=present name=/tmp/openlan-switch-{{ version }}-1.el7.x86_64.rpm
+    notify:
+      - restart openlan-switch
+
+  handlers:
+    - name: restart openlan-switch
+      service: name=openlan-switch enabled=yes state=restarted
