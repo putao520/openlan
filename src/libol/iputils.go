@@ -182,3 +182,21 @@ func IpRouteShow(name string) []string {
 		return nil
 	}
 }
+
+func IpMetricSet(name, metric string, opts ...string) ([]byte, error) {
+	switch runtime.GOOS {
+	case "linux":
+		return nil, nil
+	case "windows":
+		args := append([]string{
+			"interface", "ipv4", "set", "interface",
+			"interface=" + name, "metric=" + metric,
+		}, opts...)
+		return exec.Command("netsh", args...).CombinedOutput()
+	case "darwin":
+		//TODO
+		return nil, nil
+	default:
+		return nil, NewErr("IpAddrAdd %s not support", runtime.GOOS)
+	}
+}

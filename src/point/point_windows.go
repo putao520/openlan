@@ -52,6 +52,9 @@ func (p *Point) OnTap(w *TapWorker) error {
 			libol.Info("Point.OnTap: clear %s via %s", route.Prefix, route.NextHop)
 		}
 	}
+	if out, err := libol.IpMetricSet(p.IfName(), "235"); err != nil {
+		libol.Warn("Point.OnTap: metricSet %s: %s", err, out)
+	}
 	return nil
 }
 
