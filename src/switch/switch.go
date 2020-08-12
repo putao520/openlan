@@ -87,11 +87,6 @@ func (v *Switch) acceptBridge(bridge string) {
 		Chain: "FORWARD",
 		Input: bridge,
 	})
-	rules = append(rules, libol.IPTableRule{
-		Table: "filter",
-		Chain: "FORWARD",
-		Output: bridge,
-	})
 	v.firewall.rules = rules
 }
 
@@ -147,7 +142,7 @@ func (v *Switch) Initialize() {
 	for _, nCfg := range v.cfg.Network {
 		name := nCfg.Name
 		brCfg := nCfg.Bridge
-		// Allowed traffic on bridge.
+		// Forward traffic in bridge.
 		v.acceptBridge(brCfg.Name)
 
 		source := brCfg.Address
