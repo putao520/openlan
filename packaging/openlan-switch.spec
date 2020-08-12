@@ -30,6 +30,8 @@ mkdir -p %{buildroot}/etc/openlan/switch/network
 cp %_source_dir/packaging/resource/network.json.example %{buildroot}/etc/openlan/switch/network
 mkdir -p %{buildroot}/etc/sysconfig/openlan
 cp %_source_dir/packaging/resource/switch.cfg %{buildroot}/etc/sysconfig/openlan
+mkdir -p %{buildroot}/etc/sysctl.d
+cp %_source_dir/packaging/resource/90-openlan.conf %{buildroot}/etc/sysctl.d
 
 mkdir -p %{buildroot}/usr/lib/systemd/system
 cp %_source_dir/packaging/resource/openlan-switch.service %{buildroot}/usr/lib/systemd/system
@@ -60,6 +62,7 @@ fi
 %defattr(-,root,root)
 /etc/sysconfig/*
 /etc/openlan/*
+/etc/sysctl.d/*
 /usr/bin/*
 /usr/lib/systemd/system/*
 /var/openlan

@@ -34,6 +34,8 @@ func (rule IPTableRule) Args() []string {
 	}
 	if rule.Jump != "" {
 		args = append(args, "-j", rule.Jump)
+	} else {
+		args = append(args, "-j", "ACCEPT")
 	}
 	if rule.ToSource != "" {
 		args = append(args, "--to-source", rule.ToSource)

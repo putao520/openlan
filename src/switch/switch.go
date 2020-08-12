@@ -79,46 +79,61 @@ func NewSwitch(c config.Switch) *Switch {
 	return &v
 }
 
-func (v *Switch) addRules(source string, prefix string) {
-	libol.Info("Switch.addRules %s, %s", source, prefix)
+func (v *Switch) acceptBridge(bridge string) {
+	rules := v.firewall.rules
+	libol.Info("Switch.acceptBridge %s", bridge)
+	rules = append(rules, libol.IPTableRule{
+		Table: "filter",
+		Chain: "FORWARD",
+		Input: bridge,
+	})
+	rules = append(rules, libol.IPTableRule{
+		Table: "filter",
+		Chain: "FORWARD",
+		Output: bridge,
+	})
+	v.firewall.rules = rules
+}
+
+func (v *Switch) acceptRoute(source, prefix string) {
+	rules := v.firewall.rules
+	libol.Info("Switch.acceptRoute %s, %s", source, prefix)
 	// allowed forward between source and prefix.
-	v.firewall.rules = append(v.firewall.rules, libol.IPTableRule{
+	rules = append(rules, libol.IPTableRule{
 		Table:  "filter",
 		Chain:  "FORWARD",
 		Source: source,
 		Dest:   prefix,
-		Jump:   "ACCEPT",
 	})
-	v.firewall.rules = append(v.firewall.rules, libol.IPTableRule{
+	rules = append(rules, libol.IPTableRule{
 		Table:  "filter",
 		Chain:  "FORWARD",
 		Source: prefix,
 		Dest:   source,
-		Jump:   "ACCEPT",
 	})
 	// allowed input from source to prefix.
-	v.firewall.rules = append(v.firewall.rules, libol.IPTableRule{
+	rules = append(rules, libol.IPTableRule{
 		Table:  "filter",
 		Chain:  "INPUT",
 		Source: source,
 		Dest:   prefix,
-		Jump:   "ACCEPT",
 	})
 	// enable masquerade between source and prefix.
-	v.firewall.rules = append(v.firewall.rules, libol.IPTableRule{
+	rules = append(rules, libol.IPTableRule{
 		Table:  "nat",
 		Chain:  "POSTROUTING",
 		Source: source,
 		Dest:   prefix,
 		Jump:   "MASQUERADE",
 	})
-	v.firewall.rules = append(v.firewall.rules, libol.IPTableRule{
+	rules = append(rules, libol.IPTableRule{
 		Table:  "nat",
 		Chain:  "POSTROUTING",
 		Source: prefix,
 		Dest:   source,
 		Jump:   "MASQUERADE",
 	})
+	v.firewall.rules = rules
 }
 
 func (v *Switch) Initialize() {
@@ -132,6 +147,8 @@ func (v *Switch) Initialize() {
 	for _, nCfg := range v.cfg.Network {
 		name := nCfg.Name
 		brCfg := nCfg.Bridge
+		// Allowed traffic on bridge.
+		v.acceptBridge(brCfg.Name)
 
 		source := brCfg.Address
 		ifAddr := strings.SplitN(source, "/", 2)[0]
@@ -140,8 +157,8 @@ func (v *Switch) Initialize() {
 				if rt.NextHop != ifAddr {
 					continue
 				}
-				// MASQUERADE
-				v.addRules(source, rt.Prefix)
+				// MASQUERADE and allowed forward it.
+				v.acceptRoute(source, rt.Prefix)
 			}
 		}
 		v.worker[name] = NewNetworkWorker(*nCfg, crypt)
