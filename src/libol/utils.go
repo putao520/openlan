@@ -99,7 +99,8 @@ func UnmarshalLoad(v interface{}, file string) error {
 }
 
 func FunName(i interface{}) string {
-	name := runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
+	ptr := reflect.ValueOf(i).Pointer()
+	name := runtime.FuncForPC(ptr).Name()
 	return path.Base(name)
 }
 
