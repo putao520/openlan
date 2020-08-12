@@ -1,5 +1,5 @@
 Name: openlan-point
-Version: 5.2.19
+Version: 5.2.20
 Release: 1%{?dist}
 Summary: OpenLan's Project Software
 Group: Applications/Communications

@@ -1092,8 +1092,8 @@ func (p *Worker) FindNext(dest []byte) []byte {
 }
 
 func (p *Worker) OnIpAddr(w *SocketWorker, n *models.Network) error {
-	libol.Info("Worker.OnIpAddr: %s/%s, %s", n.IfAddr, n.Netmask, n.Routes)
-
+	libol.Info("Worker.OnIpAddr: %s/%s", n.IfAddr, n.Netmask)
+	libol.Info("Worker.OnIpAddr: %s", n.Routes)
 	if p.network != nil { // remove older firstly
 		p.FreeIpAddr()
 	}

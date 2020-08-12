@@ -45,9 +45,6 @@ var pd = Point{
 		Provider: "tap",
 		Name:     "",
 	},
-	Http: &Http{
-		Listen: "0.0.0.0:10001",
-	},
 	SaveFile:    "./point.json",
 	Network:     "default",
 	RequestAddr: true,
@@ -56,7 +53,6 @@ var pd = Point{
 
 func NewPoint() (c *Point) {
 	c = &Point{
-		Http:        &Http{},
 		RequestAddr: true,
 		Crypt:       &Crypt{},
 	}
@@ -76,7 +72,6 @@ func NewPoint() (c *Point) {
 	flag.StringVar(&c.Interface.Address, "if:addr", pd.Interface.Address, "Configure interface address")
 	flag.StringVar(&c.Interface.Bridge, "if:br", pd.Interface.Bridge, "Configure bridge name")
 	flag.StringVar(&c.Interface.Provider, "if:provider", pd.Interface.Provider, "Interface provider")
-	flag.StringVar(&c.Http.Listen, "http:listen", pd.Http.Listen, "Http listen on")
 	flag.StringVar(&c.SaveFile, "conf", pd.SaveFile, "the configuration file")
 	flag.StringVar(&c.Crypt.Secret, "crypt:secret", pd.Crypt.Secret, "Crypt secret")
 	flag.StringVar(&c.Crypt.Algo, "crypt:algo", pd.Crypt.Algo, "Crypt algorithm")

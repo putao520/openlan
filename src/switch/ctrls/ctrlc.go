@@ -52,6 +52,7 @@ func (cc *CtrlC) Open() error {
 		Conn:    to,
 		Wait:    libstar.NewWaitOne(1),
 		Timeout: 2 * time.Minute,
+		Id:      cc.Url,
 	}
 	return nil
 }

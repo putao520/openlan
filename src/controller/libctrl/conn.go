@@ -53,7 +53,7 @@ func (cn *CtrlConn) Listener(name string, call Listener) {
 }
 
 func (cn *CtrlConn) Open() {
-	libol.Stack("CtrlConn.Open %s", cn)
+	libol.Stack("CtrlConn.Open %s", cn.Id)
 	cn.Lock.Lock()
 	if cn.Ticker == nil {
 		cn.Ticker = time.NewTicker(5 * time.Second)
@@ -72,7 +72,7 @@ func (cn *CtrlConn) Open() {
 }
 
 func (cn *CtrlConn) Close() {
-	libol.Info("CtrlConn.Close: %s", cn)
+	libol.Info("CtrlConn.Close: %s", cn.Id)
 	if cn.Caller.Close != nil {
 		cn.Caller.Close(cn)
 	}
@@ -130,7 +130,7 @@ func (cn *CtrlConn) once() error {
 }
 
 func (cn *CtrlConn) queue() {
-	libol.Stack("CtrlConn.Loop %s", cn)
+	libol.Stack("CtrlConn.Loop %s", cn.Id)
 	defer func() {
 		libol.Warn("CtrlConn.queue exit")
 	}()
@@ -157,7 +157,7 @@ func (cn *CtrlConn) queue() {
 }
 
 func (cn *CtrlConn) loop() {
-	libol.Stack("CtrlConn.Loop %s", cn)
+	libol.Stack("CtrlConn.Loop %s", cn.Id)
 	defer func() {
 		cn.Close()
 		libol.Warn("CtrlConn.loop exit")
@@ -197,7 +197,7 @@ func (cn *CtrlConn) write(m Message) error {
 }
 
 func (cn *CtrlConn) read() {
-	libol.Stack("CtrlConn.read %s", cn)
+	libol.Stack("CtrlConn.read %s", cn.Id)
 	for {
 		m := Message{}
 		// read message from socket, no require lock.
@@ -225,14 +225,14 @@ func (cn *CtrlConn) read() {
 }
 
 func (cn *CtrlConn) Start() {
-	libol.Info("CtrlConn.Start %s", cn)
+	libol.Info("CtrlConn.Start %s", cn.Id)
 	libol.Go(cn.loop)
 	libol.Go(cn.queue)
 	libol.Go(cn.read)
 }
 
 func (cn *CtrlConn) Stop() {
-	libol.Info("CtrlConn.Stop %s", cn)
+	libol.Info("CtrlConn.Stop %s", cn.Id)
 	if cn.Done != nil {
 		cn.Done <- true
 	}

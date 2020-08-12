@@ -21,9 +21,9 @@ type Config struct {
 var cfg = Config{
 	StaticDir: "dist",
 	CrtDir:    "ca",
-	ConfDir:   "/etc/openlan/ctl",
+	ConfDir:   "/etc/openlan/ctrl",
 	Listen:    "0.0.0.0:10088",
-	LogFile:   "/var/log/openlan-ctl.log",
+	LogFile:   "/var/log/openlan-ctrl.log",
 	Verbose:   20,
 }
 

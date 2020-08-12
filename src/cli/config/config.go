@@ -20,7 +20,7 @@ type Http struct {
 }
 
 type Crypt struct {
-	Algo   string `json:"lago,omitempty" yaml:"algo,omitempty"`
+	Algo   string `json:"algo,omitempty" yaml:"algo,omitempty"`
 	Secret string `json:"secret,omitempty" yaml:"secret,omitempty"`
 }
 
