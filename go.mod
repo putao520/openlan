@@ -5,6 +5,7 @@ go 1.12
 require (
 	github.com/Sirupsen/logrus v0.11.0 // indirect
 	github.com/akavel/rsrc v0.8.0 // indirect
+	github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5
 	github.com/coreos/go-systemd/v22 v22.0.0
 	github.com/danieldin95/lightstar v0.0.0-20200401145448-034e11afcf81
 	github.com/docker/libnetwork v0.5.6 // indirect

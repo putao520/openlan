@@ -117,13 +117,13 @@ func NewTcpClientFromConn(conn net.Conn, cfg *TcpConfig) *TcpClient {
 		socketClient: socketClient{
 			address: conn.RemoteAddr().String(),
 			dataStream: dataStream{
-				maxSize:    1514,
-				minSize:    15,
+				maxSize: 1514,
+				minSize: 15,
 				message: &StreamMessage{
 					block: cfg.Block,
 				},
 			},
-			newTime:       time.Now().Unix(),
+			newTime: time.Now().Unix(),
 		},
 	}
 	t.updateConn(conn)

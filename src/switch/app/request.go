@@ -75,7 +75,7 @@ func (r *WithRequest) GetLease(ifAddr string, p *models.Point, n *models.Network
 		if lease == nil { // now to alloc it.
 			lease = storage.Network.NewLease(uuid, network)
 			if lease != nil {
-				lease.Alias  = alias
+				lease.Alias = alias
 			}
 		} else {
 			lease.UUID = uuid

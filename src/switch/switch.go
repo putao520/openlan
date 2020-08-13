@@ -2,6 +2,7 @@ package _switch
 
 import (
 	"encoding/json"
+	"github.com/armon/go-socks5"
 	"github.com/danieldin95/openlan-go/src/cli/config"
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
@@ -60,6 +61,7 @@ type Switch struct {
 	hooks    []Hook
 	http     *Http
 	server   libol.SocketServer
+	socks    *socks5.Server
 	worker   map[string]*NetworkWorker
 	uuid     string
 	newTime  int64
@@ -131,13 +133,21 @@ func (v *Switch) acceptRoute(source, prefix string) {
 	v.firewall.rules = rules
 }
 
-func (v *Switch) Initialize() {
-	v.lock.Lock()
-	defer v.lock.Unlock()
-
-	if v.cfg.Http != nil {
-		v.http = NewHttp(v, v.cfg)
+func (v *Switch) initSocks() {
+	if v.cfg.Socks == nil {
+		return
 	}
+	// Create a SOCKS5 server
+	conf := &socks5.Config{}
+	server, err := socks5.New(conf)
+	if err != nil {
+		libol.Error("Switch.initSocks %s", err)
+		return
+	}
+	v.socks = server
+}
+
+func (v *Switch) initNetwork() {
 	crypt := v.cfg.Crypt
 	for _, nCfg := range v.cfg.Network {
 		name := nCfg.Name
@@ -158,7 +168,9 @@ func (v *Switch) Initialize() {
 		}
 		v.worker[name] = NewNetworkWorker(*nCfg, crypt)
 	}
+}
 
+func (v *Switch) initHook() {
 	v.hooks = make([]Hook, 0, 64)
 	v.apps.Auth = app.NewPointAuth(v, v.cfg)
 	v.hooks = append(v.hooks, v.apps.Auth.OnFrame)
@@ -173,17 +185,11 @@ func (v *Switch) Initialize() {
 		v.hooks = append(v.hooks, v.apps.OnLines.OnFrame)
 	}
 	for i, h := range v.hooks {
-		libol.Info("Switch.Initialize: id %d, func %s", i, libol.FunName(h))
+		libol.Info("Switch.initHook: id %d, func %s", i, libol.FunName(h))
 	}
+}
 
-	// Controller
-	ctrls.Load(v.cfg.ConfDir + "/ctrl.json")
-	if ctrls.Ctrl.Name == "" {
-		ctrls.Ctrl.Name = v.cfg.Alias
-	}
-	ctrls.Ctrl.Switcher = v
-
-	// FireWall
+func (v *Switch) initFirewall() {
 	for _, rule := range v.cfg.FireWall {
 		v.firewall.rules = append(v.firewall.rules, libol.IPTableRule{
 			Table:    rule.Table,
@@ -198,10 +204,33 @@ func (v *Switch) Initialize() {
 			Output:   rule.Output,
 		})
 	}
-	libol.Info("Switch.Initialize total %d rules", len(v.firewall.rules))
+	libol.Info("Switch.initFirewall total %d rules", len(v.firewall.rules))
+}
+
+func (v *Switch) initCtrl() {
+	ctrls.Load(v.cfg.ConfDir + "/ctrl.json")
+	if ctrls.Ctrl.Name == "" {
+		ctrls.Ctrl.Name = v.cfg.Alias
+	}
+	ctrls.Ctrl.Switcher = v
+}
+
+func (v *Switch) Initialize() {
+	v.lock.Lock()
+	defer v.lock.Unlock()
+	if v.cfg.Http != nil {
+		v.http = NewHttp(v, v.cfg)
+	}
+	v.initNetwork()
+	v.initHook()
+	// Controller
+	v.initCtrl()
+	// FireWall
+	v.initFirewall()
 	for _, w := range v.worker {
 		w.Initialize()
 	}
+	v.initSocks()
 }
 
 func (v *Switch) onFrame(client libol.SocketClient, frame *libol.FrameMessage) error {
@@ -311,6 +340,15 @@ func (v *Switch) Start() {
 	}
 	libol.Go(ctrls.Ctrl.Start)
 	libol.Go(v.firewall.Start)
+	if v.socks != nil {
+		addr := v.cfg.Socks.Listen
+		libol.Go(func() {
+			if err := v.socks.ListenAndServe("tcp", addr); err != nil {
+				libol.Error("Switch.Start %s", err)
+				return
+			}
+		})
+	}
 }
 
 func (v *Switch) Stop() {

@@ -10,14 +10,14 @@ import (
 
 type network struct {
 	Networks *libol.SafeStrMap
-	UUID *libol.SafeStrMap // TODO with network
-	Addr *libol.SafeStrMap // TODO with network
+	UUID     *libol.SafeStrMap // TODO with network
+	Addr     *libol.SafeStrMap // TODO with network
 }
 
 var Network = network{
 	Networks: libol.NewSafeStrMap(1024),
-	UUID: libol.NewSafeStrMap(1024),
-	Addr: libol.NewSafeStrMap(1024),
+	UUID:     libol.NewSafeStrMap(1024),
+	Addr:     libol.NewSafeStrMap(1024),
 }
 
 func (w *network) Add(n *models.Network) {

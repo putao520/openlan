@@ -68,7 +68,7 @@ func (l *_Log) Write(level int, format string, v ...interface{}) {
 func (l *_Log) Save(level string, format string, v ...interface{}) {
 	m := fmt.Sprintf(format, v...)
 	if l.FileLog != nil {
-		l.FileLog.Println("["+ level + "] " + m)
+		l.FileLog.Println("[" + level + "] " + m)
 	}
 	l.Lock.Lock()
 	defer l.Lock.Unlock()

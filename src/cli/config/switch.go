@@ -97,15 +97,20 @@ type FlowRules struct {
 	Jump     string `json:"jump"` // SNAT/RETURN/MASQUERADE
 }
 
+type Socks struct {
+	Listen string `json:"listen,omitempty" yaml:"listen,omitempty"`
+}
+
 type Switch struct {
-	Alias     string      `json:"alias"`
-	Protocol  string      `json:"protocol"` // tcp/tls, udp/kcp.
-	Listen    string      `json:"listen"`
-	Timeout   int         `json:"timeout"`
-	Http      *Http       `json:"http,omitempty" yaml:"http,omitempty"`
-	Log       Log         `json:"log" yaml:"log"`
-	Cert      Cert        `json:"cert"`
-	Crypt     *Crypt      `json:"crypt"`
+	Alias     string `json:"alias"`
+	Protocol  string `json:"protocol"` // tcp/tls, udp/kcp.
+	Listen    string `json:"listen"`
+	Timeout   int    `json:"timeout"`
+	Http      *Http  `json:"http,omitempty" yaml:"http,omitempty"`
+	Log       Log    `json:"log" yaml:"log"`
+	Cert      Cert   `json:"cert"`
+	Crypt     *Crypt `json:"crypt"`
+	Socks     *Socks
 	Prof      string      `json:"prof"`
 	Network   []*Network  `json:"network"`
 	FireWall  []FlowRules `json:"firewall"`
@@ -163,6 +168,9 @@ func (c *Switch) Right() {
 		if c.Protocol == "" {
 			c.Protocol = "tls"
 		}
+	}
+	if c.Socks != nil {
+		RightAddr(&c.Socks.Listen, 11080)
 	}
 }
 

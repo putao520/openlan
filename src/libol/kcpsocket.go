@@ -129,13 +129,13 @@ func NewKcpClientFromConn(conn net.Conn, cfg *KcpConfig) *KcpClient {
 		socketClient: socketClient{
 			address: conn.RemoteAddr().String(),
 			dataStream: dataStream{
-				maxSize:    1514,
-				minSize:    15,
+				maxSize: 1514,
+				minSize: 15,
 				message: &StreamMessage{
 					timeout: cfg.Timeout,
 				},
 			},
-			newTime:       time.Now().Unix(),
+			newTime: time.Now().Unix(),
 		},
 	}
 	c.updateConn(conn)

@@ -9,6 +9,9 @@
     "algo": "xor",
     "secret": "123456"
   },
+  "socks": {
+    "listen": "192.168.100.40:11080"
+  },
   "network": [
     {
       "name": "default",

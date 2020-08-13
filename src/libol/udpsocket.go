@@ -116,14 +116,14 @@ func NewUdpClientFromConn(conn net.Conn, cfg *UdpConfig) *UdpClient {
 		socketClient: socketClient{
 			address: conn.RemoteAddr().String(),
 			dataStream: dataStream{
-				maxSize:    1514,
-				minSize:    15,
+				maxSize: 1514,
+				minSize: 15,
 				message: &DataGramMessage{
 					timeout: cfg.Timeout,
 					block:   cfg.Block,
 				},
 			},
-			newTime:       time.Now().Unix(),
+			newTime: time.Now().Unix(),
 		},
 	}
 	c.updateConn(conn)

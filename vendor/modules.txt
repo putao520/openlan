@@ -1,5 +1,7 @@
 # github.com/Sirupsen/logrus v0.11.0
 github.com/Sirupsen/logrus
+# github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5
+github.com/armon/go-socks5
 # github.com/coreos/go-systemd/v22 v22.0.0
 github.com/coreos/go-systemd/v22/daemon
 # github.com/danieldin95/lightstar v0.0.0-20200401145448-034e11afcf81
@@ -51,6 +53,7 @@ golang.org/x/crypto/salsa20/salsa
 golang.org/x/net/websocket
 golang.org/x/net/ipv4
 golang.org/x/net/ipv6
+golang.org/x/net/context
 golang.org/x/net/bpf
 golang.org/x/net/internal/iana
 golang.org/x/net/internal/socket

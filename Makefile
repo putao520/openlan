@@ -45,6 +45,7 @@ clean: ## clean cache
 ## prepare environment
 env:
 	@mkdir -p $(BD)
+	gofmt -w -s ./src
 
 ## linux platform
 linux: linux-point linux-switch linux-ctrl ## build linux binary
