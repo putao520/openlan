@@ -9,7 +9,14 @@ var FindProxyForURL = function(init, profiles) {
         return result;
     };
 }("+autoswitch", {
-    "+autoswitch": "+__ruleListOf_autoswitch",
+    "+autoswitch": function(url, host, scheme) {
+        "use strict";
+        if (/(?:^|\.)youtube\.com$/.test(host)) return "+ss-ol";
+        if (/(?:^|\.)googlevideo\.com$/.test(host)) return "+ss-ol";
+        if (/(?:^|\.)gstatic\.com$/.test(host)) return "+ss-ol";
+        if (/(?:^|\.)github\.com$/.test(host)) return "+ss-ol";
+        return "+__ruleListOf_autoswitch";
+    },
     "+__ruleListOf_autoswitch": function(url, host, scheme) {
         "use strict";
         if (/^http:\/\/blog\.ontrac\.com/.test(url)) return "DIRECT";
