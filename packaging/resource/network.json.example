@@ -26,7 +26,7 @@
   "password": [
     {
       "username": "hi",
-      "password": "12345"
+      "password": "12345^"
     }
   ],
   "links": [
@@ -34,7 +34,7 @@
       "protocol": "tls",
       "connection": "hi.openlan.net",
       "username": "hi",
-      "password": "12345"
+      "password": "12345^"
     }
   ]
 }

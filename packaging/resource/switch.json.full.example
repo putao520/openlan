@@ -6,11 +6,17 @@
     "public": "/var/openlan/public"
   },
   "crypt": {
-    "algo": "xor",
-    "secret": "123456"
+    "secret": "12345^"
   },
   "socks": {
     "listen": "192.168.100.40:11080"
+  },
+  "proxy": {
+    "listen": "192.168.100.40:11082",
+    "auth": {
+      "username": "hi",
+      "password": "12345^"
+    }
   },
   "network": [
     {
@@ -41,7 +47,7 @@
       "password": [
         {
           "username": "hi",
-          "password": "12345"
+          "password": "12345^"
         }
       ]
     }
