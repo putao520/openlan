@@ -10,18 +10,18 @@ import (
 )
 
 type Log struct {
-	File    string `json:"file,omitempty" yaml:"file,omitempty"`
-	Verbose int    `json:"level,omitempty" yaml:"level,omitempty"`
+	File    string `json:"file,omitempty"`
+	Verbose int    `json:"level,omitempty"`
 }
 
 type Http struct {
-	Listen string `json:"listen,omitempty" yaml:"listen,omitempty"`
-	Public string `json:"public,omitempty" yaml:"public,omitempty"`
+	Listen string `json:"listen,omitempty"`
+	Public string `json:"public,omitempty"`
 }
 
 type Crypt struct {
-	Algo   string `json:"algo,omitempty" yaml:"algo,omitempty"`
-	Secret string `json:"secret,omitempty" yaml:"secret,omitempty"`
+	Algo   string `json:"algo,omitempty"`
+	Secret string `json:"secret,omitempty"`
 }
 
 func (c *Crypt) IsZero() bool {

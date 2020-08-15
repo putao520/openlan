@@ -12,7 +12,7 @@ import (
 type Bridge struct {
 	Name     string `json:"name"`
 	IfMtu    int    `json:"mtu"`
-	Address  string `json:"address,omitempty" yaml:"address,omitempty"`
+	Address  string `json:"address,omitempty"`
 	Provider string `json:"provider"`
 	Stp      string `json:"stp"`
 	Delay    int    `json:"delay"`
@@ -42,10 +42,10 @@ type Password struct {
 
 type Network struct {
 	Alias    string        `json:"-"`
-	Name     string        `json:"name" yaml:"name"`
-	Bridge   Bridge        `json:"bridge" yaml:"bridge"`
+	Name     string        `json:"name"`
+	Bridge   Bridge        `json:"bridge"`
 	Subnet   IpSubnet      `json:"subnet"`
-	Links    []*Point      `json:"links" yaml:"links"`
+	Links    []*Point      `json:"links"`
 	Hosts    []HostLease   `json:"hosts"`
 	Routes   []PrefixRoute `json:"routes"`
 	Password []Password    `json:"password"`
@@ -80,8 +80,8 @@ func (n *Network) Right() {
 
 type Cert struct {
 	Dir     string `json:"dir"`
-	CrtFile string `json:"crt" yaml:"crt"`
-	KeyFile string `json:"key" yaml:"key"`
+	CrtFile string `json:"crt"`
+	KeyFile string `json:"key"`
 }
 
 type FlowRules struct {
@@ -98,19 +98,24 @@ type FlowRules struct {
 }
 
 type Socks struct {
-	Listen string `json:"listen,omitempty" yaml:"listen,omitempty"`
+	Listen string `json:"listen,omitempty"`
+}
+
+type Proxy struct {
+	Listen string `json:"listen,omitempty"`
 }
 
 type Switch struct {
-	Alias     string `json:"alias"`
-	Protocol  string `json:"protocol"` // tcp/tls, udp/kcp.
-	Listen    string `json:"listen"`
-	Timeout   int    `json:"timeout"`
-	Http      *Http  `json:"http,omitempty" yaml:"http,omitempty"`
-	Log       Log    `json:"log" yaml:"log"`
-	Cert      Cert   `json:"cert"`
-	Crypt     *Crypt `json:"crypt"`
-	Socks     *Socks
+	Alias     string      `json:"alias"`
+	Protocol  string      `json:"protocol"` // tcp/tls, udp/kcp.
+	Listen    string      `json:"listen"`
+	Timeout   int         `json:"timeout"`
+	Http      *Http       `json:"http,omitempty"`
+	Log       Log         `json:"log"`
+	Cert      Cert        `json:"cert"`
+	Crypt     *Crypt      `json:"crypt,omitempty"`
+	Socks     *Socks      `json:"socks,omitempty"`
+	Proxy     *Proxy      `json:"proxy,omitempty"`
 	Prof      string      `json:"prof"`
 	Network   []*Network  `json:"network"`
 	FireWall  []FlowRules `json:"firewall"`
@@ -171,6 +176,9 @@ func (c *Switch) Right() {
 	}
 	if c.Socks != nil {
 		RightAddr(&c.Socks.Listen, 11080)
+	}
+	if c.Proxy != nil {
+		RightAddr(&c.Proxy.Listen, 11082)
 	}
 }
 

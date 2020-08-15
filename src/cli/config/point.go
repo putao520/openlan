@@ -7,26 +7,26 @@ import (
 )
 
 type Interface struct {
-	Name     string `json:"name,omitempty" yaml:"name,omitempty"`
-	IfMtu    int    `json:"mtu" yaml:"mtu"`
-	Address  string `json:"address,omitempty" yaml:"address,omitempty"`
-	Bridge   string `json:"bridge,omitempty" yaml:"bridge,omitempty"`
-	Provider string `json:"provider,omitempty" yaml:"provider,omitempty"`
+	Name     string `json:"name,omitempty"`
+	IfMtu    int    `json:"mtu"`
+	Address  string `json:"address,omitempty"`
+	Bridge   string `json:"bridge,omitempty"`
+	Provider string `json:"provider,omitempty"`
 }
 
 type Point struct {
-	Alias       string    `json:"alias,omitempty" yaml:"alias,omitempty"`
-	Network     string    `json:"network,omitempty" yaml:"network,omitempty"`
-	Connection  string    `json:"connection" yaml:"connection"`
+	Alias       string    `json:"alias,omitempty"`
+	Network     string    `json:"network,omitempty"`
+	Connection  string    `json:"connection"`
 	Timeout     int       `json:"timeout"`
-	Username    string    `json:"username,omitempty" yaml:"username,omitempty"`
-	Password    string    `json:"password,omitempty" yaml:"password,omitempty"`
-	Protocol    string    `json:"protocol,omitempty" yaml:"protocol,omitempty"`
-	Interface   Interface `json:"interface" yaml:"interface"`
-	Log         Log       `json:"log" yaml:"log"`
-	Http        *Http     `json:"http,omitempty" yaml:"http,omitempty"`
+	Username    string    `json:"username,omitempty"`
+	Password    string    `json:"password,omitempty"`
+	Protocol    string    `json:"protocol,omitempty"`
+	Interface   Interface `json:"interface"`
+	Log         Log       `json:"log"`
+	Http        *Http     `json:"http,omitempty"`
 	Crypt       *Crypt    `json:"crypt"`
-	Prof        string    `json:"prof" yaml:"prof"`
+	Prof        string    `json:"prof"`
 	RequestAddr bool      `json:"-" yaml:"-"`
 	SaveFile    string    `json:"-" yaml:"-"`
 }

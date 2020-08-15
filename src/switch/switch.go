@@ -10,6 +10,7 @@ import (
 	"github.com/danieldin95/openlan-go/src/switch/app"
 	"github.com/danieldin95/openlan-go/src/switch/ctrls"
 	"github.com/danieldin95/openlan-go/src/switch/storage"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -62,6 +63,7 @@ type Switch struct {
 	http     *Http
 	server   libol.SocketServer
 	socks    *socks5.Server
+	proxy    *http.Server
 	worker   map[string]*NetworkWorker
 	uuid     string
 	newTime  int64
@@ -134,7 +136,8 @@ func (v *Switch) acceptRoute(source, prefix string) {
 }
 
 func (v *Switch) initSocks() {
-	if v.cfg.Socks == nil {
+	listen := v.cfg.Socks.Listen
+	if v.cfg.Socks == nil || listen == "" {
 		return
 	}
 	// Create a SOCKS5 server
@@ -145,6 +148,17 @@ func (v *Switch) initSocks() {
 		return
 	}
 	v.socks = server
+}
+
+func (v *Switch) initProxy() {
+	listen := v.cfg.Proxy.Listen
+	if v.cfg.Proxy == nil || listen == "" {
+		return
+	}
+	v.proxy = &http.Server{
+		Addr:    listen,
+		Handler: &proxy{},
+	}
 }
 
 func (v *Switch) initNetwork() {
@@ -231,6 +245,7 @@ func (v *Switch) Initialize() {
 		w.Initialize()
 	}
 	v.initSocks()
+	v.initProxy()
 }
 
 func (v *Switch) onFrame(client libol.SocketClient, frame *libol.FrameMessage) error {
@@ -318,6 +333,33 @@ func (v *Switch) OnClose(client libol.SocketClient) error {
 	return nil
 }
 
+func (v *Switch) startSocks() {
+	if v.socks == nil {
+		return
+	}
+	addr := v.cfg.Socks.Listen
+	libol.Info("Switch.startSocks %s", addr)
+	libol.Go(func() {
+		if err := v.socks.ListenAndServe("tcp", addr); err != nil {
+			libol.Error("Switch.startSocks %s", err)
+			return
+		}
+	})
+}
+
+func (v *Switch) startProxy() {
+	if v.proxy == nil {
+		return
+	}
+	libol.Info("Switch.startProxy %s", v.proxy.Addr)
+	libol.Go(func() {
+		defer v.proxy.Shutdown(nil)
+		if err := v.proxy.ListenAndServe(); err != nil {
+			libol.Error("Switch.startProxy %s", err)
+		}
+	})
+}
+
 func (v *Switch) Start() {
 	v.lock.Lock()
 	defer v.lock.Unlock()
@@ -340,15 +382,8 @@ func (v *Switch) Start() {
 	}
 	libol.Go(ctrls.Ctrl.Start)
 	libol.Go(v.firewall.Start)
-	if v.socks != nil {
-		addr := v.cfg.Socks.Listen
-		libol.Go(func() {
-			if err := v.socks.ListenAndServe("tcp", addr); err != nil {
-				libol.Error("Switch.Start %s", err)
-				return
-			}
-		})
-	}
+	v.startSocks()
+	v.startProxy()
 }
 
 func (v *Switch) Stop() {
