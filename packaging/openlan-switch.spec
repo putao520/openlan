@@ -47,8 +47,8 @@ cp -R %_source_dir/src/switch/public %{buildroot}/var/openlan
   echo "YOU NEED ALLOW TCP/UDP PORT:10002."
 }
 /usr/bin/firewall-cmd --permanent --zone=public --permanent \
- --add-port=11080/tcp --add-port=10000/tcp || {
-  echo "YOU NEED ALLOW TCP PORT:11080 and 10000."
+ --add-port=11080/tcp --add-port=11082/tcp --add-port=10000/tcp || {
+  echo "YOU NEED ALLOW TCP PORT:11080, 10082 and 10000."
 }
 firewall-cmd --reload || :
 

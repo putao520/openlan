@@ -136,12 +136,23 @@ func (v *Switch) acceptRoute(source, prefix string) {
 }
 
 func (v *Switch) initSocks() {
-	listen := v.cfg.Socks.Listen
-	if v.cfg.Socks == nil || listen == "" {
+	if v.cfg.Socks == nil || v.cfg.Socks.Listen == "" {
 		return
 	}
 	// Create a SOCKS5 server
-	conf := &socks5.Config{}
+	auth := v.cfg.Socks.Auth
+	authMethods := make([]socks5.Authenticator, 0, 2)
+	if len(auth.Username) > 0 {
+		author := socks5.UserPassAuthenticator{
+			Credentials: socks5.StaticCredentials{
+				auth.Username: auth.Password,
+			},
+		}
+		authMethods = append(authMethods, author)
+	}
+	conf := &socks5.Config{
+		AuthMethods: authMethods,
+	}
 	server, err := socks5.New(conf)
 	if err != nil {
 		libol.Error("Switch.initSocks %s", err)
@@ -151,13 +162,19 @@ func (v *Switch) initSocks() {
 }
 
 func (v *Switch) initProxy() {
-	listen := v.cfg.Proxy.Listen
-	if v.cfg.Proxy == nil || listen == "" {
+	if v.cfg.Proxy == nil || v.cfg.Proxy.Listen == "" {
 		return
 	}
+	addr := v.cfg.Proxy.Listen
+	auth := v.cfg.Proxy.Auth
+	pri := &Proxy{}
+	if len(auth.Username) > 0 {
+		pri.Users = make(map[string]string, 1)
+		pri.Users[auth.Username] = auth.Password
+	}
 	v.proxy = &http.Server{
-		Addr:    listen,
-		Handler: &proxy{},
+		Addr:    addr,
+		Handler: pri,
 	}
 }
 

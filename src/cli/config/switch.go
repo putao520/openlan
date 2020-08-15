@@ -98,11 +98,13 @@ type FlowRules struct {
 }
 
 type Socks struct {
-	Listen string `json:"listen,omitempty"`
+	Listen string   `json:"listen,omitempty"`
+	Auth   Password `json:"auth,omitempty"`
 }
 
 type Proxy struct {
-	Listen string `json:"listen,omitempty"`
+	Listen string   `json:"listen,omitempty"`
+	Auth   Password `json:"auth,omitempty"`
 }
 
 type Switch struct {

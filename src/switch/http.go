@@ -82,7 +82,7 @@ func (h *Http) Middleware(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		} else {
 			w.Header().Set("WWW-Authenticate", "Basic")
-			http.Error(w, "Authorization Required.", http.StatusUnauthorized)
+			http.Error(w, "Authorization Required", http.StatusUnauthorized)
 		}
 	})
 }
@@ -98,19 +98,16 @@ func (h *Http) Router() *mux.Router {
 
 func (h *Http) SaveToken() error {
 	libol.Info("Http.SaveToken: AdminToken: %s", h.adminToken)
-
 	f, err := os.OpenFile(h.adminFile, os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0600)
 	defer f.Close()
 	if err != nil {
 		libol.Error("Http.SaveToken: %s", err)
 		return err
 	}
-
 	if _, err := f.Write([]byte(h.adminToken)); err != nil {
 		libol.Error("Http.SaveToken: %s", err)
 		return err
 	}
-
 	return nil
 }
 
