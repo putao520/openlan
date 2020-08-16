@@ -19,28 +19,44 @@ import (
 func GetSocketServer(c config.Switch) libol.SocketServer {
 	switch c.Protocol {
 	case "kcp":
-		kcpCfg := &libol.KcpConfig{
+		cfg := &libol.KcpConfig{
 			Block:   config.GetBlock(c.Crypt),
 			Timeout: time.Duration(c.Timeout) * time.Second,
 		}
-		return libol.NewKcpServer(c.Listen, kcpCfg)
+		return libol.NewKcpServer(c.Listen, cfg)
 	case "tcp":
-		tcpCfg := &libol.TcpConfig{
+		cfg := &libol.TcpConfig{
 			Block: config.GetBlock(c.Crypt),
 		}
-		return libol.NewTcpServer(c.Listen, tcpCfg)
+		return libol.NewTcpServer(c.Listen, cfg)
 	case "udp":
-		udpCfg := &libol.UdpConfig{
+		cfg := &libol.UdpConfig{
 			Block:   config.GetBlock(c.Crypt),
 			Timeout: time.Duration(c.Timeout) * time.Second,
 		}
-		return libol.NewUdpServer(c.Listen, udpCfg)
+		return libol.NewUdpServer(c.Listen, cfg)
+	case "ws":
+		cfg := &libol.WebConfig{
+			Block:   config.GetBlock(c.Crypt),
+			Timeout: time.Duration(c.Timeout) * time.Second,
+		}
+		return libol.NewWebServer(c.Listen, cfg)
+	case "wss":
+		cfg := &libol.WebConfig{
+			Ca: &libol.WebCa{
+				CaCrt: c.Cert.CrtFile,
+				CaKey: c.Cert.KeyFile,
+			},
+			Block:   config.GetBlock(c.Crypt),
+			Timeout: time.Duration(c.Timeout) * time.Second,
+		}
+		return libol.NewWebServer(c.Listen, cfg)
 	default:
-		tcpCfg := &libol.TcpConfig{
+		cfg := &libol.TcpConfig{
 			Tls:   config.GetTlsCfg(c.Cert),
 			Block: config.GetBlock(c.Crypt),
 		}
-		return libol.NewTcpServer(c.Listen, tcpCfg)
+		return libol.NewTcpServer(c.Listen, cfg)
 	}
 }
 

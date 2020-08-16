@@ -109,7 +109,7 @@ type Proxy struct {
 
 type Switch struct {
 	Alias     string      `json:"alias"`
-	Protocol  string      `json:"protocol"` // tcp/tls, udp/kcp.
+	Protocol  string      `json:"protocol"` // tcp, tls, udp, kcp, ws and wss.
 	Listen    string      `json:"listen"`
 	Timeout   int         `json:"timeout"`
 	Http      *Http       `json:"http,omitempty"`

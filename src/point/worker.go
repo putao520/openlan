@@ -889,27 +889,38 @@ type PrefixRule struct {
 func GetSocketClient(c *config.Point) libol.SocketClient {
 	switch c.Protocol {
 	case "kcp":
-		kcpCfg := &libol.KcpConfig{
+		cfg := &libol.KcpConfig{
 			Block: config.GetBlock(c.Crypt),
 		}
-		return libol.NewKcpClient(c.Connection, kcpCfg)
+		return libol.NewKcpClient(c.Connection, cfg)
 	case "tcp":
-		tcpCfg := &libol.TcpConfig{
+		cfg := &libol.TcpConfig{
 			Block: config.GetBlock(c.Crypt),
 		}
-		return libol.NewTcpClient(c.Connection, tcpCfg)
+		return libol.NewTcpClient(c.Connection, cfg)
 	case "udp":
-		udpCfg := &libol.UdpConfig{
+		cfg := &libol.UdpConfig{
 			Block:   config.GetBlock(c.Crypt),
 			Timeout: time.Duration(c.Timeout) * time.Second,
 		}
-		return libol.NewUdpClient(c.Connection, udpCfg)
+		return libol.NewUdpClient(c.Connection, cfg)
+	case "ws":
+		cfg := &libol.WebConfig{
+			Block: config.GetBlock(c.Crypt),
+		}
+		return libol.NewWebClient(c.Connection, cfg)
+	case "wss":
+		cfg := &libol.WebConfig{
+			Ca:    &libol.WebCa{},
+			Block: config.GetBlock(c.Crypt),
+		}
+		return libol.NewWebClient(c.Connection, cfg)
 	default:
-		tcpCfg := &libol.TcpConfig{
+		cfg := &libol.TcpConfig{
 			Tls:   &tls.Config{InsecureSkipVerify: true},
 			Block: config.GetBlock(c.Crypt),
 		}
-		return libol.NewTcpClient(c.Connection, tcpCfg)
+		return libol.NewTcpClient(c.Connection, cfg)
 	}
 }
 
