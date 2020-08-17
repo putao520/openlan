@@ -76,10 +76,12 @@ func (t *TcpServer) Accept() {
 		conn, err := t.listener.Accept()
 		if err != nil {
 			Error("TcpServer.Accept: %s", err)
-			return
+			continue
+		}
+		if !t.PreAccept(conn) {
+			continue
 		}
 		Info("TcpServer.Accept: %s", conn.RemoteAddr())
-		t.sts.AcceptCount++
 		t.onClients <- NewTcpClientFromConn(conn, t.tcpCfg)
 	}
 }

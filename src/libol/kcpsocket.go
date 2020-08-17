@@ -80,9 +80,11 @@ func (k *KcpServer) Accept() {
 		conn, err := k.listener.AcceptKCP()
 		if err != nil {
 			Error("KcpServer.Accept: %s", err)
-			return
+			continue
 		}
-		k.sts.AcceptCount++
+		if !k.PreAccept(conn) {
+			continue
+		}
 		Info("KcpServer.Accept: %s", conn.RemoteAddr())
 		conn.SetStreamMode(true)
 		conn.SetWriteDelay(false)

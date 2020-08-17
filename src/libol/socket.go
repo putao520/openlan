@@ -274,11 +274,61 @@ func (s *socketClient) SetConnection(conn net.Conn) {
 // Socket Server
 
 type ServerSts struct {
-	RecvCount   int64 `json:"recv"`
-	SendCount   int64 `json:"send"`
-	DropCount   int64 `json:"dropped"`
-	AcceptCount int64 `json:"accept"`
-	CloseCount  int64 `json:"closed"`
+	Lock        sync.Mutex `json:"-"`
+	RecvCount   int64      `json:"recv"`
+	DenyCount   int64      `json:"deny"`
+	AliveCount  int64      `json:"alive"`
+	SendCount   int64      `json:"send"`
+	DropCount   int64      `json:"dropped"`
+	AcceptCount int64      `json:"accept"`
+	CloseCount  int64      `json:"closed"`
+}
+
+func (s ServerSts) Get(v string) int64 {
+	s.Lock.Lock()
+	defer s.Lock.Unlock()
+	switch v {
+	case "recv":
+		return s.RecvCount
+	case "alive":
+		return s.AliveCount
+	case "deny":
+		return s.DenyCount
+	case "send":
+		return s.SendCount
+	case "drop":
+		return s.DropCount
+	case "accept":
+		return s.AcceptCount
+	case "close":
+		return s.CloseCount
+	default:
+		Warn("ServerSts.Get %s notFound", v)
+		return -1
+	}
+}
+
+func (s *ServerSts) Add(v string, d int64) {
+	s.Lock.Lock()
+	defer s.Lock.Unlock()
+	switch v {
+	case "recv":
+		s.RecvCount += d
+	case "alive":
+		s.AliveCount += d
+	case "deny":
+		s.DenyCount += d
+	case "send":
+		s.SendCount += d
+	case "drop":
+		s.DropCount += d
+	case "accept":
+		s.AcceptCount += d
+	case "close":
+		s.CloseCount += d
+	default:
+		Warn("ServerSts.Add %s notFound", v)
+	}
 }
 
 type ServerListener struct {
@@ -295,6 +345,7 @@ type SocketServer interface {
 	Accept()
 	ListClient() <-chan SocketClient
 	OffClient(client SocketClient)
+	TotalClient() int
 	Loop(call ServerListener)
 	Read(client SocketClient, ReadAt ReadClient)
 	String() string
@@ -306,7 +357,7 @@ type SocketServer interface {
 // TODO keepalive to release zombie connections.
 type socketServer struct {
 	lock       sync.RWMutex
-	sts        ServerSts
+	sts        *ServerSts
 	address    string
 	maxClient  int
 	clients    *SafeStrMap
@@ -319,8 +370,8 @@ type socketServer struct {
 func NewSocketServer(listen string) *socketServer {
 	return &socketServer{
 		address:    listen,
-		sts:        ServerSts{},
-		maxClient:  1024,
+		sts:        &ServerSts{},
+		maxClient:  128,
 		clients:    NewSafeStrMap(1024),
 		onClients:  make(chan SocketClient, 1024),
 		offClients: make(chan SocketClient, 1024),
@@ -338,6 +389,10 @@ func (t *socketServer) ListClient() <-chan SocketClient {
 		list <- nil
 	})
 	return list
+}
+
+func (t *socketServer) TotalClient() int {
+	return t.clients.Len()
 }
 
 func (t *socketServer) OffClient(client SocketClient) {
@@ -362,12 +417,13 @@ func (t *socketServer) doOffClient(call ServerListener, client SocketClient) {
 	Info("socketServer.doOffClient: %s", client)
 	addr := client.RemoteAddr()
 	if _, ok := t.clients.GetEx(addr); ok {
-		t.sts.CloseCount++
+		t.sts.Add("close", 1)
 		if call.OnClose != nil {
 			_ = call.OnClose(client)
 		}
 		client.Close()
 		t.clients.Del(addr)
+		t.sts.Add("alive", -1)
 	}
 }
 
@@ -397,7 +453,7 @@ func (t *socketServer) Read(client SocketClient, ReadAt ReadClient) {
 			t.OffClient(client)
 			break
 		}
-		t.sts.RecvCount++
+		t.sts.Add("recv", 1)
 		if HasLog(LOG) {
 			Log("socketServer.Read: length: %d ", frame.size)
 			Log("socketServer.Read: frame : %x", frame)
@@ -424,9 +480,23 @@ func (t *socketServer) String() string {
 }
 
 func (t *socketServer) Sts() ServerSts {
-	return t.sts
+	return *t.sts
 }
 
 func (t *socketServer) SetTimeout(v int64) {
 	t.timeout = v
+}
+
+// Previous process when accept connection,
+// and allowed accept new connection, will return true.
+func (t *socketServer) PreAccept(conn net.Conn) bool {
+	t.sts.Add("accept", 1)
+	if t.sts.Get("alive") >= int64(t.maxClient) {
+		t.sts.Add("deny", 1)
+		t.sts.Add("close", 1)
+		conn.Close()
+		return false
+	}
+	t.sts.Add("alive", 1)
+	return true
 }

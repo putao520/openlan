@@ -19,12 +19,14 @@ func (l Server) List(w http.ResponseWriter, r *http.Request) {
 	server := l.Switcher.Server()
 	data := &struct {
 		UpTime     int64           `json:"uptime"`
+		Total      int             `json:"total"`
 		Statistic  libol.ServerSts `json:"statistic"`
 		Connection []interface{}   `json:"connection"`
 	}{
 		UpTime:     l.Switcher.UpTime(),
 		Statistic:  server.Sts(),
 		Connection: make([]interface{}, 0, 1024),
+		Total:      server.TotalClient(),
 	}
 	for u := range server.ListClient() {
 		if u == nil {

@@ -69,10 +69,12 @@ func (k *UdpServer) Accept() {
 		conn, err := k.listener.Accept()
 		if err != nil {
 			Error("TcpServer.Accept: %s", err)
-			return
+			continue
+		}
+		if !k.PreAccept(conn) {
+			continue
 		}
 		Info("UdpServer.Accept: %s", conn.RemoteAddr())
-		k.sts.AcceptCount++
 		k.onClients <- NewUdpClientFromConn(conn, k.udpCfg)
 	}
 }

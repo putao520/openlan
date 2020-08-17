@@ -144,8 +144,8 @@ func PrettyTime(t int64) string {
 
 func PrettyBytes(b uint64) string {
 	split := func(_v uint64, _m uint64) (i uint64, d int) {
-		v := float64(_v%_m) / float64(_m)
-		return _v / _m, int(v * 100) //move two decimal to integer
+		_d := float64(_v%_m) / float64(_m)
+		return _v / _m, int(_d * 100) //move two decimal to integer
 	}
 	if b < 1024 {
 		return fmt.Sprintf("%dB", b)

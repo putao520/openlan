@@ -107,8 +107,16 @@ type Proxy struct {
 	Auth   Password `json:"auth,omitempty"`
 }
 
+type Perf struct {
+	Point    int `json:"point"`
+	Neighbor int `json:"neighbor"`
+	OnLine   int `json:"online"`
+	Link     int `json:"link"`
+}
+
 type Switch struct {
 	Alias     string      `json:"alias"`
+	Perf      Perf        `json:"perf"`
 	Protocol  string      `json:"protocol"` // tcp, tls, udp, kcp, ws and wss.
 	Listen    string      `json:"listen"`
 	Timeout   int         `json:"timeout"`
@@ -137,6 +145,12 @@ var sd = Switch{
 		Listen: "0.0.0.0:10000",
 	},
 	Listen: "0.0.0.0:10002",
+	Perf: Perf{
+		Point:    1024,
+		Neighbor: 1024,
+		OnLine:   64,
+		Link:     1024,
+	},
 }
 
 func NewSwitch() (c Switch) {
@@ -181,6 +195,18 @@ func (c *Switch) Right() {
 	}
 	if c.Proxy != nil {
 		RightAddr(&c.Proxy.Listen, 11082)
+	}
+	if c.Perf.Point == 0 {
+		c.Perf.Point = sd.Perf.Point
+	}
+	if c.Perf.Neighbor == 0 {
+		c.Perf.Neighbor = sd.Perf.Neighbor
+	}
+	if c.Perf.OnLine == 0 {
+		c.Perf.OnLine = sd.Perf.OnLine
+	}
+	if c.Perf.Link == 0 {
+		c.Perf.Link = sd.Perf.Link
 	}
 }
 
