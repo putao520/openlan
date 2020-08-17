@@ -78,10 +78,9 @@ func (t *TcpServer) Accept() {
 			Error("TcpServer.Accept: %s", err)
 			continue
 		}
-		if !t.PreAccept(conn) {
+		if !t.preAccept(conn) {
 			continue
 		}
-		Info("TcpServer.Accept: %s", conn.RemoteAddr())
 		t.onClients <- NewTcpClientFromConn(conn, t.tcpCfg)
 	}
 }

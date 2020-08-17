@@ -268,10 +268,10 @@ type ServerSts struct {
 	CloseCount  int64      `json:"closed"`
 }
 
-func (s ServerSts) Get(v string) int64 {
+func (s *ServerSts) Get(k string) int64 {
 	s.Lock.Lock()
 	defer s.Lock.Unlock()
-	switch v {
+	switch k {
 	case "recv":
 		return s.RecvCount
 	case "alive":
@@ -287,32 +287,38 @@ func (s ServerSts) Get(v string) int64 {
 	case "close":
 		return s.CloseCount
 	default:
-		Warn("ServerSts.Get %s notFound", v)
+		Warn("ServerSts.Get %s notFound", k)
 		return -1
 	}
 }
 
-func (s *ServerSts) Add(v string, d int64) {
+func (s *ServerSts) Add(k string, v int64) {
 	s.Lock.Lock()
 	defer s.Lock.Unlock()
-	switch v {
+	switch k {
 	case "recv":
-		s.RecvCount += d
+		s.RecvCount += v
 	case "alive":
-		s.AliveCount += d
+		s.AliveCount += v
 	case "deny":
-		s.DenyCount += d
+		s.DenyCount += v
 	case "send":
-		s.SendCount += d
+		s.SendCount += v
 	case "drop":
-		s.DropCount += d
+		s.DropCount += v
 	case "accept":
-		s.AcceptCount += d
+		s.AcceptCount += v
 	case "close":
-		s.CloseCount += d
+		s.CloseCount += v
 	default:
-		Warn("ServerSts.Add %s notFound", v)
+		Warn("ServerSts.Add %s notFound", k)
 	}
+}
+
+func (s *ServerSts) Copy() ServerSts {
+	s.Lock.Lock()
+	defer s.Lock.Unlock()
+	return *s
 }
 
 type ServerListener struct {
@@ -387,7 +393,7 @@ func (t *socketServer) OffClient(client SocketClient) {
 }
 
 func (t *socketServer) doOnClient(call ServerListener, client SocketClient) {
-	Info("socketServer.doOnClient: %s", client)
+	Info("socketServer.doOnClient: %s ?", client)
 	_ = t.clients.Set(client.RemoteAddr(), client)
 	if call.OnClient != nil {
 		_ = call.OnClient(client)
@@ -398,9 +404,10 @@ func (t *socketServer) doOnClient(call ServerListener, client SocketClient) {
 }
 
 func (t *socketServer) doOffClient(call ServerListener, client SocketClient) {
-	Info("socketServer.doOffClient: %s", client)
+	Info("socketServer.doOffClient: %s ?", client)
 	addr := client.RemoteAddr()
 	if _, ok := t.clients.GetEx(addr); ok {
+		Info("socketServer.doOffClient: close %s", addr)
 		t.sts.Add("close", 1)
 		if call.OnClose != nil {
 			_ = call.OnClose(client)
@@ -464,7 +471,7 @@ func (t *socketServer) String() string {
 }
 
 func (t *socketServer) Sts() ServerSts {
-	return *t.sts
+	return t.sts.Copy()
 }
 
 func (t *socketServer) SetTimeout(v int64) {
@@ -473,14 +480,19 @@ func (t *socketServer) SetTimeout(v int64) {
 
 // Previous process when accept connection,
 // and allowed accept new connection, will return true.
-func (t *socketServer) PreAccept(conn net.Conn) bool {
+func (t *socketServer) preAccept(conn net.Conn) bool {
+	addr := conn.RemoteAddr()
+	Debug("socketServer.preAccept: %s", addr)
 	t.sts.Add("accept", 1)
-	if t.sts.Get("alive") >= int64(t.maxClient) {
+	alive := t.sts.Get("alive")
+	if alive >= int64(t.maxClient) {
+		Debug("socketServer.preAccept: close %s", addr)
 		t.sts.Add("deny", 1)
 		t.sts.Add("close", 1)
 		conn.Close()
 		return false
 	}
+	Debug("socketServer.preAccept: allow %s", addr)
 	t.sts.Add("alive", 1)
 	return true
 }

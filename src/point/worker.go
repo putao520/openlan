@@ -44,18 +44,18 @@ var (
 	EventLogin   = "login"
 )
 
-type socketEvent struct {
+type SocketEvent struct {
 	Type   string
 	Reason string
 	Time   int64
 }
 
-func (e socketEvent) String() string {
+func (e SocketEvent) String() string {
 	return e.Type + " " + e.Reason
 }
 
-func NewEvent(typ, reason string) socketEvent {
-	return socketEvent{
+func NewEvent(typ, reason string) SocketEvent {
+	return SocketEvent{
 		Time:   time.Now().Unix(),
 		Reason: reason,
 		Type:   typ,
@@ -89,7 +89,7 @@ type SocketWorker struct {
 	done       chan bool
 	ticker     *time.Ticker
 	pointCfg   *config.Point
-	eventQueue chan socketEvent
+	eventQueue chan SocketEvent
 	writeQueue chan *libol.FrameMessage
 	jobber     []jobTimer
 	record     recordTime
@@ -112,7 +112,7 @@ func NewSocketWorker(client libol.SocketClient, c *config.Point) (t *SocketWorke
 			LastTime: time.Now().Unix(),
 		},
 		pointCfg:   c,
-		eventQueue: make(chan socketEvent, 32),
+		eventQueue: make(chan SocketEvent, 32),
 		writeQueue: make(chan *libol.FrameMessage, 1024),
 		jobber:     make([]jobTimer, 0, 32),
 	}
@@ -421,7 +421,7 @@ func (t *SocketWorker) doTicker() error {
 	return nil
 }
 
-func (t *SocketWorker) dispatch(ev socketEvent) {
+func (t *SocketWorker) dispatch(ev SocketEvent) {
 	libol.Info("SocketWorker.dispatch %v", ev)
 	switch ev.Type {
 	case EventConed:
@@ -430,9 +430,9 @@ func (t *SocketWorker) dispatch(ev socketEvent) {
 			_ = t.toLogin(t.client)
 		}
 	case EventSuccess:
-	case EventRecon, EventLogin:
+	case EventRecon:
 		t.reconnect()
-	case EventSignIn:
+	case EventSignIn, EventLogin:
 		_ = t.reLogin()
 	}
 }
@@ -499,7 +499,7 @@ func (t *SocketWorker) Read() {
 func (t *SocketWorker) deadCheck() {
 	dt := time.Now().Unix() - t.record.last
 	if dt > int64(t.pointCfg.Timeout) {
-		libol.Warn("SocketWorker.deadCheck: %s idle %ds", t.client, dt)
+		libol.Warn("SocketWorker.deadCheck: %v idle %ds", t.client, dt)
 		t.eventQueue <- NewEvent(EventRecon, "from dead check")
 		t.record.last = time.Now().Unix()
 	}

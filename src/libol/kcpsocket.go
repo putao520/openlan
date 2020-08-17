@@ -82,10 +82,9 @@ func (k *KcpServer) Accept() {
 			Error("KcpServer.Accept: %s", err)
 			continue
 		}
-		if !k.PreAccept(conn) {
+		if !k.preAccept(conn) {
 			continue
 		}
-		Info("KcpServer.Accept: %s", conn.RemoteAddr())
 		conn.SetStreamMode(true)
 		conn.SetWriteDelay(false)
 		conn.SetACKNoDelay(false)

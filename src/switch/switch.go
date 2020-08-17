@@ -363,7 +363,6 @@ func (v *Switch) OnClose(client libol.SocketClient) error {
 		storage.Network.DelLease(uuid)
 	}
 	storage.Point.Del(client.Addr())
-
 	return nil
 }
 

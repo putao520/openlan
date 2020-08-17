@@ -89,12 +89,11 @@ func (t *WebServer) Accept() {
 	}
 	defer t.Close()
 	t.listener.Handler = websocket.Handler(func(ws *websocket.Conn) {
-		if !t.PreAccept(ws) {
+		if !t.preAccept(ws) {
 			return
 		}
 		defer ws.Close()
 		ws.PayloadType = websocket.BinaryFrame
-		Info("WebServer.Accept: %s", ws.RemoteAddr())
 		wws := &wsConn{ws}
 		client := NewWebClientFromConn(wws, t.webCfg)
 		t.onClients <- client
