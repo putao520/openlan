@@ -77,7 +77,7 @@ func (i *Ip4Proto) Decode() error {
 type FrameMessage struct {
 	control bool
 	action  string
-	params  string
+	params  []byte
 	buffer  []byte
 	size    int
 	total   int
@@ -89,7 +89,7 @@ func NewFrameMessage() *FrameMessage {
 	m := FrameMessage{
 		control: false,
 		action:  "",
-		params:  "",
+		params:  make([]byte, 0, 2),
 		size:    0,
 		buffer:  make([]byte, HlSize+MaxBuf),
 	}
@@ -102,7 +102,7 @@ func (m *FrameMessage) Decode() bool {
 	m.control = isControl(m.frame)
 	if m.control {
 		m.action = string(m.frame[6:11])
-		m.params = string(m.frame[12:])
+		m.params = m.frame[12:]
 	}
 	return m.control
 }
@@ -123,7 +123,7 @@ func (m *FrameMessage) String() string {
 	return fmt.Sprintf("control: %t, frame: %x", m.control, m.frame[:20])
 }
 
-func (m *FrameMessage) CmdAndParams() (string, string) {
+func (m *FrameMessage) CmdAndParams() (string, []byte) {
 	return m.action, m.params
 }
 
@@ -156,13 +156,23 @@ type ControlMessage struct {
 	control  bool
 	operator string
 	action   string
-	params   string
+	params   []byte
+}
+
+func NewRequestFrame(action string, body []byte) *FrameMessage {
+	m := NewControlMessage(action, "= ", body)
+	return m.Encode()
+}
+
+func NewResponseFrame(action string, body []byte) *FrameMessage {
+	m := NewControlMessage(action, ": ", body)
+	return m.Encode()
 }
 
 //operator: request is '= ', and response is  ': '
 //action: login, network etc.
 //body: json string.
-func NewControlMessage(action string, opr string, body string) *ControlMessage {
+func NewControlMessage(action, opr string, body []byte) *ControlMessage {
 	c := ControlMessage{
 		control:  true,
 		action:   action,

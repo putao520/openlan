@@ -36,8 +36,6 @@ type SocketClient interface {
 	Close()
 	WriteMsg(frame *FrameMessage) error
 	ReadMsg() (*FrameMessage, error)
-	WriteReq(action string, body string) error
-	WriteResp(action string, body string) error
 	State() string
 	UpTime() int64
 	AliveTime() int64
@@ -113,20 +111,6 @@ func (t *dataStream) ReadMsg() (*FrameMessage, error) {
 	t.sts.RecvOkay += uint64(len(frame.frame))
 
 	return frame, nil
-}
-
-func (t *dataStream) WriteReq(action string, body string) error {
-	m := NewControlMessage(action, "= ", body)
-	frame := m.Encode()
-	Cmd("dataStream.WriteReq: %s", frame.frame)
-	return t.WriteMsg(frame)
-}
-
-func (t *dataStream) WriteResp(action string, body string) error {
-	m := NewControlMessage(action, ": ", body)
-	frame := m.Encode()
-	Cmd("dataStream.WriteRsp: %s", frame.frame)
-	return t.WriteMsg(frame)
 }
 
 type socketClient struct {

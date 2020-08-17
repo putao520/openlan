@@ -46,11 +46,12 @@ func (r *WithRequest) OnFrame(client libol.SocketClient, frame *libol.FrameMessa
 	return nil
 }
 
-func (r *WithRequest) OnDefault(client libol.SocketClient, data string) {
-	_ = client.WriteResp("pong", data)
+func (r *WithRequest) OnDefault(client libol.SocketClient, data []byte) {
+	m := libol.NewResponseFrame("pong", data)
+	_ = client.WriteMsg(m)
 }
 
-func (r *WithRequest) OnNeighbor(client libol.SocketClient, data string) {
+func (r *WithRequest) OnNeighbor(client libol.SocketClient, data []byte) {
 	resp := make([]schema.Neighbor, 0, 32)
 	for obj := range storage.Neighbor.List() {
 		if obj == nil {
@@ -59,7 +60,8 @@ func (r *WithRequest) OnNeighbor(client libol.SocketClient, data string) {
 		resp = append(resp, models.NewNeighborSchema(obj))
 	}
 	if respStr, err := json.Marshal(resp); err == nil {
-		_ = client.WriteResp("neighbor", string(respStr))
+		m := libol.NewResponseFrame("neighbor", respStr)
+		_ = client.WriteMsg(m)
 	}
 }
 
@@ -96,11 +98,11 @@ func (r *WithRequest) GetLease(ifAddr string, p *models.Point, n *models.Network
 	}
 	return lease
 }
-func (r *WithRequest) OnIpAddr(client libol.SocketClient, data string) {
+func (r *WithRequest) OnIpAddr(client libol.SocketClient, data []byte) {
 	var resp *models.Network
 	libol.Info("WithRequest.OnIpAddr: %s from %s", data, client)
 	recv := models.NewNetwork("", "")
-	if err := json.Unmarshal([]byte(data), recv); err != nil {
+	if err := json.Unmarshal(data, recv); err != nil {
 		libol.Error("WithRequest.OnIpAddr: invalid json data.")
 		return
 	}
@@ -139,16 +141,18 @@ func (r *WithRequest) OnIpAddr(client libol.SocketClient, data string) {
 	if resp != nil {
 		libol.Cmd("WithRequest.OnIpAddr: resp %s", resp)
 		if respStr, err := json.Marshal(resp); err == nil {
-			_ = client.WriteResp("ipaddr", string(respStr))
+			m := libol.NewResponseFrame("ipaddr", respStr)
+			_ = client.WriteMsg(m)
 		}
 		libol.Info("WithRequest.OnIpAddr: %s for %s", resp.IfAddr, client)
 	} else {
 		libol.Error("WithRequest.OnIpAddr: %s no free address", recv.Name)
-		_ = client.WriteResp("ipaddr", "no free address")
+		m := libol.NewResponseFrame("ipaddr", []byte("no free address"))
+		_ = client.WriteMsg(m)
 	}
 }
 
-func (r *WithRequest) OnLeave(client libol.SocketClient, data string) {
+func (r *WithRequest) OnLeave(client libol.SocketClient, data []byte) {
 	libol.Info("WithRequest.OnLeave: %s", client.RemoteAddr())
 	r.master.OffClient(client)
 }

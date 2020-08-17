@@ -32,11 +32,13 @@ func (p *PointAuth) OnFrame(client libol.SocketClient, frame *libol.FrameMessage
 		case "logi=":
 			if err := p.handleLogin(client, params); err != nil {
 				libol.Error("PointAuth.OnFrame: %s", err)
-				_ = client.WriteResp("login", err.Error())
+				m := libol.NewResponseFrame("login", []byte(err.Error()))
+				_ = client.WriteMsg(m)
 				//client.Close()
 				return err
 			}
-			_ = client.WriteResp("login", "okay.")
+			m := libol.NewResponseFrame("login", []byte("okay"))
+			_ = client.WriteMsg(m)
 		}
 		//If instruct is not login and already auth, continue to process.
 		if client.Status() == libol.ClAuth {
@@ -51,7 +53,7 @@ func (p *PointAuth) OnFrame(client libol.SocketClient, frame *libol.FrameMessage
 	return nil
 }
 
-func (p *PointAuth) handleLogin(client libol.SocketClient, data string) error {
+func (p *PointAuth) handleLogin(client libol.SocketClient, data []byte) error {
 	libol.Debug("PointAuth.handleLogin: %s", data)
 
 	if client.Status() == libol.ClAuth {

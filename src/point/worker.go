@@ -71,10 +71,12 @@ type recordTime struct {
 	last      int64 // record time last frame received or connected.
 	connected int64 // record last connected time, ns.
 	reconnect int64 // record time when triggered reconnected, ns.
+	success   int64 // record success time when login.
 	sleeps    int   // record times to control connecting delay.
 	closed    int64
 	live      int64 // record received pong frame time.
 }
+
 type SocketWorker struct {
 	// private
 	listener   SocketWorkerListener
@@ -106,7 +108,7 @@ func NewSocketWorker(client libol.SocketClient, c *config.Point) (t *SocketWorke
 		done:   make(chan bool, 2),
 		ticker: time.NewTicker(2 * time.Second),
 		keepalive: KeepAlive{
-			Interval: 10,
+			Interval: 15,
 			LastTime: time.Now().Unix(),
 		},
 		pointCfg:   c,
@@ -184,7 +186,8 @@ func (t *SocketWorker) leave() {
 		return
 	}
 	libol.Cmd("SocketWorker.leave: left: %s", body)
-	if err := t.client.WriteReq("left", string(body)); err != nil {
+	m := libol.NewRequestFrame("left", body)
+	if err := t.client.WriteMsg(m); err != nil {
 		libol.Error("Switch.leave: %s", err)
 		return
 	}
@@ -241,6 +244,10 @@ func (t *SocketWorker) reconnect() {
 	})
 }
 
+func (t *SocketWorker) reLogin() error {
+	return t.toLogin(t.client)
+}
+
 // toLogin request
 func (t *SocketWorker) toLogin(client libol.SocketClient) error {
 	body, err := json.Marshal(t.user)
@@ -249,7 +256,8 @@ func (t *SocketWorker) toLogin(client libol.SocketClient) error {
 		return err
 	}
 	libol.Cmd("SocketWorker.toLogin: %s", body)
-	if err := client.WriteReq("login", string(body)); err != nil {
+	m := libol.NewRequestFrame("login", body)
+	if err := client.WriteMsg(m); err != nil {
 		libol.Error("SocketWorker.toLogin: %s", err)
 		return err
 	}
@@ -268,20 +276,22 @@ func (t *SocketWorker) toNetwork(client libol.SocketClient) error {
 		return err
 	}
 	libol.Cmd("SocketWorker.toNetwork: %s", body)
-	if err := client.WriteReq("ipaddr", string(body)); err != nil {
+	m := libol.NewRequestFrame("ipaddr", body)
+	if err := client.WriteMsg(m); err != nil {
 		libol.Error("SocketWorker.toNetwork: %s", err)
 		return err
 	}
 	return nil
 }
 
-func (t *SocketWorker) onLogin(resp string) error {
-	if strings.HasPrefix(resp, "okay") {
+func (t *SocketWorker) onLogin(resp []byte) error {
+	if strings.HasPrefix(string(resp), "okay") {
 		t.client.SetStatus(libol.ClAuth)
 		if t.listener.OnSuccess != nil {
 			_ = t.listener.OnSuccess(t)
 		}
 		t.record.sleeps = 0
+		t.record.success = time.Now().Unix()
 		_ = t.toNetwork(t.client)
 		t.eventQueue <- NewEvent(EventSuccess, "already success")
 		libol.Info("SocketWorker.onInstruct.toLogin: success")
@@ -292,13 +302,13 @@ func (t *SocketWorker) onLogin(resp string) error {
 	return nil
 }
 
-func (t *SocketWorker) onIpAddr(resp string) error {
+func (t *SocketWorker) onIpAddr(resp []byte) error {
 	if !t.pointCfg.RequestAddr {
 		libol.Info("SocketWorker.onIpAddr: not allowed")
 		return nil
 	}
 	n := &models.Network{}
-	if err := json.Unmarshal([]byte(resp), n); err != nil {
+	if err := json.Unmarshal(resp, n); err != nil {
 		return libol.NewErr("SocketWorker.onInstruct: Invalid json data.")
 	}
 	t.network = n
@@ -308,14 +318,14 @@ func (t *SocketWorker) onIpAddr(resp string) error {
 	return nil
 }
 
-func (t *SocketWorker) onLeft(resp string) error {
+func (t *SocketWorker) onLeft(resp []byte) error {
 	client := t.client
 	libol.Info("SocketWorker.onLeft: %s %s", client.String(), resp)
 	t.close()
 	return nil
 }
 
-func (t *SocketWorker) onSignIn(resp string) error {
+func (t *SocketWorker) onSignIn(resp []byte) error {
 	client := t.client
 	libol.Info("SocketWorker.onSignIn: %s %s", client.String(), resp)
 	t.eventQueue <- NewEvent(EventSignIn, "request from server")
@@ -339,7 +349,12 @@ func (t *SocketWorker) onInstruct(frame *libol.FrameMessage) error {
 	case "pong:":
 		t.record.live = time.Now().Unix()
 	case "sign=":
-		return t.onSignIn(resp)
+		now := time.Now().Unix()
+		if now > t.record.success {
+			return t.onSignIn(resp)
+		} else {
+			libol.Info("dismiss by success")
+		}
 	case "left=":
 		return t.onLeft(resp)
 	default:
@@ -349,34 +364,37 @@ func (t *SocketWorker) onInstruct(frame *libol.FrameMessage) error {
 }
 
 func (t *SocketWorker) doKeepalive() error {
-	if t.keepalive.Should() {
-		if t.client == nil {
-			return nil
-		}
-		t.keepalive.Update()
-		data := struct {
-			DateTime   int64  `json:"datetime"`
-			UUID       string `json:"uuid"`
-			Alias      string `json:"alias"`
-			Connection string `json:"connection"`
-			Address    string `json:"address"`
-		}{
-			DateTime:   time.Now().Unix(),
-			UUID:       t.user.UUID,
-			Alias:      t.user.Alias,
-			Address:    t.client.LocalAddr(),
-			Connection: t.client.RemoteAddr(),
-		}
-		body, err := json.Marshal(data)
-		if err != nil {
-			libol.Error("SocketWorker.doTicker: %s", err)
-			return err
-		}
-		libol.Cmd("SocketWorker.doTicker: ping= %s", body)
-		if err := t.client.WriteReq("ping", string(body)); err != nil {
-			libol.Error("SocketWorker.doTicker: %s", err)
-			return err
-		}
+	if !t.keepalive.Should() {
+		return nil
+	}
+	client := t.client
+	if client == nil {
+		return nil
+	}
+	t.keepalive.Update()
+	data := struct {
+		DateTime   int64  `json:"datetime"`
+		UUID       string `json:"uuid"`
+		Alias      string `json:"alias"`
+		Connection string `json:"connection"`
+		Address    string `json:"address"`
+	}{
+		DateTime:   time.Now().Unix(),
+		UUID:       t.user.UUID,
+		Alias:      t.user.Alias,
+		Address:    t.client.LocalAddr(),
+		Connection: t.client.RemoteAddr(),
+	}
+	body, err := json.Marshal(data)
+	if err != nil {
+		libol.Error("SocketWorker.doTicker: %s", err)
+		return err
+	}
+	libol.Cmd("SocketWorker.doTicker: ping= %s", body)
+	m := libol.NewRequestFrame("ping", body)
+	if err := client.WriteMsg(m); err != nil {
+		libol.Error("SocketWorker.doTicker: %s", err)
+		return err
 	}
 	return nil
 }
@@ -412,8 +430,10 @@ func (t *SocketWorker) dispatch(ev socketEvent) {
 			_ = t.toLogin(t.client)
 		}
 	case EventSuccess:
-	case EventRecon, EventSignIn, EventLogin:
+	case EventRecon, EventLogin:
 		t.reconnect()
+	case EventSignIn:
+		_ = t.reLogin()
 	}
 }
 

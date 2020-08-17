@@ -316,7 +316,8 @@ func (v *Switch) SignIn(client libol.SocketClient) error {
 		return err
 	}
 	libol.Cmd("Switch.SignIn: %s", body)
-	if err := client.WriteReq("signin", string(body)); err != nil {
+	m := libol.NewRequestFrame("signin", body)
+	if err := client.WriteMsg(m); err != nil {
 		libol.Error("Switch.SignIn: %s", err)
 		return err
 	}
@@ -568,7 +569,8 @@ func (v *Switch) leftClient(client libol.SocketClient) {
 		return
 	}
 	libol.Cmd("Switch.leftClient: %s", body)
-	if err := client.WriteReq("left", string(body)); err != nil {
+	m := libol.NewRequestFrame("left", body)
+	if err := client.WriteMsg(m); err != nil {
 		libol.Error("Switch.leftClient: %s", err)
 		return
 	}
