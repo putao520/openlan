@@ -69,8 +69,8 @@ type jobTimer struct {
 
 type recordTime struct {
 	last      int64 // record time last frame received or connected.
-	connected int64 // record last connected time.
-	reconnect int64 // record time when triggered reconnected.
+	connected int64 // record last connected time, ns.
+	reconnect int64 // record time when triggered reconnected, ns.
 	sleeps    int   // record times to control connecting delay.
 	closed    int64
 	live      int64 // record received pong frame time.
@@ -101,7 +101,7 @@ func NewSocketWorker(client libol.SocketClient, c *config.Point) (t *SocketWorke
 		routes:  make(map[string]*models.Route, 64),
 		record: recordTime{
 			last:      time.Now().Unix(),
-			reconnect: time.Now().Unix(),
+			reconnect: time.Now().UnixNano(),
 		},
 		done:   make(chan bool, 2),
 		ticker: time.NewTicker(2 * time.Second),
@@ -142,7 +142,7 @@ func (t *SocketWorker) Initialize() {
 	t.client.SetMaxSize(t.pointCfg.Interface.IfMtu)
 	t.client.SetListener(libol.ClientListener{
 		OnConnected: func(client libol.SocketClient) error {
-			t.record.connected = time.Now().Unix()
+			t.record.connected = time.Now().UnixNano()
 			t.eventQueue <- NewEvent(EventConed, "from socket")
 			return nil
 		},
@@ -226,7 +226,7 @@ func (t *SocketWorker) reconnect() {
 	if t.isStopped() {
 		return
 	}
-	t.record.reconnect = time.Now().Unix()
+	t.record.reconnect = time.Now().UnixNano()
 	t.jobber = append(t.jobber, jobTimer{
 		Time: time.Now().Unix() + t.sleepIdle(),
 		Call: func() error {
@@ -348,7 +348,7 @@ func (t *SocketWorker) onInstruct(frame *libol.FrameMessage) error {
 	return nil
 }
 
-func (t *SocketWorker) doTicker() error {
+func (t *SocketWorker) doKeepalive() error {
 	if t.keepalive.Should() {
 		if t.client == nil {
 			return nil
@@ -378,7 +378,10 @@ func (t *SocketWorker) doTicker() error {
 			return err
 		}
 	}
+	return nil
+}
 
+func (t *SocketWorker) doJober() error {
 	// travel jobber and execute expired.
 	now := time.Now().Unix()
 	newTimer := make([]jobTimer, 0, 32)
@@ -391,6 +394,12 @@ func (t *SocketWorker) doTicker() error {
 	}
 	t.jobber = newTimer
 	libol.Debug("SocketWorker.doTicker %d", len(t.jobber))
+	return nil
+}
+
+func (t *SocketWorker) doTicker() error {
+	_ = t.doKeepalive()
+	_ = t.doJober()
 	return nil
 }
 
