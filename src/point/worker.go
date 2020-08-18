@@ -95,8 +95,8 @@ type SocketWorker struct {
 	record     recordTime
 }
 
-func NewSocketWorker(client libol.SocketClient, c *config.Point) (t *SocketWorker) {
-	t = &SocketWorker{
+func NewSocketWorker(client libol.SocketClient, c *config.Point) *SocketWorker {
+	t := &SocketWorker{
 		client:  client,
 		user:    models.NewUser(c.Username, c.Password),
 		network: models.NewNetwork(c.Network, c.Interface.Address),
@@ -118,8 +118,7 @@ func NewSocketWorker(client libol.SocketClient, c *config.Point) (t *SocketWorke
 	}
 	t.user.Alias = c.Alias
 	t.user.Network = c.Network
-
-	return
+	return t
 }
 
 func (t *SocketWorker) sleepNow() int64 {
@@ -238,7 +237,9 @@ func (t *SocketWorker) reconnect() {
 		Time: time.Now().Unix() + t.sleepIdle(),
 		Call: func() error {
 			libol.Debug("SocketWorker.reconnect: on jobber")
-			if t.record.connected < t.record.reconnect { // already connected after.
+			r := &t.record
+			if r.connected < r.reconnect { // already connected after.
+				libol.Info("SocketWorker.reconnect: %d<%d", r.connected, r.reconnect)
 				return t.connect()
 			} else {
 				libol.Cmd("SocketWorker.reconnect: dissed by already")
@@ -270,7 +271,7 @@ func (t *SocketWorker) sendLogin(client libol.SocketClient) error {
 
 // toLogin request
 func (t *SocketWorker) toLogin(client libol.SocketClient) error {
-	if err := t.sendLogin(t.client); err != nil {
+	if err := t.sendLogin(client); err != nil {
 		libol.Error("SocketWorker.toLogin: %s", err)
 	}
 	return nil

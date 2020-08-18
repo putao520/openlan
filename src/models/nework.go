@@ -89,6 +89,6 @@ func NetworkEqual(o *Network, n *Network) bool {
 				return false
 			}
 		}
+		return true
 	}
-	return true
 }
