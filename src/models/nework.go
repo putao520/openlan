@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"net"
+	"sort"
 	"strings"
 )
 
@@ -60,4 +61,34 @@ func (u *Network) String() string {
 }
 
 func (u *Network) ParseIP(s string) {
+}
+
+func NetworkEqual(o *Network, n *Network) bool {
+	if o == n {
+		return true
+	} else if o == nil || n == nil {
+		return false
+	} else if o.IfAddr != n.IfAddr || o.Netmask != n.Netmask {
+		return false
+	} else {
+		ors := make([]string, 0, 32)
+		nrs := make([]string, 0, 32)
+		for _, rt := range o.Routes {
+			ors = append(ors, rt.String())
+		}
+		for _, rt := range n.Routes {
+			nrs = append(nrs, rt.String())
+		}
+		if len(ors) != len(nrs) {
+			return false
+		}
+		sort.Strings(ors)
+		sort.Strings(nrs)
+		for i := range ors {
+			if ors[i] != nrs[i] {
+				return false
+			}
+		}
+	}
+	return true
 }

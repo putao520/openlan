@@ -163,9 +163,9 @@ func (t *SocketWorker) Start() {
 	libol.Go(t.Loop)
 }
 
-func (t *SocketWorker) leave() {
-	if t.client == nil {
-		return
+func (t *SocketWorker) sendLeave(client libol.SocketClient) error {
+	if client == nil {
+		return libol.NewErr("client is nil")
 	}
 	data := struct {
 		DateTime   int64  `json:"datetime"`
@@ -182,21 +182,25 @@ func (t *SocketWorker) leave() {
 	}
 	body, err := json.Marshal(data)
 	if err != nil {
-		libol.Error("SocketWorker.leave: %s", err)
-		return
+		return err
 	}
 	libol.Cmd("SocketWorker.leave: left: %s", body)
 	m := libol.NewRequestFrame("left", body)
-	if err := t.client.WriteMsg(m); err != nil {
-		libol.Error("Switch.leave: %s", err)
-		return
+	if err := client.WriteMsg(m); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *SocketWorker) leave() {
+	if err := t.sendLeave(t.client); err != nil {
+		libol.Error("SocketWorker.leave: %s", err)
 	}
 }
 
 func (t *SocketWorker) Stop() {
 	t.lock.Lock()
 	defer t.lock.Unlock()
-
 	t.leave()
 	t.client.Terminal()
 	t.done <- true
@@ -248,17 +252,41 @@ func (t *SocketWorker) reLogin() error {
 	return t.toLogin(t.client)
 }
 
-// toLogin request
-func (t *SocketWorker) toLogin(client libol.SocketClient) error {
+func (t *SocketWorker) sendLogin(client libol.SocketClient) error {
+	if client == nil {
+		return libol.NewErr("client is nil")
+	}
 	body, err := json.Marshal(t.user)
 	if err != nil {
-		libol.Error("SocketWorker.toLogin: %s", err)
 		return err
 	}
 	libol.Cmd("SocketWorker.toLogin: %s", body)
 	m := libol.NewRequestFrame("login", body)
 	if err := client.WriteMsg(m); err != nil {
+		return err
+	}
+	return nil
+}
+
+// toLogin request
+func (t *SocketWorker) toLogin(client libol.SocketClient) error {
+	if err := t.sendLogin(t.client); err != nil {
 		libol.Error("SocketWorker.toLogin: %s", err)
+	}
+	return nil
+}
+
+func (t *SocketWorker) sendIpAddr(client libol.SocketClient) error {
+	if client == nil {
+		return libol.NewErr("client is nil")
+	}
+	body, err := json.Marshal(t.network)
+	if err != nil {
+		return err
+	}
+	libol.Cmd("SocketWorker.toNetwork: %s", body)
+	m := libol.NewRequestFrame("ipaddr", body)
+	if err := client.WriteMsg(m); err != nil {
 		return err
 	}
 	return nil
@@ -270,16 +298,8 @@ func (t *SocketWorker) toNetwork(client libol.SocketClient) error {
 		libol.Info("SocketWorker.toNetwork: notNeed")
 		return nil
 	}
-	body, err := json.Marshal(t.network)
-	if err != nil {
+	if err := t.sendIpAddr(client); err != nil {
 		libol.Error("SocketWorker.toNetwork: %s", err)
-		return err
-	}
-	libol.Cmd("SocketWorker.toNetwork: %s", body)
-	m := libol.NewRequestFrame("ipaddr", body)
-	if err := client.WriteMsg(m); err != nil {
-		libol.Error("SocketWorker.toNetwork: %s", err)
-		return err
 	}
 	return nil
 }
@@ -349,12 +369,7 @@ func (t *SocketWorker) onInstruct(frame *libol.FrameMessage) error {
 	case "pong:":
 		t.record.live = time.Now().Unix()
 	case "sign=":
-		now := time.Now().Unix()
-		if now > t.record.success {
-			return t.onSignIn(resp)
-		} else {
-			libol.Info("dismiss by success")
-		}
+		return t.onSignIn(resp)
 	case "left=":
 		return t.onLeft(resp)
 	default:
@@ -363,15 +378,10 @@ func (t *SocketWorker) onInstruct(frame *libol.FrameMessage) error {
 	return nil
 }
 
-func (t *SocketWorker) doKeepalive() error {
-	if !t.keepalive.Should() {
-		return nil
-	}
-	client := t.client
+func (t *SocketWorker) sendPing(client libol.SocketClient) error {
 	if client == nil {
-		return nil
+		return libol.NewErr("client is nil")
 	}
-	t.keepalive.Update()
 	data := struct {
 		DateTime   int64  `json:"datetime"`
 		UUID       string `json:"uuid"`
@@ -387,14 +397,23 @@ func (t *SocketWorker) doKeepalive() error {
 	}
 	body, err := json.Marshal(data)
 	if err != nil {
-		libol.Error("SocketWorker.doTicker: %s", err)
 		return err
 	}
 	libol.Cmd("SocketWorker.doTicker: ping= %s", body)
 	m := libol.NewRequestFrame("ping", body)
 	if err := client.WriteMsg(m); err != nil {
-		libol.Error("SocketWorker.doTicker: %s", err)
 		return err
+	}
+	return nil
+}
+
+func (t *SocketWorker) doKeepalive() error {
+	if !t.keepalive.Should() {
+		return nil
+	}
+	t.keepalive.Update()
+	if err := t.sendPing(t.client); err != nil {
+		libol.Error("SocketWorker.doTicker: %s", err)
 	}
 	return nil
 }
@@ -430,6 +449,7 @@ func (t *SocketWorker) dispatch(ev SocketEvent) {
 			_ = t.toLogin(t.client)
 		}
 	case EventSuccess:
+		_ = t.sendPing(t.client)
 	case EventRecon:
 		t.reconnect()
 	case EventSignIn, EventLogin:
@@ -974,7 +994,7 @@ type Worker struct {
 	ifAddr    string
 	listener  WorkerListener
 	http      *http.Http
-	tcpWorker *SocketWorker
+	conWorker *SocketWorker
 	tapWorker *TapWorker
 	config    *config.Point
 	uuid      string
@@ -996,14 +1016,14 @@ func (p *Worker) Initialize() {
 	}
 	libol.Info("Worker.Initialize")
 	client := GetSocketClient(p.config)
-	p.tcpWorker = NewSocketWorker(client, p.config)
+	p.conWorker = NewSocketWorker(client, p.config)
 
 	tapCfg := GetTapCfg(p.config)
 	// register listener
 	p.tapWorker = NewTapWorker(tapCfg, p.config)
 
-	p.tcpWorker.SetUUID(p.UUID())
-	p.tcpWorker.listener = SocketWorkerListener{
+	p.conWorker.SetUUID(p.UUID())
+	p.conWorker.listener = SocketWorkerListener{
 		OnClose:   p.OnClose,
 		OnSuccess: p.OnSuccess,
 		OnIpAddr:  p.OnIpAddr,
@@ -1012,7 +1032,7 @@ func (p *Worker) Initialize() {
 			return nil
 		},
 	}
-	p.tcpWorker.Initialize()
+	p.conWorker.Initialize()
 
 	p.tapWorker.listener = TapWorkerListener{
 		OnOpen: func(w *TapWorker) error {
@@ -1022,12 +1042,15 @@ func (p *Worker) Initialize() {
 				}
 			}
 			if p.network != nil {
-				_ = p.OnIpAddr(p.tcpWorker, p.network)
+				n := p.network
+				// remove older firstly
+				p.FreeIpAddr()
+				_ = p.OnIpAddr(p.conWorker, n)
 			}
 			return nil
 		},
 		ReadAt: func(frame *libol.FrameMessage) error {
-			p.tcpWorker.writeQueue <- frame
+			p.conWorker.writeQueue <- frame
 			return nil
 		},
 		FindNext: p.FindNext,
@@ -1042,29 +1065,29 @@ func (p *Worker) Initialize() {
 func (p *Worker) Start() {
 	libol.Debug("Worker.Start linux.")
 	p.tapWorker.Start()
-	p.tcpWorker.Start()
+	p.conWorker.Start()
 	if p.http != nil {
 		libol.Go(p.http.Start)
 	}
 }
 
 func (p *Worker) Stop() {
-	if p.tapWorker == nil || p.tcpWorker == nil {
+	if p.tapWorker == nil || p.conWorker == nil {
 		return
 	}
 	if p.http != nil {
 		p.http.Shutdown()
 	}
 	p.FreeIpAddr()
-	p.tcpWorker.Stop()
+	p.conWorker.Stop()
 	p.tapWorker.Stop()
-	p.tcpWorker = nil
+	p.conWorker = nil
 	p.tapWorker = nil
 }
 
 func (p *Worker) Client() libol.SocketClient {
-	if p.tcpWorker != nil {
-		return p.tcpWorker.client
+	if p.conWorker != nil {
+		return p.conWorker.client
 	}
 	return nil
 }
@@ -1109,8 +1132,8 @@ func (p *Worker) IfName() string {
 }
 
 func (p *Worker) Worker() *SocketWorker {
-	if p.tcpWorker != nil {
-		return p.tcpWorker
+	if p.conWorker != nil {
+		return p.conWorker
 	}
 	return nil
 }
@@ -1132,11 +1155,12 @@ func (p *Worker) FindNext(dest []byte) []byte {
 }
 
 func (p *Worker) OnIpAddr(w *SocketWorker, n *models.Network) error {
+	if models.NetworkEqual(p.network, n) {
+		libol.Info("Worker.OnIpAddr: %s/%s noChanged", n.IfAddr, n.Netmask)
+		return nil
+	}
 	libol.Info("Worker.OnIpAddr: %s/%s", n.IfAddr, n.Netmask)
 	libol.Info("Worker.OnIpAddr: %s", n.Routes)
-	if p.network != nil { // remove older firstly
-		p.FreeIpAddr()
-	}
 	prefix := libol.Netmask2Len(n.Netmask)
 	ipStr := fmt.Sprintf("%s/%d", n.IfAddr, prefix)
 	p.tapWorker.OnIpAddr(ipStr)
@@ -1147,7 +1171,6 @@ func (p *Worker) OnIpAddr(w *SocketWorker, n *models.Network) error {
 		_ = p.listener.AddRoutes(n.Routes)
 	}
 	p.network = n
-
 	// update routes
 	ip := net.ParseIP(p.network.IfAddr)
 	m := net.IPMask(net.ParseIP(p.network.Netmask).To4())
