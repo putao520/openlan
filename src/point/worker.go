@@ -69,8 +69,8 @@ type jobTimer struct {
 
 type recordTime struct {
 	last      int64 // record time last frame received or connected.
-	connected int64 // record last connected time, ns.
-	reconnect int64 // record time when triggered reconnected, ns.
+	connected int64 // record last connected time.
+	reconnect int64 // record time when triggered reconnected.
 	success   int64 // record success time when login.
 	sleeps    int   // record times to control connecting delay.
 	closed    int64
@@ -103,7 +103,7 @@ func NewSocketWorker(client libol.SocketClient, c *config.Point) *SocketWorker {
 		routes:  make(map[string]*models.Route, 64),
 		record: recordTime{
 			last:      time.Now().Unix(),
-			reconnect: time.Now().UnixNano(),
+			reconnect: time.Now().Unix(),
 		},
 		done:   make(chan bool, 2),
 		ticker: time.NewTicker(2 * time.Second),
@@ -143,7 +143,7 @@ func (t *SocketWorker) Initialize() {
 	t.client.SetMaxSize(t.pointCfg.Interface.IfMtu)
 	t.client.SetListener(libol.ClientListener{
 		OnConnected: func(client libol.SocketClient) error {
-			t.record.connected = time.Now().UnixNano()
+			t.record.connected = time.Now().Unix()
 			t.eventQueue <- NewEvent(EventConed, "from socket")
 			return nil
 		},
@@ -232,19 +232,21 @@ func (t *SocketWorker) reconnect() {
 	if t.isStopped() {
 		return
 	}
-	t.record.reconnect = time.Now().UnixNano()
+	t.record.reconnect = time.Now().Unix()
 	t.jobber = append(t.jobber, jobTimer{
 		Time: time.Now().Unix() + t.sleepIdle(),
 		Call: func() error {
 			libol.Debug("SocketWorker.reconnect: on jobber")
-			r := &t.record
-			if r.connected < r.reconnect { // already connected after.
-				libol.Info("SocketWorker.reconnect: %d<%d", r.connected, r.reconnect)
-				return t.connect()
-			} else {
-				libol.Cmd("SocketWorker.reconnect: dissed by already")
+			if t.record.connected >= t.record.reconnect { // already connected after.
+				libol.Cmd("SocketWorker.reconnect: dissed by connected")
+				return nil
 			}
-			return nil
+			if t.record.last >= t.record.reconnect { // ignored immediately connect.
+				libol.Info("SocketWorker.reconnect: dissed by last")
+				return nil
+			}
+			libol.Info("SocketWorker.reconnect: %v", t.record)
+			return t.connect()
 		},
 	})
 }
