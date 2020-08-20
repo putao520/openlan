@@ -520,12 +520,18 @@ func (t *SocketWorker) Read() {
 }
 
 func (t *SocketWorker) deadCheck() {
-	dt := time.Now().Unix() - t.record.last
-	if dt > int64(t.pointCfg.Timeout) {
-		libol.Warn("SocketWorker.deadCheck: %v idle %ds", t.client, dt)
-		t.eventQueue <- NewEvent(EventRecon, "from dead check")
-		t.record.last = time.Now().Unix()
+	timeout := int64(t.pointCfg.Timeout)
+	now := time.Now().Unix()
+	dt := now - t.record.last
+	if dt < timeout {
+		return
 	}
+	dr := now - t.record.reconnect
+	if dr < timeout { // timeout and avoid send reconn frequently.
+		libol.Info("SocketWorker.deadCheck: recon frequently")
+		return
+	}
+	t.eventQueue <- NewEvent(EventRecon, "from dead check")
 }
 
 func (t *SocketWorker) DoWrite(frame *libol.FrameMessage) error {
