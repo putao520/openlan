@@ -28,6 +28,7 @@ type Message struct {
 	Level   string `json:"level"`
 	Date    string `json:"date"`
 	Message string `json:"message"`
+	Module  string `json:"module"`
 }
 
 var levels = map[int]string{
@@ -44,7 +45,7 @@ var levels = map[int]string{
 	FATAL: "FATAL",
 }
 
-type _Log struct {
+type logger struct {
 	Level    int
 	FileName string
 	FileLog  *log.Logger
@@ -52,7 +53,7 @@ type _Log struct {
 	Errors   *list.List
 }
 
-func (l *_Log) Write(level int, format string, v ...interface{}) {
+func (l *logger) Write(level int, format string, v ...interface{}) {
 	str, ok := levels[level]
 	if !ok {
 		str = "NULL"
@@ -65,7 +66,7 @@ func (l *_Log) Write(level int, format string, v ...interface{}) {
 	}
 }
 
-func (l *_Log) Save(level string, format string, v ...interface{}) {
+func (l *logger) Save(level string, format string, v ...interface{}) {
 	m := fmt.Sprintf(format, v...)
 	if l.FileLog != nil {
 		l.FileLog.Println("[" + level + "] " + m)
@@ -87,7 +88,7 @@ func (l *_Log) Save(level string, format string, v ...interface{}) {
 	l.Errors.PushBack(ele)
 }
 
-func (l *_Log) List() <-chan *Message {
+func (l *logger) List() <-chan *Message {
 	c := make(chan *Message, 128)
 	go func() {
 		l.Lock.Lock()
@@ -100,61 +101,28 @@ func (l *_Log) List() <-chan *Message {
 	return c
 }
 
-var Logger = _Log{
+var Logger = logger{
 	Level:    INFO,
 	FileName: ".log.error",
 	Errors:   list.New(),
 }
 
-func HasLog(level int) bool {
-	if level >= Logger.Level {
-		return true
+type SubLogger struct {
+	*logger
+	Prefix string
+}
+
+func NewSubLogger(prefix string) *SubLogger {
+	return &SubLogger{
+		logger: &Logger,
+		Prefix: prefix,
 	}
-	return false
 }
 
-func Print(format string, v ...interface{}) {
-	Logger.Write(PRINT, format, v...)
-}
+var rLogger = NewSubLogger("root")
 
-func Log(format string, v ...interface{}) {
-	Logger.Write(LOG, format, v...)
-}
-
-func Lock(format string, v ...interface{}) {
-	Logger.Write(LOCK, format, v...)
-}
-
-func Stack(format string, v ...interface{}) {
-	Logger.Write(STACK, format, v...)
-}
-
-func Debug(format string, v ...interface{}) {
-	Logger.Write(DEBUG, format, v...)
-}
-
-func Cmd(format string, v ...interface{}) {
-	Logger.Write(CMD, format, v...)
-}
-
-func Cmd1(format string, v ...interface{}) {
-	Logger.Write(CMD1, format, v...)
-}
-
-func Info(format string, v ...interface{}) {
-	Logger.Write(INFO, format, v...)
-}
-
-func Warn(format string, v ...interface{}) {
-	Logger.Write(WARN, format, v...)
-}
-
-func Error(format string, v ...interface{}) {
-	Logger.Write(ERROR, format, v...)
-}
-
-func Fatal(format string, v ...interface{}) {
-	Logger.Write(FATAL, format, v...)
+func HasLog(level int) bool {
+	return rLogger.Has(level)
 }
 
 func Init(file string, level int) {
@@ -174,13 +142,104 @@ func SetLog(level int) {
 	Logger.Level = level
 }
 
-func Close() {
-	//TODO
-}
-
 func Catch(name string) {
 	if err := recover(); err != nil {
 		Fatal("%s [PANIC] >>> %s <<<", name, err)
 		Fatal("%s [STACK] >>> %s <<<", name, debug.Stack())
 	}
+}
+
+func Print(format string, v ...interface{}) {
+	rLogger.Print(format, v...)
+}
+
+func Log(format string, v ...interface{}) {
+	rLogger.Log(format, v...)
+}
+
+func Lock(format string, v ...interface{}) {
+	rLogger.Lock(format, v...)
+}
+
+func Stack(format string, v ...interface{}) {
+	rLogger.Stack(format, v...)
+}
+
+func Debug(format string, v ...interface{}) {
+	rLogger.Debug(format, v...)
+}
+
+func Cmd(format string, v ...interface{}) {
+	rLogger.Cmd(format, v...)
+}
+
+func Info(format string, v ...interface{}) {
+	rLogger.Info(format, v...)
+}
+
+func Warn(format string, v ...interface{}) {
+	rLogger.Warn(format, v...)
+}
+
+func Error(format string, v ...interface{}) {
+	rLogger.Error(format, v...)
+}
+
+func Fatal(format string, v ...interface{}) {
+	rLogger.Fatal(format, v...)
+}
+
+func (s *SubLogger) Has(level int) bool {
+	if level >= s.Level {
+		return true
+	}
+	return false
+}
+
+func (s *SubLogger) Fmt(format string) string {
+	return "<" + s.Prefix + "> " + format
+}
+
+func (s *SubLogger) Print(format string, v ...interface{}) {
+	Logger.Write(PRINT, s.Fmt(format), v...)
+}
+
+func (s *SubLogger) Log(format string, v ...interface{}) {
+	Logger.Write(LOG, s.Fmt(format), v...)
+}
+
+func (s *SubLogger) Lock(format string, v ...interface{}) {
+	Logger.Write(LOCK, s.Fmt(format), v...)
+}
+
+func (s *SubLogger) Stack(format string, v ...interface{}) {
+	Logger.Write(STACK, s.Fmt(format), v...)
+}
+
+func (s *SubLogger) Debug(format string, v ...interface{}) {
+	Logger.Write(DEBUG, s.Fmt(format), v...)
+}
+
+func (s *SubLogger) Cmd(format string, v ...interface{}) {
+	Logger.Write(CMD, s.Fmt(format), v...)
+}
+
+func (s *SubLogger) Cmd1(format string, v ...interface{}) {
+	Logger.Write(CMD1, s.Fmt(format), v...)
+}
+
+func (s *SubLogger) Info(format string, v ...interface{}) {
+	Logger.Write(INFO, s.Fmt(format), v...)
+}
+
+func (s *SubLogger) Warn(format string, v ...interface{}) {
+	Logger.Write(WARN, s.Fmt(format), v...)
+}
+
+func (s *SubLogger) Error(format string, v ...interface{}) {
+	Logger.Write(ERROR, s.Fmt(format), v...)
+}
+
+func (s *SubLogger) Fatal(format string, v ...interface{}) {
+	Logger.Write(FATAL, s.Fmt(format), v...)
 }

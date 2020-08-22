@@ -88,11 +88,12 @@ type SocketWorker struct {
 	keepalive  KeepAlive
 	done       chan bool
 	ticker     *time.Ticker
-	pointCfg   *config.Point
+	pinCfg     *config.Point
 	eventQueue chan SocketEvent
 	writeQueue chan *libol.FrameMessage
 	jobber     []jobTimer
 	record     recordTime
+	logger     *libol.SubLogger
 }
 
 func NewSocketWorker(client libol.SocketClient, c *config.Point) *SocketWorker {
@@ -111,10 +112,11 @@ func NewSocketWorker(client libol.SocketClient, c *config.Point) *SocketWorker {
 			Interval: 15,
 			LastTime: time.Now().Unix(),
 		},
-		pointCfg:   c,
+		pinCfg:     c,
 		eventQueue: make(chan SocketEvent, 32),
 		writeQueue: make(chan *libol.FrameMessage, 1024),
 		jobber:     make([]jobTimer, 0, 32),
+		logger:     libol.NewSubLogger(c.ID()),
 	}
 	t.user.Alias = c.Alias
 	t.user.Network = c.Network
@@ -135,12 +137,8 @@ func (t *SocketWorker) sleepIdle() int64 {
 func (t *SocketWorker) Initialize() {
 	t.lock.Lock()
 	defer t.lock.Unlock()
-
-	if t.client == nil {
-		return
-	}
-	libol.Info("SocketWorker.Initialize")
-	t.client.SetMaxSize(t.pointCfg.Interface.IfMtu)
+	t.logger.Info("SocketWorker.Initialize")
+	t.client.SetMaxSize(t.pinCfg.Interface.IfMtu)
 	t.client.SetListener(libol.ClientListener{
 		OnConnected: func(client libol.SocketClient) error {
 			t.record.connected = time.Now().Unix()
@@ -183,7 +181,7 @@ func (t *SocketWorker) sendLeave(client libol.SocketClient) error {
 	if err != nil {
 		return err
 	}
-	libol.Cmd("SocketWorker.leave: left: %s", body)
+	t.logger.Cmd("SocketWorker.leave: left: %s", body)
 	m := libol.NewRequestFrame("left", body)
 	if err := client.WriteMsg(m); err != nil {
 		return err
@@ -193,7 +191,7 @@ func (t *SocketWorker) sendLeave(client libol.SocketClient) error {
 
 func (t *SocketWorker) leave() {
 	if err := t.sendLeave(t.client); err != nil {
-		libol.Error("SocketWorker.leave: %s", err)
+		t.logger.Error("SocketWorker.leave: %s", err)
 	}
 }
 
@@ -214,15 +212,15 @@ func (t *SocketWorker) close() {
 }
 
 func (t *SocketWorker) connect() error {
-	libol.Warn("SocketWorker.connect %s:%d", t.client, libol.ClInit)
+	t.logger.Warn("SocketWorker.connect %s:%d", t.client, libol.ClInit)
 	t.client.Close()
 	s := t.client.Status()
 	if s != libol.ClInit {
-		libol.Warn("SocketWorker.connect %s %d->%d", t.client, s, libol.ClInit)
+		t.logger.Warn("SocketWorker.connect %s %d->%d", t.client, s, libol.ClInit)
 		t.client.SetStatus(libol.ClInit)
 	}
 	if err := t.client.Connect(); err != nil {
-		libol.Error("SocketWorker.connect %s %s", t.client, err)
+		t.logger.Error("SocketWorker.connect %s %s", t.client, err)
 		return err
 	}
 	return nil
@@ -236,16 +234,16 @@ func (t *SocketWorker) reconnect() {
 	t.jobber = append(t.jobber, jobTimer{
 		Time: time.Now().Unix() + t.sleepIdle(),
 		Call: func() error {
-			libol.Debug("SocketWorker.reconnect: on jobber")
+			t.logger.Debug("SocketWorker.reconnect: on jobber")
 			if t.record.connected >= t.record.reconnect { // already connected after.
-				libol.Cmd("SocketWorker.reconnect: dissed by connected")
+				t.logger.Cmd("SocketWorker.reconnect: dissed by connected")
 				return nil
 			}
 			if t.record.last >= t.record.reconnect { // ignored immediately connect.
-				libol.Info("SocketWorker.reconnect: dissed by last")
+				t.logger.Info("SocketWorker.reconnect: dissed by last")
 				return nil
 			}
-			libol.Info("SocketWorker.reconnect: %v", t.record)
+			t.logger.Info("SocketWorker.reconnect: %v", t.record)
 			return t.connect()
 		},
 	})
@@ -263,7 +261,7 @@ func (t *SocketWorker) sendLogin(client libol.SocketClient) error {
 	if err != nil {
 		return err
 	}
-	libol.Cmd("SocketWorker.toLogin: %s", body)
+	t.logger.Cmd("SocketWorker.toLogin: %s", body)
 	m := libol.NewRequestFrame("login", body)
 	if err := client.WriteMsg(m); err != nil {
 		return err
@@ -274,7 +272,8 @@ func (t *SocketWorker) sendLogin(client libol.SocketClient) error {
 // toLogin request
 func (t *SocketWorker) toLogin(client libol.SocketClient) error {
 	if err := t.sendLogin(client); err != nil {
-		libol.Error("SocketWorker.toLogin: %s", err)
+		t.logger.Error("SocketWorker.toLogin: %s", err)
+		return err
 	}
 	return nil
 }
@@ -287,7 +286,7 @@ func (t *SocketWorker) sendIpAddr(client libol.SocketClient) error {
 	if err != nil {
 		return err
 	}
-	libol.Cmd("SocketWorker.toNetwork: %s", body)
+	t.logger.Cmd("SocketWorker.toNetwork: %s", body)
 	m := libol.NewRequestFrame("ipaddr", body)
 	if err := client.WriteMsg(m); err != nil {
 		return err
@@ -297,12 +296,13 @@ func (t *SocketWorker) sendIpAddr(client libol.SocketClient) error {
 
 // network request
 func (t *SocketWorker) toNetwork(client libol.SocketClient) error {
-	if !t.pointCfg.RequestAddr && t.network.IfAddr == "" {
-		libol.Info("SocketWorker.toNetwork: notNeed")
+	if !t.pinCfg.RequestAddr && t.network.IfAddr == "" {
+		t.logger.Info("SocketWorker.toNetwork: notNeed")
 		return nil
 	}
 	if err := t.sendIpAddr(client); err != nil {
-		libol.Error("SocketWorker.toNetwork: %s", err)
+		t.logger.Error("SocketWorker.toNetwork: %s", err)
+		return err
 	}
 	return nil
 }
@@ -317,17 +317,17 @@ func (t *SocketWorker) onLogin(resp []byte) error {
 		t.record.success = time.Now().Unix()
 		_ = t.toNetwork(t.client)
 		t.eventQueue <- NewEvent(EventSuccess, "already success")
-		libol.Info("SocketWorker.onInstruct.toLogin: success")
+		t.logger.Info("SocketWorker.onInstruct.toLogin: success")
 	} else {
 		t.client.SetStatus(libol.ClUnAuth)
-		libol.Error("SocketWorker.onInstruct.toLogin: %s", resp)
+		t.logger.Error("SocketWorker.onInstruct.toLogin: %s", resp)
 	}
 	return nil
 }
 
 func (t *SocketWorker) onIpAddr(resp []byte) error {
-	if !t.pointCfg.RequestAddr {
-		libol.Info("SocketWorker.onIpAddr: not allowed")
+	if !t.pinCfg.RequestAddr {
+		t.logger.Info("SocketWorker.onIpAddr: not allowed")
 		return nil
 	}
 	n := &models.Network{}
@@ -343,14 +343,14 @@ func (t *SocketWorker) onIpAddr(resp []byte) error {
 
 func (t *SocketWorker) onLeft(resp []byte) error {
 	client := t.client
-	libol.Info("SocketWorker.onLeft: %s %s", client.String(), resp)
+	t.logger.Info("SocketWorker.onLeft: %s %s", client.String(), resp)
 	t.close()
 	return nil
 }
 
 func (t *SocketWorker) onSignIn(resp []byte) error {
 	client := t.client
-	libol.Info("SocketWorker.onSignIn: %s %s", client.String(), resp)
+	t.logger.Info("SocketWorker.onSignIn: %s %s", client.String(), resp)
 	t.eventQueue <- NewEvent(EventSignIn, "request from server")
 	return nil
 }
@@ -362,7 +362,7 @@ func (t *SocketWorker) onInstruct(frame *libol.FrameMessage) error {
 	}
 	action, resp := frame.CmdAndParams()
 	if libol.HasLog(libol.CMD) {
-		libol.Cmd("SocketWorker.onInstruct %s %s", action, resp)
+		t.logger.Cmd("SocketWorker.onInstruct %s %s", action, resp)
 	}
 	switch action {
 	case "logi:":
@@ -376,7 +376,7 @@ func (t *SocketWorker) onInstruct(frame *libol.FrameMessage) error {
 	case "left=":
 		return t.onLeft(resp)
 	default:
-		libol.Warn("SocketWorker.onInstruct: %s %s", action, resp)
+		t.logger.Warn("SocketWorker.onInstruct: %s %s", action, resp)
 	}
 	return nil
 }
@@ -402,7 +402,7 @@ func (t *SocketWorker) sendPing(client libol.SocketClient) error {
 	if err != nil {
 		return err
 	}
-	libol.Cmd("SocketWorker.doTicker: ping= %s", body)
+	t.logger.Cmd("SocketWorker.doTicker: ping= %s", body)
 	m := libol.NewRequestFrame("ping", body)
 	if err := client.WriteMsg(m); err != nil {
 		return err
@@ -416,7 +416,8 @@ func (t *SocketWorker) doKeepalive() error {
 	}
 	t.keepalive.Update()
 	if err := t.sendPing(t.client); err != nil {
-		libol.Error("SocketWorker.doTicker: %s", err)
+		t.logger.Error("SocketWorker.doTicker: %s", err)
+		return err
 	}
 	return nil
 }
@@ -433,7 +434,7 @@ func (t *SocketWorker) doJober() error {
 		}
 	}
 	t.jobber = newTimer
-	libol.Debug("SocketWorker.doTicker %d", len(t.jobber))
+	t.logger.Debug("SocketWorker.doTicker %d", len(t.jobber))
 	return nil
 }
 
@@ -444,7 +445,7 @@ func (t *SocketWorker) doTicker() error {
 }
 
 func (t *SocketWorker) dispatch(ev SocketEvent) {
-	libol.Info("SocketWorker.dispatch %v", ev)
+	t.logger.Info("SocketWorker.dispatch %v", ev)
 	switch ev.Type {
 	case EventConed:
 		if t.client != nil {
@@ -472,7 +473,7 @@ func (t *SocketWorker) Loop() {
 		case <-t.done:
 			return
 		case c := <-t.ticker.C:
-			libol.Log("SocketWorker.Ticker: at %s", c)
+			t.logger.Log("SocketWorker.Ticker: at %s", c)
 			t.lock.Lock()
 			_ = t.doTicker()
 			t.lock.Unlock()
@@ -488,7 +489,7 @@ func (t *SocketWorker) Read() {
 	for {
 		t.lock.Lock()
 		if t.isStopped() || !t.client.IsOk() {
-			libol.Error("SocketWorker.Read: %v", t.client)
+			t.logger.Error("SocketWorker.Read: %v", t.client)
 			t.lock.Unlock()
 			break
 		}
@@ -496,12 +497,12 @@ func (t *SocketWorker) Read() {
 		data, err := t.client.ReadMsg()
 		t.lock.Lock()
 		if err != nil {
-			libol.Error("SocketWorker.Read: %s", err)
+			t.logger.Error("SocketWorker.Read: %s", err)
 			t.lock.Unlock()
 			break
 		}
-		if libol.HasLog(libol.DEBUG) {
-			libol.Debug("SocketWorker.Read: %x", data)
+		if t.logger.Has(libol.DEBUG) {
+			t.logger.Debug("SocketWorker.Read: %x", data)
 		}
 		t.record.last = time.Now().Unix()
 		if data.Size() > 0 {
@@ -520,7 +521,7 @@ func (t *SocketWorker) Read() {
 }
 
 func (t *SocketWorker) deadCheck() {
-	timeout := int64(t.pointCfg.Timeout)
+	timeout := int64(t.pinCfg.Timeout)
 	now := time.Now().Unix()
 	dt := now - t.record.last
 	if dt < timeout {
@@ -528,15 +529,15 @@ func (t *SocketWorker) deadCheck() {
 	}
 	dr := now - t.record.reconnect
 	if dr < timeout { // timeout and avoid send reconn frequently.
-		libol.Info("SocketWorker.deadCheck: recon frequently")
+		t.logger.Info("SocketWorker.deadCheck: recon frequently")
 		return
 	}
 	t.eventQueue <- NewEvent(EventRecon, "from dead check")
 }
 
 func (t *SocketWorker) DoWrite(frame *libol.FrameMessage) error {
-	if libol.HasLog(libol.DEBUG) {
-		libol.Debug("SocketWorker.DoWrite: %x", frame)
+	if t.logger.Has(libol.DEBUG) {
+		t.logger.Debug("SocketWorker.DoWrite: %x", frame)
 	}
 	t.lock.Lock()
 	t.deadCheck()
@@ -545,7 +546,7 @@ func (t *SocketWorker) DoWrite(frame *libol.FrameMessage) error {
 		return libol.NewErr("client is nil")
 	}
 	if t.client.Status() != libol.ClAuth {
-		libol.Debug("SocketWorker.Loop: dropping by unAuth")
+		t.logger.Debug("SocketWorker.Loop: dropping by unAuth")
 		t.lock.Unlock()
 		return nil
 	}
@@ -611,6 +612,7 @@ type TapWorker struct {
 	writeQueue chan *libol.FrameMessage
 	done       chan bool
 	recvIpAddr chan string
+	logger     *libol.SubLogger
 }
 
 func NewTapWorker(devCfg network.TapConfig, c *config.Point) (a *TapWorker) {
@@ -622,6 +624,7 @@ func NewTapWorker(devCfg network.TapConfig, c *config.Point) (a *TapWorker) {
 		done:       make(chan bool, 2),
 		writeQueue: make(chan *libol.FrameMessage, 1024),
 		recvIpAddr: make(chan string, 1024),
+		logger:     libol.NewSubLogger(c.ID()),
 	}
 	return
 }
@@ -630,7 +633,7 @@ func (a *TapWorker) Initialize() {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
-	libol.Info("TapWorker.Initialize")
+	a.logger.Info("TapWorker.Initialize")
 	a.neighbor = Neighbors{
 		neighbors: make(map[uint32]*Neighbor, 1024),
 		done:      make(chan bool),
@@ -650,7 +653,7 @@ func (a *TapWorker) Initialize() {
 	if a.device != nil && a.device.IsTun() {
 		a.setEther(a.pointCfg.Interface.Address)
 		a.ether.HwAddr = libol.GenEthAddr(6)
-		libol.Info("TapWorker.Initialize: src %x", a.ether.HwAddr)
+		a.logger.Info("TapWorker.Initialize: src %x", a.ether.HwAddr)
 	}
 }
 
@@ -661,14 +664,14 @@ func (a *TapWorker) setEther(addr string) {
 	ifAddr := strings.SplitN(addr, "/", 2)[0]
 	a.ether.IpAddr = net.ParseIP(ifAddr).To4()
 	if a.ether.IpAddr == nil {
-		libol.Warn("TapWorker.setEther: srcIp is nil")
+		a.logger.Warn("TapWorker.setEther: srcIp is nil")
 		a.ether.IpAddr = []byte{0x00, 0x00, 0x00, 0x00}
 	} else {
-		libol.Info("TapWorker.setEther: srcIp % x", a.ether.IpAddr)
+		a.logger.Info("TapWorker.setEther: srcIp % x", a.ether.IpAddr)
 	}
 	// changed address need open device again.
 	if a.ifAddr != "" && a.ifAddr != addr {
-		libol.Warn("TapWorker.setEther changed %s->%s", a.ifAddr, addr)
+		a.logger.Warn("TapWorker.setEther changed %s->%s", a.ifAddr, addr)
 		a.openAgain = true
 	}
 	a.ifAddr = addr
@@ -687,10 +690,10 @@ func (a *TapWorker) open() {
 	}
 	device, err := network.NewKernelTap(a.pointCfg.Network, a.deviceCfg)
 	if err != nil {
-		libol.Error("TapWorker.open: %s", err)
+		a.logger.Error("TapWorker.open: %s", err)
 		return
 	}
-	libol.Info("TapWorker.open: >>>> %s <<<<", device.Name())
+	a.logger.Info("TapWorker.open: >>>> %s <<<<", device.Name())
 	a.device = device
 	if a.listener.OnOpen != nil {
 		_ = a.listener.OnOpen(a)
@@ -712,7 +715,7 @@ func (a *TapWorker) OnArpAlive(dest []byte) {
 
 // process if ethernet destination is missed
 func (a *TapWorker) onMiss(dest []byte) {
-	libol.Debug("TapWorker.onMiss: %v.", dest)
+	a.logger.Debug("TapWorker.onMiss: %v.", dest)
 	eth := a.newEth(libol.EthArp, libol.BROADED)
 	reply := libol.NewArp()
 	reply.OpCode = libol.ArpRequest
@@ -724,7 +727,7 @@ func (a *TapWorker) onMiss(dest []byte) {
 	frame := libol.NewFrameMessage()
 	frame.Append(eth.Encode())
 	frame.Append(reply.Encode())
-	libol.Debug("TapWorker.onMiss: %x.", frame.Frame()[:64])
+	a.logger.Debug("TapWorker.onMiss: %x.", frame.Frame()[:64])
 	if a.listener.ReadAt != nil {
 		_ = a.listener.ReadAt(frame)
 	}
@@ -735,7 +738,7 @@ func (a *TapWorker) onFrame(frame *libol.FrameMessage, data []byte) int {
 	if a.device.IsTun() {
 		iph, err := libol.NewIpv4FromFrame(data)
 		if err != nil {
-			libol.Warn("TapWorker.onFrame: %s", err)
+			a.logger.Warn("TapWorker.onFrame: %s", err)
 			return 0
 		}
 		dest := iph.Destination
@@ -745,7 +748,7 @@ func (a *TapWorker) onFrame(frame *libol.FrameMessage, data []byte) int {
 		neb := a.neighbor.GetByBytes(dest)
 		if neb == nil {
 			a.onMiss(dest)
-			libol.Debug("TapWorker.onFrame: onMiss neighbor %v", dest)
+			a.logger.Debug("TapWorker.onFrame: onMiss neighbor %v", dest)
 			return 0
 		}
 		eth := a.newEth(libol.EthIp4, neb.HwAddr)
@@ -772,14 +775,14 @@ func (a *TapWorker) Read() {
 		n, err := a.device.Read(data)
 		a.lock.Lock()
 		if err != nil || a.openAgain || a.device == nil {
-			libol.Warn("TapWorker.Read: %s", err)
+			a.logger.Warn("TapWorker.Read: %s", err)
 			a.open()
 			a.openAgain = false // clear openAgain flags
 			a.lock.Unlock()
 			continue
 		}
-		if libol.HasLog(libol.DEBUG) {
-			libol.Debug("TapWorker.Read: %x", data[:n])
+		if a.logger.Has(libol.DEBUG) {
+			a.logger.Debug("TapWorker.Read: %x", data[:n])
 		}
 		if size := a.onFrame(frame, data[:n]); size == 0 {
 			a.lock.Unlock()
@@ -809,8 +812,8 @@ func (a *TapWorker) Loop() {
 
 func (a *TapWorker) DoWrite(frame *libol.FrameMessage) error {
 	data := frame.Frame()
-	if libol.HasLog(libol.DEBUG) {
-		libol.Debug("TapWorker.DoWrite: %x", data)
+	if a.logger.Has(libol.DEBUG) {
+		a.logger.Debug("TapWorker.DoWrite: %x", data)
 	}
 	a.lock.Lock()
 	if a.device == nil {
@@ -820,27 +823,27 @@ func (a *TapWorker) DoWrite(frame *libol.FrameMessage) error {
 	if a.device.IsTun() {
 		// proxy arp request.
 		if a.toArp(data) {
-			libol.Debug("TapWorker.DoWrite: Arp proxy.")
+			a.logger.Debug("TapWorker.DoWrite: Arp proxy.")
 			a.lock.Unlock()
 			return nil
 		}
 		eth, err := libol.NewEtherFromFrame(data)
 		if err != nil {
-			libol.Error("TapWorker.DoWrite: %s", err)
+			a.logger.Error("TapWorker.DoWrite: %s", err)
 			a.lock.Unlock()
 			return nil
 		}
 		if eth.IsIP4() {
 			data = data[14:]
 		} else {
-			libol.Debug("TapWorker.DoWrite: 0x%04x not IPv4", eth.Type)
+			a.logger.Debug("TapWorker.DoWrite: 0x%04x not IPv4", eth.Type)
 			a.lock.Unlock()
 			return nil
 		}
 	}
 	a.lock.Unlock()
 	if _, err := a.device.Write(data); err != nil {
-		libol.Error("TapWorker.DoWrite: %s", err)
+		a.logger.Error("TapWorker.DoWrite: %s", err)
 		return err
 	}
 	return nil
@@ -848,10 +851,10 @@ func (a *TapWorker) DoWrite(frame *libol.FrameMessage) error {
 
 // learn source from arp
 func (a *TapWorker) toArp(data []byte) bool {
-	libol.Debug("TapWorker.toArp")
+	a.logger.Debug("TapWorker.toArp")
 	eth, err := libol.NewEtherFromFrame(data)
 	if err != nil {
-		libol.Warn("TapWorker.toArp: %s", err)
+		a.logger.Warn("TapWorker.toArp: %s", err)
 		return false
 	}
 	if !eth.IsArp() {
@@ -859,12 +862,12 @@ func (a *TapWorker) toArp(data []byte) bool {
 	}
 	arp, err := libol.NewArpFromFrame(data[eth.Len:])
 	if err != nil {
-		libol.Error("TapWorker.toArp: %s.", err)
+		a.logger.Error("TapWorker.toArp: %s.", err)
 		return false
 	}
 	if arp.IsIP4() {
 		if !bytes.Equal(eth.Src, arp.SHwAddr) {
-			libol.Error("TapWorker.toArp: eth.dst not arp.shw %x.", arp.SIpAddr)
+			a.logger.Error("TapWorker.toArp: eth.dst not arp.shw %x.", arp.SIpAddr)
 			return true
 		}
 		switch arp.OpCode {
@@ -880,7 +883,7 @@ func (a *TapWorker) toArp(data []byte) bool {
 				frame := libol.NewFrameMessage()
 				frame.Append(eth.Encode())
 				frame.Append(rep.Encode())
-				libol.Cmd1("TapWorker.toArp: reply %v on %x.", rep.SIpAddr, rep.SHwAddr)
+				a.logger.Cmd1("TapWorker.toArp: reply %v on %x.", rep.SIpAddr, rep.SHwAddr)
 				if a.listener.ReadAt != nil {
 					_ = a.listener.ReadAt(frame)
 				}
@@ -894,17 +897,17 @@ func (a *TapWorker) toArp(data []byte) bool {
 					NewTime: time.Now().Unix(),
 					Uptime:  time.Now().Unix(),
 				})
-				libol.Cmd1("TapWorker.toArp: recv %v on %x.", arp.SIpAddr, arp.SHwAddr)
+				a.logger.Cmd1("TapWorker.toArp: recv %v on %x.", arp.SIpAddr, arp.SHwAddr)
 			}
 		default:
-			libol.Warn("TapWorker.toArp: not op %x.", arp.OpCode)
+			a.logger.Warn("TapWorker.toArp: not op %x.", arp.OpCode)
 		}
 	}
 	return true
 }
 
 func (a *TapWorker) close() {
-	libol.Info("TapWorker.close")
+	a.logger.Info("TapWorker.close")
 	if a.device != nil {
 		if a.listener.OnClose != nil {
 			a.listener.OnClose(a)
@@ -1005,31 +1008,33 @@ type Worker struct {
 	http      *http.Http
 	conWorker *SocketWorker
 	tapWorker *TapWorker
-	config    *config.Point
+	cfg       *config.Point
 	uuid      string
 	network   *models.Network
 	routes    []PrefixRule
+	logger    *libol.SubLogger
 }
 
-func NewWorker(config *config.Point) (p *Worker) {
+func NewWorker(cfg *config.Point) *Worker {
 	return &Worker{
-		ifAddr: config.Interface.Address,
-		config: config,
+		ifAddr: cfg.Interface.Address,
+		cfg:    cfg,
 		routes: make([]PrefixRule, 0, 32),
+		logger: libol.NewSubLogger(cfg.ID()),
 	}
 }
 
 func (p *Worker) Initialize() {
-	if p.config == nil {
+	if p.cfg == nil {
 		return
 	}
-	libol.Info("Worker.Initialize")
-	client := GetSocketClient(p.config)
-	p.conWorker = NewSocketWorker(client, p.config)
+	p.logger.Info("Worker.Initialize")
+	client := GetSocketClient(p.cfg)
+	p.conWorker = NewSocketWorker(client, p.cfg)
 
-	tapCfg := GetTapCfg(p.config)
+	tapCfg := GetTapCfg(p.cfg)
 	// register listener
-	p.tapWorker = NewTapWorker(tapCfg, p.config)
+	p.tapWorker = NewTapWorker(tapCfg, p.cfg)
 
 	p.conWorker.SetUUID(p.UUID())
 	p.conWorker.listener = SocketWorkerListener{
@@ -1066,13 +1071,13 @@ func (p *Worker) Initialize() {
 	}
 	p.tapWorker.Initialize()
 
-	if p.config.Http != nil {
+	if p.cfg.Http != nil {
 		p.http = http.NewHttp(p)
 	}
 }
 
 func (p *Worker) Start() {
-	libol.Debug("Worker.Start linux.")
+	p.logger.Debug("Worker.Start linux.")
 	p.tapWorker.Start()
 	p.conWorker.Start()
 	if p.http != nil {
@@ -1155,8 +1160,8 @@ func (p *Worker) FindNext(dest []byte) []byte {
 		if rt.Type == 0x00 {
 			break
 		}
-		if libol.HasLog(libol.DEBUG) {
-			libol.Debug("Worker.FindNext %v to %v", dest, rt.NextHop)
+		if p.logger.Has(libol.DEBUG) {
+			p.logger.Debug("Worker.FindNext %v to %v", dest, rt.NextHop)
 		}
 		return rt.NextHop.To4()
 	}
@@ -1165,11 +1170,11 @@ func (p *Worker) FindNext(dest []byte) []byte {
 
 func (p *Worker) OnIpAddr(w *SocketWorker, n *models.Network) error {
 	if models.NetworkEqual(p.network, n) {
-		libol.Info("Worker.OnIpAddr: %s/%s noChanged", n.IfAddr, n.Netmask)
+		p.logger.Info("Worker.OnIpAddr: %s/%s noChanged", n.IfAddr, n.Netmask)
 		return nil
 	}
-	libol.Info("Worker.OnIpAddr: %s/%s", n.IfAddr, n.Netmask)
-	libol.Info("Worker.OnIpAddr: %s", n.Routes)
+	p.logger.Info("Worker.OnIpAddr: %s/%s", n.IfAddr, n.Netmask)
+	p.logger.Info("Worker.OnIpAddr: %s", n.Routes)
 	prefix := libol.Netmask2Len(n.Netmask)
 	ipStr := fmt.Sprintf("%s/%d", n.IfAddr, prefix)
 	p.tapWorker.OnIpAddr(ipStr)
@@ -1220,13 +1225,13 @@ func (p *Worker) FreeIpAddr() {
 }
 
 func (p *Worker) OnClose(w *SocketWorker) error {
-	libol.Info("Worker.OnClose")
+	p.logger.Info("Worker.OnClose")
 	p.FreeIpAddr()
 	return nil
 }
 
 func (p *Worker) OnSuccess(w *SocketWorker) error {
-	libol.Info("Worker.OnSuccess")
+	p.logger.Info("Worker.OnSuccess")
 	if p.listener.AddAddr != nil {
 		_ = p.listener.AddAddr(p.ifAddr)
 	}
@@ -1245,5 +1250,5 @@ func (p *Worker) SetUUID(v string) {
 }
 
 func (p *Worker) Config() *config.Point {
-	return p.config
+	return p.cfg
 }

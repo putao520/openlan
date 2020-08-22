@@ -21,16 +21,13 @@ type Pointer interface {
 type MixPoint struct {
 	// private
 	uuid   string
-	worker Worker
+	worker *Worker
 	config *config.Point
 }
 
 func NewMixPoint(config *config.Point) MixPoint {
 	p := MixPoint{
-		worker: Worker{
-			ifAddr: config.Interface.Address,
-			config: config,
-		},
+		worker: NewWorker(config),
 		config: config,
 	}
 	return p

@@ -12,7 +12,9 @@ import (
 )
 
 type HttpProxy struct {
-	Users map[string]string
+	Listen string
+	Users  map[string]string
+	Logger *libol.SubLogger
 }
 
 var (
@@ -35,6 +37,13 @@ func parseBasicAuth(auth string) (username, password string, ok bool) {
 		return
 	}
 	return cs[:s], cs[s+1:], true
+}
+
+func NewHttpProxy(addr string) *HttpProxy {
+	return &HttpProxy{
+		Listen: addr,
+		Logger: libol.NewSubLogger(addr),
+	}
 }
 
 func (t *HttpProxy) isAuth(username, password string) bool {
@@ -67,7 +76,7 @@ func (t *HttpProxy) tunnel(w http.ResponseWriter, conn net.Conn) {
 		return
 	}
 	defer src.Close()
-	libol.Info("HttpProxy.tunnel %s->%s", src.RemoteAddr(), conn.RemoteAddr())
+	t.Logger.Info("HttpProxy.tunnel %s->%s", src.RemoteAddr(), conn.RemoteAddr())
 	wait := libol.NewWaitOne(2)
 	libol.Go(func() {
 		defer wait.Done()
@@ -76,27 +85,27 @@ func (t *HttpProxy) tunnel(w http.ResponseWriter, conn net.Conn) {
 		if n := bio.Reader.Buffered(); n > 0 {
 			n64, err := io.CopyN(conn, bio, int64(n))
 			if n64 != int64(n) || err != nil {
-				libol.Warn("HttpProxy.tunnel io.CopyN:", n64, err)
+				t.Logger.Warn("HttpProxy.tunnel io.CopyN:", n64, err)
 				return
 			}
 		}
 		if _, err := io.Copy(conn, src); err != nil {
-			libol.Debug("HttpProxy.tunnel from ws %s", err)
+			t.Logger.Debug("HttpProxy.tunnel from ws %s", err)
 		}
 	})
 	libol.Go(func() {
 		defer wait.Done()
 		if _, err := io.Copy(src, conn); err != nil {
-			libol.Debug("HttpProxy.tunnel from target %s", err)
+			t.Logger.Debug("HttpProxy.tunnel from target %s", err)
 		}
 	})
 	wait.Wait()
-	libol.Debug("HttpProxy.tunnel %s exit", conn.RemoteAddr())
+	t.Logger.Debug("HttpProxy.tunnel %s exit", conn.RemoteAddr())
 }
 
 func (t *HttpProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	libol.Debug("HttpProxy.ServeHTTP %v", r)
-	libol.Debug("HttpProxy.ServeHTTP %v", r.URL.Host)
+	t.Logger.Debug("HttpProxy.ServeHTTP %v", r)
+	t.Logger.Debug("HttpProxy.ServeHTTP %v", r.URL.Host)
 	if len(t.Users) != 0 {
 		auth := r.Header.Get("Proxy-Authorization")
 		user, password, ok := parseBasicAuth(auth)
@@ -130,50 +139,58 @@ type TcpProxy struct {
 	Listen   string
 	Target   string
 	Listener net.Listener
+	Logger   *libol.SubLogger
+}
+
+func NewTcpProxy(listen, target string) *TcpProxy {
+	return &TcpProxy{
+		Listen: listen,
+		Target: target,
+		Logger: libol.NewSubLogger(listen),
+	}
 }
 
 func (t *TcpProxy) tunnel(src net.Conn, dst net.Conn) {
 	defer dst.Close()
 	defer src.Close()
-	libol.Info("TcpProxy.tunnel [%s,%s]->[%s,%s]",
-		src.RemoteAddr(), src.LocalAddr(), dst.LocalAddr(), dst.RemoteAddr())
+	t.Logger.Info("TcpProxy.tunnel %s->%s", src.RemoteAddr(), dst.RemoteAddr())
 	wait := libol.NewWaitOne(2)
 	libol.Go(func() {
 		defer wait.Done()
 		if _, err := io.Copy(dst, src); err != nil {
-			libol.Debug("TcpProxy.tunnel from ws %s", err)
+			t.Logger.Debug("TcpProxy.tunnel from ws %s", err)
 		}
 	})
 	libol.Go(func() {
 		defer wait.Done()
 		if _, err := io.Copy(src, dst); err != nil {
-			libol.Debug("TcpProxy.tunnel from target %s", err)
+			t.Logger.Debug("TcpProxy.tunnel from target %s", err)
 		}
 	})
 	wait.Wait()
-	libol.Debug("TcpProxy.tunnel %s exit", dst.RemoteAddr())
+	t.Logger.Debug("TcpProxy.tunnel %s exit", dst.RemoteAddr())
 }
 
 func (t *TcpProxy) Start() {
 	listen, err := net.Listen("tcp", t.Listen)
 	if err != nil {
-		libol.Error("TcpProxy.Start %s", err)
+		t.Logger.Error("TcpProxy.Start %s", err)
 		return
 	}
 	t.Listener = listen
-	libol.Info("TcpProxy.Start: %s->%s", t.Listen, t.Target)
+	t.Logger.Info("TcpProxy.Start: %s", t.Target)
 	libol.Go(func() {
 		defer listen.Close()
 		for {
 			conn, err := listen.Accept()
 			if err != nil {
-				libol.Error("TcpServer.Accept: %s", err)
+				t.Logger.Error("TcpServer.Accept: %s", err)
 				break
 			}
 			// connect target and pipe it.
 			target, err := net.Dial("tcp", t.Target)
 			if err != nil {
-				libol.Error("TcpProxy.Accept %s", err)
+				t.Logger.Error("TcpProxy.Accept %s", err)
 				continue
 			}
 			libol.Go(func() {
@@ -188,7 +205,7 @@ func (t *TcpProxy) Stop() {
 	if t.Listener != nil {
 		t.Listener.Close()
 	}
-	libol.Info("TcpProxy.Stop %s", t.Listen)
+	t.Logger.Info("TcpProxy.Stop")
 	t.Listener = nil
 }
 
@@ -237,7 +254,7 @@ func (p *Proxy) initHttp() {
 	}
 	addr := p.cfg.Http.Listen
 	auth := p.cfg.Http.Auth
-	hp := &HttpProxy{}
+	hp := NewHttpProxy(addr)
 	if len(auth.Username) > 0 {
 		hp.Users = make(map[string]string, 1)
 		hp.Users[auth.Username] = auth.Password
@@ -254,10 +271,7 @@ func (p *Proxy) initTcp() {
 	}
 	p.tcp = make([]*TcpProxy, 0, 32)
 	for _, c := range p.cfg.Tcp {
-		p.tcp = append(p.tcp, &TcpProxy{
-			Listen: c.Listen,
-			Target: c.Target,
-		})
+		p.tcp = append(p.tcp, NewTcpProxy(c.Listen, c.Target))
 	}
 }
 
