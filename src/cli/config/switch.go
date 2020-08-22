@@ -102,9 +102,39 @@ type Socks struct {
 	Auth   Password `json:"auth,omitempty"`
 }
 
-type Proxy struct {
+type HttpProxy struct {
 	Listen string   `json:"listen,omitempty"`
 	Auth   Password `json:"auth,omitempty"`
+}
+
+type TcpProxy struct {
+	Listen string `json:"listen,omitempty"`
+	Target string `json:"target,omitempty"`
+}
+
+type Proxy struct {
+	Socks *Socks      `json:"socks,omitempty"`
+	Http  *HttpProxy  `json:"http,omitempty"`
+	Tcp   []*TcpProxy `json:"tcp,omitempty"`
+}
+
+func (p *Proxy) Right() {
+	libol.Debug("Proxy.Right Socks %v", p.Socks)
+	if p.Socks != nil {
+		RightAddr(&p.Socks.Listen, 11080)
+	}
+	libol.Debug("Proxy.Right Http %v", p.Http)
+	if p.Http != nil {
+		RightAddr(&p.Http.Listen, 11082)
+	}
+	libol.Debug("Proxy.Right Tcp %v", p.Tcp)
+}
+
+var fd = Perf{
+	Point:    1024,
+	Neighbor: 1024,
+	OnLine:   64,
+	Link:     1024,
 }
 
 type Perf struct {
@@ -114,9 +144,24 @@ type Perf struct {
 	Link     int `json:"link"`
 }
 
+func (p *Perf) Right() {
+	if p.Point == 0 {
+		p.Point = fd.Point
+	}
+	if p.Neighbor == 0 {
+		p.Neighbor = fd.Neighbor
+	}
+	if p.OnLine == 0 {
+		p.OnLine = fd.OnLine
+	}
+	if p.Link == 0 {
+		p.Link = fd.Link
+	}
+}
+
 type Switch struct {
 	Alias     string      `json:"alias"`
-	Perf      Perf        `json:"perf"`
+	Perf      *Perf       `json:"perf"`
 	Protocol  string      `json:"protocol"` // tcp, tls, udp, kcp, ws and wss.
 	Listen    string      `json:"listen"`
 	Timeout   int         `json:"timeout"`
@@ -124,7 +169,6 @@ type Switch struct {
 	Log       Log         `json:"log"`
 	Cert      Cert        `json:"cert"`
 	Crypt     *Crypt      `json:"crypt,omitempty"`
-	Socks     *Socks      `json:"socks,omitempty"`
 	Proxy     *Proxy      `json:"proxy,omitempty"`
 	Prof      string      `json:"prof"`
 	Network   []*Network  `json:"network"`
@@ -145,12 +189,7 @@ var sd = Switch{
 		Listen: "0.0.0.0:10000",
 	},
 	Listen: "0.0.0.0:10002",
-	Perf: Perf{
-		Point:    1024,
-		Neighbor: 1024,
-		OnLine:   64,
-		Link:     1024,
-	},
+	Perf:   &fd,
 }
 
 func NewSwitch() (c Switch) {
@@ -166,8 +205,8 @@ func NewSwitch() (c Switch) {
 	if err := c.Load(); err != nil {
 		libol.Error("NewSwitch.load %s", err)
 	}
-	c.Default()
 	libol.Init(c.Log.File, c.Log.Verbose)
+	c.Default()
 	libol.Debug("NewSwitch %v", c)
 	return c
 }
@@ -180,6 +219,7 @@ func (c *Switch) Right() {
 	if c.Http != nil {
 		RightAddr(&c.Http.Listen, 10000)
 	}
+	libol.Debug("Proxy.Right Http %v", c.Http)
 	c.TokenFile = fmt.Sprintf("%s/token", c.ConfDir)
 	c.SaveFile = fmt.Sprintf("%s/switch.json", c.ConfDir)
 	if c.Cert.Dir != "" {
@@ -190,23 +230,14 @@ func (c *Switch) Right() {
 			c.Protocol = "tls"
 		}
 	}
-	if c.Socks != nil {
-		RightAddr(&c.Socks.Listen, 11080)
-	}
+	libol.Debug("Switch.Right Proxy %v", c.Proxy)
 	if c.Proxy != nil {
-		RightAddr(&c.Proxy.Listen, 11082)
+		c.Proxy.Right()
 	}
-	if c.Perf.Point == 0 {
-		c.Perf.Point = sd.Perf.Point
-	}
-	if c.Perf.Neighbor == 0 {
-		c.Perf.Neighbor = sd.Perf.Neighbor
-	}
-	if c.Perf.OnLine == 0 {
-		c.Perf.OnLine = sd.Perf.OnLine
-	}
-	if c.Perf.Link == 0 {
-		c.Perf.Link = sd.Perf.Link
+	if c.Perf != nil {
+		c.Perf.Right()
+	} else {
+		c.Perf = &fd
 	}
 }
 

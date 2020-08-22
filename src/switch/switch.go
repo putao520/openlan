@@ -2,7 +2,6 @@ package _switch
 
 import (
 	"encoding/json"
-	"github.com/armon/go-socks5"
 	"github.com/danieldin95/openlan-go/src/cli/config"
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
@@ -10,7 +9,6 @@ import (
 	"github.com/danieldin95/openlan-go/src/switch/app"
 	"github.com/danieldin95/openlan-go/src/switch/ctrls"
 	"github.com/danieldin95/openlan-go/src/switch/storage"
-	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -78,8 +76,7 @@ type Switch struct {
 	hooks    []Hook
 	http     *Http
 	server   libol.SocketServer
-	socks    *socks5.Server
-	proxy    *http.Server
+	proxy    *Proxy
 	worker   map[string]*NetworkWorker
 	uuid     string
 	newTime  int64
@@ -95,6 +92,7 @@ func NewSwitch(c config.Switch) *Switch {
 		worker:  make(map[string]*NetworkWorker, 32),
 		server:  server,
 		newTime: time.Now().Unix(),
+		proxy:   NewProxy(c.Proxy),
 	}
 	return &v
 }
@@ -149,49 +147,6 @@ func (v *Switch) acceptRoute(source, prefix string) {
 		Jump:   "MASQUERADE",
 	})
 	v.firewall.rules = rules
-}
-
-func (v *Switch) initSocks() {
-	if v.cfg.Socks == nil || v.cfg.Socks.Listen == "" {
-		return
-	}
-	// Create a SOCKS5 server
-	auth := v.cfg.Socks.Auth
-	authMethods := make([]socks5.Authenticator, 0, 2)
-	if len(auth.Username) > 0 {
-		author := socks5.UserPassAuthenticator{
-			Credentials: socks5.StaticCredentials{
-				auth.Username: auth.Password,
-			},
-		}
-		authMethods = append(authMethods, author)
-	}
-	conf := &socks5.Config{
-		AuthMethods: authMethods,
-	}
-	server, err := socks5.New(conf)
-	if err != nil {
-		libol.Error("Switch.initSocks %s", err)
-		return
-	}
-	v.socks = server
-}
-
-func (v *Switch) initProxy() {
-	if v.cfg.Proxy == nil || v.cfg.Proxy.Listen == "" {
-		return
-	}
-	addr := v.cfg.Proxy.Listen
-	auth := v.cfg.Proxy.Auth
-	pri := &Proxy{}
-	if len(auth.Username) > 0 {
-		pri.Users = make(map[string]string, 1)
-		pri.Users[auth.Username] = auth.Password
-	}
-	v.proxy = &http.Server{
-		Addr:    addr,
-		Handler: pri,
-	}
 }
 
 func (v *Switch) initNetwork() {
@@ -277,8 +232,7 @@ func (v *Switch) Initialize() {
 	for _, w := range v.worker {
 		w.Initialize()
 	}
-	v.initSocks()
-	v.initProxy()
+	v.proxy.Initialize()
 }
 
 func (v *Switch) onFrame(client libol.SocketClient, frame *libol.FrameMessage) error {
@@ -366,33 +320,6 @@ func (v *Switch) OnClose(client libol.SocketClient) error {
 	return nil
 }
 
-func (v *Switch) startSocks() {
-	if v.socks == nil {
-		return
-	}
-	addr := v.cfg.Socks.Listen
-	libol.Info("Switch.startSocks %s", addr)
-	libol.Go(func() {
-		if err := v.socks.ListenAndServe("tcp", addr); err != nil {
-			libol.Error("Switch.startSocks %s", err)
-			return
-		}
-	})
-}
-
-func (v *Switch) startProxy() {
-	if v.proxy == nil {
-		return
-	}
-	libol.Info("Switch.startProxy %s", v.proxy.Addr)
-	libol.Go(func() {
-		defer v.proxy.Shutdown(nil)
-		if err := v.proxy.ListenAndServe(); err != nil {
-			libol.Error("Switch.startProxy %s", err)
-		}
-	})
-}
-
 func (v *Switch) Start() {
 	v.lock.Lock()
 	defer v.lock.Unlock()
@@ -415,8 +342,9 @@ func (v *Switch) Start() {
 	}
 	libol.Go(ctrls.Ctrl.Start)
 	libol.Go(v.firewall.Start)
-	v.startSocks()
-	v.startProxy()
+	if v.proxy != nil {
+		v.proxy.Start()
+	}
 }
 
 func (v *Switch) Stop() {
@@ -424,6 +352,9 @@ func (v *Switch) Stop() {
 	defer v.lock.Unlock()
 
 	libol.Debug("Switch.Stop")
+	if v.proxy != nil {
+		v.proxy.Stop()
+	}
 	ctrls.Ctrl.Stop()
 	// firstly, notify leave to point.
 	for p := range storage.Point.List() {

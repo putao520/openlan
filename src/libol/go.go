@@ -31,9 +31,9 @@ func Go(call func()) {
 	go func() {
 		defer Catch("Go.func")
 		Gos.Add(call)
-		Info("Go.Add: %s", name)
+		Debug("Go.Add: %s", name)
 		call()
-		Info("Go.Del: %s", name)
+		Debug("Go.Del: %s", name)
 		Gos.Del(call)
 	}()
 }
