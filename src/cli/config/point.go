@@ -81,7 +81,7 @@ func NewPoint() (c *Point) {
 		libol.Warn("NewPoint.load %s", err)
 	}
 	c.Default()
-	libol.Init(c.Log.File, c.Log.Verbose)
+	libol.SetLogger(c.Log.File, c.Log.Verbose)
 	return c
 }
 

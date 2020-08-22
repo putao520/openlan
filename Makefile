@@ -35,7 +35,7 @@ pkg: linux-rpm windows-zip darwin-zip ## build all plaftorm packages
 
 ## upgrade
 upgrade:
-	ansible-playbook ./misc/playbook/upgrade.yaml -e "version=$(VER)" 
+	ansible-playbook ./misc/playbook/upgrade.yaml -e "version=$(VER)"
 
 clean: ## clean cache
 	rm -rvf ./build
@@ -112,3 +112,4 @@ darwin-zip: env darwin ## build darwin packages
 test: ## execute unit test
 	go test -v -mod=vendor -bench=. github.com/danieldin95/openlan-go/src/point
 	go test -v -mod=vendor -bench=. github.com/danieldin95/openlan-go/src/libol
+	go test -v -mod=vendor -bench=. github.com/danieldin95/openlan-go/src/models

@@ -205,7 +205,7 @@ func NewSwitch() (c Switch) {
 	if err := c.Load(); err != nil {
 		libol.Error("NewSwitch.load %s", err)
 	}
-	libol.Init(c.Log.File, c.Log.Verbose)
+	libol.SetLogger(c.Log.File, c.Log.Verbose)
 	c.Default()
 	libol.Debug("NewSwitch %v", c)
 	return c

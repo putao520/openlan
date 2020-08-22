@@ -36,7 +36,7 @@ func main() {
 	flag.Parse()
 
 	libol.PreNotify()
-	libol.Init(cfg.LogFile, cfg.Verbose)
+	libol.SetLogger(cfg.LogFile, cfg.Verbose)
 	storage.Storager.Load(cfg.ConfDir)
 
 	h := http.NewServer(cfg.Listen, cfg.StaticDir)

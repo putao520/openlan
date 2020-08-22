@@ -101,10 +101,24 @@ func (l *logger) List() <-chan *Message {
 	return c
 }
 
-var Logger = logger{
+var Logger = &logger{
 	Level:    INFO,
 	FileName: ".log.error",
 	Errors:   list.New(),
+}
+
+func SetLogger(file string, level int) {
+	Logger.Level = level
+	if file == "" || Logger.FileName == file {
+		return
+	}
+	Logger.FileName = file
+	logFile, err := os.Create(Logger.FileName)
+	if err == nil {
+		Logger.FileLog = log.New(logFile, "", log.LstdFlags)
+	} else {
+		Warn("Logger.Init: %s", err)
+	}
 }
 
 type SubLogger struct {
@@ -114,7 +128,7 @@ type SubLogger struct {
 
 func NewSubLogger(prefix string) *SubLogger {
 	return &SubLogger{
-		logger: &Logger,
+		logger: Logger,
 		Prefix: prefix,
 	}
 }
@@ -123,23 +137,6 @@ var rLogger = NewSubLogger("root")
 
 func HasLog(level int) bool {
 	return rLogger.Has(level)
-}
-
-func Init(file string, level int) {
-	SetLog(level)
-	Logger.FileName = file
-	if Logger.FileName != "" {
-		logFile, err := os.Create(Logger.FileName)
-		if err == nil {
-			Logger.FileLog = log.New(logFile, "", log.LstdFlags)
-		} else {
-			Warn("Logger.Init: %s", err)
-		}
-	}
-}
-
-func SetLog(level int) {
-	Logger.Level = level
 }
 
 func Catch(name string) {
@@ -201,45 +198,45 @@ func (s *SubLogger) Fmt(format string) string {
 }
 
 func (s *SubLogger) Print(format string, v ...interface{}) {
-	Logger.Write(PRINT, s.Fmt(format), v...)
+	s.logger.Write(PRINT, s.Fmt(format), v...)
 }
 
 func (s *SubLogger) Log(format string, v ...interface{}) {
-	Logger.Write(LOG, s.Fmt(format), v...)
+	s.logger.Write(LOG, s.Fmt(format), v...)
 }
 
 func (s *SubLogger) Lock(format string, v ...interface{}) {
-	Logger.Write(LOCK, s.Fmt(format), v...)
+	s.logger.Write(LOCK, s.Fmt(format), v...)
 }
 
 func (s *SubLogger) Stack(format string, v ...interface{}) {
-	Logger.Write(STACK, s.Fmt(format), v...)
+	s.logger.Write(STACK, s.Fmt(format), v...)
 }
 
 func (s *SubLogger) Debug(format string, v ...interface{}) {
-	Logger.Write(DEBUG, s.Fmt(format), v...)
+	s.logger.Write(DEBUG, s.Fmt(format), v...)
 }
 
 func (s *SubLogger) Cmd(format string, v ...interface{}) {
-	Logger.Write(CMD, s.Fmt(format), v...)
+	s.logger.Write(CMD, s.Fmt(format), v...)
 }
 
 func (s *SubLogger) Cmd1(format string, v ...interface{}) {
-	Logger.Write(CMD1, s.Fmt(format), v...)
+	s.logger.Write(CMD1, s.Fmt(format), v...)
 }
 
 func (s *SubLogger) Info(format string, v ...interface{}) {
-	Logger.Write(INFO, s.Fmt(format), v...)
+	s.logger.Write(INFO, s.Fmt(format), v...)
 }
 
 func (s *SubLogger) Warn(format string, v ...interface{}) {
-	Logger.Write(WARN, s.Fmt(format), v...)
+	s.logger.Write(WARN, s.Fmt(format), v...)
 }
 
 func (s *SubLogger) Error(format string, v ...interface{}) {
-	Logger.Write(ERROR, s.Fmt(format), v...)
+	s.logger.Write(ERROR, s.Fmt(format), v...)
 }
 
 func (s *SubLogger) Fatal(format string, v ...interface{}) {
-	Logger.Write(FATAL, s.Fmt(format), v...)
+	s.logger.Write(FATAL, s.Fmt(format), v...)
 }
