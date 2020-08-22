@@ -8,15 +8,23 @@
   "crypt": {
     "secret": "12345^"
   },
-  "socks": {
-    "listen": "192.168.100.40:11080"
-  },
   "proxy": {
-    "listen": "192.168.100.40:11082",
-    "auth": {
-      "username": "hi",
-      "password": "12345^"
-    }
+    "socks": {
+      "listen": "192.168.100.40:11080"
+    },
+    "http": {
+      "listen": "192.168.100.40:11082",
+      "auth": {
+        "username": "hi",
+        "password": "12345^"
+      }
+    },
+    "tcp": [
+      {
+        "listen": "0.0.0.0:8022",
+        "target": "192.168.100.80:22"
+      }
+    ]
   },
   "network": [
     {

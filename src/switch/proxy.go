@@ -67,7 +67,7 @@ func (t *HttpProxy) tunnel(w http.ResponseWriter, conn net.Conn) {
 		return
 	}
 	defer src.Close()
-	libol.Info("HttpProxy.tunnel to %s", conn.RemoteAddr())
+	libol.Info("HttpProxy.tunnel %s->%s", src.RemoteAddr(), conn.RemoteAddr())
 	wait := libol.NewWaitOne(2)
 	libol.Go(func() {
 		defer wait.Done()
