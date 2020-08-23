@@ -141,8 +141,8 @@ func HasLog(level int) bool {
 
 func Catch(name string) {
 	if err := recover(); err != nil {
-		Fatal("%s [PANIC] >>> %s <<<", name, err)
-		Fatal("%s [STACK] >>> %s <<<", name, debug.Stack())
+		Fatal("[%s] [PANIC] >>> %s <<<", name, err)
+		Fatal("[%s] [STACK] >>> %s <<<", name, debug.Stack())
 	}
 }
 
@@ -194,7 +194,7 @@ func (s *SubLogger) Has(level int) bool {
 }
 
 func (s *SubLogger) Fmt(format string) string {
-	return "<" + s.Prefix + "> " + format
+	return "[" + s.Prefix + "] " + format
 }
 
 func (s *SubLogger) Print(format string, v ...interface{}) {
