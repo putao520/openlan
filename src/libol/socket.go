@@ -66,7 +66,7 @@ type dataStream struct {
 	connector  func() error
 }
 
-func (t *dataStream) cnt() *SafeStrInt64 {
+func (t *dataStream) Cnt() *SafeStrInt64 {
 	if t.statics == nil {
 		t.statics = NewSafeStrInt64()
 	}
@@ -86,7 +86,7 @@ func (t *dataStream) IsOk() bool {
 
 func (t *dataStream) WriteMsg(frame *FrameMessage) error {
 	if err := t.connector(); err != nil {
-		t.cnt().Add(CsDropped, 1)
+		t.Cnt().Add(CsDropped, 1)
 		return err
 	}
 	if t.message == nil { // default is stream message
@@ -94,10 +94,10 @@ func (t *dataStream) WriteMsg(frame *FrameMessage) error {
 	}
 	n, err := t.message.Send(t.connection, frame)
 	if err != nil {
-		t.cnt().Add(CsSendError, 1)
+		t.Cnt().Add(CsSendError, 1)
 		return err
 	}
-	t.cnt().Add(CsSendOkay, int64(n))
+	t.Cnt().Add(CsSendOkay, int64(n))
 	return nil
 }
 
@@ -115,7 +115,7 @@ func (t *dataStream) ReadMsg() (*FrameMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	t.cnt().Add(CsRecvOkay, int64(len(frame.frame)))
+	t.Cnt().Add(CsRecvOkay, int64(len(frame.frame)))
 
 	return frame, nil
 }
@@ -226,7 +226,7 @@ func (s *socketClient) Have(state uint8) bool {
 
 func (s *socketClient) Sts() map[string]int64 {
 	sts := make(map[string]int64)
-	s.cnt().Copy(sts)
+	s.Cnt().Copy(sts)
 	return sts
 }
 
@@ -302,7 +302,7 @@ type SocketServer interface {
 // TODO keepalive to release zombie connections.
 type socketServer struct {
 	lock       sync.RWMutex
-	sts        *SafeStrInt64
+	statics    *SafeStrInt64
 	address    string
 	maxClient  int
 	clients    *SafeStrMap
@@ -315,12 +315,19 @@ type socketServer struct {
 func NewSocketServer(listen string) *socketServer {
 	return &socketServer{
 		address:    listen,
-		sts:        NewSafeStrInt64(),
+		statics:    NewSafeStrInt64(),
 		maxClient:  128,
 		clients:    NewSafeStrMap(1024),
 		onClients:  make(chan SocketClient, 1024),
 		offClients: make(chan SocketClient, 1024),
 	}
+}
+
+func (t *socketServer) Cnt() *SafeStrInt64 {
+	if t.statics == nil {
+		t.statics = NewSafeStrInt64()
+	}
+	return t.statics
 }
 
 func (t *socketServer) ListClient() <-chan SocketClient {
@@ -363,13 +370,13 @@ func (t *socketServer) doOffClient(call ServerListener, client SocketClient) {
 	addr := client.RemoteAddr()
 	if _, ok := t.clients.GetEx(addr); ok {
 		Info("socketServer.doOffClient: close %s", addr)
-		t.sts.Add(SsClose, 1)
+		t.statics.Add(SsClose, 1)
 		if call.OnClose != nil {
 			_ = call.OnClose(client)
 		}
 		client.Close()
 		t.clients.Del(addr)
-		t.sts.Add(SsAlive, -1)
+		t.statics.Add(SsAlive, -1)
 	}
 }
 
@@ -399,7 +406,7 @@ func (t *socketServer) Read(client SocketClient, ReadAt ReadClient) {
 			t.OffClient(client)
 			break
 		}
-		t.sts.Add(SsRecv, 1)
+		t.statics.Add(SsRecv, 1)
 		if HasLog(LOG) {
 			Log("socketServer.Read: length: %d ", frame.size)
 			Log("socketServer.Read: frame : %x", frame)
@@ -427,7 +434,7 @@ func (t *socketServer) String() string {
 
 func (t *socketServer) Sts() map[string]int64 {
 	sts := make(map[string]int64, 32)
-	t.sts.Copy(sts)
+	t.statics.Copy(sts)
 	return sts
 }
 
@@ -440,16 +447,16 @@ func (t *socketServer) SetTimeout(v int64) {
 func (t *socketServer) preAccept(conn net.Conn) bool {
 	addr := conn.RemoteAddr()
 	Debug("socketServer.preAccept: %s", addr)
-	t.sts.Add(SsAccept, 1)
-	alive := t.sts.Get(SsAlive)
+	t.statics.Add(SsAccept, 1)
+	alive := t.statics.Get(SsAlive)
 	if alive >= int64(t.maxClient) {
 		Debug("socketServer.preAccept: close %s", addr)
-		t.sts.Add(SsDeny, 1)
-		t.sts.Add(SsClose, 1)
+		t.statics.Add(SsDeny, 1)
+		t.statics.Add(SsClose, 1)
 		conn.Close()
 		return false
 	}
 	Debug("socketServer.preAccept: allow %s", addr)
-	t.sts.Add(SsAlive, 1)
+	t.statics.Add(SsAlive, 1)
 	return true
 }
