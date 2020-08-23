@@ -1,6 +1,7 @@
 package libol
 
 import (
+	"bytes"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -69,4 +70,26 @@ func TestPrettyBytes(t *testing.T) {
 
 	s = PrettyBytes(1024*1024*1024 + 1024*1024*512 + 59)
 	assert.Equal(t, "1.50G", s, "be the same.")
+}
+
+func TestScanPure(t *testing.T) {
+	buff := bytes.NewBuffer([]byte(`// hi`))
+	_, err := ScanAnn(buff)
+	assert.Equal(t, nil, err, "be the same.")
+	buff = bytes.NewBuffer([]byte(`// hi
+			you are`))
+	data, err := ScanAnn(buff)
+	assert.Equal(t, string(data), "\t\t\tyou are", "be the same.")
+	buff = bytes.NewBuffer([]byte(`// hi
+			you are
+			// you are
+            //`))
+	data, err = ScanAnn(buff)
+	assert.Equal(t, string(data), "\t\t\tyou are", "be the same.")
+	buff = bytes.NewBuffer([]byte(`// hi
+			you are
+			// you are
+			/`))
+	data, err = ScanAnn(buff)
+	assert.Equal(t, string(data), "\t\t\tyou are\t\t\t/", "be the same.")
 }

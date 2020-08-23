@@ -1,4 +1,5 @@
 {
+  "protocol": "tls",
   "cert": {
     "dir": "/var/openlan/ca"
   },

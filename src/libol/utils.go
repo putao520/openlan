@@ -1,10 +1,11 @@
 package libol
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"net"
 	"os"
@@ -42,20 +43,20 @@ func GenEthAddr(n int) []byte {
 	return data
 }
 
-func Marshal(v interface{}, pretty bool) (string, error) {
+func Marshal(v interface{}, pretty bool) ([]byte, error) {
 	str, err := json.Marshal(v)
 	if err != nil {
 		Error("Marshal error: %s", err)
-		return "", err
+		return nil, err
 	}
 	if !pretty {
-		return string(str), nil
+		return str, nil
 	}
 	var out bytes.Buffer
 	if err := json.Indent(&out, str, "", "  "); err != nil {
-		return string(str), nil
+		return str, nil
 	}
-	return out.String(), nil
+	return out.Bytes(), nil
 }
 
 func MarshalSave(v interface{}, file string, pretty bool) error {
@@ -70,7 +71,7 @@ func MarshalSave(v interface{}, file string, pretty bool) error {
 		Error("MarshalSave error: %s", err)
 		return err
 	}
-	if _, err := f.Write([]byte(str)); err != nil {
+	if _, err := f.Write(str); err != nil {
 		Error("MarshalSave: %s", err)
 		return err
 	}
@@ -84,15 +85,49 @@ func FileExist(file string) error {
 	return nil
 }
 
+func ScanAnn(r io.Reader) ([]byte, error) {
+	data := make([]byte, 0, 1024)
+	scan := bufio.NewScanner(r)
+	for scan.Scan() {
+		bs := scan.Bytes()
+		dis := false
+		for i, b := range bs {
+			if b == ' ' || b == '\t' || b == '\r' || b == '\n' {
+				continue
+			}
+			if b == '/' && len(bs) > i+1 && bs[i+1] == '/' {
+				dis = true // if start with //, need discard it.
+			}
+			break
+		}
+		if !dis {
+			data = append(data, bs...)
+		}
+	}
+	if err := scan.Err(); err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+func LoadWithoutAnn(file string) ([]byte, error) {
+	fp, err := os.OpenFile(file, os.O_RDONLY, os.ModePerm)
+	if err != nil {
+		return nil, err
+	}
+	defer fp.Close()
+	return ScanAnn(fp)
+}
+
 func UnmarshalLoad(v interface{}, file string) error {
 	if err := FileExist(file); err != nil {
 		return NewErr("UnmarshalLoad: %s %s", file, err)
 	}
-	contents, err := ioutil.ReadFile(file)
+	contents, err := LoadWithoutAnn(file)
 	if err != nil {
 		return NewErr("UnmarshalLoad: %s %s", file, err)
 	}
-	if err := json.Unmarshal([]byte(contents), v); err != nil {
+	if err := json.Unmarshal(contents, v); err != nil {
 		return NewErr("UnmarshalLoad: %s", err)
 	}
 	return nil
