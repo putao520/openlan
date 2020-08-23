@@ -181,6 +181,7 @@
                     <th>Network</th>
                     <th>User</th>
                     <th>Connection</th>
+                    <th>r/t|Traffic</th>
                     <th>State</th>
                 </tr>
                 </thead>
@@ -192,6 +193,7 @@
                         <td>{{ .Device }}.{{ .Network }}</td>
                         <td>{{ .User }}</td>
                         <td><a href="https://{{ getIpAddr .Address }}:10000">{{ .Address }}</a></td>
+                        <td>{{ prettyBytes .RxBytes }}/{{ prettyBytes .TxBytes }}</td>
                         <td><span class="{{ .State }}">{{ .State }}</span></td>
                     </tr>
                 {{ end }}

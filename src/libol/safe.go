@@ -209,3 +209,47 @@ func (sv *SafeVar) GetWithFunc(proc func(v interface{})) {
 	defer sv.lock.RUnlock()
 	proc(sv.data)
 }
+
+type SafeStrInt64 struct {
+	lock sync.RWMutex
+	data map[string]int64
+}
+
+func NewSafeStrInt64() *SafeStrInt64 {
+	return &SafeStrInt64{
+		data: make(map[string]int64, 32),
+	}
+}
+
+func (s *SafeStrInt64) Get(k string) int64 {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	if v, ok := s.data[k]; ok {
+		return v
+	}
+	return 0
+}
+
+func (s *SafeStrInt64) Set(k string, v int64) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.data[k] = v
+}
+
+func (s *SafeStrInt64) Add(k string, v int64) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	if _, ok := s.data[k]; ok {
+		s.data[k] += v
+	} else {
+		s.data[k] = v
+	}
+}
+
+func (s *SafeStrInt64) Copy(dst map[string]int64) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	for k, v := range s.data {
+		dst[k] = v
+	}
+}

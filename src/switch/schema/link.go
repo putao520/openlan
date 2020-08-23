@@ -8,9 +8,9 @@ type Link struct {
 	User      string `json:"user"`
 	Address   string `json:"server"`
 	Device    string `json:"device"`
-	RxBytes   uint64 `json:"rxBytes"`
-	TxBytes   uint64 `json:"txBytes"`
-	ErrPkt    uint64 `json:"errors"`
+	RxBytes   int64  `json:"rxBytes"`
+	TxBytes   int64  `json:"txBytes"`
+	ErrPkt    int64  `json:"errors"`
 	State     string `json:"state"`
 	AliveTime int64  `json:"aliveTime"`
 }

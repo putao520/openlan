@@ -1,7 +1,6 @@
 package api
 
 import (
-	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/gorilla/mux"
 	"net/http"
 )
@@ -18,10 +17,10 @@ func (l Server) Router(router *mux.Router) {
 func (l Server) List(w http.ResponseWriter, r *http.Request) {
 	server := l.Switcher.Server()
 	data := &struct {
-		UpTime     int64           `json:"uptime"`
-		Total      int             `json:"total"`
-		Statistic  libol.ServerSts `json:"statistic"`
-		Connection []interface{}   `json:"connection"`
+		UpTime     int64            `json:"uptime"`
+		Total      int              `json:"total"`
+		Statistic  map[string]int64 `json:"statistic"`
+		Connection []interface{}    `json:"connection"`
 	}{
 		UpTime:     l.Switcher.UpTime(),
 		Statistic:  server.Sts(),
@@ -33,10 +32,10 @@ func (l Server) List(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		data.Connection = append(data.Connection, &struct {
-			UpTime     int64           `json:"uptime"`
-			LocalAddr  string          `json:"localAddr"`
-			RemoteAddr string          `json:"remoteAddr"`
-			Statistic  libol.ClientSts `json:"statistic"`
+			UpTime     int64            `json:"uptime"`
+			LocalAddr  string           `json:"localAddr"`
+			RemoteAddr string           `json:"remoteAddr"`
+			Statistic  map[string]int64 `json:"statistic"`
 		}{
 			UpTime:     u.UpTime(),
 			LocalAddr:  u.LocalAddr(),

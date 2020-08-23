@@ -16,12 +16,12 @@ const (
 	ClClosed     = 0x06
 )
 
-type ClientSts struct {
-	SendOkay  uint64 `json:"send"`
-	RecvOkay  uint64 `json:"recv"`
-	SendError uint64 `json:"error"`
-	Dropped   uint64 `json:"dropped"`
-}
+const (
+	CsSendOkay  = "send"
+	CsRecvOkay  = "recv"
+	CsSendError = "error"
+	CsDropped   = "dropped"
+)
 
 type ClientListener struct {
 	OnClose     func(client SocketClient) error
@@ -52,7 +52,7 @@ type SocketClient interface {
 	Have(status uint8) bool
 	Addr() string
 	SetAddr(addr string)
-	Sts() ClientSts
+	Sts() map[string]int64
 	SetListener(listener ClientListener)
 	SetTimeout(v int64)
 }
@@ -60,10 +60,17 @@ type SocketClient interface {
 type dataStream struct {
 	message    Messager
 	connection net.Conn
-	sts        ClientSts
+	statics    *SafeStrInt64
 	maxSize    int
 	minSize    int
 	connector  func() error
+}
+
+func (t *dataStream) cnt() *SafeStrInt64 {
+	if t.statics == nil {
+		t.statics = NewSafeStrInt64()
+	}
+	return t.statics
 }
 
 func (t *dataStream) String() string {
@@ -79,7 +86,7 @@ func (t *dataStream) IsOk() bool {
 
 func (t *dataStream) WriteMsg(frame *FrameMessage) error {
 	if err := t.connector(); err != nil {
-		t.sts.Dropped++
+		t.cnt().Add(CsDropped, 1)
 		return err
 	}
 	if t.message == nil { // default is stream message
@@ -87,10 +94,10 @@ func (t *dataStream) WriteMsg(frame *FrameMessage) error {
 	}
 	n, err := t.message.Send(t.connection, frame)
 	if err != nil {
-		t.sts.SendError++
+		t.cnt().Add(CsSendError, 1)
 		return err
 	}
-	t.sts.SendOkay += uint64(n)
+	t.cnt().Add(CsSendOkay, int64(n))
 	return nil
 }
 
@@ -108,7 +115,7 @@ func (t *dataStream) ReadMsg() (*FrameMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	t.sts.RecvOkay += uint64(len(frame.frame))
+	t.cnt().Add(CsRecvOkay, int64(len(frame.frame)))
 
 	return frame, nil
 }
@@ -217,8 +224,10 @@ func (s *socketClient) Have(state uint8) bool {
 	return s.Status() == state
 }
 
-func (s *socketClient) Sts() ClientSts {
-	return s.sts
+func (s *socketClient) Sts() map[string]int64 {
+	sts := make(map[string]int64)
+	s.cnt().Copy(sts)
+	return sts
 }
 
 func (s *socketClient) SetListener(listener ClientListener) {
@@ -257,69 +266,15 @@ func (s *socketClient) SetConnection(conn net.Conn) {
 
 // Socket Server
 
-type ServerSts struct {
-	Lock        sync.Mutex `json:"-"`
-	RecvCount   int64      `json:"recv"`
-	DenyCount   int64      `json:"deny"`
-	AliveCount  int64      `json:"alive"`
-	SendCount   int64      `json:"send"`
-	DropCount   int64      `json:"dropped"`
-	AcceptCount int64      `json:"accept"`
-	CloseCount  int64      `json:"closed"`
-}
-
-func (s *ServerSts) Get(k string) int64 {
-	s.Lock.Lock()
-	defer s.Lock.Unlock()
-	switch k {
-	case "recv":
-		return s.RecvCount
-	case "alive":
-		return s.AliveCount
-	case "deny":
-		return s.DenyCount
-	case "send":
-		return s.SendCount
-	case "drop":
-		return s.DropCount
-	case "accept":
-		return s.AcceptCount
-	case "close":
-		return s.CloseCount
-	default:
-		Warn("ServerSts.Get %s notFound", k)
-		return -1
-	}
-}
-
-func (s *ServerSts) Add(k string, v int64) {
-	s.Lock.Lock()
-	defer s.Lock.Unlock()
-	switch k {
-	case "recv":
-		s.RecvCount += v
-	case "alive":
-		s.AliveCount += v
-	case "deny":
-		s.DenyCount += v
-	case "send":
-		s.SendCount += v
-	case "drop":
-		s.DropCount += v
-	case "accept":
-		s.AcceptCount += v
-	case "close":
-		s.CloseCount += v
-	default:
-		Warn("ServerSts.Add %s notFound", k)
-	}
-}
-
-func (s *ServerSts) Copy() ServerSts {
-	s.Lock.Lock()
-	defer s.Lock.Unlock()
-	return *s
-}
+const (
+	SsRecv   = "recv"
+	SsDeny   = "deny"
+	SsAlive  = "alive"
+	SsSend   = "send"
+	SsDrop   = "dropped"
+	SsAccept = "accept"
+	SsClose  = "closed"
+)
 
 type ServerListener struct {
 	OnClient func(client SocketClient) error
@@ -340,14 +295,14 @@ type SocketServer interface {
 	Read(client SocketClient, ReadAt ReadClient)
 	String() string
 	Addr() string
-	Sts() ServerSts
+	Sts() map[string]int64
 	SetTimeout(v int64)
 }
 
 // TODO keepalive to release zombie connections.
 type socketServer struct {
 	lock       sync.RWMutex
-	sts        *ServerSts
+	sts        *SafeStrInt64
 	address    string
 	maxClient  int
 	clients    *SafeStrMap
@@ -360,7 +315,7 @@ type socketServer struct {
 func NewSocketServer(listen string) *socketServer {
 	return &socketServer{
 		address:    listen,
-		sts:        &ServerSts{},
+		sts:        NewSafeStrInt64(),
 		maxClient:  128,
 		clients:    NewSafeStrMap(1024),
 		onClients:  make(chan SocketClient, 1024),
@@ -408,13 +363,13 @@ func (t *socketServer) doOffClient(call ServerListener, client SocketClient) {
 	addr := client.RemoteAddr()
 	if _, ok := t.clients.GetEx(addr); ok {
 		Info("socketServer.doOffClient: close %s", addr)
-		t.sts.Add("close", 1)
+		t.sts.Add(SsClose, 1)
 		if call.OnClose != nil {
 			_ = call.OnClose(client)
 		}
 		client.Close()
 		t.clients.Del(addr)
-		t.sts.Add("alive", -1)
+		t.sts.Add(SsAlive, -1)
 	}
 }
 
@@ -444,7 +399,7 @@ func (t *socketServer) Read(client SocketClient, ReadAt ReadClient) {
 			t.OffClient(client)
 			break
 		}
-		t.sts.Add("recv", 1)
+		t.sts.Add(SsRecv, 1)
 		if HasLog(LOG) {
 			Log("socketServer.Read: length: %d ", frame.size)
 			Log("socketServer.Read: frame : %x", frame)
@@ -470,8 +425,10 @@ func (t *socketServer) String() string {
 	return t.Addr()
 }
 
-func (t *socketServer) Sts() ServerSts {
-	return t.sts.Copy()
+func (t *socketServer) Sts() map[string]int64 {
+	sts := make(map[string]int64, 32)
+	t.sts.Copy(sts)
+	return sts
 }
 
 func (t *socketServer) SetTimeout(v int64) {
@@ -483,16 +440,16 @@ func (t *socketServer) SetTimeout(v int64) {
 func (t *socketServer) preAccept(conn net.Conn) bool {
 	addr := conn.RemoteAddr()
 	Debug("socketServer.preAccept: %s", addr)
-	t.sts.Add("accept", 1)
-	alive := t.sts.Get("alive")
+	t.sts.Add(SsAccept, 1)
+	alive := t.sts.Get(SsAlive)
 	if alive >= int64(t.maxClient) {
 		Debug("socketServer.preAccept: close %s", addr)
-		t.sts.Add("deny", 1)
-		t.sts.Add("close", 1)
+		t.sts.Add(SsDeny, 1)
+		t.sts.Add(SsClose, 1)
 		conn.Close()
 		return false
 	}
 	Debug("socketServer.preAccept: allow %s", addr)
-	t.sts.Add("alive", 1)
+	t.sts.Add(SsAlive, 1)
 	return true
 }

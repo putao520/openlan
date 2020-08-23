@@ -67,15 +67,15 @@ type jobTimer struct {
 	Call func() error
 }
 
-type recordTime struct {
-	last      int64 // record time last frame received or connected.
-	connected int64 // record last connected time.
-	reconnect int64 // record time when triggered reconnected.
-	success   int64 // record success time when login.
-	sleeps    int   // record times to control connecting delay.
-	closed    int64
-	live      int64 // record received pong frame time.
-}
+const (
+	rtLast      = "last"      // record time last frame received or connected.
+	rtConnected = "connected" // record last connected time.
+	rtReconnect = "reconnect" // record time when triggered reconnected.
+	rtSuccess   = "reSuccess" // record success time when login.
+	rtSleeps    = "sleeps"    // record times to control connecting delay.
+	rtClosed    = "closed"
+	rtLive      = "live" // record received pong frame time.
+)
 
 type SocketWorker struct {
 	// private
@@ -92,7 +92,7 @@ type SocketWorker struct {
 	eventQueue chan SocketEvent
 	writeQueue chan *libol.FrameMessage
 	jobber     []jobTimer
-	record     recordTime
+	record     *libol.SafeStrInt64
 	logger     *libol.SubLogger
 }
 
@@ -102,12 +102,9 @@ func NewSocketWorker(client libol.SocketClient, c *config.Point) *SocketWorker {
 		user:    models.NewUser(c.Username, c.Password),
 		network: models.NewNetwork(c.Network, c.Interface.Address),
 		routes:  make(map[string]*models.Route, 64),
-		record: recordTime{
-			last:      time.Now().Unix(),
-			reconnect: time.Now().Unix(),
-		},
-		done:   make(chan bool, 2),
-		ticker: time.NewTicker(2 * time.Second),
+		record:  libol.NewSafeStrInt64(),
+		done:    make(chan bool, 2),
+		ticker:  time.NewTicker(2 * time.Second),
 		keepalive: KeepAlive{
 			Interval: 15,
 			LastTime: time.Now().Unix(),
@@ -124,12 +121,14 @@ func NewSocketWorker(client libol.SocketClient, c *config.Point) *SocketWorker {
 }
 
 func (t *SocketWorker) sleepNow() int64 {
-	return int64(t.record.sleeps * 5)
+	sleeps := t.record.Get(rtSleeps)
+	return sleeps * 5
 }
 
 func (t *SocketWorker) sleepIdle() int64 {
-	if t.record.sleeps < 20 {
-		t.record.sleeps++
+	sleeps := t.record.Get(rtSleeps)
+	if sleeps < 20 {
+		t.record.Add(rtSleeps, 1)
 	}
 	return t.sleepNow()
 }
@@ -141,12 +140,12 @@ func (t *SocketWorker) Initialize() {
 	t.client.SetMaxSize(t.pinCfg.Interface.IfMtu)
 	t.client.SetListener(libol.ClientListener{
 		OnConnected: func(client libol.SocketClient) error {
-			t.record.connected = time.Now().Unix()
+			t.record.Set(rtConnected, time.Now().Unix())
 			t.eventQueue <- NewEvent(EventConed, "from socket")
 			return nil
 		},
 		OnClose: func(client libol.SocketClient) error {
-			t.record.closed = time.Now().Unix()
+			t.record.Set(rtClosed, time.Now().Unix())
 			t.eventQueue <- NewEvent(EventClosed, "from socket")
 			return nil
 		},
@@ -230,16 +229,16 @@ func (t *SocketWorker) reconnect() {
 	if t.isStopped() {
 		return
 	}
-	t.record.reconnect = time.Now().Unix()
+	t.record.Set(rtReconnect, time.Now().Unix())
 	t.jobber = append(t.jobber, jobTimer{
 		Time: time.Now().Unix() + t.sleepIdle(),
 		Call: func() error {
 			t.logger.Debug("SocketWorker.reconnect: on jobber")
-			if t.record.connected >= t.record.reconnect { // already connected after.
+			if t.record.Get(rtConnected) >= t.record.Get(rtReconnect) { // already connected after.
 				t.logger.Cmd("SocketWorker.reconnect: dissed by connected")
 				return nil
 			}
-			if t.record.last >= t.record.reconnect { // ignored immediately connect.
+			if t.record.Get(rtLast) >= t.record.Get(rtReconnect) { // ignored immediately connect.
 				t.logger.Info("SocketWorker.reconnect: dissed by last")
 				return nil
 			}
@@ -313,8 +312,8 @@ func (t *SocketWorker) onLogin(resp []byte) error {
 		if t.listener.OnSuccess != nil {
 			_ = t.listener.OnSuccess(t)
 		}
-		t.record.sleeps = 0
-		t.record.success = time.Now().Unix()
+		t.record.Set(rtSleeps, 0)
+		t.record.Set(rtSuccess, time.Now().Unix())
 		_ = t.toNetwork(t.client)
 		t.eventQueue <- NewEvent(EventSuccess, "already success")
 		t.logger.Info("SocketWorker.onInstruct.toLogin: success")
@@ -370,7 +369,7 @@ func (t *SocketWorker) onInstruct(frame *libol.FrameMessage) error {
 	case "ipad:":
 		return t.onIpAddr(resp)
 	case "pong:":
-		t.record.live = time.Now().Unix()
+		t.record.Set(rtLive, time.Now().Unix())
 	case "sign=":
 		return t.onSignIn(resp)
 	case "left=":
@@ -504,7 +503,7 @@ func (t *SocketWorker) Read() {
 		if t.logger.Has(libol.DEBUG) {
 			t.logger.Debug("SocketWorker.Read: %x", data)
 		}
-		t.record.last = time.Now().Unix()
+		t.record.Set(rtLast, time.Now().Unix())
 		if data.Size() > 0 {
 			data.Decode()
 			if data.IsControl() {
@@ -521,15 +520,13 @@ func (t *SocketWorker) Read() {
 }
 
 func (t *SocketWorker) deadCheck() {
-	timeout := int64(t.pinCfg.Timeout)
+	out := int64(t.pinCfg.Timeout)
 	now := time.Now().Unix()
-	dt := now - t.record.last
-	if dt < timeout {
+	if now-t.record.Get(rtLast) < out {
 		return
 	}
-	dr := now - t.record.reconnect
-	if dr < timeout { // timeout and avoid send reconn frequently.
-		t.logger.Info("SocketWorker.deadCheck: recon frequently")
+	if now-t.record.Get(rtReconnect) < out { // timeout and avoid send reconn frequently.
+		t.logger.Info("SocketWorker.deadCheck: reconn frequently")
 		return
 	}
 	t.eventQueue <- NewEvent(EventRecon, "from dead check")
