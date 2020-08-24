@@ -151,6 +151,8 @@ func (t *SocketWorker) Initialize() {
 			return nil
 		},
 	})
+	t.record.Set(rtLast, time.Now().Unix())
+	t.record.Set(rtReconnect, time.Now().Unix())
 }
 
 func (t *SocketWorker) Start() {
