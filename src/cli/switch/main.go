@@ -9,11 +9,6 @@ import (
 func main() {
 	c := config.NewSwitch()
 	s := _switch.NewSwitch(c)
-	if c.PProf != "" {
-		f := libol.PProf{File: c.PProf}
-		f.Start()
-		defer f.Stop()
-	}
 	libol.PreNotify()
 	s.Initialize()
 	s.Start()
