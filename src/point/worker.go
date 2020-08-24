@@ -575,12 +575,6 @@ func (t *SocketWorker) SetAuth(auth string) {
 	}
 }
 
-func (t *SocketWorker) SetAddr(addr string) {
-	t.lock.Lock()
-	defer t.lock.Unlock()
-	t.client.SetAddr(addr)
-}
-
 func (t *SocketWorker) SetUUID(v string) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
@@ -1135,7 +1129,7 @@ func (p *Worker) State() string {
 func (p *Worker) Addr() string {
 	client := p.Client()
 	if client != nil {
-		return client.Addr()
+		return client.Address()
 	}
 	return ""
 }
@@ -1172,11 +1166,12 @@ func (p *Worker) FindNext(dest []byte) []byte {
 }
 
 func (p *Worker) OnIpAddr(w *SocketWorker, n *models.Network) error {
+	addr := fmt.Sprintf("%s/%s", n.IfAddr, n.Netmask)
 	if models.NetworkEqual(p.network, n) {
-		p.logger.Info("Worker.OnIpAddr: %s/%s noChanged", n.IfAddr, n.Netmask)
+		p.logger.Info("Worker.OnIpAddr: %s noChanged", addr)
 		return nil
 	}
-	p.logger.Info("Worker.OnIpAddr: %s/%s", n.IfAddr, n.Netmask)
+	p.logger.Info("Worker.OnIpAddr: %s", addr)
 	p.logger.Info("Worker.OnIpAddr: %s", n.Routes)
 	prefix := libol.Netmask2Len(n.Netmask)
 	ipStr := fmt.Sprintf("%s/%d", n.IfAddr, prefix)

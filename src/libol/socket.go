@@ -50,60 +50,52 @@ type SocketClient interface {
 	MinSize() int
 	IsOk() bool
 	Have(status uint8) bool
-	Addr() string
-	SetAddr(addr string)
-	Sts() map[string]int64
+	Address() string
+	Statistics() map[string]int64
 	SetListener(listener ClientListener)
 	SetTimeout(v int64)
 }
 
-type dataStream struct {
+type StreamSocket struct {
 	message    Messager
 	connection net.Conn
-	statics    *SafeStrInt64
+	statistics *SafeStrInt64
 	maxSize    int
 	minSize    int
 	connector  func() error
 }
 
-func (t *dataStream) Cnt() *SafeStrInt64 {
-	if t.statics == nil {
-		t.statics = NewSafeStrInt64()
-	}
-	return t.statics
-}
-
-func (t *dataStream) String() string {
+func (t *StreamSocket) String() string {
 	if t.connection != nil {
 		return t.connection.RemoteAddr().String()
 	}
 	return "unknown"
 }
 
-func (t *dataStream) IsOk() bool {
+func (t *StreamSocket) IsOk() bool {
 	return t.connection != nil
 }
 
-func (t *dataStream) WriteMsg(frame *FrameMessage) error {
+func (t *StreamSocket) WriteMsg(frame *FrameMessage) error {
 	if err := t.connector(); err != nil {
-		t.Cnt().Add(CsDropped, 1)
+		t.statistics.Add(CsDropped, 1)
 		return err
 	}
 	if t.message == nil { // default is stream message
 		t.message = &StreamMessage{}
 	}
-	n, err := t.message.Send(t.connection, frame)
+	size, err := t.message.Send(t.connection, frame)
 	if err != nil {
-		t.Cnt().Add(CsSendError, 1)
+		t.statistics.Add(CsSendError, 1)
 		return err
 	}
-	t.Cnt().Add(CsSendOkay, int64(n))
+	t.statistics.Add(CsSendOkay, int64(size))
 	return nil
 }
 
-func (t *dataStream) ReadMsg() (*FrameMessage, error) {
+func (t *StreamSocket) ReadMsg() (*FrameMessage, error) {
 	if HasLog(LOG) {
-		Log("dataStream.ReadMsg: %s", t)
+		Log("StreamSocket.ReadMsg: %s", t)
 	}
 	if !t.IsOk() {
 		return nil, NewErr("%s: not okay", t)
@@ -115,13 +107,13 @@ func (t *dataStream) ReadMsg() (*FrameMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	t.Cnt().Add(CsRecvOkay, int64(len(frame.frame)))
-
+	size := len(frame.frame)
+	t.statistics.Add(CsRecvOkay, int64(size))
 	return frame, nil
 }
 
-type socketClient struct {
-	dataStream
+type SocketClientImpl struct {
+	*StreamSocket
 	lock          sync.RWMutex
 	listener      ClientListener
 	address       string
@@ -134,21 +126,21 @@ type socketClient struct {
 	localAddr     string
 }
 
-func NewSocketClient(address string, message Messager) socketClient {
-	return socketClient{
+func NewSocketClient(address string, message Messager) *SocketClientImpl {
+	return &SocketClientImpl{
 		address: address,
-		dataStream: dataStream{
-			maxSize: 1514,
-			minSize: 15,
-			message: message,
-			statics: NewSafeStrInt64(),
+		StreamSocket: &StreamSocket{
+			maxSize:    1514,
+			minSize:    15,
+			message:    message,
+			statistics: NewSafeStrInt64(),
 		},
 		newTime: time.Now().Unix(),
 		status:  ClInit,
 	}
 }
 
-func (s *socketClient) State() string {
+func (s *SocketClientImpl) State() string {
 	switch s.Status() {
 	case ClInit:
 		return "initialized"
@@ -168,7 +160,7 @@ func (s *socketClient) State() string {
 	return ""
 }
 
-func (s *socketClient) retry() bool {
+func (s *SocketClientImpl) Retry() bool {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	if s.connection != nil ||
@@ -180,17 +172,17 @@ func (s *socketClient) retry() bool {
 	return true
 }
 
-func (s *socketClient) Status() uint8 {
+func (s *SocketClientImpl) Status() uint8 {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 	return s.status
 }
 
-func (s *socketClient) UpTime() int64 {
+func (s *SocketClientImpl) UpTime() int64 {
 	return time.Now().Unix() - s.newTime
 }
 
-func (s *socketClient) AliveTime() int64 {
+func (s *SocketClientImpl) AliveTime() int64 {
 	if s.connectedTime == 0 {
 		return 0
 	}
@@ -198,71 +190,67 @@ func (s *socketClient) AliveTime() int64 {
 }
 
 // Get server address for client or remote address from server.
-func (s *socketClient) Addr() string {
+func (s *SocketClientImpl) Address() string {
 	return s.address
 }
 
-func (s *socketClient) SetAddr(addr string) {
-	s.address = addr
+func (s *SocketClientImpl) String() string {
+	return s.Address()
 }
 
-func (s *socketClient) String() string {
-	return s.Addr()
-}
-
-func (s *socketClient) Private() interface{} {
+func (s *SocketClientImpl) Private() interface{} {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 	return s.private
 }
 
-func (s *socketClient) SetPrivate(v interface{}) {
+func (s *SocketClientImpl) SetPrivate(v interface{}) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.private = v
 }
 
-func (s *socketClient) MaxSize() int {
+func (s *SocketClientImpl) MaxSize() int {
 	return s.maxSize
 }
 
-func (s *socketClient) SetMaxSize(value int) {
+func (s *SocketClientImpl) SetMaxSize(value int) {
 	s.maxSize = value
 }
 
-func (s *socketClient) MinSize() int {
+func (s *SocketClientImpl) MinSize() int {
 	return s.minSize
 }
 
-func (s *socketClient) Have(state uint8) bool {
+func (s *SocketClientImpl) Have(state uint8) bool {
 	return s.Status() == state
 }
 
-func (s *socketClient) Sts() map[string]int64 {
+func (s *SocketClientImpl) Statistics() map[string]int64 {
 	sts := make(map[string]int64)
-	s.Cnt().Copy(sts)
+	s.statistics.Copy(sts)
 	return sts
 }
 
-func (s *socketClient) SetListener(listener ClientListener) {
+func (s *SocketClientImpl) SetListener(listener ClientListener) {
 	s.listener = listener
 }
 
 // Get actual local address
-func (s *socketClient) LocalAddr() string {
+func (s *SocketClientImpl) LocalAddr() string {
 	return s.localAddr
 }
 
 // Get actual remote address
-func (s *socketClient) RemoteAddr() string {
+func (s *SocketClientImpl) RemoteAddr() string {
 	return s.remoteAddr
 }
 
-func (s *socketClient) SetTimeout(v int64) {
+func (s *SocketClientImpl) SetTimeout(v int64) {
 	s.timeout = v
 }
 
-func (s *socketClient) updateConn(conn net.Conn) {
+func (s *SocketClientImpl) updateConn(conn net.Conn) {
 	if conn != nil {
 		s.connection = conn
 		s.connectedTime = time.Now().Unix()
@@ -271,7 +259,7 @@ func (s *socketClient) updateConn(conn net.Conn) {
 	}
 }
 
-func (s *socketClient) SetConnection(conn net.Conn) {
+func (s *SocketClientImpl) SetConnection(conn net.Conn) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.updateConn(conn)
@@ -308,15 +296,15 @@ type SocketServer interface {
 	Loop(call ServerListener)
 	Read(client SocketClient, ReadAt ReadClient)
 	String() string
-	Addr() string
-	Sts() map[string]int64
+	Address() string
+	Statistics() map[string]int64
 	SetTimeout(v int64)
 }
 
 // TODO keepalive to release zombie connections.
-type socketServer struct {
+type SocketServerImpl struct {
 	lock       sync.RWMutex
-	statics    *SafeStrInt64
+	statistics *SafeStrInt64
 	address    string
 	maxClient  int
 	clients    *SafeStrMap
@@ -326,10 +314,10 @@ type socketServer struct {
 	timeout    int64 // sec for read and write timeout
 }
 
-func NewSocketServer(listen string) *socketServer {
-	return &socketServer{
+func NewSocketServer(listen string) *SocketServerImpl {
+	return &SocketServerImpl{
 		address:    listen,
-		statics:    NewSafeStrInt64(),
+		statistics: NewSafeStrInt64(),
 		maxClient:  128,
 		clients:    NewSafeStrMap(1024),
 		onClients:  make(chan SocketClient, 1024),
@@ -337,14 +325,7 @@ func NewSocketServer(listen string) *socketServer {
 	}
 }
 
-func (t *socketServer) Cnt() *SafeStrInt64 {
-	if t.statics == nil {
-		t.statics = NewSafeStrInt64()
-	}
-	return t.statics
-}
-
-func (t *socketServer) ListClient() <-chan SocketClient {
+func (t *SocketServerImpl) ListClient() <-chan SocketClient {
 	list := make(chan SocketClient, 32)
 	Go(func() {
 		t.clients.Iter(func(k string, v interface{}) {
@@ -357,19 +338,19 @@ func (t *socketServer) ListClient() <-chan SocketClient {
 	return list
 }
 
-func (t *socketServer) TotalClient() int {
+func (t *SocketServerImpl) TotalClient() int {
 	return t.clients.Len()
 }
 
-func (t *socketServer) OffClient(client SocketClient) {
-	Warn("socketServer.OffClient %s", client)
+func (t *SocketServerImpl) OffClient(client SocketClient) {
+	Warn("SocketServerImpl.OffClient %s", client)
 	if client != nil {
 		t.offClients <- client
 	}
 }
 
-func (t *socketServer) doOnClient(call ServerListener, client SocketClient) {
-	Info("socketServer.doOnClient: %s ?", client)
+func (t *SocketServerImpl) doOnClient(call ServerListener, client SocketClient) {
+	Info("SocketServerImpl.doOnClient: %s ?", client)
 	_ = t.clients.Set(client.RemoteAddr(), client)
 	if call.OnClient != nil {
 		_ = call.OnClient(client)
@@ -379,23 +360,23 @@ func (t *socketServer) doOnClient(call ServerListener, client SocketClient) {
 	}
 }
 
-func (t *socketServer) doOffClient(call ServerListener, client SocketClient) {
-	Info("socketServer.doOffClient: %s ?", client)
+func (t *SocketServerImpl) doOffClient(call ServerListener, client SocketClient) {
+	Info("SocketServerImpl.doOffClient: %s ?", client)
 	addr := client.RemoteAddr()
 	if _, ok := t.clients.GetEx(addr); ok {
-		Info("socketServer.doOffClient: close %s", addr)
-		t.statics.Add(SsClose, 1)
+		Info("SocketServerImpl.doOffClient: close %s", addr)
+		t.statistics.Add(SsClose, 1)
 		if call.OnClose != nil {
 			_ = call.OnClose(client)
 		}
 		client.Close()
 		t.clients.Del(addr)
-		t.statics.Add(SsAlive, -1)
+		t.statistics.Add(SsAlive, -1)
 	}
 }
 
-func (t *socketServer) Loop(call ServerListener) {
-	Debug("socketServer.Loop")
+func (t *SocketServerImpl) Loop(call ServerListener) {
+	Debug("SocketServerImpl.Loop")
 	defer t.close()
 	for {
 		select {
@@ -407,70 +388,70 @@ func (t *socketServer) Loop(call ServerListener) {
 	}
 }
 
-func (t *socketServer) Read(client SocketClient, ReadAt ReadClient) {
-	Log("socketServer.Read: %s", client)
+func (t *SocketServerImpl) Read(client SocketClient, ReadAt ReadClient) {
+	Log("SocketServerImpl.Read: %s", client)
 	for {
 		frame, err := client.ReadMsg()
 		if err != nil || frame.size <= 0 {
 			if frame != nil {
-				Error("socketServer.Read: %s %d", client, frame.size)
+				Error("SocketServerImpl.Read: %s %d", client, frame.size)
 			} else {
-				Error("socketServer.Read: %s %s", client, err)
+				Error("SocketServerImpl.Read: %s %s", client, err)
 			}
 			t.OffClient(client)
 			break
 		}
-		t.statics.Add(SsRecv, 1)
+		t.statistics.Add(SsRecv, 1)
 		if HasLog(LOG) {
-			Log("socketServer.Read: length: %d ", frame.size)
-			Log("socketServer.Read: frame : %x", frame)
+			Log("SocketServerImpl.Read: length: %d ", frame.size)
+			Log("SocketServerImpl.Read: frame : %x", frame)
 		}
 		if err := ReadAt(client, frame); err != nil {
-			Error("socketServer.Read: readAt %s", err)
+			Error("SocketServerImpl.Read: readAt %s", err)
 			break
 		}
 	}
 }
 
-func (t *socketServer) Close() {
+func (t *SocketServerImpl) Close() {
 	if t.close != nil {
 		t.close()
 	}
 }
 
-func (t *socketServer) Addr() string {
+func (t *SocketServerImpl) Address() string {
 	return t.address
 }
 
-func (t *socketServer) String() string {
-	return t.Addr()
+func (t *SocketServerImpl) String() string {
+	return t.Address()
 }
 
-func (t *socketServer) Sts() map[string]int64 {
+func (t *SocketServerImpl) Statistics() map[string]int64 {
 	sts := make(map[string]int64, 32)
-	t.statics.Copy(sts)
+	t.statistics.Copy(sts)
 	return sts
 }
 
-func (t *socketServer) SetTimeout(v int64) {
+func (t *SocketServerImpl) SetTimeout(v int64) {
 	t.timeout = v
 }
 
 // Previous process when accept connection,
 // and allowed accept new connection, will return true.
-func (t *socketServer) preAccept(conn net.Conn) bool {
+func (t *SocketServerImpl) preAccept(conn net.Conn) bool {
 	addr := conn.RemoteAddr()
-	Debug("socketServer.preAccept: %s", addr)
-	t.statics.Add(SsAccept, 1)
-	alive := t.statics.Get(SsAlive)
+	Debug("SocketServerImpl.preAccept: %s", addr)
+	t.statistics.Add(SsAccept, 1)
+	alive := t.statistics.Get(SsAlive)
 	if alive >= int64(t.maxClient) {
-		Debug("socketServer.preAccept: close %s", addr)
-		t.statics.Add(SsDeny, 1)
-		t.statics.Add(SsClose, 1)
+		Debug("SocketServerImpl.preAccept: close %s", addr)
+		t.statistics.Add(SsDeny, 1)
+		t.statistics.Add(SsClose, 1)
 		conn.Close()
 		return false
 	}
-	Debug("socketServer.preAccept: allow %s", addr)
-	t.statics.Add(SsAlive, 1)
+	Debug("SocketServerImpl.preAccept: allow %s", addr)
+	t.statistics.Add(SsAlive, 1)
 	return true
 }

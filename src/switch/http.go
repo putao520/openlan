@@ -218,7 +218,7 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 		pointList = append(pointList, p)
 	}
 	sort.SliceStable(pointList, func(i, j int) bool {
-		return pointList[i].Client.Addr() > pointList[j].Client.Addr()
+		return pointList[i].Client.Address() > pointList[j].Client.Address()
 	})
 	for _, p := range pointList {
 		body.Points = append(body.Points, models.NewPointSchema(p))
@@ -246,7 +246,7 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 		linkList = append(linkList, p)
 	}
 	sort.SliceStable(linkList, func(i, j int) bool {
-		return linkList[i].Client.Addr() > linkList[j].Client.Addr()
+		return linkList[i].Client.Address() > linkList[j].Client.Address()
 	})
 	for _, p := range linkList {
 		body.Links = append(body.Links, models.NewLinkSchema(p))

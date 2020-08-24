@@ -39,15 +39,15 @@ type WebConfig struct {
 // Server Implement
 
 type WebServer struct {
-	*socketServer
+	*SocketServerImpl
 	webCfg   *WebConfig
 	listener *http.Server
 }
 
 func NewWebServer(listen string, cfg *WebConfig) *WebServer {
 	t := &WebServer{
-		webCfg:       cfg,
-		socketServer: NewSocketServer(listen),
+		webCfg:           cfg,
+		SocketServerImpl: NewSocketServer(listen),
 	}
 	t.close = t.Close
 	if err := t.Listen(); err != nil {
@@ -115,18 +115,18 @@ func (t *WebServer) Accept() {
 // Client Implement
 
 type WebClient struct {
-	socketClient
+	*SocketClientImpl
 	webCfg *WebConfig
 	done   chan bool
 }
 
 func NewWebClient(addr string, cfg *WebConfig) *WebClient {
 	t := &WebClient{
-		webCfg:       cfg,
-		socketClient: NewSocketClient(addr, &StreamMessage{
+		webCfg: cfg,
+		SocketClientImpl: NewSocketClient(addr, &StreamMessage{
 			block: cfg.Block,
 		}),
-		done:         make(chan bool, 2),
+		done: make(chan bool, 2),
 	}
 	t.connector = t.Connect
 	return t
@@ -135,11 +135,11 @@ func NewWebClient(addr string, cfg *WebConfig) *WebClient {
 func NewWebClientFromConn(conn net.Conn, cfg *WebConfig) *WebClient {
 	addr := conn.RemoteAddr().String()
 	t := &WebClient{
-		webCfg:       cfg,
-		socketClient: NewSocketClient(addr, &StreamMessage{
+		webCfg: cfg,
+		SocketClientImpl: NewSocketClient(addr, &StreamMessage{
 			block: cfg.Block,
 		}),
-		done:         make(chan bool, 2),
+		done: make(chan bool, 2),
 	}
 	t.updateConn(conn)
 	t.connector = t.Connect
@@ -147,7 +147,7 @@ func NewWebClientFromConn(conn net.Conn, cfg *WebConfig) *WebClient {
 }
 
 func (t *WebClient) Connect() error {
-	if !t.retry() {
+	if !t.Retry() {
 		return nil
 	}
 	var url string

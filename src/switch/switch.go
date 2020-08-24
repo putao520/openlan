@@ -220,11 +220,11 @@ func (v *Switch) initCtrl() {
 func (v *Switch) Initialize() {
 	v.lock.Lock()
 	defer v.lock.Unlock()
+	v.initHook()
 	if v.cfg.Http != nil {
 		v.http = NewHttp(v, v.cfg)
 	}
 	v.initNetwork()
-	v.initHook()
 	// Controller
 	v.initCtrl()
 	// FireWall
@@ -251,7 +251,7 @@ func (v *Switch) onFrame(client libol.SocketClient, frame *libol.FrameMessage) e
 
 func (v *Switch) OnClient(client libol.SocketClient) error {
 	client.SetStatus(libol.ClConnected)
-	libol.Info("Switch.onClient: %s", client.Addr())
+	libol.Info("Switch.onClient: %s", client.Address())
 	return nil
 }
 
@@ -279,12 +279,13 @@ func (v *Switch) SignIn(client libol.SocketClient) error {
 }
 
 func (v *Switch) ReadClient(client libol.SocketClient, frame *libol.FrameMessage) error {
+	addr := client.Address()
 	if libol.HasLog(libol.LOG) {
-		libol.Log("Switch.ReadClient: %s %x", client.Addr(), frame.Frame())
+		libol.Log("Switch.ReadClient: %s %x", addr, frame.Frame())
 	}
 	frame.Decode()
 	if err := v.onFrame(client, frame); err != nil {
-		libol.Debug("Switch.ReadClient: %s dropping by %s", client.Addr(), err)
+		libol.Debug("Switch.ReadClient: %s dropping by %s", addr, err)
 		// send request to point login again.
 		_ = v.SignIn(client)
 		return nil
@@ -306,17 +307,18 @@ func (v *Switch) ReadClient(client libol.SocketClient, frame *libol.FrameMessage
 		}
 		return nil
 	}
-	return libol.NewErr("point %s not found.", client)
+	return libol.NewErr("point %s not found.", addr)
 }
 
 func (v *Switch) OnClose(client libol.SocketClient) error {
-	libol.Info("Switch.OnClose: %s", client)
+	addr := client.Address()
+	libol.Info("Switch.OnClose: %s", addr)
 	// already not need support free list for device.
-	uuid := storage.Point.GetUUID(client.Addr())
-	if storage.Point.GetAddr(uuid) == client.Addr() { // not has newer
+	uuid := storage.Point.GetUUID(addr)
+	if storage.Point.GetAddr(uuid) == addr { // not has newer
 		storage.Network.DelLease(uuid)
 	}
-	storage.Point.Del(client.Addr())
+	storage.Point.Del(addr)
 	return nil
 }
 
@@ -415,15 +417,16 @@ func (v *Switch) NewTap(tenant string) (network.Taper, error) {
 func (v *Switch) FreeTap(dev network.Taper) error {
 	v.lock.Lock()
 	defer v.lock.Unlock()
-	libol.Debug("Switch.FreeTap %s", dev.Name())
-
-	w, ok := v.worker[dev.Tenant()]
+	name := dev.Name()
+	tenant := dev.Tenant()
+	libol.Debug("Switch.FreeTap %s", name)
+	w, ok := v.worker[tenant]
 	if !ok {
-		return libol.NewErr("Not found bridge %s", dev.Tenant())
+		return libol.NewErr("Not found bridge %s", tenant)
 	}
 	br := w.bridge
 	_ = br.DelSlave(dev)
-	libol.Info("Switch.FreeTap: %s", dev.Name())
+	libol.Info("Switch.FreeTap: %s", name)
 	return nil
 }
 
@@ -444,8 +447,8 @@ func (v *Switch) DelLink(tenant, addr string) {
 
 func (v *Switch) ReadTap(device network.Taper, readAt func(f *libol.FrameMessage) error) {
 	defer device.Close()
-	libol.Info("Switch.ReadTap: %s", device.Name())
-
+	name := device.Name()
+	libol.Info("Switch.ReadTap: %s", name)
 	for {
 		frame := libol.NewFrameMessage()
 		n, err := device.Read(frame.Frame())
@@ -458,7 +461,7 @@ func (v *Switch) ReadTap(device network.Taper, readAt func(f *libol.FrameMessage
 			libol.Log("Switch.ReadTap: %x\n", frame.Frame()[:n])
 		}
 		if err := readAt(frame); err != nil {
-			libol.Error("Switch.ReadTap: readAt %s %s", device.Name(), err)
+			libol.Error("Switch.ReadTap: readAt %s %s", name, err)
 			break
 		}
 	}

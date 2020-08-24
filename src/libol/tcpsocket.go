@@ -16,15 +16,15 @@ type TcpConfig struct {
 // Server Implement
 
 type TcpServer struct {
-	*socketServer
+	*SocketServerImpl
 	tcpCfg   *TcpConfig
 	listener net.Listener
 }
 
 func NewTcpServer(listen string, cfg *TcpConfig) *TcpServer {
 	t := &TcpServer{
-		tcpCfg:       cfg,
-		socketServer: NewSocketServer(listen),
+		tcpCfg:           cfg,
+		SocketServerImpl: NewSocketServer(listen),
 	}
 	t.close = t.Close
 	if err := t.Listen(); err != nil {
@@ -88,14 +88,14 @@ func (t *TcpServer) Accept() {
 // Client Implement
 
 type TcpClient struct {
-	socketClient
+	*SocketClientImpl
 	tcpCfg *TcpConfig
 }
 
 func NewTcpClient(addr string, cfg *TcpConfig) *TcpClient {
 	t := &TcpClient{
-		tcpCfg:       cfg,
-		socketClient: NewSocketClient(addr, &StreamMessage{
+		tcpCfg: cfg,
+		SocketClientImpl: NewSocketClient(addr, &StreamMessage{
 			block: cfg.Block,
 		}),
 	}
@@ -106,8 +106,8 @@ func NewTcpClient(addr string, cfg *TcpConfig) *TcpClient {
 func NewTcpClientFromConn(conn net.Conn, cfg *TcpConfig) *TcpClient {
 	addr := conn.RemoteAddr().String()
 	t := &TcpClient{
-		tcpCfg:       cfg,
-		socketClient: NewSocketClient(addr, &StreamMessage{
+		tcpCfg: cfg,
+		SocketClientImpl: NewSocketClient(addr, &StreamMessage{
 			block: cfg.Block,
 		}),
 	}
@@ -117,7 +117,7 @@ func NewTcpClientFromConn(conn net.Conn, cfg *TcpConfig) *TcpClient {
 }
 
 func (t *TcpClient) Connect() error {
-	if !t.retry() {
+	if !t.Retry() {
 		return nil
 	}
 	var err error

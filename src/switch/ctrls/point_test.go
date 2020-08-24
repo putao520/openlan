@@ -28,7 +28,7 @@ func TestCtl_Point(t *testing.T) {
 	}
 	storage.Point.Add(&point)
 	time.Sleep(5 * time.Second)
-	storage.Point.Del(point.Client.Addr())
+	storage.Point.Del(point.Client.Address())
 	time.Sleep(5 * time.Second)
 	cc.Stop()
 	time.Sleep(5 * time.Second)

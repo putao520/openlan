@@ -23,7 +23,7 @@ func (l Server) List(w http.ResponseWriter, r *http.Request) {
 		Connection []interface{}    `json:"connection"`
 	}{
 		UpTime:     l.Switcher.UpTime(),
-		Statistic:  server.Sts(),
+		Statistic:  server.Statistics(),
 		Connection: make([]interface{}, 0, 1024),
 		Total:      server.TotalClient(),
 	}
@@ -40,7 +40,7 @@ func (l Server) List(w http.ResponseWriter, r *http.Request) {
 			UpTime:     u.UpTime(),
 			LocalAddr:  u.LocalAddr(),
 			RemoteAddr: u.RemoteAddr(),
-			Statistic:  u.Sts(),
+			Statistic:  u.Statistics(),
 		})
 	}
 	ResponseJson(w, data)

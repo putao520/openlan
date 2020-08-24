@@ -16,7 +16,7 @@ var defaultUdpConfig = UdpConfig{
 }
 
 type UdpServer struct {
-	*socketServer
+	*SocketServerImpl
 	udpCfg   *UdpConfig
 	listener net.Listener
 }
@@ -26,8 +26,8 @@ func NewUdpServer(listen string, cfg *UdpConfig) *UdpServer {
 		cfg = &defaultUdpConfig
 	}
 	k := &UdpServer{
-		udpCfg:       cfg,
-		socketServer: NewSocketServer(listen),
+		udpCfg:           cfg,
+		SocketServerImpl: NewSocketServer(listen),
 	}
 	k.close = k.Close
 	if err := k.Listen(); err != nil {
@@ -81,7 +81,7 @@ func (k *UdpServer) Accept() {
 // Client Implement
 
 type UdpClient struct {
-	socketClient
+	*SocketClientImpl
 	udpCfg *UdpConfig
 }
 
@@ -91,7 +91,7 @@ func NewUdpClient(addr string, cfg *UdpConfig) *UdpClient {
 	}
 	c := &UdpClient{
 		udpCfg: cfg,
-		socketClient: NewSocketClient(addr, &DataGramMessage{
+		SocketClientImpl: NewSocketClient(addr, &DataGramMessage{
 			timeout: cfg.Timeout,
 			block:   cfg.Block,
 		}),
@@ -106,7 +106,7 @@ func NewUdpClientFromConn(conn net.Conn, cfg *UdpConfig) *UdpClient {
 	}
 	addr := conn.RemoteAddr().String()
 	c := &UdpClient{
-		socketClient: NewSocketClient(addr, &DataGramMessage{
+		SocketClientImpl: NewSocketClient(addr, &DataGramMessage{
 			timeout: cfg.Timeout,
 			block:   cfg.Block,
 		}),
@@ -117,7 +117,7 @@ func NewUdpClientFromConn(conn net.Conn, cfg *UdpConfig) *UdpClient {
 }
 
 func (c *UdpClient) Connect() error {
-	if !c.retry() {
+	if !c.Retry() {
 		return nil
 	}
 	Info("UdpClient.Connect: udp://%s", c.address)

@@ -63,7 +63,7 @@ func (w *NetworkWorker) Initialize() {
 	}
 	for _, rt := range w.cfg.Routes {
 		if rt.NextHop == "" {
-			w.logger.Warn("NetworkWorker.Initialize: %s not next-hop", rt.Prefix)
+			w.logger.Warn("NetworkWorker.Initialize: %s noNextHop", rt.Prefix)
 			continue
 		}
 		n.Routes = append(n.Routes, &models.Route{
@@ -153,7 +153,7 @@ func (w *NetworkWorker) UnLoadRoutes() {
 			w.logger.Warn("NetworkWorker.UnLoadRoute: %s", err)
 			continue
 		}
-		w.logger.Info("NetworkWorker.UnLoadRoute: %s via %s", rt.Prefix, rt.NextHop)
+		w.logger.Info("NetworkWorker.UnLoadRoute: %v", rt)
 	}
 }
 

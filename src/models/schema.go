@@ -7,13 +7,13 @@ import (
 
 func NewPointSchema(p *Point) schema.Point {
 	client, dev := p.Client, p.Device
-	sts := client.Sts()
+	sts := client.Statistics()
 	return schema.Point{
 		Uptime:    p.Uptime,
 		UUID:      p.UUID,
 		Alias:     p.Alias,
 		User:      p.User,
-		Address:   client.Addr(),
+		Address:   client.Address(),
 		Device:    dev.Name(),
 		RxBytes:   sts[libol.CsRecvOkay],
 		TxBytes:   sts[libol.CsSendOkay],
@@ -26,13 +26,13 @@ func NewPointSchema(p *Point) schema.Point {
 
 func NewLinkSchema(p *Point) schema.Link {
 	client, dev := p.Client, p.Device
-	sts := client.Sts()
+	sts := client.Statistics()
 	return schema.Link{
 		UUID:      p.UUID,
 		User:      p.User,
 		Uptime:    client.UpTime(),
 		Device:    dev.Name(),
-		Address:   client.Addr(),
+		Address:   client.Address(),
 		State:     client.State(),
 		RxBytes:   sts[libol.CsRecvOkay],
 		TxBytes:   sts[libol.CsSendOkay],

@@ -21,7 +21,7 @@ var defaultKcpConfig = KcpConfig{
 }
 
 type KcpServer struct {
-	*socketServer
+	*SocketServerImpl
 	kcpCfg   *KcpConfig
 	listener *kcp.Listener
 }
@@ -31,8 +31,8 @@ func NewKcpServer(listen string, cfg *KcpConfig) *KcpServer {
 		cfg = &defaultKcpConfig
 	}
 	k := &KcpServer{
-		kcpCfg:       cfg,
-		socketServer: NewSocketServer(listen),
+		kcpCfg:           cfg,
+		SocketServerImpl: NewSocketServer(listen),
 	}
 	k.close = k.Close
 	if err := k.Listen(); err != nil {
@@ -95,7 +95,7 @@ func (k *KcpServer) Accept() {
 // Client Implement
 
 type KcpClient struct {
-	socketClient
+	*SocketClientImpl
 	kcpCfg *KcpConfig
 }
 
@@ -105,7 +105,7 @@ func NewKcpClient(addr string, cfg *KcpConfig) *KcpClient {
 	}
 	c := &KcpClient{
 		kcpCfg: cfg,
-		socketClient: NewSocketClient(addr, &StreamMessage{
+		SocketClientImpl: NewSocketClient(addr, &StreamMessage{
 			timeout: cfg.Timeout,
 		}),
 	}
@@ -119,7 +119,7 @@ func NewKcpClientFromConn(conn net.Conn, cfg *KcpConfig) *KcpClient {
 	}
 	addr := conn.RemoteAddr().String()
 	c := &KcpClient{
-		socketClient: NewSocketClient(addr, &StreamMessage{
+		SocketClientImpl: NewSocketClient(addr, &StreamMessage{
 			timeout: cfg.Timeout,
 		}),
 	}
@@ -129,7 +129,7 @@ func NewKcpClientFromConn(conn net.Conn, cfg *KcpConfig) *KcpClient {
 }
 
 func (c *KcpClient) Connect() error {
-	if !c.retry() {
+	if !c.Retry() {
 		return nil
 	}
 	Info("KcpClient.Connect: kcp://%s", c.address)
