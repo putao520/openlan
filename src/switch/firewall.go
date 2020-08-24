@@ -3,10 +3,11 @@ package _switch
 import (
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/moby/libnetwork/iptables"
+	"sync"
 )
 
 type FireWall struct {
-	lock  libol.Locker
+	lock  sync.Mutex
 	rules []libol.IPTableRule
 }
 

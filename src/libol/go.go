@@ -3,10 +3,11 @@ package libol
 import (
 	"net/http"
 	_ "net/http/pprof"
+	"sync"
 )
 
 type gos struct {
-	lock  Locker
+	lock  sync.Mutex
 	total uint64
 }
 

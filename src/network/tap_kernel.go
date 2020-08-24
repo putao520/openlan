@@ -3,10 +3,11 @@ package network
 import (
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/songgao/water"
+	"sync"
 )
 
 type KernelTap struct {
-	lock   libol.Locker
+	lock   sync.Mutex
 	device *water.Interface
 	bridge Bridger
 	tenant string

@@ -2,10 +2,11 @@ package network
 
 import (
 	"github.com/danieldin95/openlan-go/src/libol"
+	"sync"
 )
 
 type UserSpaceTap struct {
-	lock       libol.Locker
+	lock       sync.Mutex
 	writeQueue chan []byte
 	readQueue  chan []byte
 	bridge     Bridger

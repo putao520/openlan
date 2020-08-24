@@ -12,6 +12,7 @@ import (
 	"github.com/danieldin95/openlan-go/src/point/http"
 	"net"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -81,7 +82,7 @@ type SocketWorker struct {
 	// private
 	listener   SocketWorkerListener
 	client     libol.SocketClient
-	lock       libol.Locker
+	lock       sync.Mutex
 	user       *models.User
 	network    *models.Network
 	routes     map[string]*models.Route
@@ -600,7 +601,7 @@ type TunEther struct {
 
 type TapWorker struct {
 	// private
-	lock       libol.Locker
+	lock       sync.Mutex
 	device     network.Taper
 	listener   TapWorkerListener
 	ether      TunEther

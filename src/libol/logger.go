@@ -12,7 +12,6 @@ import (
 
 const (
 	PRINT = 00
-	LOCK  = 01
 	LOG   = 05
 	STACK = 06
 	DEBUG = 10
@@ -34,7 +33,6 @@ type Message struct {
 var levels = map[int]string{
 	PRINT: "PRINT",
 	LOG:   "LOG",
-	LOCK:  "LOCK",
 	DEBUG: "DEBUG",
 	STACK: "STACK",
 	CMD:   "CMD",
@@ -154,10 +152,6 @@ func Log(format string, v ...interface{}) {
 	rLogger.Log(format, v...)
 }
 
-func Lock(format string, v ...interface{}) {
-	rLogger.Lock(format, v...)
-}
-
 func Stack(format string, v ...interface{}) {
 	rLogger.Stack(format, v...)
 }
@@ -203,10 +197,6 @@ func (s *SubLogger) Print(format string, v ...interface{}) {
 
 func (s *SubLogger) Log(format string, v ...interface{}) {
 	s.logger.Write(LOG, s.Fmt(format), v...)
-}
-
-func (s *SubLogger) Lock(format string, v ...interface{}) {
-	s.logger.Write(LOCK, s.Fmt(format), v...)
 }
 
 func (s *SubLogger) Stack(format string, v ...interface{}) {
