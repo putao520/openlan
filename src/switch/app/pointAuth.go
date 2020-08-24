@@ -29,15 +29,15 @@ func (p *PointAuth) OnFrame(client libol.SocketClient, frame *libol.FrameMessage
 		action, params := frame.CmdAndParams()
 		libol.Debug("PointAuth.OnFrame: %s", action)
 		switch action {
-		case "logi=":
+		case libol.LoginReq:
 			if err := p.handleLogin(client, params); err != nil {
 				libol.Error("PointAuth.OnFrame: %s", err)
-				m := libol.NewResponseFrame("login", []byte(err.Error()))
+				m := libol.NewControlFrame(libol.LoginResp, []byte(err.Error()))
 				_ = client.WriteMsg(m)
 				//client.Close()
 				return err
 			}
-			m := libol.NewResponseFrame("login", []byte("okay"))
+			m := libol.NewControlFrame(libol.LoginResp, []byte("okay"))
 			_ = client.WriteMsg(m)
 		}
 		//If instruct is not login and already auth, continue to process.

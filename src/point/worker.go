@@ -183,7 +183,7 @@ func (t *SocketWorker) sendLeave(client libol.SocketClient) error {
 		return err
 	}
 	t.logger.Cmd("SocketWorker.leave: left: %s", body)
-	m := libol.NewRequestFrame("left", body)
+	m := libol.NewControlFrame(libol.LeftReq, body)
 	if err := client.WriteMsg(m); err != nil {
 		return err
 	}
@@ -265,7 +265,7 @@ func (t *SocketWorker) sendLogin(client libol.SocketClient) error {
 		return err
 	}
 	t.logger.Cmd("SocketWorker.toLogin: %s", body)
-	m := libol.NewRequestFrame("login", body)
+	m := libol.NewControlFrame(libol.LoginReq, body)
 	if err := client.WriteMsg(m); err != nil {
 		return err
 	}
@@ -290,7 +290,7 @@ func (t *SocketWorker) sendIpAddr(client libol.SocketClient) error {
 		return err
 	}
 	t.logger.Cmd("SocketWorker.toNetwork: %s", body)
-	m := libol.NewRequestFrame("ipaddr", body)
+	m := libol.NewControlFrame(libol.IpAddrReq, body)
 	if err := client.WriteMsg(m); err != nil {
 		return err
 	}
@@ -368,15 +368,15 @@ func (t *SocketWorker) onInstruct(frame *libol.FrameMessage) error {
 		t.logger.Cmd("SocketWorker.onInstruct %s %s", action, resp)
 	}
 	switch action {
-	case "logi:":
+	case libol.LoginResp:
 		return t.onLogin(resp)
-	case "ipad:":
+	case libol.IpAddrResp:
 		return t.onIpAddr(resp)
-	case "pong:":
+	case libol.PongResp:
 		t.record.Set(rtLive, time.Now().Unix())
-	case "sign=":
+	case libol.SignReq:
 		return t.onSignIn(resp)
-	case "left=":
+	case libol.LeftReq:
 		return t.onLeft(resp)
 	default:
 		t.logger.Warn("SocketWorker.onInstruct: %s %s", action, resp)
@@ -406,7 +406,7 @@ func (t *SocketWorker) sendPing(client libol.SocketClient) error {
 		return err
 	}
 	t.logger.Cmd("SocketWorker.doTicker: ping= %s", body)
-	m := libol.NewRequestFrame("ping", body)
+	m := libol.NewControlFrame(libol.PingReq, body)
 	if err := client.WriteMsg(m); err != nil {
 		return err
 	}

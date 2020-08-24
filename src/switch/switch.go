@@ -270,7 +270,7 @@ func (v *Switch) SignIn(client libol.SocketClient) error {
 		return err
 	}
 	libol.Cmd("Switch.SignIn: %s", body)
-	m := libol.NewRequestFrame("signin", body)
+	m := libol.NewControlFrame(libol.SignReq, body)
 	if err := client.WriteMsg(m); err != nil {
 		libol.Error("Switch.SignIn: %s", err)
 		return err
@@ -287,7 +287,9 @@ func (v *Switch) ReadClient(client libol.SocketClient, frame *libol.FrameMessage
 	if err := v.onFrame(client, frame); err != nil {
 		libol.Debug("Switch.ReadClient: %s dropping by %s", addr, err)
 		// send request to point login again.
-		_ = v.SignIn(client)
+		if frame.Action() != libol.LoginReq {
+			_ = v.SignIn(client)
+		}
 		return nil
 	}
 	if frame.IsControl() {
@@ -502,7 +504,7 @@ func (v *Switch) leftClient(client libol.SocketClient) {
 		return
 	}
 	libol.Cmd("Switch.leftClient: %s", body)
-	m := libol.NewRequestFrame("left", body)
+	m := libol.NewControlFrame(libol.LeftReq, body)
 	if err := client.WriteMsg(m); err != nil {
 		libol.Error("Switch.leftClient: %s", err)
 		return

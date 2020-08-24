@@ -32,13 +32,13 @@ func (r *WithRequest) OnFrame(client libol.SocketClient, frame *libol.FrameMessa
 		libol.Cmd("WithRequest.OnFrame: %s %s", action, body)
 	}
 	switch action {
-	case "neig=":
+	case libol.NeighborReq:
 		r.OnNeighbor(client, body)
-	case "ipad=":
+	case libol.IpAddrReq:
 		r.OnIpAddr(client, body)
-	case "left=":
+	case libol.LeftReq:
 		r.OnLeave(client, body)
-	case "logi=":
+	case libol.LoginReq:
 		libol.Debug("WithRequest.OnFrame %s: %s", action, body)
 	default:
 		r.OnDefault(client, body)
@@ -47,7 +47,7 @@ func (r *WithRequest) OnFrame(client libol.SocketClient, frame *libol.FrameMessa
 }
 
 func (r *WithRequest) OnDefault(client libol.SocketClient, data []byte) {
-	m := libol.NewResponseFrame("pong", data)
+	m := libol.NewControlFrame(libol.PongResp, data)
 	_ = client.WriteMsg(m)
 }
 
@@ -60,7 +60,7 @@ func (r *WithRequest) OnNeighbor(client libol.SocketClient, data []byte) {
 		resp = append(resp, models.NewNeighborSchema(obj))
 	}
 	if respStr, err := json.Marshal(resp); err == nil {
-		m := libol.NewResponseFrame("neighbor", respStr)
+		m := libol.NewControlFrame(libol.NeighborResp, respStr)
 		_ = client.WriteMsg(m)
 	}
 }
@@ -141,13 +141,13 @@ func (r *WithRequest) OnIpAddr(client libol.SocketClient, data []byte) {
 	if resp != nil {
 		libol.Cmd("WithRequest.OnIpAddr: resp %s", resp)
 		if respStr, err := json.Marshal(resp); err == nil {
-			m := libol.NewResponseFrame("ipaddr", respStr)
+			m := libol.NewControlFrame(libol.IpAddrResp, respStr)
 			_ = client.WriteMsg(m)
 		}
 		libol.Info("WithRequest.OnIpAddr: %s for %s", resp.IfAddr, client)
 	} else {
 		libol.Error("WithRequest.OnIpAddr: %s no free address", recv.Name)
-		m := libol.NewResponseFrame("ipaddr", []byte("no free address"))
+		m := libol.NewControlFrame(libol.IpAddrResp, []byte("no free address"))
 		_ = client.WriteMsg(m)
 	}
 }

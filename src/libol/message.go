@@ -16,6 +16,19 @@ const (
 
 var MAGIC = []byte{0xff, 0xff}
 
+const (
+	LoginReq     = "logi= "
+	LoginResp    = "logi: "
+	NeighborReq  = "neig= "
+	NeighborResp = "neig: "
+	IpAddrReq    = "ipad= "
+	IpAddrResp   = "ipad: "
+	LeftReq      = "left= "
+	SignReq      = "sign= "
+	PingReq      = "ping= "
+	PongResp     = "pong: "
+)
+
 func isControl(data []byte) bool {
 	if len(data) < 6 {
 		return false
@@ -101,7 +114,7 @@ func NewFrameMessage() *FrameMessage {
 func (m *FrameMessage) Decode() bool {
 	m.control = isControl(m.frame)
 	if m.control {
-		m.action = string(m.frame[6:11])
+		m.action = string(m.frame[6:12])
 		m.params = m.frame[12:]
 	}
 	return m.control
@@ -121,6 +134,10 @@ func (m *FrameMessage) Frame() []byte {
 
 func (m *FrameMessage) String() string {
 	return fmt.Sprintf("control: %t, frame: %x", m.control, m.frame[:20])
+}
+
+func (m *FrameMessage) Action() string {
+	return m.action
 }
 
 func (m *FrameMessage) CmdAndParams() (string, []byte) {
@@ -159,13 +176,8 @@ type ControlMessage struct {
 	params   []byte
 }
 
-func NewRequestFrame(action string, body []byte) *FrameMessage {
-	m := NewControlMessage(action, "= ", body)
-	return m.Encode()
-}
-
-func NewResponseFrame(action string, body []byte) *FrameMessage {
-	m := NewControlMessage(action, ": ", body)
+func NewControlFrame(action string, body []byte) *FrameMessage {
+	m := NewControlMessage(action[:4], action[4:], body)
 	return m.Encode()
 }
 
