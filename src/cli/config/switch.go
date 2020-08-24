@@ -170,7 +170,7 @@ type Switch struct {
 	Cert      Cert        `json:"cert"`
 	Crypt     *Crypt      `json:"crypt,omitempty"`
 	Proxy     *Proxy      `json:"proxy,omitempty"`
-	Prof      string      `json:"prof"`
+	PProf     string      `json:"pprof"`
 	Network   []*Network  `json:"network"`
 	FireWall  []FlowRules `json:"firewall"`
 	Inspect   string      `json:"inspect"`
@@ -199,7 +199,7 @@ func NewSwitch() (c Switch) {
 	flag.StringVar(&c.Log.File, "log:file", sd.Log.File, "Configure log file")
 	flag.IntVar(&c.Log.Verbose, "log:level", sd.Log.Verbose, "Configure log level")
 	flag.StringVar(&c.ConfDir, "conf:dir", sd.ConfDir, "Configure virtual switch directory")
-	flag.StringVar(&c.Prof, "prof", sd.Prof, "Configure file for CPU prof")
+	flag.StringVar(&c.PProf, "prof", sd.PProf, "Configure file for CPU prof")
 	flag.Parse()
 	c.SaveFile = fmt.Sprintf("%s/switch.json", c.ConfDir)
 	if err := c.Load(); err != nil {

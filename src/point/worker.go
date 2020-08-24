@@ -155,6 +155,7 @@ func (t *SocketWorker) Initialize() {
 func (t *SocketWorker) Start() {
 	t.lock.Lock()
 	defer t.lock.Unlock()
+	t.logger.Info("SocketWorker.Start")
 	_ = t.connect()
 	libol.Go(t.Loop)
 }
@@ -189,6 +190,7 @@ func (t *SocketWorker) sendLeave(client libol.SocketClient) error {
 }
 
 func (t *SocketWorker) leave() {
+	t.logger.Info("SocketWorker.leave")
 	if err := t.sendLeave(t.client); err != nil {
 		t.logger.Error("SocketWorker.leave: %s", err)
 	}
@@ -197,6 +199,7 @@ func (t *SocketWorker) leave() {
 func (t *SocketWorker) Stop() {
 	t.lock.Lock()
 	defer t.lock.Unlock()
+	t.logger.Info("SocketWorker.Stop")
 	t.leave()
 	t.client.Terminal()
 	t.done <- true
@@ -543,12 +546,13 @@ func (t *SocketWorker) DoWrite(frame *libol.FrameMessage) error {
 		return libol.NewErr("client is nil")
 	}
 	if t.client.Status() != libol.ClAuth {
-		t.logger.Debug("SocketWorker.Loop: dropping by unAuth")
+		t.logger.Debug("SocketWorker.DoWrite: dropping by unAuth")
 		t.lock.Unlock()
 		return nil
 	}
 	t.lock.Unlock()
 	if err := t.client.WriteMsg(frame); err != nil {
+		t.logger.Error("SocketWorker.DoWrite: %s", err)
 		t.eventQueue <- NewEvent(EventRecon, "from write")
 		return err
 	}
@@ -917,6 +921,7 @@ func (a *TapWorker) close() {
 func (a *TapWorker) Start() {
 	a.lock.Lock()
 	defer a.lock.Unlock()
+	a.logger.Info("TapWorker.Start")
 	libol.Go(a.Read)
 	libol.Go(a.Loop)
 	libol.Go(a.neighbor.Start)
@@ -925,6 +930,7 @@ func (a *TapWorker) Start() {
 func (a *TapWorker) Stop() {
 	a.lock.Lock()
 	defer a.lock.Unlock()
+	a.logger.Info("TapWorker.Stop")
 	a.done <- true
 	a.neighbor.Stop()
 	a.close()

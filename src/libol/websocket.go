@@ -122,40 +122,24 @@ type WebClient struct {
 
 func NewWebClient(addr string, cfg *WebConfig) *WebClient {
 	t := &WebClient{
-		webCfg: cfg,
-		socketClient: socketClient{
-			address: addr,
-			newTime: time.Now().Unix(),
-			dataStream: dataStream{
-				maxSize: 1514,
-				minSize: 15,
-				message: &StreamMessage{
-					block: cfg.Block,
-				},
-			},
-			status: ClInit,
-		},
-		done: make(chan bool, 2),
+		webCfg:       cfg,
+		socketClient: NewSocketClient(addr, &StreamMessage{
+			block: cfg.Block,
+		}),
+		done:         make(chan bool, 2),
 	}
 	t.connector = t.Connect
 	return t
 }
 
 func NewWebClientFromConn(conn net.Conn, cfg *WebConfig) *WebClient {
+	addr := conn.RemoteAddr().String()
 	t := &WebClient{
-		webCfg: cfg,
-		socketClient: socketClient{
-			address: conn.RemoteAddr().String(),
-			dataStream: dataStream{
-				maxSize: 1514,
-				minSize: 15,
-				message: &StreamMessage{
-					block: cfg.Block,
-				},
-			},
-			newTime: time.Now().Unix(),
-		},
-		done: make(chan bool, 2),
+		webCfg:       cfg,
+		socketClient: NewSocketClient(addr, &StreamMessage{
+			block: cfg.Block,
+		}),
+		done:         make(chan bool, 2),
 	}
 	t.updateConn(conn)
 	t.connector = t.Connect

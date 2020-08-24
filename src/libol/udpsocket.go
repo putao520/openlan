@@ -91,19 +91,10 @@ func NewUdpClient(addr string, cfg *UdpConfig) *UdpClient {
 	}
 	c := &UdpClient{
 		udpCfg: cfg,
-		socketClient: socketClient{
-			address: addr,
-			newTime: time.Now().Unix(),
-			dataStream: dataStream{
-				maxSize: 1514,
-				minSize: 15,
-				message: &DataGramMessage{
-					timeout: cfg.Timeout,
-					block:   cfg.Block,
-				},
-			},
-			status: ClInit,
-		},
+		socketClient: NewSocketClient(addr, &DataGramMessage{
+			timeout: cfg.Timeout,
+			block:   cfg.Block,
+		}),
 	}
 	c.connector = c.Connect
 	return c
@@ -113,19 +104,12 @@ func NewUdpClientFromConn(conn net.Conn, cfg *UdpConfig) *UdpClient {
 	if cfg == nil {
 		cfg = &defaultUdpConfig
 	}
+	addr := conn.RemoteAddr().String()
 	c := &UdpClient{
-		socketClient: socketClient{
-			address: conn.RemoteAddr().String(),
-			dataStream: dataStream{
-				maxSize: 1514,
-				minSize: 15,
-				message: &DataGramMessage{
-					timeout: cfg.Timeout,
-					block:   cfg.Block,
-				},
-			},
-			newTime: time.Now().Unix(),
-		},
+		socketClient: NewSocketClient(addr, &DataGramMessage{
+			timeout: cfg.Timeout,
+			block:   cfg.Block,
+		}),
 	}
 	c.updateConn(conn)
 	c.connector = c.Connect

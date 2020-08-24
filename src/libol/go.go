@@ -38,21 +38,21 @@ func Go(call func()) {
 	}()
 }
 
-type Prof struct {
+type PProf struct {
 	File string
 }
 
-func (p *Prof) Start() {
+func (p *PProf) Start() {
 	f, err := os.Create(p.File)
 	if err != nil {
-		Warn("Prof.Start %s", err)
+		Warn("PProf.Start %s", err)
 		return
 	}
 	if err := pprof.StartCPUProfile(f); err != nil {
-		Warn("Prof.Start %s", err)
+		Warn("PProf.Start %s", err)
 	}
 }
 
-func (p *Prof) Stop() {
+func (p *PProf) Stop() {
 	pprof.StopCPUProfile()
 }

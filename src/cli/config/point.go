@@ -26,7 +26,7 @@ type Point struct {
 	Log         Log       `json:"log"`
 	Http        *Http     `json:"http,omitempty"`
 	Crypt       *Crypt    `json:"crypt"`
-	Prof        string    `json:"prof"`
+	PProf       string    `json:"pprof"`
 	RequestAddr bool      `json:"-" yaml:"-"`
 	SaveFile    string    `json:"-" yaml:"-"`
 }
@@ -75,7 +75,7 @@ func NewPoint() (c *Point) {
 	flag.StringVar(&c.SaveFile, "conf", pd.SaveFile, "the configuration file")
 	flag.StringVar(&c.Crypt.Secret, "crypt:secret", pd.Crypt.Secret, "Crypt secret")
 	flag.StringVar(&c.Crypt.Algo, "crypt:algo", pd.Crypt.Algo, "Crypt algorithm")
-	flag.StringVar(&c.Prof, "prof", pd.Prof, "Configure file for CPU prof")
+	flag.StringVar(&c.PProf, "pprof", pd.PProf, "Configure file for CPU prof")
 	flag.Parse()
 	if err := c.Load(); err != nil {
 		libol.Warn("NewPoint.load %s", err)

@@ -94,38 +94,22 @@ type TcpClient struct {
 
 func NewTcpClient(addr string, cfg *TcpConfig) *TcpClient {
 	t := &TcpClient{
-		tcpCfg: cfg,
-		socketClient: socketClient{
-			address: addr,
-			newTime: time.Now().Unix(),
-			dataStream: dataStream{
-				maxSize: 1514,
-				minSize: 15,
-				message: &StreamMessage{
-					block: cfg.Block,
-				},
-			},
-			status: ClInit,
-		},
+		tcpCfg:       cfg,
+		socketClient: NewSocketClient(addr, &StreamMessage{
+			block: cfg.Block,
+		}),
 	}
 	t.connector = t.Connect
 	return t
 }
 
 func NewTcpClientFromConn(conn net.Conn, cfg *TcpConfig) *TcpClient {
+	addr := conn.RemoteAddr().String()
 	t := &TcpClient{
-		tcpCfg: cfg,
-		socketClient: socketClient{
-			address: conn.RemoteAddr().String(),
-			dataStream: dataStream{
-				maxSize: 1514,
-				minSize: 15,
-				message: &StreamMessage{
-					block: cfg.Block,
-				},
-			},
-			newTime: time.Now().Unix(),
-		},
+		tcpCfg:       cfg,
+		socketClient: NewSocketClient(addr, &StreamMessage{
+			block: cfg.Block,
+		}),
 	}
 	t.updateConn(conn)
 	t.connector = t.Connect

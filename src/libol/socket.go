@@ -134,6 +134,20 @@ type socketClient struct {
 	localAddr     string
 }
 
+func NewSocketClient(address string, message Messager) socketClient {
+	return socketClient{
+		address: address,
+		dataStream: dataStream{
+			maxSize: 1514,
+			minSize: 15,
+			message: message,
+			statics: NewSafeStrInt64(),
+		},
+		newTime: time.Now().Unix(),
+		status:  ClInit,
+	}
+}
+
 func (s *socketClient) State() string {
 	switch s.Status() {
 	case ClInit:

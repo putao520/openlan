@@ -105,18 +105,9 @@ func NewKcpClient(addr string, cfg *KcpConfig) *KcpClient {
 	}
 	c := &KcpClient{
 		kcpCfg: cfg,
-		socketClient: socketClient{
-			address: addr,
-			newTime: time.Now().Unix(),
-			dataStream: dataStream{
-				maxSize: 1514,
-				minSize: 15,
-				message: &StreamMessage{
-					timeout: cfg.Timeout,
-				},
-			},
-			status: ClInit,
-		},
+		socketClient: NewSocketClient(addr, &StreamMessage{
+			timeout: cfg.Timeout,
+		}),
 	}
 	c.connector = c.Connect
 	return c
@@ -126,18 +117,11 @@ func NewKcpClientFromConn(conn net.Conn, cfg *KcpConfig) *KcpClient {
 	if cfg == nil {
 		cfg = &defaultKcpConfig
 	}
+	addr := conn.RemoteAddr().String()
 	c := &KcpClient{
-		socketClient: socketClient{
-			address: conn.RemoteAddr().String(),
-			dataStream: dataStream{
-				maxSize: 1514,
-				minSize: 15,
-				message: &StreamMessage{
-					timeout: cfg.Timeout,
-				},
-			},
-			newTime: time.Now().Unix(),
-		},
+		socketClient: NewSocketClient(addr, &StreamMessage{
+			timeout: cfg.Timeout,
+		}),
 	}
 	c.updateConn(conn)
 	c.connector = c.Connect
