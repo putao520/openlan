@@ -11,11 +11,6 @@ import (
 func main() {
 	c := config.NewPoint()
 	p := point.NewPoint(c)
-	if c.PProf != "" {
-		f := libol.PProf{File: c.PProf}
-		f.Start()
-		defer f.Stop()
-	}
 	libol.PreNotify()
 	p.Initialize()
 	p.Start()

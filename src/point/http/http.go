@@ -5,7 +5,6 @@ import (
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/gorilla/mux"
 	"net/http"
-	"net/http/pprof"
 )
 
 type Http struct {
@@ -45,16 +44,6 @@ func (h *Http) Initialize() {
 	h.LoadRouter()
 }
 
-func (h *Http) PProf(r *mux.Router) {
-	if r != nil {
-		r.HandleFunc("/debug/pprof/", pprof.Index)
-		r.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-		r.HandleFunc("/debug/pprof/profile", pprof.Profile)
-		r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-		r.HandleFunc("/debug/pprof/trace", pprof.Trace)
-	}
-}
-
 func (h *Http) IsAuth(w http.ResponseWriter, r *http.Request) bool {
 	token, pass, ok := r.BasicAuth()
 	libol.Debug("Http.IsAuth token: %s, pass: %s", token, pass)
@@ -88,7 +77,6 @@ func (h *Http) Router() *mux.Router {
 func (h *Http) LoadRouter() {
 	router := h.Router()
 
-	h.PProf(router)
 	router.HandleFunc("/current/uuid", func(w http.ResponseWriter, r *http.Request) {
 		format := GetQueryOne(r, "format")
 		if format == "yaml" {

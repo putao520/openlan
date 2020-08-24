@@ -507,15 +507,20 @@ func (t *SocketWorker) Read() {
 			t.logger.Debug("SocketWorker.Read: %x", data)
 		}
 		t.record.Set(rtLast, time.Now().Unix())
-		if data.Size() > 0 {
-			data.Decode()
-			if data.IsControl() {
-				_ = t.onInstruct(data)
-			} else if t.listener.ReadAt != nil {
-				_ = t.listener.ReadAt(data)
-			}
+		if data.Size() <= 0 {
+			t.lock.Unlock()
+			continue
+		}
+		data.Decode()
+		if data.IsControl() {
+			_ = t.onInstruct(data)
+			t.lock.Unlock()
+			continue
 		}
 		t.lock.Unlock()
+		if t.listener.ReadAt != nil {
+			_ = t.listener.ReadAt(data)
+		}
 	}
 	if !t.isStopped() {
 		t.eventQueue <- NewEvent(EventRecon, "from read")
@@ -783,10 +788,10 @@ func (a *TapWorker) Read() {
 			a.lock.Unlock()
 			continue
 		}
+		a.lock.Unlock()
 		if a.listener.ReadAt != nil {
 			_ = a.listener.ReadAt(frame)
 		}
-		a.lock.Unlock()
 	}
 }
 
@@ -1075,6 +1080,10 @@ func (p *Worker) Initialize() {
 
 func (p *Worker) Start() {
 	p.logger.Debug("Worker.Start linux.")
+	if p.cfg.PProf != "" {
+		f := libol.PProf{Listen: p.cfg.PProf}
+		f.Start()
+	}
 	p.tapWorker.Start()
 	p.conWorker.Start()
 	if p.http != nil {

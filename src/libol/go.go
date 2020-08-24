@@ -1,8 +1,8 @@
 package libol
 
 import (
-	"os"
-	"runtime/pprof"
+	"net/http"
+	_ "net/http/pprof"
 )
 
 type gos struct {
@@ -39,20 +39,21 @@ func Go(call func()) {
 }
 
 type PProf struct {
-	File string
+	File   string
+	Listen string
 }
 
 func (p *PProf) Start() {
-	f, err := os.Create(p.File)
-	if err != nil {
-		Warn("PProf.Start %s", err)
-		return
+	if p.Listen == "" {
+		p.Listen = "localhost:6060"
 	}
-	if err := pprof.StartCPUProfile(f); err != nil {
-		Warn("PProf.Start %s", err)
-	}
+	Go(func() {
+		Info("PProf.Start %s", p.Listen)
+		if err := http.ListenAndServe(p.Listen, nil); err != nil {
+			Error("PProf.Start %s", err)
+		}
+	})
 }
 
 func (p *PProf) Stop() {
-	pprof.StopCPUProfile()
 }
