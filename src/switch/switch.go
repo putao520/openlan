@@ -286,8 +286,8 @@ func (v *Switch) ReadClient(client libol.SocketClient, frame *libol.FrameMessage
 	frame.Decode()
 	if err := v.onFrame(client, frame); err != nil {
 		libol.Debug("Switch.ReadClient: %s dropping by %s", addr, err)
-		// send request to point login again.
-		if frame.Action() != libol.LoginReq {
+		if frame.Action() == libol.PingReq {
+			// send sign message to point require login.
 			_ = v.SignIn(client)
 		}
 		return nil

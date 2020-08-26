@@ -53,7 +53,21 @@ func (t *HttpProxy) isAuth(username, password string) bool {
 	return false
 }
 
-func (t *HttpProxy) route(w http.ResponseWriter, p *http.Response) (written int64, err error) {
+func (t *HttpProxy) CheckAuth(w http.ResponseWriter, r *http.Request) bool {
+	if len(t.Users) == 0 {
+		return true
+	}
+	auth := r.Header.Get("Proxy-Authorization")
+	user, password, ok := parseBasicAuth(auth)
+	if !ok || !t.isAuth(user, password) {
+		w.Header().Set("Proxy-Authenticate", "Basic")
+		http.Error(w, "Proxy Authentication Required", http.StatusProxyAuthRequired)
+		return false
+	}
+	return true
+}
+
+func (t *HttpProxy) route(w http.ResponseWriter, p *http.Response) {
 	defer p.Body.Close()
 	for key, value := range p.Header {
 		if key == "Proxy-Authorization" {
@@ -66,7 +80,7 @@ func (t *HttpProxy) route(w http.ResponseWriter, p *http.Response) (written int6
 		}
 	}
 	w.WriteHeader(p.StatusCode)
-	return io.Copy(w, p.Body)
+	_, _ = io.Copy(w, p.Body)
 }
 
 func (t *HttpProxy) tunnel(w http.ResponseWriter, conn net.Conn) {
@@ -76,7 +90,7 @@ func (t *HttpProxy) tunnel(w http.ResponseWriter, conn net.Conn) {
 		return
 	}
 	defer src.Close()
-	t.Logger.Info("HttpProxy.tunnel %s->%s", src.RemoteAddr(), conn.RemoteAddr())
+	t.Logger.Info("HttpProxy.tunnel %s -> %s", src.RemoteAddr(), conn.RemoteAddr())
 	wait := libol.NewWaitOne(2)
 	libol.Go(func() {
 		defer wait.Done()
@@ -106,14 +120,9 @@ func (t *HttpProxy) tunnel(w http.ResponseWriter, conn net.Conn) {
 func (t *HttpProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	t.Logger.Debug("HttpProxy.ServeHTTP %v", r)
 	t.Logger.Debug("HttpProxy.ServeHTTP %v", r.URL.Host)
-	if len(t.Users) != 0 {
-		auth := r.Header.Get("Proxy-Authorization")
-		user, password, ok := parseBasicAuth(auth)
-		if !ok || !t.isAuth(user, password) {
-			w.Header().Set("Proxy-Authenticate", "Basic")
-			http.Error(w, "Proxy Authentication Required", http.StatusProxyAuthRequired)
-			return
-		}
+	if !t.CheckAuth(w, r) {
+		t.Logger.Info("HttpProxy.ServeHTTP Required %v Authentication", r.URL.Host)
+		return
 	}
 	if r.Method == "CONNECT" { //RFC-7231 Tunneling TCP based protocols through Web Proxy servers
 		conn, err := net.Dial("tcp", r.URL.Host)
@@ -131,7 +140,7 @@ func (t *HttpProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		defer transport.CloseIdleConnections()
-		_, _ = t.route(w, p)
+		t.route(w, p)
 	}
 }
 
@@ -153,7 +162,7 @@ func NewTcpProxy(listen, target string) *TcpProxy {
 func (t *TcpProxy) tunnel(src net.Conn, dst net.Conn) {
 	defer dst.Close()
 	defer src.Close()
-	t.Logger.Info("TcpProxy.tunnel %s->%s", src.RemoteAddr(), dst.RemoteAddr())
+	t.Logger.Info("TcpProxy.tunnel %s -> %s", src.RemoteAddr(), dst.RemoteAddr())
 	wait := libol.NewWaitOne(2)
 	libol.Go(func() {
 		defer wait.Done()

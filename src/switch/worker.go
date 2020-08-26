@@ -212,10 +212,9 @@ func (w *NetworkWorker) AddLink(c *config.Point) {
 func (w *NetworkWorker) DelLink(addr string) {
 	w.linksLock.Lock()
 	defer w.linksLock.Unlock()
-
 	if p, ok := w.links[addr]; ok {
 		p.Stop()
-		storage.Link.Del(p.Addr())
+		storage.Link.Del(p.UUID())
 		delete(w.links, addr)
 	}
 }

@@ -31,7 +31,6 @@ func (h Link) List(w http.ResponseWriter, r *http.Request) {
 		}
 		links = append(links, models.NewLinkSchema(l))
 	}
-
 	ResponseJson(w, links)
 }
 
@@ -54,13 +53,11 @@ func (h Link) Add(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	c := &config.Point{}
 	if err := json.Unmarshal([]byte(body), c); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	c.Default()
 	h.Switcher.AddLink(c.Network, c)
 	ResponseMsg(w, 0, "")
