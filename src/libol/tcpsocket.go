@@ -27,9 +27,6 @@ func NewTcpServer(listen string, cfg *TcpConfig) *TcpServer {
 		SocketServerImpl: NewSocketServer(listen),
 	}
 	t.close = t.Close
-	if err := t.Listen(); err != nil {
-		Debug("NewTcpServer: %s", err)
-	}
 	return t
 }
 

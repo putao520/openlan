@@ -50,9 +50,6 @@ func NewWebServer(listen string, cfg *WebConfig) *WebServer {
 		SocketServerImpl: NewSocketServer(listen),
 	}
 	t.close = t.Close
-	if err := t.Listen(); err != nil {
-		Debug("NewWebServer: %s", err)
-	}
 	return t
 }
 

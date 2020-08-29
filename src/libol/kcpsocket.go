@@ -35,9 +35,6 @@ func NewKcpServer(listen string, cfg *KcpConfig) *KcpServer {
 		SocketServerImpl: NewSocketServer(listen),
 	}
 	k.close = k.Close
-	if err := k.Listen(); err != nil {
-		Debug("NewKcpServer: %s", err)
-	}
 	return k
 }
 

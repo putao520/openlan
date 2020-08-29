@@ -30,9 +30,6 @@ func NewUdpServer(listen string, cfg *UdpConfig) *UdpServer {
 		SocketServerImpl: NewSocketServer(listen),
 	}
 	k.close = k.Close
-	if err := k.Listen(); err != nil {
-		Debug("NewUdpServer: %s", err)
-	}
 	return k
 }
 
