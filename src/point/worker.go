@@ -537,7 +537,7 @@ func (t *SocketWorker) deadCheck() {
 		return
 	}
 	if now-t.record.Get(rtReconnect) < out { // timeout and avoid send reconn frequently.
-		t.logger.Info("SocketWorker.deadCheck: reconn frequently")
+		t.logger.Cmd("SocketWorker.deadCheck: reconn frequently")
 		return
 	}
 	t.eventQueue <- NewEvent(EventRecon, "from dead check")

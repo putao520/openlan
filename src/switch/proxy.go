@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"time"
 )
 
 type HttpProxy struct {
@@ -181,10 +182,19 @@ func (t *TcpProxy) tunnel(src net.Conn, dst net.Conn) {
 }
 
 func (t *TcpProxy) Start() {
-	listen, err := net.Listen("tcp", t.Listen)
-	if err != nil {
-		t.Logger.Error("TcpProxy.Start %s", err)
-		return
+	var err error
+	var listen net.Listener
+	c := 5 * time.Second
+	for {
+		listen, err = net.Listen("tcp", t.Listen)
+		if err == nil {
+			break
+		}
+		t.Logger.Warn("TcpProxy.Start %s", err)
+		time.Sleep(c)
+		if c < time.Minute {
+			c += 10 * time.Second
+		}
 	}
 	t.Listener = listen
 	t.Logger.Info("TcpProxy.Start: %s", t.Target)
@@ -291,9 +301,17 @@ func (p *Proxy) startSocks() {
 	addr := p.cfg.Socks.Listen
 	libol.Info("Proxy.startSocks %s", addr)
 	libol.Go(func() {
-		if err := p.socks.ListenAndServe("tcp", addr); err != nil {
-			libol.Error("Proxy.startSocks %s", err)
-			return
+		c := 5 * time.Second
+		for {
+			err := p.socks.ListenAndServe("tcp", addr)
+			if err == nil {
+				break
+			}
+			libol.Warn("Proxy.startSocks %s", err)
+			time.Sleep(c)
+			if c < time.Minute {
+				c += 10 * time.Second
+			}
 		}
 	})
 }
@@ -323,8 +341,17 @@ func (p *Proxy) startHttp() {
 	libol.Info("Proxy.startHttp %s", p.http.Addr)
 	libol.Go(func() {
 		defer p.http.Shutdown(nil)
-		if err := p.http.ListenAndServe(); err != nil {
-			libol.Error("Proxy.startHttp %s", err)
+		c := 5 * time.Second
+		for {
+			err := p.http.ListenAndServe()
+			if err == nil {
+				break
+			}
+			libol.Warn("Proxy.startHttp %s", err)
+			time.Sleep(c)
+			if c < time.Minute {
+				c += 10 * time.Second
+			}
 		}
 	})
 }
@@ -334,9 +361,9 @@ func (p *Proxy) Start() {
 		return
 	}
 	libol.Info("Proxy.Start")
-	p.startTcp()
-	p.startSocks()
-	p.startHttp()
+	libol.Go(p.startTcp)
+	libol.Go(p.startSocks)
+	libol.Go(p.startHttp)
 }
 
 func (p *Proxy) stopTcp() {

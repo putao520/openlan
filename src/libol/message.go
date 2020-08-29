@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/xtaci/kcp-go/v5"
 	"net"
+	"sync"
 	"time"
 )
 
@@ -96,6 +97,9 @@ type FrameMessage struct {
 	total   int
 	frame   []byte
 	proto   *Ip4Proto
+	lock    *sync.RWMutex
+	next    *FrameMessage
+	tail    *FrameMessage
 }
 
 func NewFrameMessage() *FrameMessage {
