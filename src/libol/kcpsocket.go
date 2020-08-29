@@ -65,16 +65,18 @@ func (k *KcpServer) Close() {
 
 func (k *KcpServer) Accept() {
 	Debug("KcpServer.Accept")
-
-	for {
-		if k.listener != nil {
-			break
-		}
+	promise := Promise{
+		First:  2 * time.Second,
+		MinInt: 5 * time.Second,
+		MaxInt: 30 * time.Second,
+	}
+	promise.Done(func() error {
 		if err := k.Listen(); err != nil {
 			Warn("KcpServer.Accept: %s", err)
+			return err
 		}
-		time.Sleep(time.Second * 5)
-	}
+		return nil
+	})
 	defer k.Close()
 	for {
 		conn, err := k.listener.AcceptKCP()

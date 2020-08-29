@@ -78,15 +78,18 @@ func (t *WebServer) Close() {
 
 func (t *WebServer) Accept() {
 	Debug("WebServer.Accept")
-	for {
-		if t.listener != nil {
-			break
-		}
+	promise := Promise{
+		First:  2 * time.Second,
+		MinInt: 5 * time.Second,
+		MaxInt: 30 * time.Second,
+	}
+	promise.Done(func() error {
 		if err := t.Listen(); err != nil {
 			Warn("WebServer.Accept: %s", err)
+			return err
 		}
-		time.Sleep(time.Second * 5)
-	}
+		return nil
+	})
 	defer t.Close()
 	t.listener.Handler = websocket.Handler(func(ws *websocket.Conn) {
 		if !t.preAccept(ws) {

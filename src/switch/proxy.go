@@ -182,20 +182,20 @@ func (t *TcpProxy) tunnel(src net.Conn, dst net.Conn) {
 }
 
 func (t *TcpProxy) Start() {
-	var err error
 	var listen net.Listener
-	c := 5 * time.Second
-	for {
-		listen, err = net.Listen("tcp", t.Listen)
-		if err == nil {
-			break
-		}
-		t.Logger.Warn("TcpProxy.Start %s", err)
-		time.Sleep(c)
-		if c < time.Minute {
-			c += 10 * time.Second
-		}
+	promise := &libol.Promise{
+		First:  time.Second * 2,
+		MaxInt: time.Minute,
+		MinInt: time.Second * 10,
 	}
+	promise.Done(func() error {
+		var err error
+		listen, err = net.Listen("tcp", t.Listen)
+		if err != nil {
+			t.Logger.Warn("TcpProxy.Start %s", err)
+		}
+		return err
+	})
 	t.Listener = listen
 	t.Logger.Info("TcpProxy.Start: %s", t.Target)
 	libol.Go(func() {
@@ -301,18 +301,18 @@ func (p *Proxy) startSocks() {
 	addr := p.cfg.Socks.Listen
 	libol.Info("Proxy.startSocks %s", addr)
 	libol.Go(func() {
-		c := 5 * time.Second
-		for {
-			err := p.socks.ListenAndServe("tcp", addr)
-			if err == nil {
-				break
-			}
-			libol.Warn("Proxy.startSocks %s", err)
-			time.Sleep(c)
-			if c < time.Minute {
-				c += 10 * time.Second
-			}
+		promise := &libol.Promise{
+			First:  time.Second * 2,
+			MaxInt: time.Minute,
+			MinInt: time.Second * 10,
 		}
+		promise.Done(func() error {
+			if err := p.socks.ListenAndServe("tcp", addr); err != nil {
+				libol.Warn("Proxy.startSocks %s", err)
+				return err
+			}
+			return nil
+		})
 	})
 }
 
@@ -341,18 +341,18 @@ func (p *Proxy) startHttp() {
 	libol.Info("Proxy.startHttp %s", p.http.Addr)
 	libol.Go(func() {
 		defer p.http.Shutdown(nil)
-		c := 5 * time.Second
-		for {
-			err := p.http.ListenAndServe()
-			if err == nil {
-				break
-			}
-			libol.Warn("Proxy.startHttp %s", err)
-			time.Sleep(c)
-			if c < time.Minute {
-				c += 10 * time.Second
-			}
+		promise := &libol.Promise{
+			First:  time.Second * 2,
+			MaxInt: time.Minute,
+			MinInt: time.Second * 10,
 		}
+		promise.Done(func() error {
+			if err := p.http.ListenAndServe(); err != nil {
+				libol.Warn("Proxy.startHttp %s", err)
+				return err
+			}
+			return nil
+		})
 	})
 }
 

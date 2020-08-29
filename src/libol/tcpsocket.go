@@ -62,15 +62,18 @@ func (t *TcpServer) Close() {
 
 func (t *TcpServer) Accept() {
 	Debug("TcpServer.Accept")
-	for {
-		if t.listener != nil {
-			break
-		}
+	promise := Promise{
+		First:  2 * time.Second,
+		MinInt: 5 * time.Second,
+		MaxInt: 30 * time.Second,
+	}
+	promise.Done(func() error {
 		if err := t.Listen(); err != nil {
 			Warn("TcpServer.Accept: %s", err)
+			return err
 		}
-		time.Sleep(time.Second * 5)
-	}
+		return nil
+	})
 	defer t.Close()
 	for {
 		conn, err := t.listener.Accept()
