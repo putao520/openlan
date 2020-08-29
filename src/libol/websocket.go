@@ -78,18 +78,8 @@ func (t *WebServer) Close() {
 
 func (t *WebServer) Accept() {
 	Debug("WebServer.Accept")
-	promise := Promise{
-		First:  2 * time.Second,
-		MinInt: 5 * time.Second,
-		MaxInt: 30 * time.Second,
-	}
-	promise.Done(func() error {
-		if err := t.Listen(); err != nil {
-			Warn("WebServer.Accept: %s", err)
-			return err
-		}
-		return nil
-	})
+
+	_ = t.Listen()
 	defer t.Close()
 	t.listener.Handler = websocket.Handler(func(ws *websocket.Conn) {
 		if !t.preAccept(ws) {
@@ -103,16 +93,26 @@ func (t *WebServer) Accept() {
 		<-client.done
 		Info("WebServer.Accept: %s exit", ws.RemoteAddr())
 	})
-	if t.webCfg.Ca == nil {
-		if err := t.listener.ListenAndServe(); err != nil {
-			Error("WebServer.Accept on %s: %s", t.address, err)
-		}
-	} else {
-		ca := t.webCfg.Ca
-		if err := t.listener.ListenAndServeTLS(ca.CaCrt, ca.CaKey); err != nil {
-			Error("WebServer.Accept on %s: %s", t.address, err)
-		}
+	promise := Promise{
+		First:  2 * time.Second,
+		MinInt: 5 * time.Second,
+		MaxInt: 30 * time.Second,
 	}
+	promise.Done(func() error {
+		if t.webCfg.Ca == nil {
+			if err := t.listener.ListenAndServe(); err != nil {
+				Error("WebServer.Accept on %s: %s", t.address, err)
+				return err
+			}
+		} else {
+			ca := t.webCfg.Ca
+			if err := t.listener.ListenAndServeTLS(ca.CaCrt, ca.CaKey); err != nil {
+				Error("WebServer.Accept on %s: %s", t.address, err)
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 // Client Implement
