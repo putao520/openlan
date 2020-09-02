@@ -420,9 +420,16 @@ func (t *SocketWorker) doKeepalive() error {
 		return nil
 	}
 	t.keepalive.Update()
-	if err := t.sendPing(t.client); err != nil {
-		t.logger.Error("SocketWorker.doTicker: %s", err)
-		return err
+	if t.client.Have(libol.ClAuth) {
+		if err := t.sendPing(t.client); err != nil {
+			t.logger.Error("SocketWorker.doKeepalive: %s", err)
+			return err
+		}
+	} else {
+		if err := t.sendLogin(t.client); err != nil {
+			t.logger.Error("SocketWorker.doKeepalive: %s", err)
+			return err
+		}
 	}
 	return nil
 }
@@ -553,7 +560,7 @@ func (t *SocketWorker) DoWrite(frame *libol.FrameMessage) error {
 		t.lock.Unlock()
 		return libol.NewErr("client is nil")
 	}
-	if t.client.Status() != libol.ClAuth {
+	if !t.client.Have(libol.ClAuth) {
 		t.logger.Debug("SocketWorker.DoWrite: dropping by unAuth")
 		t.lock.Unlock()
 		return nil
