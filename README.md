@@ -85,7 +85,7 @@ OpenLAN提供一种局域网数据报文在广域网的传输实现，并能够�
 
  把它保存在文件`point.json`中，并与程序`point.windows.x86_64.exe`在同一个目录下。 
 
-### 点击Point程序执行
+### 点击OLP程序执行
 
   在打开的console终端中看到`login: success`字样，代表登录成功。如下：
   
@@ -128,7 +128,7 @@ OpenLAN提供一种局域网数据报文在广域网的传输实现，并能够�
     3. 运行point程序即可。
 
 ## 在Linux系统中
-### 安装vSwitch并运行
+### 安装OLS并运行
 
     [root@office ~]# wget https://github.com/danieldin95/openlan-go/releases/download/v4.3.16/openlan-vswitch-4.3.16-1.el7.x86_64.rpm
     [root@office ~]# yum install ./openlan-vswitch-4.3.16-1.el7.x86_64.rpm
@@ -165,7 +165,7 @@ OpenLAN提供一种局域网数据报文在广域网的传输实现，并能够�
     [root@office ~]# systemctl enable vswitch
     [root@office ~]# systemctl start vswitch
 
-### 安装Point并运行
+### 安装OLP并运行
 
     [root@home ~]# wget https://github.com/danieldin95/openlan-go/releases/download/v4.3.16/openlan-point-4.3.16-1.el7.x86_64.rpm
     [root@home ~]# yum install ./openlan-point-4.3.16-1.el7.x86_64.rpm
@@ -184,13 +184,13 @@ OpenLAN提供一种局域网数据报文在广域网的传输实现，并能够�
     [root@home ~]# systemctl enable point
     [root@home ~]# systemctl start point
   
-  测试网络
+  测试网络可达
   
     [root@home ~]# ping 192.168.1.20
 
 ## 在MacOS系统中
 
-  在终端中运行Point
+  在终端中运行OLP
 
     admindeMac:~ admin$ cat ./point.json
     {
@@ -203,29 +203,21 @@ OpenLAN提供一种局域网数据报文在广域网的传输实现，并能够�
     admindeMac:~ admin$ 
     admindeMac:~ admin$ sudo ./point.darwin.x86_64
 
-  测试网络
+  测试网络可达
 
     admindeMac:~ admin$ ping 192.168.1.10
 
-  *说明*
 
-     由于MacOS不支持tap设备，所以必须要配置点到点的地址，其中if.addr的第一个地址为本地地址，第二个为远端地址。
-     如果需要与同一网络下所有主机通信，可以手动配置路由.
-
-  添加子网路由：
-
-    admindeMac:~ admin$ sudo route add -net 192.168.1.0/24 -iface utun1
-
-  测试与同网段其他主机的连通性
+  测试与同网段其他主机的可达
 
     admindeMac:~ admin$ ping 192.168.1.20
     admindeMac:~ admin$ ping 192.168.1.21
  
-# 从源码编译它
+# 获取源码
 
     [root@localhost ~]# go get -u -v github.com/danieldin95/openlan-go  
 
-## 在Linux系统中
+## 编译程序
 
    只编译程序
     
@@ -241,9 +233,6 @@ OpenLAN提供一种局域网数据报文在广域网的传输实现，并能够�
     [root@localhost openlan-go]# make windows
     [root@localhost openlan-go]# make darwin
     
-## 在Windows系统中
-    
-    L:\openlan-go> go build -o ./resource/point.windows.x86_64.exe main/point_windows.go
 
 # 欢迎捐赠
 
