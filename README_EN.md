@@ -5,7 +5,7 @@
 
 The OpenLAN project help you to build a local area network via the Internet.  
 
-# Terminology
+## Terminology
 
 * OLS: OpenLAN Switch
 * OLP: OpenLAN Point
