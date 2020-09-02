@@ -45,10 +45,10 @@ type Network struct {
 	Name     string        `json:"name"`
 	Bridge   Bridge        `json:"bridge"`
 	Subnet   IpSubnet      `json:"subnet"`
-	Links    []*Point      `json:"links"`
-	Hosts    []HostLease   `json:"hosts"`
-	Routes   []PrefixRoute `json:"routes"`
-	Password []Password    `json:"password"`
+	Links    []*Point      `json:"links,omitempty"`
+	Hosts    []HostLease   `json:"hosts,omitempty"`
+	Routes   []PrefixRoute `json:"routes,omitempty"`
+	Password []Password    `json:"password,omitempty"`
 }
 
 func (n *Network) Right() {
@@ -84,6 +84,18 @@ type Cert struct {
 	KeyFile string `json:"key"`
 }
 
+func (c *Cert) Right() {
+	if c.Dir == "" {
+		return
+	}
+	if c.CrtFile == "" {
+		c.CrtFile = fmt.Sprintf("%s/crt.pem", c.Dir)
+	}
+	if c.KeyFile == "" {
+		c.KeyFile = fmt.Sprintf("%s/private.key", c.Dir)
+	}
+}
+
 type FlowRules struct {
 	Table    string `json:"table"`
 	Chain    string `json:"chain"`
@@ -105,6 +117,7 @@ type Socks struct {
 type HttpProxy struct {
 	Listen string   `json:"listen,omitempty"`
 	Auth   Password `json:"auth,omitempty"`
+	Cert   *Cert    `json:"cert,omitempty"`
 }
 
 type TcpProxy struct {
@@ -126,6 +139,9 @@ func (p *Proxy) Right() {
 	libol.Debug("Proxy.Right Http %v", p.Http)
 	if p.Http != nil {
 		RightAddr(&p.Http.Listen, 11082)
+		if p.Http.Cert != nil {
+			p.Http.Cert.Right()
+		}
 	}
 	libol.Debug("Proxy.Right Tcp %v", p.Tcp)
 }
@@ -161,18 +177,18 @@ func (p *Perf) Right() {
 
 type Switch struct {
 	Alias     string      `json:"alias"`
-	Perf      *Perf       `json:"perf"`
+	Perf      *Perf       `json:"perf,omitempty"`
 	Protocol  string      `json:"protocol"` // tcp, tls, udp, kcp, ws and wss.
 	Listen    string      `json:"listen"`
 	Timeout   int         `json:"timeout"`
 	Http      *Http       `json:"http,omitempty"`
 	Log       Log         `json:"log"`
-	Cert      Cert        `json:"cert"`
+	Cert      *Cert       `json:"cert,omitempty"`
 	Crypt     *Crypt      `json:"crypt,omitempty"`
 	Proxy     *Proxy      `json:"proxy,omitempty"`
 	PProf     string      `json:"pprof"`
-	Network   []*Network  `json:"network"`
-	FireWall  []FlowRules `json:"firewall"`
+	Network   []*Network  `json:"network,omitempty"`
+	FireWall  []FlowRules `json:"firewall,omitempty"`
 	Inspect   string      `json:"inspect"`
 	ConfDir   string      `json:"-" yaml:"-"`
 	TokenFile string      `json:"-" yaml:"-"`
@@ -222,9 +238,8 @@ func (c *Switch) Right() {
 	libol.Debug("Proxy.Right Http %v", c.Http)
 	c.TokenFile = fmt.Sprintf("%s/token", c.ConfDir)
 	c.SaveFile = fmt.Sprintf("%s/switch.json", c.ConfDir)
-	if c.Cert.Dir != "" {
-		c.Cert.CrtFile = fmt.Sprintf("%s/crt.pem", c.Cert.Dir)
-		c.Cert.KeyFile = fmt.Sprintf("%s/private.key", c.Cert.Dir)
+	if c.Cert != nil {
+		c.Cert.Right()
 		// default is tls if cert configured
 		if c.Protocol == "" {
 			c.Protocol = "tls"

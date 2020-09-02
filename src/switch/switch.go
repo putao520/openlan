@@ -51,8 +51,10 @@ func GetSocketServer(c config.Switch) libol.SocketServer {
 		return libol.NewWebServer(c.Listen, cfg)
 	default:
 		cfg := &libol.TcpConfig{
-			Tls:   config.GetTlsCfg(c.Cert),
 			Block: config.GetBlock(c.Crypt),
+		}
+		if c.Cert != nil {
+			cfg.Tls = config.GetTlsCfg(*c.Cert)
 		}
 		return libol.NewTcpServer(c.Listen, cfg)
 	}

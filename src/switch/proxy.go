@@ -338,7 +338,12 @@ func (p *Proxy) startHttp() {
 	if p.http == nil {
 		return
 	}
-	libol.Info("Proxy.startHttp %s", p.http.Addr)
+	crt := p.cfg.Http.Cert
+	if crt == nil || crt.KeyFile == "" {
+		libol.Info("Proxy.startHttp %s", p.http.Addr)
+	} else {
+		libol.Info("Proxy.startHttps %s", p.http.Addr)
+	}
 	libol.Go(func() {
 		defer p.http.Shutdown(nil)
 		promise := &libol.Promise{
@@ -347,9 +352,16 @@ func (p *Proxy) startHttp() {
 			MinInt: time.Second * 10,
 		}
 		promise.Done(func() error {
-			if err := p.http.ListenAndServe(); err != nil {
-				libol.Warn("Proxy.startHttp %s", err)
-				return err
+			if crt == nil || crt.KeyFile == "" {
+				if err := p.http.ListenAndServe(); err != nil {
+					libol.Warn("Proxy.startHttp %s", err)
+					return err
+				}
+			} else {
+				if err := p.http.ListenAndServeTLS(crt.CrtFile, crt.KeyFile); err != nil {
+					libol.Error("Proxy.startHttps %s", err)
+					return err
+				}
 			}
 			return nil
 		})

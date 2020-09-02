@@ -25,7 +25,7 @@ type Point struct {
 	Interface   Interface `json:"interface"`
 	Log         Log       `json:"log"`
 	Http        *Http     `json:"http,omitempty"`
-	Crypt       *Crypt    `json:"crypt"`
+	Crypt       *Crypt    `json:"crypt,omitempty"`
 	PProf       string    `json:"pprof"`
 	RequestAddr bool      `json:"-" yaml:"-"`
 	SaveFile    string    `json:"-" yaml:"-"`
