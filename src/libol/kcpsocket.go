@@ -131,7 +131,7 @@ func (c *KcpClient) Connect() error {
 	if !c.Retry() {
 		return nil
 	}
-	Info("KcpClient.Connect: kcp://%s", c.address)
+	c.out.Info("KcpClient.Connect: kcp://%s", c.address)
 	conn, err := kcp.DialWithOptions(
 		c.address,
 		c.kcpCfg.Block,
@@ -151,13 +151,13 @@ func (c *KcpClient) Connect() error {
 }
 
 func (c *KcpClient) Close() {
-	Info("KcpClient.Close: %s %v", c.address, c.IsOk())
+	c.out.Info("KcpClient.Close: %v", c.IsOk())
 	c.lock.Lock()
 	if c.connection != nil {
 		if c.status != ClTerminal {
 			c.status = ClClosed
 		}
-		Info("KcpClient.Close: %s", c.address)
+		c.out.Info("KcpClient.Close")
 		_ = c.connection.Close()
 		c.connection = nil
 		c.private = nil

@@ -120,7 +120,7 @@ func (c *UdpClient) Connect() error {
 	if !c.Retry() {
 		return nil
 	}
-	Info("UdpClient.Connect: udp://%s", c.address)
+	c.out.Info("UdpClient.Connect: udp://%s", c.address)
 	conn, err := net.Dial("udp", c.address)
 	if err != nil {
 		return err
@@ -133,13 +133,13 @@ func (c *UdpClient) Connect() error {
 }
 
 func (c *UdpClient) Close() {
-	Info("UdpClient.Close: %s %v", c.address, c.IsOk())
+	c.out.Info("UdpClient.Close: %v", c.IsOk())
 	c.lock.Lock()
 	if c.connection != nil {
 		if c.status != ClTerminal {
 			c.status = ClClosed
 		}
-		Info("UdpClient.Close: %s", c.address)
+		c.out.Info("UdpClient.Close")
 		_ = c.connection.Close()
 		c.connection = nil
 		c.private = nil

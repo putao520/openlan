@@ -332,12 +332,12 @@ func (t *SocketWorker) onLogin(resp []byte) error {
 
 func (t *SocketWorker) onIpAddr(resp []byte) error {
 	if !t.pinCfg.RequestAddr {
-		t.out.Info("SocketWorker.onIpAddr: not allowed")
+		t.out.Info("SocketWorker.onIpAddr: notAllowed")
 		return nil
 	}
 	n := &models.Network{}
 	if err := json.Unmarshal(resp, n); err != nil {
-		return libol.NewErr("SocketWorker.onInstruct: Invalid json data.")
+		return libol.NewErr("SocketWorker.onInstruct: invalid json data.")
 	}
 	t.network = n
 	if t.listener.OnIpAddr != nil {
@@ -347,15 +347,15 @@ func (t *SocketWorker) onIpAddr(resp []byte) error {
 }
 
 func (t *SocketWorker) onLeft(resp []byte) error {
-	client := t.client
-	t.out.Info("SocketWorker.onLeft: %s %s", client.String(), resp)
+	t.out.Info("SocketWorker.onLeft")
+	t.out.Cmd("SocketWorker.onLeft: %s", resp)
 	t.close()
 	return nil
 }
 
 func (t *SocketWorker) onSignIn(resp []byte) error {
-	client := t.client
-	t.out.Info("SocketWorker.onSignIn: %s %s", client.String(), resp)
+	t.out.Info("SocketWorker.onSignIn")
+	t.out.Cmd("SocketWorker.onSignIn: %s", resp)
 	t.eventQueue <- NewEvent(EventSignIn, "request from server")
 	return nil
 }

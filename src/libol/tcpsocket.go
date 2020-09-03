@@ -123,10 +123,10 @@ func (t *TcpClient) Connect() error {
 	var err error
 	var conn net.Conn
 	if t.tcpCfg.Tls != nil {
-		Info("TcpClient.Connect: tls://%s", t.address)
+		t.out.Info("TcpClient.Connect: tls://%s", t.address)
 		conn, err = tls.Dial("tcp", t.address, t.tcpCfg.Tls)
 	} else {
-		Info("TcpClient.Connect: tcp://%s", t.address)
+		t.out.Info("TcpClient.Connect: tcp://%s", t.address)
 		conn, err = net.Dial("tcp", t.address)
 	}
 	if err != nil {
@@ -140,7 +140,7 @@ func (t *TcpClient) Connect() error {
 }
 
 func (t *TcpClient) Close() {
-	Info("TcpClient.Close: %s %v", t.address, t.IsOk())
+	t.out.Info("TcpClient.Close: %v", t.IsOk())
 	t.lock.Lock()
 	if t.connection != nil {
 		if t.status != ClTerminal {
@@ -153,7 +153,7 @@ func (t *TcpClient) Close() {
 		if t.listener.OnClose != nil {
 			_ = t.listener.OnClose(t)
 		}
-		Info("TcpClient.Close: %s %d", t.address, t.status)
+		t.out.Info("TcpClient.Close: %d", t.status)
 	} else {
 		t.lock.Unlock()
 	}

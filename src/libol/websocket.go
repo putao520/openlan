@@ -152,10 +152,10 @@ func (t *WebClient) Connect() error {
 	}
 	var url string
 	if t.webCfg.Ca != nil {
-		Info("WebClient.Connect: wss://%s", t.address)
+		t.out.Info("WebClient.Connect: wss://%s", t.address)
 		url = "wss://" + t.address
 	} else {
-		Info("WebClient.Connect: ws://%s", t.address)
+		t.out.Info("WebClient.Connect: ws://%s", t.address)
 		url = "ws://" + t.address
 	}
 	config, err := websocket.NewConfig(url, url)
@@ -175,7 +175,7 @@ func (t *WebClient) Connect() error {
 }
 
 func (t *WebClient) Close() {
-	Info("WebClient.Close: %s %v", t.address, t.IsOk())
+	t.out.Info("WebClient.Close: %v", t.IsOk())
 	t.lock.Lock()
 	if t.connection != nil {
 		if t.status != ClTerminal {
@@ -189,7 +189,7 @@ func (t *WebClient) Close() {
 		if t.listener.OnClose != nil {
 			_ = t.listener.OnClose(t)
 		}
-		Info("WebClient.Close: %s %d", t.address, t.status)
+		t.out.Info("WebClient.Close: %d", t.status)
 	} else {
 		t.lock.Unlock()
 	}
