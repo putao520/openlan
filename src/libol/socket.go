@@ -54,6 +54,7 @@ type SocketClient interface {
 	Statistics() map[string]int64
 	SetListener(listener ClientListener)
 	SetTimeout(v int64)
+	Out() *SubLogger
 }
 
 type StreamSocket struct {
@@ -63,6 +64,7 @@ type StreamSocket struct {
 	maxSize    int
 	minSize    int
 	connector  func() error
+	out        *SubLogger
 }
 
 func (t *StreamSocket) String() string {
@@ -134,10 +136,18 @@ func NewSocketClient(address string, message Messager) *SocketClientImpl {
 			minSize:    15,
 			message:    message,
 			statistics: NewSafeStrInt64(),
+			out:        NewSubLogger(address),
 		},
 		newTime: time.Now().Unix(),
 		status:  ClInit,
 	}
+}
+
+func (t *SocketClientImpl) Out() *SubLogger {
+	if t.out == nil {
+		t.out = NewSubLogger(t.address)
+	}
+	return t.out
 }
 
 func (s *SocketClientImpl) State() string {

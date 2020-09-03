@@ -21,15 +21,16 @@ func NewWithRequest(m Master, c config.Switch) *WithRequest {
 }
 
 func (r *WithRequest) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) error {
+	out := client.Out()
 	if frame.IsEthernet() {
 		return nil
 	}
-	if libol.HasLog(libol.DEBUG) {
-		libol.Log("WithRequest.OnFrame %s.", frame)
+	if out.Has(libol.DEBUG) {
+		out.Log("WithRequest.OnFrame %s.", frame)
 	}
 	action, body := frame.CmdAndParams()
-	if libol.HasLog(libol.CMD) {
-		libol.Cmd("WithRequest.OnFrame: %s %s", action, body)
+	if out.Has(libol.CMD) {
+		out.Cmd("WithRequest.OnFrame: %s %s", action, body)
 	}
 	switch action {
 	case libol.NeighborReq:
@@ -39,7 +40,7 @@ func (r *WithRequest) OnFrame(client libol.SocketClient, frame *libol.FrameMessa
 	case libol.LeftReq:
 		r.OnLeave(client, body)
 	case libol.LoginReq:
-		libol.Debug("WithRequest.OnFrame %s: %s", action, body)
+		out.Debug("WithRequest.OnFrame %s: %s", action, body)
 	default:
 		r.OnDefault(client, body)
 	}
@@ -100,10 +101,11 @@ func (r *WithRequest) GetLease(ifAddr string, p *models.Point, n *models.Network
 }
 func (r *WithRequest) OnIpAddr(client libol.SocketClient, data []byte) {
 	var resp *models.Network
-	libol.Info("WithRequest.OnIpAddr: %s from %s", data, client)
+	out := client.Out()
+	out.Info("WithRequest.OnIpAddr: %s", data)
 	recv := models.NewNetwork("", "")
 	if err := json.Unmarshal(data, recv); err != nil {
-		libol.Error("WithRequest.OnIpAddr: invalid json data.")
+		out.Error("WithRequest.OnIpAddr: invalid json data.")
 		return
 	}
 	if recv.Name == "" {
@@ -114,13 +116,13 @@ func (r *WithRequest) OnIpAddr(client libol.SocketClient, data []byte) {
 	}
 	n := storage.Network.Get(recv.Name)
 	if n == nil {
-		libol.Error("WithRequest.OnIpAddr: invalid network %s.", recv.Name)
+		out.Error("WithRequest.OnIpAddr: invalid network %s.", recv.Name)
 		return
 	}
-	libol.Cmd("WithRequest.OnIpAddr: find %s", n)
+	out.Cmd("WithRequest.OnIpAddr: find %s", n)
 	p := storage.Point.Get(client.Address())
 	if p == nil {
-		libol.Error("WithRequest.OnIpAddr: invalid point %s.", client)
+		out.Error("WithRequest.OnIpAddr: point notFound")
 		return
 	}
 	lease := r.GetLease(recv.IfAddr, p, n)
@@ -139,20 +141,21 @@ func (r *WithRequest) OnIpAddr(client libol.SocketClient, data []byte) {
 		resp = recv
 	}
 	if resp != nil {
-		libol.Cmd("WithRequest.OnIpAddr: resp %s", resp)
+		out.Cmd("WithRequest.OnIpAddr: resp %s", resp)
 		if respStr, err := json.Marshal(resp); err == nil {
 			m := libol.NewControlFrame(libol.IpAddrResp, respStr)
 			_ = client.WriteMsg(m)
 		}
-		libol.Info("WithRequest.OnIpAddr: %s for %s", resp.IfAddr, client)
+		out.Info("WithRequest.OnIpAddr: %s", resp.IfAddr)
 	} else {
-		libol.Error("WithRequest.OnIpAddr: %s no free address", recv.Name)
+		out.Error("WithRequest.OnIpAddr: %s no free address", recv.Name)
 		m := libol.NewControlFrame(libol.IpAddrResp, []byte("no free address"))
 		_ = client.WriteMsg(m)
 	}
 }
 
 func (r *WithRequest) OnLeave(client libol.SocketClient, data []byte) {
-	libol.Info("WithRequest.OnLeave: %s", client.RemoteAddr())
+	out := client.Out()
+	out.Info("WithRequest.OnLeave")
 	r.master.OffClient(client)
 }

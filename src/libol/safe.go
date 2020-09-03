@@ -253,3 +253,13 @@ func (s *SafeStrInt64) Copy(dst map[string]int64) {
 		dst[k] = v
 	}
 }
+
+func (s *SafeStrInt64) Data() map[string]int64 {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	dst := make(map[string]int64, 32)
+	for k, v := range s.data {
+		dst[k] = v
+	}
+	return dst
+}

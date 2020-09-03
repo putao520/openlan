@@ -81,7 +81,6 @@ func (o *Online) pop() {
 func (o *Online) AddLine(line *models.Line) {
 	o.lock.Lock()
 	defer o.lock.Unlock()
-
 	if libol.HasLog(libol.LOG) {
 		libol.Log("Online.AddLine %s", line)
 		libol.Log("Online.AddLine %d", o.lineList.Len())

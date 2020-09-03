@@ -82,6 +82,7 @@ type Switch struct {
 	worker   map[string]*NetworkWorker
 	uuid     string
 	newTime  int64
+	out      *libol.SubLogger
 }
 
 func NewSwitch(c config.Switch) *Switch {
@@ -95,13 +96,15 @@ func NewSwitch(c config.Switch) *Switch {
 		server:  server,
 		newTime: time.Now().Unix(),
 		proxy:   NewProxy(c.Proxy),
+		hooks:   make([]Hook, 0, 64),
+		out:     libol.NewSubLogger(c.Alias),
 	}
 	return &v
 }
 
 func (v *Switch) acceptBridge(bridge string) {
 	rules := v.firewall.rules
-	libol.Info("Switch.acceptBridge %s", bridge)
+	v.out.Info("Switch.acceptBridge %s", bridge)
 	rules = append(rules, libol.IPTableRule{
 		Table: "filter",
 		Chain: "FORWARD",
@@ -112,7 +115,7 @@ func (v *Switch) acceptBridge(bridge string) {
 
 func (v *Switch) acceptRoute(source, prefix string) {
 	rules := v.firewall.rules
-	libol.Info("Switch.acceptRoute %s, %s", source, prefix)
+	v.out.Info("Switch.acceptRoute %s, %s", source, prefix)
 	// allowed forward between source and prefix.
 	rules = append(rules, libol.IPTableRule{
 		Table:  "filter",
@@ -175,21 +178,24 @@ func (v *Switch) initNetwork() {
 }
 
 func (v *Switch) initHook() {
-	v.hooks = make([]Hook, 0, 64)
+	// Append accessed auth for point
 	v.apps.Auth = app.NewPointAuth(v, v.cfg)
 	v.hooks = append(v.hooks, v.apps.Auth.OnFrame)
+	// Append request process
 	v.apps.Request = app.NewWithRequest(v, v.cfg)
 	v.hooks = append(v.hooks, v.apps.Request.OnFrame)
+	// Check whether inspect neighbor
 	if strings.Contains(v.cfg.Inspect, "neighbor") {
 		v.apps.Neighbor = app.NewNeighbors(v, v.cfg)
 		v.hooks = append(v.hooks, v.apps.Neighbor.OnFrame)
 	}
+	// Check whether inspect online flow by five-tuple.
 	if strings.Contains(v.cfg.Inspect, "online") {
 		v.apps.OnLines = app.NewOnline(v, v.cfg)
 		v.hooks = append(v.hooks, v.apps.OnLines.OnFrame)
 	}
 	for i, h := range v.hooks {
-		libol.Info("Switch.initHook: id %d, func %s", i, libol.FunName(h))
+		v.out.Debug("Switch.initHook: id %d, func %s", i, libol.FunName(h))
 	}
 }
 
@@ -208,7 +214,7 @@ func (v *Switch) initFirewall() {
 			Output:   rule.Output,
 		})
 	}
-	libol.Info("Switch.initFirewall total %d rules", len(v.firewall.rules))
+	v.out.Info("Switch.initFirewall total %d rules", len(v.firewall.rules))
 }
 
 func (v *Switch) initCtrl() {
@@ -239,8 +245,8 @@ func (v *Switch) Initialize() {
 
 func (v *Switch) onFrame(client libol.SocketClient, frame *libol.FrameMessage) error {
 	for _, h := range v.hooks {
-		if libol.HasLog(libol.LOG) {
-			libol.Log("Switch.onFrame: %s", libol.FunName(h))
+		if v.out.Has(libol.LOG) {
+			v.out.Log("Switch.onFrame: %s", libol.FunName(h))
 		}
 		if h != nil {
 			if err := h(client, frame); err != nil {
@@ -253,12 +259,12 @@ func (v *Switch) onFrame(client libol.SocketClient, frame *libol.FrameMessage) e
 
 func (v *Switch) OnClient(client libol.SocketClient) error {
 	client.SetStatus(libol.ClConnected)
-	libol.Info("Switch.onClient: %s", client.Address())
+	v.out.Info("Switch.onClient: %s", client.Address())
 	return nil
 }
 
 func (v *Switch) SignIn(client libol.SocketClient) error {
-	libol.Cmd("Switch.SignIn %s", client.String())
+	v.out.Cmd("Switch.SignIn %s", client.String())
 	data := struct {
 		Address string `json:"address"`
 		Switch  string `json:"switch"`
@@ -268,13 +274,13 @@ func (v *Switch) SignIn(client libol.SocketClient) error {
 	}
 	body, err := json.Marshal(data)
 	if err != nil {
-		libol.Error("Switch.SignIn: %s", err)
+		v.out.Error("Switch.SignIn: %s", err)
 		return err
 	}
-	libol.Cmd("Switch.SignIn: %s", body)
+	v.out.Cmd("Switch.SignIn: %s", body)
 	m := libol.NewControlFrame(libol.SignReq, body)
 	if err := client.WriteMsg(m); err != nil {
-		libol.Error("Switch.SignIn: %s", err)
+		v.out.Error("Switch.SignIn: %s", err)
 		return err
 	}
 	return nil
@@ -282,12 +288,12 @@ func (v *Switch) SignIn(client libol.SocketClient) error {
 
 func (v *Switch) ReadClient(client libol.SocketClient, frame *libol.FrameMessage) error {
 	addr := client.Address()
-	if libol.HasLog(libol.LOG) {
-		libol.Log("Switch.ReadClient: %s %x", addr, frame.Frame())
+	if v.out.Has(libol.LOG) {
+		v.out.Log("Switch.ReadClient: %s %x", addr, frame.Frame())
 	}
 	frame.Decode()
 	if err := v.onFrame(client, frame); err != nil {
-		libol.Debug("Switch.ReadClient: %s dropping by %s", addr, err)
+		v.out.Debug("Switch.ReadClient: %s dropping by %s", addr, err)
 		if frame.Action() == libol.PingReq {
 			// send sign message to point require login.
 			_ = v.SignIn(client)
@@ -306,7 +312,7 @@ func (v *Switch) ReadClient(client libol.SocketClient, frame *libol.FrameMessage
 			return libol.NewErr("Tap devices is nil")
 		}
 		if _, err := device.Write(frame.Frame()); err != nil {
-			libol.Error("Switch.ReadClient: %s", err)
+			v.out.Error("Switch.ReadClient: %s", err)
 			return err
 		}
 		return nil
@@ -316,7 +322,7 @@ func (v *Switch) ReadClient(client libol.SocketClient, frame *libol.FrameMessage
 
 func (v *Switch) OnClose(client libol.SocketClient) error {
 	addr := client.Address()
-	libol.Info("Switch.OnClose: %s", addr)
+	v.out.Info("Switch.OnClose: %s", addr)
 	// already not need support free list for device.
 	uuid := storage.Point.GetUUID(addr)
 	if storage.Point.GetAddr(uuid) == addr { // not has newer
@@ -330,7 +336,7 @@ func (v *Switch) Start() {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
-	libol.Debug("Switch.Start")
+	v.out.Debug("Switch.Start")
 	if v.cfg.PProf != "" {
 		f := libol.PProf{Listen: v.cfg.PProf}
 		f.Start()
@@ -361,7 +367,7 @@ func (v *Switch) Stop() {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
-	libol.Debug("Switch.Stop")
+	v.out.Debug("Switch.Stop")
 	if v.proxy != nil {
 		v.proxy.Stop()
 	}
@@ -400,7 +406,7 @@ func (v *Switch) Server() libol.SocketServer {
 func (v *Switch) NewTap(tenant string) (network.Taper, error) {
 	v.lock.Lock()
 	defer v.lock.Unlock()
-	libol.Debug("Switch.NewTap")
+	v.out.Debug("Switch.NewTap")
 
 	// already not need support free list for device.
 	// dropped firstly packages during 15s because of forwarding delay.
@@ -411,14 +417,14 @@ func (v *Switch) NewTap(tenant string) (network.Taper, error) {
 	br := w.bridge
 	dev, err := network.NewTaper(br.Type(), tenant, network.TapConfig{Type: network.TAP})
 	if err != nil {
-		libol.Error("Switch.NewTap: %s", err)
+		v.out.Error("Switch.NewTap: %s", err)
 		return nil, err
 	}
 	mtu := br.Mtu()
 	dev.SetMtu(mtu)
 	dev.Up()
 	_ = br.AddSlave(dev)
-	libol.Info("Switch.NewTap: %s on %s", dev.Name(), tenant)
+	v.out.Info("Switch.NewTap: %s on %s", dev.Name(), tenant)
 	return dev, nil
 }
 
@@ -427,14 +433,14 @@ func (v *Switch) FreeTap(dev network.Taper) error {
 	defer v.lock.Unlock()
 	name := dev.Name()
 	tenant := dev.Tenant()
-	libol.Debug("Switch.FreeTap %s", name)
+	v.out.Debug("Switch.FreeTap %s", name)
 	w, ok := v.worker[tenant]
 	if !ok {
 		return libol.NewErr("Not found bridge %s", tenant)
 	}
 	br := w.bridge
 	_ = br.DelSlave(dev)
-	libol.Info("Switch.FreeTap: %s", name)
+	v.out.Info("Switch.FreeTap: %s", name)
 	return nil
 }
 
@@ -456,27 +462,27 @@ func (v *Switch) DelLink(tenant, addr string) {
 func (v *Switch) ReadTap(device network.Taper, readAt func(f *libol.FrameMessage) error) {
 	defer device.Close()
 	name := device.Name()
-	libol.Info("Switch.ReadTap: %s", name)
+	v.out.Info("Switch.ReadTap: %s", name)
 	for {
 		frame := libol.NewFrameMessage()
 		n, err := device.Read(frame.Frame())
 		if err != nil {
-			libol.Error("Switch.ReadTap: %s", err)
+			v.out.Error("Switch.ReadTap: %s", err)
 			break
 		}
 		frame.SetSize(n)
-		if libol.HasLog(libol.LOG) {
-			libol.Log("Switch.ReadTap: %x\n", frame.Frame()[:n])
+		if v.out.Has(libol.LOG) {
+			v.out.Log("Switch.ReadTap: %x\n", frame.Frame()[:n])
 		}
 		if err := readAt(frame); err != nil {
-			libol.Error("Switch.ReadTap: readAt %s %s", name, err)
+			v.out.Error("Switch.ReadTap: readAt %s %s", name, err)
 			break
 		}
 	}
 }
 
 func (v *Switch) OffClient(client libol.SocketClient) {
-	libol.Info("Switch.OffClient: %s", client)
+	v.out.Info("Switch.OffClient: %s", client)
 	if v.server != nil {
 		v.server.OffClient(client)
 	}
@@ -490,7 +496,7 @@ func (v *Switch) leftClient(client libol.SocketClient) {
 	if client == nil {
 		return
 	}
-	libol.Info("Switch.leftClient: %s", client.String())
+	v.out.Info("Switch.leftClient: %s", client.String())
 	data := struct {
 		DateTime   int64  `json:"datetime"`
 		UUID       string `json:"uuid"`
@@ -506,13 +512,13 @@ func (v *Switch) leftClient(client libol.SocketClient) {
 	}
 	body, err := json.Marshal(data)
 	if err != nil {
-		libol.Error("Switch.leftClient: %s", err)
+		v.out.Error("Switch.leftClient: %s", err)
 		return
 	}
-	libol.Cmd("Switch.leftClient: %s", body)
+	v.out.Cmd("Switch.leftClient: %s", body)
 	m := libol.NewControlFrame(libol.LeftReq, body)
 	if err := client.WriteMsg(m); err != nil {
-		libol.Error("Switch.leftClient: %s", err)
+		v.out.Error("Switch.leftClient: %s", err)
 		return
 	}
 }

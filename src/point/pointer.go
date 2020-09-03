@@ -23,12 +23,14 @@ type MixPoint struct {
 	uuid   string
 	worker *Worker
 	config *config.Point
+	out    *libol.SubLogger
 }
 
 func NewMixPoint(config *config.Point) MixPoint {
 	p := MixPoint{
 		worker: NewWorker(config),
 		config: config,
+		out:    libol.NewSubLogger(config.Id()),
 	}
 	return p
 }

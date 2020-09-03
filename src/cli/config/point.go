@@ -119,8 +119,8 @@ func (c *Point) Load() error {
 	return nil
 }
 
-func (c *Point) ID() string {
-	return c.Connection + "." + c.Network
+func (c *Point) Id() string {
+	return c.Connection + ":" + c.Network
 }
 
 func init() {

@@ -26,7 +26,7 @@ type NetworkWorker struct {
 	uuid      string
 	crypt     *config.Crypt
 	bridge    network.Bridger
-	logger    *libol.SubLogger
+	out       *libol.SubLogger
 }
 
 func NewNetworkWorker(c config.Network, crypt *config.Crypt) *NetworkWorker {
@@ -37,7 +37,7 @@ func NewNetworkWorker(c config.Network, crypt *config.Crypt) *NetworkWorker {
 		startTime: 0,
 		links:     make(map[string]*point.Point),
 		crypt:     crypt,
-		logger:    libol.NewSubLogger(c.Name),
+		out:       libol.NewSubLogger(c.Name),
 	}
 }
 
@@ -63,7 +63,7 @@ func (w *NetworkWorker) Initialize() {
 	}
 	for _, rt := range w.cfg.Routes {
 		if rt.NextHop == "" {
-			w.logger.Warn("NetworkWorker.Initialize: %s noNextHop", rt.Prefix)
+			w.out.Warn("NetworkWorker.Initialize: %s noNextHop", rt.Prefix)
 			continue
 		}
 		n.Routes = append(n.Routes, &models.Route{
@@ -103,7 +103,7 @@ func (w *NetworkWorker) UnLoadLinks() {
 
 func (w *NetworkWorker) LoadRoutes() {
 	// install routes
-	w.logger.Debug("NetworkWorker.LoadRoute: %v", w.cfg.Routes)
+	w.out.Debug("NetworkWorker.LoadRoute: %v", w.cfg.Routes)
 	ifAddr := strings.SplitN(w.cfg.Bridge.Address, "/", 2)[0]
 	link, err := netlink.LinkByName(w.bridge.Name())
 	if ifAddr == "" || err != nil {
@@ -123,12 +123,12 @@ func (w *NetworkWorker) LoadRoutes() {
 			Dst:       dst, Gw: next,
 			Priority: rt.Metric,
 		}
-		w.logger.Debug("NetworkWorker.LoadRoute: %s", rte)
+		w.out.Debug("NetworkWorker.LoadRoute: %s", rte)
 		if err := netlink.RouteAdd(&rte); err != nil {
-			w.logger.Warn("NetworkWorker.LoadRoute: %s", err)
+			w.out.Warn("NetworkWorker.LoadRoute: %s", err)
 			continue
 		}
-		w.logger.Info("NetworkWorker.LoadRoute: %v", rt)
+		w.out.Info("NetworkWorker.LoadRoute: %v", rt)
 	}
 }
 
@@ -148,28 +148,28 @@ func (w *NetworkWorker) UnLoadRoutes() {
 			Dst:       dst,
 			Gw:        next,
 		}
-		w.logger.Debug("NetworkWorker.UnLoadRoute: %s", rte)
+		w.out.Debug("NetworkWorker.UnLoadRoute: %s", rte)
 		if err := netlink.RouteDel(&rte); err != nil {
-			w.logger.Warn("NetworkWorker.UnLoadRoute: %s", err)
+			w.out.Warn("NetworkWorker.UnLoadRoute: %s", err)
 			continue
 		}
-		w.logger.Info("NetworkWorker.UnLoadRoute: %v", rt)
+		w.out.Info("NetworkWorker.UnLoadRoute: %v", rt)
 	}
 }
 
 func (w *NetworkWorker) Start(v api.Switcher) {
-	w.logger.Info("NetworkWorker.Start")
+	w.out.Info("NetworkWorker.Start")
 	brCfg := w.cfg.Bridge
 	w.bridge.Open(brCfg.Address)
 	if brCfg.Stp == "on" {
 		if err := w.bridge.Stp(true); err != nil {
-			w.logger.Warn("NetworkWorker.Start: Stp %s", err)
+			w.out.Warn("NetworkWorker.Start: Stp %s", err)
 		}
 	} else {
 		_ = w.bridge.Stp(false)
 	}
 	if err := w.bridge.Delay(brCfg.Delay); err != nil {
-		w.logger.Warn("NetworkWorker.Start: Delay %s", err)
+		w.out.Warn("NetworkWorker.Start: Delay %s", err)
 	}
 	w.uuid = v.UUID()
 	w.startTime = time.Now().Unix()
@@ -178,7 +178,7 @@ func (w *NetworkWorker) Start(v api.Switcher) {
 }
 
 func (w *NetworkWorker) Stop() {
-	w.logger.Info("NetworkWorker.Close")
+	w.out.Info("NetworkWorker.Close")
 	w.UnLoadRoutes()
 	w.UnLoadLinks()
 	w.startTime = 0
