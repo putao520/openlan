@@ -3,7 +3,7 @@ package storage
 import (
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
-	pp "github.com/danieldin95/openlan-go/src/olp"
+	pp "github.com/danieldin95/openlan-go/src/olap"
 )
 
 type link struct {

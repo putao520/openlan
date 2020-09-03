@@ -1,4 +1,4 @@
-package olp
+package olap
 
 import (
 	"encoding/binary"

@@ -1,4 +1,4 @@
-package olp
+package olap
 
 import (
 	"github.com/danieldin95/openlan-go/src/cli/config"

@@ -1,4 +1,4 @@
-package olp
+package olap
 
 import (
 	"bytes"
@@ -9,7 +9,7 @@ import (
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
 	"github.com/danieldin95/openlan-go/src/network"
-	"github.com/danieldin95/openlan-go/src/olp/http"
+	"github.com/danieldin95/openlan-go/src/olap/http"
 	"net"
 	"strings"
 	"sync"

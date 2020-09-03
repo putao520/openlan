@@ -7,13 +7,13 @@ The OpenLAN project help you to build a local area network via the Internet.
 
 ## Terminology
 
-* OLS: OpenLAN Switch
-* OLP: OpenLAN Point
+* OLSW: OpenLAN Switch
+* OLAP: OpenLAN Access Point
 * NAT: Network Address translation
 
 ## Branch Access
 
-                                        OLS(Central) - 10.1.2.10/24
+                                        OLSW(Central) - 10.1.2.10/24
                                                 ^
                                                 |   
                                               Wifi(DNAT)
@@ -24,32 +24,32 @@ The OpenLAN project help you to build a local area network via the Internet.
                        |                        |                           |
                    Branch 1                 Branch 2                     Branch 3    
                        |                        |                           |
-                      OLP                      OLP                         OLP
+                      OLAP                      OLAP                         OLAP
                  10.1.2.11/24              10.1.2.12/24                  10.1.2.13/24
 
 ## Multiple Area
                 
                    192.168.1.20/24                                 192.168.1.22/24
                          |                                                 |
-                        OLP ---- Wifi ----> OLS(NanJing) <---- Wifi ---- OLP
+                        OLAP ---- Wifi ---> OLSW(NanJing) <---- Wifi --- OLAP
                                                 |
                                                 |
                                              Internet 
                                                 |
                                                 |
-                                           OLS(ShangHai) - 192.168.1.10/24
+                                           OLSW(ShangHai) - 192.168.1.10/24
                                                 |
                        ------------------------------------------------------
                        ^                        ^                           ^
                        |                        |                           |
                    Office Wifi               Home Wifi                 Hotel Wifi     
                        |                        |                           |
-                      OLP                      OLP                         OLP
+                     OLAP                     OLAP                         OLAP
                  192.168.1.11/24           192.168.1.12/24              192.168.1.13/24
                   
 
-# What's OLP? 
-A OLP is the endpoint to access OLS, and all OLPs behind the same switch can visit each other like local area network. 
+# What's OLAP? 
+A OLAP is the endpoint to access OLSW, and all OLAPs behind the same switch can visit each other like local area network. 
 
 ## on Windows
 ### Firstly, Install tap-windows6
@@ -71,7 +71,7 @@ Download [tap-windows-9](https://github.com/danieldin95/openlan-go/releases/down
    Save to file `point.json` with same directory of  `point.windows.x86_64.exe`. Click right on `point.windwos.x86_64.exe`, and Run as Administrator.
 
 ## on Linux
-### Install OLS and start it.
+### Install OLSW and start it.
 
     [root@office ~]# wget https://github.com/danieldin95/openlan-go/releases/download/v4.3.14/openlan-vswitch-4.3.14-1.el7.x86_64.rpm
     [root@office ~]# yum install ./openlan-vswitch-4.3.14-1.el7.x86_64.rpm
@@ -107,7 +107,7 @@ Download [tap-windows-9](https://github.com/danieldin95/openlan-go/releases/down
     [root@office ~]# systemctl start vswitch
 
 
-### Install OLP and start it.
+### Install OLAP and start it.
 
     [root@home ~]# wget https://github.com/danieldin95/openlan-go/releases/download/v4.3.14/openlan-point-4.3.14-1.el7.x86_64.rpm
     [root@home ~]# yum install ./openlan-point-4.3.14-1.el7.x86_64.rpm

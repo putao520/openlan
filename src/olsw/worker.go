@@ -5,7 +5,7 @@ import (
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
 	"github.com/danieldin95/openlan-go/src/network"
-	"github.com/danieldin95/openlan-go/src/olp"
+	"github.com/danieldin95/openlan-go/src/olap"
 	"github.com/danieldin95/openlan-go/src/olsw/api"
 	"github.com/danieldin95/openlan-go/src/olsw/storage"
 	"github.com/vishvananda/netlink"
@@ -22,7 +22,7 @@ type NetworkWorker struct {
 	newTime   int64
 	startTime int64
 	linksLock sync.RWMutex
-	links     map[string]*olp.Point
+	links     map[string]*olap.Point
 	uuid      string
 	crypt     *config.Crypt
 	bridge    network.Bridger
@@ -35,7 +35,7 @@ func NewNetworkWorker(c config.Network, crypt *config.Crypt) *NetworkWorker {
 		cfg:       c,
 		newTime:   time.Now().Unix(),
 		startTime: 0,
-		links:     make(map[string]*olp.Point),
+		links:     make(map[string]*olap.Point),
 		crypt:     crypt,
 		out:       libol.NewSubLogger(c.Name),
 	}
@@ -199,7 +199,7 @@ func (w *NetworkWorker) AddLink(c *config.Point) {
 	c.Network = w.cfg.Name
 	c.Interface.Address = w.cfg.Bridge.Address
 	libol.Go(func() {
-		p := olp.NewPoint(c)
+		p := olap.NewPoint(c)
 		p.Initialize()
 		w.linksLock.Lock()
 		w.links[c.Connection] = p

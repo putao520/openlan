@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"github.com/danieldin95/openlan-go/src/cli/config"
 	"github.com/danieldin95/openlan-go/src/libol"
-	"github.com/danieldin95/openlan-go/src/olp"
+	"github.com/danieldin95/openlan-go/src/olap"
 )
 
 func main() {
 	c := config.NewPoint()
-	p := olp.NewPoint(c)
+	p := olap.NewPoint(c)
 	p.Initialize()
 	p.Start()
 	go func() {
