@@ -2,7 +2,7 @@ package models
 
 import (
 	"github.com/danieldin95/openlan-go/src/libol"
-	"github.com/danieldin95/openlan-go/src/switch/schema"
+	"github.com/danieldin95/openlan-go/src/olsw/schema"
 )
 
 func NewPointSchema(p *Point) schema.Point {

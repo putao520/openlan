@@ -2,10 +2,9 @@ package main
 
 import (
 	"flag"
-	"github.com/danieldin95/lightstar/libstar"
-	"github.com/danieldin95/openlan-go/src/controller/http"
-	"github.com/danieldin95/openlan-go/src/controller/storage"
 	"github.com/danieldin95/openlan-go/src/libol"
+	"github.com/danieldin95/openlan-go/src/olctl/http"
+	"github.com/danieldin95/openlan-go/src/olctl/storage"
 	"os"
 )
 
@@ -45,5 +44,5 @@ func main() {
 	}
 	go h.Start()
 	libol.SdNotify()
-	libstar.Wait()
+	libol.Wait()
 }

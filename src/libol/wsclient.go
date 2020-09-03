@@ -2,14 +2,28 @@ package libol
 
 import (
 	"crypto/tls"
-	"github.com/danieldin95/lightstar/libstar"
+	"encoding/base64"
 	"golang.org/x/net/websocket"
 	"net/http"
 	"net/url"
 )
 
+type Auth struct {
+	Type     string
+	Username string
+	Password string
+}
+
+func BasicAuth(username, password string) string {
+	auth := username
+	if password != "" {
+		auth += ":" + password
+	}
+	return "Basic " + base64.StdEncoding.EncodeToString([]byte(auth))
+}
+
 type WsClient struct {
-	Auth      libstar.Auth
+	Auth      Auth
 	Url       string
 	TlsConfig *tls.Config
 	Protocol  string
@@ -37,7 +51,7 @@ func (w *WsClient) Dial() (ws *websocket.Conn, err error) {
 	config.TlsConfig = w.TlsConfig
 	if w.Auth.Type == "basic" {
 		config.Header = http.Header{
-			"Authorization": {libstar.BasicAuth(w.Auth.Username, w.Auth.Password)},
+			"Authorization": {BasicAuth(w.Auth.Username, w.Auth.Password)},
 		}
 	}
 	return websocket.DialConfig(config)
