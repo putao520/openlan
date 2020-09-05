@@ -45,7 +45,7 @@ func (n *Neighbors) Expire() {
 	for _, d := range deletes {
 		if l, ok := n.neighbors[d]; ok {
 			delete(n.neighbors, d)
-			libol.Info("Neighbors.Expire: delete %x", l.HwAddr)
+			libol.Debug("Neighbors.Expire: delete %x", l.HwAddr)
 		}
 	}
 }
@@ -123,10 +123,9 @@ func (n *Neighbors) Get(d uint32) *Neighbor {
 }
 
 func (n *Neighbors) Clear() {
-	libol.Info("Neighbor.Clear")
+	libol.Debug("Neighbor.Clear")
 	n.lock.Lock()
 	defer n.lock.Unlock()
-
 	deletes := make([]uint32, 0, 1024)
 	for index := range n.neighbors {
 		deletes = append(deletes, index)
@@ -142,7 +141,6 @@ func (n *Neighbors) Clear() {
 func (n *Neighbors) GetByBytes(d []byte) *Neighbor {
 	n.lock.RLock()
 	defer n.lock.RUnlock()
-
 	k := binary.BigEndian.Uint32(d)
 	if l, ok := n.neighbors[k]; ok {
 		return l

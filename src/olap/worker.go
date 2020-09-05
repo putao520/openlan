@@ -57,9 +57,9 @@ func (e SocketEvent) String() string {
 
 func NewEvent(typ, reason string) SocketEvent {
 	return SocketEvent{
+		Type:   typ,
 		Time:   time.Now().Unix(),
 		Reason: reason,
-		Type:   typ,
 	}
 }
 
@@ -75,7 +75,8 @@ const (
 	rtSuccess   = "reSuccess" // record success time when login.
 	rtSleeps    = "sleeps"    // record times to control connecting delay.
 	rtClosed    = "closed"
-	rtLive      = "live" // record received pong frame time.
+	rtLive      = "live"   // record received pong frame time.
+	rtIpAddr    = "ipAddr" // record last receive ipAddr message after success.
 )
 
 type SocketWorker struct {
@@ -217,15 +218,15 @@ func (t *SocketWorker) close() {
 }
 
 func (t *SocketWorker) connect() error {
-	t.out.Warn("SocketWorker.connect %s:%d", t.client, libol.ClInit)
+	t.out.Warn("SocketWorker.connect: %s", t.client)
 	t.client.Close()
 	s := t.client.Status()
 	if s != libol.ClInit {
-		t.out.Warn("SocketWorker.connect %s %d->%d", t.client, s, libol.ClInit)
+		t.out.Warn("SocketWorker.connect: %s and status %d", t.client, s)
 		t.client.SetStatus(libol.ClInit)
 	}
 	if err := t.client.Connect(); err != nil {
-		t.out.Error("SocketWorker.connect %s %s", t.client, err)
+		t.out.Error("SocketWorker.connect: %s %s", t.client, err)
 		return err
 	}
 	return nil
@@ -236,7 +237,7 @@ func (t *SocketWorker) reconnect() {
 		return
 	}
 	t.record.Set(rtReconnect, time.Now().Unix())
-	t.jobber = append(t.jobber, jobTimer{
+	job := jobTimer{
 		Time: time.Now().Unix() + t.sleepIdle(),
 		Call: func() error {
 			t.out.Debug("SocketWorker.reconnect: on jobber")
@@ -251,11 +252,8 @@ func (t *SocketWorker) reconnect() {
 			t.out.Info("SocketWorker.reconnect: %v", t.record.Data())
 			return t.connect()
 		},
-	})
-}
-
-func (t *SocketWorker) reLogin() error {
-	return t.toLogin(t.client)
+	}
+	t.jobber = append(t.jobber, job)
 }
 
 func (t *SocketWorker) sendLogin(client libol.SocketClient) error {
@@ -299,9 +297,16 @@ func (t *SocketWorker) sendIpAddr(client libol.SocketClient) error {
 	return nil
 }
 
+func (t *SocketWorker) canReqAddr() bool {
+	if t.pinCfg.RequestAddr && t.network.IfAddr == "" {
+		return true
+	}
+	return false
+}
+
 // network request
 func (t *SocketWorker) toNetwork(client libol.SocketClient) error {
-	if !t.pinCfg.RequestAddr && t.network.IfAddr == "" {
+	if !t.canReqAddr() {
 		t.out.Info("SocketWorker.toNetwork: notNeed")
 		return nil
 	}
@@ -313,19 +318,23 @@ func (t *SocketWorker) toNetwork(client libol.SocketClient) error {
 }
 
 func (t *SocketWorker) onLogin(resp []byte) error {
+	if t.client.Have(libol.ClAuth) {
+		t.out.Cmd("SocketWorker.onLogin: %s", resp)
+		return nil
+	}
 	if strings.HasPrefix(string(resp), "okay") {
 		t.client.SetStatus(libol.ClAuth)
 		if t.listener.OnSuccess != nil {
 			_ = t.listener.OnSuccess(t)
 		}
 		t.record.Set(rtSleeps, 0)
+		t.record.Set(rtIpAddr, 0)
 		t.record.Set(rtSuccess, time.Now().Unix())
-		_ = t.toNetwork(t.client)
-		t.eventQueue <- NewEvent(EventSuccess, "already success")
-		t.out.Info("SocketWorker.onInstruct.toLogin: success")
+		t.eventQueue <- NewEvent(EventSuccess, "from login")
+		t.out.Info("SocketWorker.onLogin: success")
 	} else {
 		t.client.SetStatus(libol.ClUnAuth)
-		t.out.Error("SocketWorker.onInstruct.toLogin: %s", resp)
+		t.out.Error("SocketWorker.onLogin: %s", resp)
 	}
 	return nil
 }
@@ -337,7 +346,7 @@ func (t *SocketWorker) onIpAddr(resp []byte) error {
 	}
 	n := &models.Network{}
 	if err := json.Unmarshal(resp, n); err != nil {
-		return libol.NewErr("SocketWorker.onInstruct: invalid json data.")
+		return libol.NewErr("SocketWorker.onIpAddr: invalid json data.")
 	}
 	t.network = n
 	if t.listener.OnIpAddr != nil {
@@ -373,6 +382,7 @@ func (t *SocketWorker) onInstruct(frame *libol.FrameMessage) error {
 	case libol.LoginResp:
 		return t.onLogin(resp)
 	case libol.IpAddrResp:
+		t.record.Set(rtIpAddr, time.Now().Unix())
 		return t.onIpAddr(resp)
 	case libol.PongResp:
 		t.record.Set(rtLive, time.Now().Unix())
@@ -415,26 +425,32 @@ func (t *SocketWorker) sendPing(client libol.SocketClient) error {
 	return nil
 }
 
-func (t *SocketWorker) doKeepalive() error {
+func (t *SocketWorker) doAlive() error {
 	if !t.keepalive.Should() {
 		return nil
 	}
 	t.keepalive.Update()
 	if t.client.Have(libol.ClAuth) {
+		// Whether ipAddr request was already? and try ipAddr?
+		rtIp := t.record.Get(rtIpAddr)
+		rtSuc := t.record.Get(rtSuccess)
+		if t.canReqAddr() && rtIp < rtSuc {
+			_ = t.toNetwork(t.client)
+		}
 		if err := t.sendPing(t.client); err != nil {
-			t.out.Error("SocketWorker.doKeepalive: %s", err)
+			t.out.Error("SocketWorker.doAlive: %s", err)
 			return err
 		}
 	} else {
 		if err := t.sendLogin(t.client); err != nil {
-			t.out.Error("SocketWorker.doKeepalive: %s", err)
+			t.out.Error("SocketWorker.doAlive: %s", err)
 			return err
 		}
 	}
 	return nil
 }
 
-func (t *SocketWorker) doJober() error {
+func (t *SocketWorker) doJobber() error {
 	// travel jobber and execute expired.
 	now := time.Now().Unix()
 	newTimer := make([]jobTimer, 0, 32)
@@ -446,18 +462,18 @@ func (t *SocketWorker) doJober() error {
 		}
 	}
 	t.jobber = newTimer
-	t.out.Debug("SocketWorker.doJober %d", len(t.jobber))
+	t.out.Debug("SocketWorker.doJobber: %d", len(t.jobber))
 	return nil
 }
 
 func (t *SocketWorker) doTicker() error {
-	_ = t.doKeepalive()
-	_ = t.doJober()
+	_ = t.doAlive()
+	_ = t.doJobber()
 	return nil
 }
 
 func (t *SocketWorker) dispatch(ev SocketEvent) {
-	t.out.Info("SocketWorker.dispatch %v", ev)
+	t.out.Info("SocketWorker.dispatch: %v", ev)
 	switch ev.Type {
 	case EventConed:
 		if t.client != nil {
@@ -465,11 +481,11 @@ func (t *SocketWorker) dispatch(ev SocketEvent) {
 			_ = t.toLogin(t.client)
 		}
 	case EventSuccess:
-		_ = t.sendPing(t.client)
+		_ = t.toNetwork(t.client)
 	case EventRecon:
 		t.reconnect()
 	case EventSignIn, EventLogin:
-		_ = t.reLogin()
+		_ = t.toLogin(t.client)
 	}
 }
 
