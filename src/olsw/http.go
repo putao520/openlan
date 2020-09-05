@@ -209,60 +209,64 @@ func (h *Http) PubFile(w http.ResponseWriter, r *http.Request) {
 func (h *Http) getIndex(body *schema.Index) *schema.Index {
 	body.Version = schema.NewVersionSchema()
 	body.Worker = api.NewWorkerSchema(h.switcher)
+
+	sortAp := func(i *models.Point, j *models.Point) bool {
+		return i.Network+i.Client.Address() > j.Network+j.Client.Address()
+	}
 	// display accessed point.
-	pointList := make([]*models.Point, 0, 128)
+	pls := make([]*models.Point, 0, 128)
 	for p := range storage.Point.List() {
 		if p == nil {
 			break
 		}
-		pointList = append(pointList, p)
+		pls = append(pls, p)
 	}
-	sort.SliceStable(pointList, func(i, j int) bool {
-		return pointList[i].Client.Address() > pointList[j].Client.Address()
+	sort.SliceStable(pls, func(i, j int) bool {
+		return sortAp(pls[i], pls[j])
 	})
-	for _, p := range pointList {
+	for _, p := range pls {
 		body.Points = append(body.Points, models.NewPointSchema(p))
 	}
 	// display neighbor.
-	neighborList := make([]*models.Neighbor, 0, 128)
+	nls := make([]*models.Neighbor, 0, 128)
 	for n := range storage.Neighbor.List() {
 		if n == nil {
 			break
 		}
-		neighborList = append(neighborList, n)
+		nls = append(nls, n)
 	}
-	sort.SliceStable(neighborList, func(i, j int) bool {
-		return neighborList[i].IpAddr.String() > neighborList[j].IpAddr.String()
+	sort.SliceStable(nls, func(i, j int) bool {
+		return nls[i].IpAddr.String() > nls[j].IpAddr.String()
 	})
-	for _, n := range neighborList {
+	for _, n := range nls {
 		body.Neighbors = append(body.Neighbors, models.NewNeighborSchema(n))
 	}
 	// display links.
-	linkList := make([]*models.Point, 0, 128)
+	lls := make([]*models.Point, 0, 128)
 	for p := range storage.Link.List() {
 		if p == nil {
 			break
 		}
-		linkList = append(linkList, p)
+		lls = append(lls, p)
 	}
-	sort.SliceStable(linkList, func(i, j int) bool {
-		return linkList[i].Client.Address() > linkList[j].Client.Address()
+	sort.SliceStable(lls, func(i, j int) bool {
+		return sortAp(lls[i], lls[j])
 	})
-	for _, p := range linkList {
+	for _, p := range lls {
 		body.Links = append(body.Links, models.NewLinkSchema(p))
 	}
 	// display online flow.
-	lineList := make([]*models.Line, 0, 128)
+	ols := make([]*models.Line, 0, 128)
 	for l := range storage.Online.List() {
 		if l == nil {
 			break
 		}
-		lineList = append(lineList, l)
+		ols = append(ols, l)
 	}
-	sort.SliceStable(lineList, func(i, j int) bool {
-		return lineList[i].LastTime() < lineList[j].LastTime()
+	sort.SliceStable(ols, func(i, j int) bool {
+		return ols[i].LastTime() < ols[j].LastTime()
 	})
-	for _, l := range lineList {
+	for _, l := range ols {
 		body.OnLines = append(body.OnLines, models.NewOnLineSchema(l))
 
 	}

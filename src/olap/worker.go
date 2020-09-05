@@ -298,7 +298,11 @@ func (t *SocketWorker) sendIpAddr(client libol.SocketClient) error {
 }
 
 func (t *SocketWorker) canReqAddr() bool {
-	if t.pinCfg.RequestAddr && t.network.IfAddr == "" {
+	if t.pinCfg.RequestAddr {
+		return true
+	}
+	// For link, need advise ipAddr with configured address.
+	if t.network.IfAddr != "" {
 		return true
 	}
 	return false
