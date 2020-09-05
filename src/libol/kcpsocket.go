@@ -104,7 +104,7 @@ func NewKcpClient(addr string, cfg *KcpConfig) *KcpClient {
 	}
 	c := &KcpClient{
 		kcpCfg: cfg,
-		SocketClientImpl: NewSocketClient(addr, &StreamMessage{
+		SocketClientImpl: NewSocketClient(addr, &StreamMessagerImpl{
 			timeout: cfg.Timeout,
 		}),
 	}
@@ -118,7 +118,7 @@ func NewKcpClientFromConn(conn net.Conn, cfg *KcpConfig) *KcpClient {
 	}
 	addr := conn.RemoteAddr().String()
 	c := &KcpClient{
-		SocketClientImpl: NewSocketClient(addr, &StreamMessage{
+		SocketClientImpl: NewSocketClient(addr, &StreamMessagerImpl{
 			timeout: cfg.Timeout,
 		}),
 	}

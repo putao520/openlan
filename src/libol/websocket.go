@@ -123,7 +123,7 @@ type WebClient struct {
 func NewWebClient(addr string, cfg *WebConfig) *WebClient {
 	t := &WebClient{
 		webCfg: cfg,
-		SocketClientImpl: NewSocketClient(addr, &StreamMessage{
+		SocketClientImpl: NewSocketClient(addr, &StreamMessagerImpl{
 			block: cfg.Block,
 		}),
 		done: make(chan bool, 2),
@@ -136,7 +136,7 @@ func NewWebClientFromConn(conn net.Conn, cfg *WebConfig) *WebClient {
 	addr := conn.RemoteAddr().String()
 	t := &WebClient{
 		webCfg: cfg,
-		SocketClientImpl: NewSocketClient(addr, &StreamMessage{
+		SocketClientImpl: NewSocketClient(addr, &StreamMessagerImpl{
 			block: cfg.Block,
 		}),
 		done: make(chan bool, 2),

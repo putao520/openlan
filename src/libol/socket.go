@@ -84,7 +84,7 @@ func (t *StreamSocket) WriteMsg(frame *FrameMessage) error {
 		return err
 	}
 	if t.message == nil { // default is stream message
-		t.message = &StreamMessage{}
+		t.message = &StreamMessagerImpl{}
 	}
 	size, err := t.message.Send(t.connection, frame)
 	if err != nil {
@@ -103,7 +103,7 @@ func (t *StreamSocket) ReadMsg() (*FrameMessage, error) {
 		return nil, NewErr("%s: not okay", t)
 	}
 	if t.message == nil { // default is stream message
-		t.message = &StreamMessage{}
+		t.message = &StreamMessagerImpl{}
 	}
 	frame, err := t.message.Receive(t.connection, t.maxSize, t.minSize)
 	if err != nil {
@@ -143,11 +143,11 @@ func NewSocketClient(address string, message Messager) *SocketClientImpl {
 	}
 }
 
-func (t *SocketClientImpl) Out() *SubLogger {
-	if t.out == nil {
-		t.out = NewSubLogger(t.address)
+func (s *SocketClientImpl) Out() *SubLogger {
+	if s.out == nil {
+		s.out = NewSubLogger(s.address)
 	}
-	return t.out
+	return s.out
 }
 
 func (s *SocketClientImpl) State() string {

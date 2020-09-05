@@ -28,10 +28,10 @@ func (b *BrCtl) SysPath(fun string) string {
 func (b *BrCtl) Stp(on bool) error {
 	file := b.SysPath("stp_state")
 	fp, err := os.OpenFile(file, os.O_RDWR, 0600)
-	defer fp.Close()
 	if err != nil {
 		return err
 	}
+	defer fp.Close()
 	if on {
 		if _, err := fp.Write([]byte("1")); err != nil {
 			return err
@@ -47,10 +47,10 @@ func (b *BrCtl) Stp(on bool) error {
 func (b *BrCtl) Delay(delay int) error { // by second
 	file := b.SysPath("forward_delay")
 	fp, err := os.OpenFile(file, os.O_RDWR, 0600)
-	defer fp.Close()
 	if err != nil {
 		return err
 	}
+	defer fp.Close()
 	if _, err := fp.Write([]byte(strconv.Itoa(delay * 100))); err != nil {
 		return err
 	}

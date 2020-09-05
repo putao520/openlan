@@ -95,7 +95,7 @@ type TcpClient struct {
 func NewTcpClient(addr string, cfg *TcpConfig) *TcpClient {
 	t := &TcpClient{
 		tcpCfg: cfg,
-		SocketClientImpl: NewSocketClient(addr, &StreamMessage{
+		SocketClientImpl: NewSocketClient(addr, &StreamMessagerImpl{
 			block: cfg.Block,
 		}),
 	}
@@ -107,7 +107,7 @@ func NewTcpClientFromConn(conn net.Conn, cfg *TcpConfig) *TcpClient {
 	addr := conn.RemoteAddr().String()
 	t := &TcpClient{
 		tcpCfg: cfg,
-		SocketClientImpl: NewSocketClient(addr, &StreamMessage{
+		SocketClientImpl: NewSocketClient(addr, &StreamMessagerImpl{
 			block: cfg.Block,
 		}),
 	}

@@ -746,13 +746,13 @@ func (a *TapWorker) OnArpAlive(dest []byte) {
 // process if ethernet destination is missed
 func (a *TapWorker) onMiss(dest []byte) {
 	a.out.Debug("TapWorker.onMiss: %v.", dest)
-	eth := a.newEth(libol.EthArp, libol.BROADED)
+	eth := a.newEth(libol.EthArp, libol.EthAll)
 	reply := libol.NewArp()
 	reply.OpCode = libol.ArpRequest
 	reply.SIpAddr = a.ether.IpAddr
 	reply.TIpAddr = dest
 	reply.SHwAddr = a.ether.HwAddr
-	reply.THwAddr = libol.ZEROED
+	reply.THwAddr = libol.EthZero
 
 	frame := libol.NewFrameMessage()
 	frame.Append(eth.Encode())
@@ -1228,7 +1228,7 @@ func (p *Worker) OnIpAddr(w *SocketWorker, n *models.Network) error {
 	p.routes = append(p.routes, PrefixRule{
 		Type:        0x00,
 		Destination: net.IPNet{IP: ip.Mask(m), Mask: m},
-		NextHop:     libol.ZEROED,
+		NextHop:     libol.EthZero,
 	})
 	for _, rt := range n.Routes {
 		_, dest, err := net.ParseCIDR(rt.Prefix)

@@ -90,7 +90,7 @@ func NewSwitch(c config.Switch) *Switch {
 	v := Switch{
 		cfg: c,
 		firewall: FireWall{
-			rules: make([]libol.IPTableRule, 0, 32),
+			rules: make([]libol.IpTableRule, 0, 32),
 		},
 		worker:  make(map[string]*NetworkWorker, 32),
 		server:  server,
@@ -105,7 +105,7 @@ func NewSwitch(c config.Switch) *Switch {
 func (v *Switch) acceptBridge(bridge string) {
 	rules := v.firewall.rules
 	v.out.Info("Switch.acceptBridge %s", bridge)
-	rules = append(rules, libol.IPTableRule{
+	rules = append(rules, libol.IpTableRule{
 		Table: "filter",
 		Chain: "FORWARD",
 		Input: bridge,
@@ -117,34 +117,34 @@ func (v *Switch) acceptRoute(source, prefix string) {
 	rules := v.firewall.rules
 	v.out.Info("Switch.acceptRoute %s, %s", source, prefix)
 	// allowed forward between source and prefix.
-	rules = append(rules, libol.IPTableRule{
+	rules = append(rules, libol.IpTableRule{
 		Table:  "filter",
 		Chain:  "FORWARD",
 		Source: source,
 		Dest:   prefix,
 	})
-	rules = append(rules, libol.IPTableRule{
+	rules = append(rules, libol.IpTableRule{
 		Table:  "filter",
 		Chain:  "FORWARD",
 		Source: prefix,
 		Dest:   source,
 	})
 	// allowed input from source to prefix.
-	rules = append(rules, libol.IPTableRule{
+	rules = append(rules, libol.IpTableRule{
 		Table:  "filter",
 		Chain:  "INPUT",
 		Source: source,
 		Dest:   prefix,
 	})
 	// enable masquerade between source and prefix.
-	rules = append(rules, libol.IPTableRule{
+	rules = append(rules, libol.IpTableRule{
 		Table:  "nat",
 		Chain:  "POSTROUTING",
 		Source: source,
 		Dest:   prefix,
 		Jump:   "MASQUERADE",
 	})
-	rules = append(rules, libol.IPTableRule{
+	rules = append(rules, libol.IpTableRule{
 		Table:  "nat",
 		Chain:  "POSTROUTING",
 		Source: prefix,
@@ -201,7 +201,7 @@ func (v *Switch) initHook() {
 
 func (v *Switch) initFirewall() {
 	for _, rule := range v.cfg.FireWall {
-		v.firewall.rules = append(v.firewall.rules, libol.IPTableRule{
+		v.firewall.rules = append(v.firewall.rules, libol.IpTableRule{
 			Table:    rule.Table,
 			Chain:    rule.Chain,
 			Source:   rule.Source,

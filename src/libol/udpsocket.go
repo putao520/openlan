@@ -91,7 +91,7 @@ func NewUdpClient(addr string, cfg *UdpConfig) *UdpClient {
 	}
 	c := &UdpClient{
 		udpCfg: cfg,
-		SocketClientImpl: NewSocketClient(addr, &DataGramMessage{
+		SocketClientImpl: NewSocketClient(addr, &PacketMessagerImpl{
 			timeout: cfg.Timeout,
 			block:   cfg.Block,
 		}),
@@ -106,7 +106,7 @@ func NewUdpClientFromConn(conn net.Conn, cfg *UdpConfig) *UdpClient {
 	}
 	addr := conn.RemoteAddr().String()
 	c := &UdpClient{
-		SocketClientImpl: NewSocketClient(addr, &DataGramMessage{
+		SocketClientImpl: NewSocketClient(addr, &PacketMessagerImpl{
 			timeout: cfg.Timeout,
 			block:   cfg.Block,
 		}),

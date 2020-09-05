@@ -34,7 +34,7 @@ func isControl(data []byte) bool {
 	if len(data) < 6 {
 		return false
 	}
-	if bytes.Equal(data[:6], ZEROED[:6]) {
+	if bytes.Equal(data[:6], EthZero[:6]) {
 		return true
 	}
 	return false
@@ -89,6 +89,7 @@ func (i *Ip4Proto) Decode() error {
 }
 
 type FrameMessage struct {
+	seq     uint64
 	control bool
 	action  string
 	params  []byte
@@ -174,6 +175,7 @@ func (m *FrameMessage) Proto() (*Ip4Proto, error) {
 }
 
 type ControlMessage struct {
+	seq      uint64
 	control  bool
 	operator string
 	action   string
@@ -201,7 +203,7 @@ func NewControlMessage(action, opr string, body []byte) *ControlMessage {
 func (c *ControlMessage) Encode() *FrameMessage {
 	p := fmt.Sprintf("%s%s%s", c.action[:4], c.operator[:2], c.params)
 	frame := NewFrameMessage()
-	frame.Append(ZEROED[:6])
+	frame.Append(EthZero[:6])
 	frame.Append([]byte(p))
 	return frame
 }
@@ -211,12 +213,12 @@ type Messager interface {
 	Receive(conn net.Conn, max, min int) (*FrameMessage, error)
 }
 
-type StreamMessage struct {
+type StreamMessagerImpl struct {
 	timeout time.Duration // ns for read and write deadline.
 	block   kcp.BlockCrypt
 }
 
-func (s *StreamMessage) write(conn net.Conn, tmp []byte) (int, error) {
+func (s *StreamMessagerImpl) write(conn net.Conn, tmp []byte) (int, error) {
 	if s.timeout != 0 {
 		err := conn.SetWriteDeadline(time.Now().Add(s.timeout))
 		if err != nil {
@@ -230,7 +232,7 @@ func (s *StreamMessage) write(conn net.Conn, tmp []byte) (int, error) {
 	return n, nil
 }
 
-func (s *StreamMessage) writeFull(conn net.Conn, buf []byte) error {
+func (s *StreamMessagerImpl) writeFull(conn net.Conn, buf []byte) error {
 	if conn == nil {
 		return NewErr("connection is nil")
 	}
@@ -259,7 +261,7 @@ func (s *StreamMessage) writeFull(conn net.Conn, buf []byte) error {
 	return nil
 }
 
-func (s *StreamMessage) Send(conn net.Conn, frame *FrameMessage) (int, error) {
+func (s *StreamMessagerImpl) Send(conn net.Conn, frame *FrameMessage) (int, error) {
 	frame.buffer[0] = MAGIC[0]
 	frame.buffer[1] = MAGIC[1]
 	binary.BigEndian.PutUint16(frame.buffer[2:4], uint16(frame.size))
@@ -272,7 +274,7 @@ func (s *StreamMessage) Send(conn net.Conn, frame *FrameMessage) (int, error) {
 	return frame.size, nil
 }
 
-func (s *StreamMessage) read(conn net.Conn, tmp []byte) (int, error) {
+func (s *StreamMessagerImpl) read(conn net.Conn, tmp []byte) (int, error) {
 	if s.timeout != 0 {
 		err := conn.SetReadDeadline(time.Now().Add(s.timeout))
 		if err != nil {
@@ -286,7 +288,7 @@ func (s *StreamMessage) read(conn net.Conn, tmp []byte) (int, error) {
 	return n, nil
 }
 
-func (s *StreamMessage) readFull(conn net.Conn, buf []byte) error {
+func (s *StreamMessagerImpl) readFull(conn net.Conn, buf []byte) error {
 	if conn == nil {
 		return NewErr("connection is nil")
 	}
@@ -311,7 +313,7 @@ func (s *StreamMessage) readFull(conn net.Conn, buf []byte) error {
 	return nil
 }
 
-func (s *StreamMessage) Receive(conn net.Conn, max, min int) (*FrameMessage, error) {
+func (s *StreamMessagerImpl) Receive(conn net.Conn, max, min int) (*FrameMessage, error) {
 	frame := NewFrameMessage()
 	h := frame.buffer[:4]
 	if err := s.readFull(conn, h); err != nil {
@@ -336,12 +338,12 @@ func (s *StreamMessage) Receive(conn net.Conn, max, min int) (*FrameMessage, err
 	return frame, nil
 }
 
-type DataGramMessage struct {
+type PacketMessagerImpl struct {
 	timeout time.Duration // ns for read and write deadline
 	block   kcp.BlockCrypt
 }
 
-func (s *DataGramMessage) Send(conn net.Conn, frame *FrameMessage) (int, error) {
+func (s *PacketMessagerImpl) Send(conn net.Conn, frame *FrameMessage) (int, error) {
 	frame.buffer[0] = MAGIC[0]
 	frame.buffer[1] = MAGIC[1]
 	binary.BigEndian.PutUint16(frame.buffer[2:4], uint16(frame.size))
@@ -349,7 +351,7 @@ func (s *DataGramMessage) Send(conn net.Conn, frame *FrameMessage) (int, error) 
 		s.block.Encrypt(frame.frame, frame.frame)
 	}
 	if HasLog(DEBUG) {
-		Debug("DataGramMessage.Send: %s %x", conn.RemoteAddr(), frame)
+		Debug("PacketMessagerImpl.Send: %s %x", conn.RemoteAddr(), frame)
 	}
 	if s.timeout != 0 {
 		err := conn.SetWriteDeadline(time.Now().Add(s.timeout))
@@ -363,10 +365,10 @@ func (s *DataGramMessage) Send(conn net.Conn, frame *FrameMessage) (int, error) 
 	return frame.size, nil
 }
 
-func (s *DataGramMessage) Receive(conn net.Conn, max, min int) (*FrameMessage, error) {
+func (s *PacketMessagerImpl) Receive(conn net.Conn, max, min int) (*FrameMessage, error) {
 	frame := NewFrameMessage()
 	if HasLog(DEBUG) {
-		Debug("DataGramMessage.Receive %s %d", conn.RemoteAddr(), s.timeout)
+		Debug("PacketMessagerImpl.Receive %s %d", conn.RemoteAddr(), s.timeout)
 	}
 	if s.timeout != 0 {
 		err := conn.SetReadDeadline(time.Now().Add(s.timeout))
@@ -379,7 +381,7 @@ func (s *DataGramMessage) Receive(conn net.Conn, max, min int) (*FrameMessage, e
 		return nil, err
 	}
 	if HasLog(DEBUG) {
-		Debug("DataGramMessage.Receive: %s %x", conn.RemoteAddr(), frame.buffer)
+		Debug("PacketMessagerImpl.Receive: %s %x", conn.RemoteAddr(), frame.buffer)
 	}
 	if n <= 4 {
 		return nil, NewErr("%s: small frame", conn.RemoteAddr())

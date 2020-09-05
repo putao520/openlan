@@ -5,7 +5,7 @@ import (
 	"runtime"
 )
 
-type IPTableRule struct {
+type IpTableRule struct {
 	Table    string
 	Chain    string
 	Input    string
@@ -18,7 +18,7 @@ type IPTableRule struct {
 	Jump     string
 }
 
-func (rule IPTableRule) Args() []string {
+func (rule IpTableRule) Args() []string {
 	var args []string
 	if rule.Source != "" {
 		args = append(args, "-s", rule.Source)
@@ -46,8 +46,8 @@ func (rule IPTableRule) Args() []string {
 	return args
 }
 
-func IPTableCmd(rule IPTableRule, opr string) ([]byte, error) {
-	Debug("IPTableCmd: %s, %v", opr, rule)
+func IpTableCmd(rule IpTableRule, opr string) ([]byte, error) {
+	Debug("IpTableCmd: %s, %v", opr, rule)
 	table := iptables.Table(rule.Table)
 	chain := rule.Chain
 	switch runtime.GOOS {
@@ -61,12 +61,12 @@ func IPTableCmd(rule IPTableRule, opr string) ([]byte, error) {
 		}
 		return iptables.Raw(fullArgs...)
 	default:
-		return nil, NewErr("IPTable notSupport %s", runtime.GOOS)
+		return nil, NewErr("IpTable notSupport %s", runtime.GOOS)
 	}
 }
 
-func IPTableInit() {
+func IpTableInit() {
 	if err := iptables.FirewalldInit(); err != nil {
-		Error("IPTables.init %s", err)
+		Error("IpTables.init %s", err)
 	}
 }
