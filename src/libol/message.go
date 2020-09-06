@@ -98,21 +98,27 @@ type FrameMessage struct {
 	total   int
 	frame   []byte
 	proto   *FrameProto
-	lock    *sync.RWMutex
-	next    *FrameMessage
-	tail    *FrameMessage
+	header  *FrameLLHeader
 }
 
 func NewFrameMessage() *FrameMessage {
 	m := FrameMessage{
-		control: false,
-		action:  "",
-		params:  make([]byte, 0, 2),
-		size:    0,
-		buffer:  make([]byte, HlSize+MaxBuf),
+		params: make([]byte, 0, 2),
+		buffer: make([]byte, HlSize+MaxBuf),
 	}
 	m.frame = m.buffer[HlSize:]
 	m.total = len(m.frame)
+	return &m
+}
+
+func NewFrameMessageFromBytes(buffer []byte) *FrameMessage {
+	m := FrameMessage{
+		params: make([]byte, 0, 2),
+		buffer: buffer,
+	}
+	m.frame = m.buffer[HlSize:]
+	m.total = len(m.frame)
+	m.size = len(m.frame)
 	return &m
 }
 
@@ -174,6 +180,54 @@ func (m *FrameMessage) Proto() (*FrameProto, error) {
 	return m.proto, err
 }
 
+const (
+	FmsNew   = 0
+	FmsWrFin = 1
+	FmsRdFin = 2
+)
+
+type FrameLLNode struct {
+	next *FrameLLNode
+	data *FrameMessage
+}
+
+type FrameLLHeader struct {
+	lock  *sync.RWMutex
+	state int
+	tail  *FrameLLNode
+	next  *FrameLLNode
+}
+
+func (l *FrameLLHeader) Have(state int) bool {
+	l.lock.RLock()
+	defer l.lock.RUnlock()
+	return l.state == state
+}
+
+func (l *FrameLLHeader) State(state int) {
+	l.lock.Lock()
+	defer l.lock.Unlock()
+	l.state = state
+}
+
+func (l *FrameLLHeader) Next() *FrameLLNode {
+	l.lock.RLock()
+	defer l.lock.RUnlock()
+	return l.next
+}
+
+func (l *FrameLLHeader) Add(data *FrameMessage) {
+	l.lock.Lock()
+	defer l.lock.Unlock()
+	next := &FrameLLNode{data: data}
+	if l.tail == nil {
+		l.tail = next
+	} else if l.tail != nil {
+		l.tail.next = next
+		l.tail = next
+	}
+}
+
 type ControlMessage struct {
 	seq      uint64
 	control  bool
@@ -211,11 +265,18 @@ func (c *ControlMessage) Encode() *FrameMessage {
 type Messager interface {
 	Send(conn net.Conn, frame *FrameMessage) (int, error)
 	Receive(conn net.Conn, max, min int) (*FrameMessage, error)
+	Flush()
 }
 
 type StreamMessagerImpl struct {
 	timeout time.Duration // ns for read and write deadline.
 	block   kcp.BlockCrypt
+	buffer  []byte
+	bufSize int // default is (1518 + 20+20+14) * 8
+}
+
+func (s *StreamMessagerImpl) Flush() {
+	s.buffer = nil
 }
 
 func (s *StreamMessagerImpl) write(conn net.Conn, tmp []byte) (int, error) {
@@ -288,6 +349,7 @@ func (s *StreamMessagerImpl) read(conn net.Conn, tmp []byte) (int, error) {
 	return n, nil
 }
 
+//340Mib
 func (s *StreamMessagerImpl) readX(conn net.Conn, buf []byte) error {
 	if conn == nil {
 		return NewErr("connection is nil")
@@ -313,34 +375,68 @@ func (s *StreamMessagerImpl) readX(conn net.Conn, buf []byte) error {
 	return nil
 }
 
+func (s *StreamMessagerImpl) fetchFrame(tmp []byte, min int) (*FrameMessage, error) {
+	ts := len(tmp)
+	if ts < min {
+		return nil, nil
+	}
+	if !bytes.Equal(tmp[:2], MAGIC[:2]) {
+		return nil, NewErr("wrong magic")
+	}
+	ps := binary.BigEndian.Uint16(tmp[2:4])
+	fs := int(ps) + HlSize
+	if ts >= fs {
+		s.buffer = tmp[fs:]
+		if s.block != nil {
+			s.block.Decrypt(tmp[HlSize:fs], tmp[HlSize:fs])
+		}
+		return NewFrameMessageFromBytes(tmp[:fs]), nil
+	}
+	return nil, nil
+}
+
+// 430Mib
 func (s *StreamMessagerImpl) Receive(conn net.Conn, max, min int) (*FrameMessage, error) {
-	frame := NewFrameMessage()
-	h := frame.buffer[:4]
-	if err := s.readX(conn, h); err != nil {
+	frame, err := s.fetchFrame(s.buffer, min)
+	if err != nil {
 		return nil, err
 	}
-	if !bytes.Equal(h[:2], MAGIC[:2]) {
-		return nil, NewErr("%s: wrong magic", conn.RemoteAddr())
+	if frame != nil { // firstly, check buffer has messages.
+		return frame, nil
 	}
-	size := int(binary.BigEndian.Uint16(h[2:4]))
-	if size > max || size < min {
-		return nil, NewErr("%s: wrong size %d", conn.RemoteAddr(), size)
+	if s.bufSize == 0 {
+		s.bufSize = 12576 // 1572 * 8
 	}
-	tmp := frame.buffer[4 : 4+size]
-	if err := s.readX(conn, tmp); err != nil {
-		return nil, err
+	bs := len(s.buffer)
+	tmp := make([]byte, s.bufSize)
+	if bs > 0 {
+		copy(tmp[:bs], s.buffer[:bs])
 	}
-	if s.block != nil {
-		s.block.Decrypt(tmp, tmp)
+	for { // loop forever until socket error or find one message.
+		rn, err := conn.Read(tmp[bs:])
+		if err != nil {
+			return nil, err
+		}
+		rs := bs + rn
+		frame, err := s.fetchFrame(tmp[:rs], min)
+		if err != nil {
+			return nil, err
+		}
+		if frame != nil {
+			return frame, nil
+		}
+		// If notFound message, continue to read.
+		bs = rs
 	}
-	frame.size = size
-	frame.frame = tmp
-	return frame, nil
 }
 
 type PacketMessagerImpl struct {
 	timeout time.Duration // ns for read and write deadline
 	block   kcp.BlockCrypt
+}
+
+func (s *PacketMessagerImpl) Flush() {
+	//TODO
 }
 
 func (s *PacketMessagerImpl) Send(conn net.Conn, frame *FrameMessage) (int, error) {

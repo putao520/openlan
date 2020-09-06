@@ -158,8 +158,7 @@ func (c *KcpClient) Close() {
 			c.status = ClClosed
 		}
 		c.out.Info("KcpClient.Close")
-		_ = c.connection.Close()
-		c.connection = nil
+		c.updateConn(nil)
 		c.private = nil
 		c.lock.Unlock()
 		if c.listener.OnClose != nil {

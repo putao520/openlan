@@ -140,8 +140,7 @@ func (c *UdpClient) Close() {
 			c.status = ClClosed
 		}
 		c.out.Info("UdpClient.Close")
-		_ = c.connection.Close()
-		c.connection = nil
+		c.updateConn(nil)
 		c.private = nil
 		c.lock.Unlock()
 		if c.listener.OnClose != nil {

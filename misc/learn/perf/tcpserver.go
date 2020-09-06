@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"flag"
 	"fmt"
-	"github.com/danieldin95/openlan-go/libol"
+	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/songgao/water"
 	"net"
 )
@@ -197,9 +197,6 @@ func main() {
 	flag.StringVar(&mode, "mode", mode, "client or server.")
 	flag.Parse()
 
-	p := libol.Prof{File: "tcpserver-" + mode + ".prof"}
-	p.Start()
-	defer p.Stop()
 	if mode == "server" {
 		go Server(address)
 	} else if mode == "client" {

@@ -181,9 +181,8 @@ func (t *WebClient) Close() {
 		if t.status != ClTerminal {
 			t.status = ClClosed
 		}
-		_ = t.connection.Close()
+		t.updateConn(nil)
 		t.done <- true
-		t.connection = nil
 		t.private = nil
 		t.lock.Unlock()
 		if t.listener.OnClose != nil {

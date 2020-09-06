@@ -146,8 +146,7 @@ func (t *TcpClient) Close() {
 		if t.status != ClTerminal {
 			t.status = ClClosed
 		}
-		_ = t.connection.Close()
-		t.connection = nil
+		t.updateConn(nil)
 		t.private = nil
 		t.lock.Unlock()
 		if t.listener.OnClose != nil {

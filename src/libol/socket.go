@@ -266,6 +266,12 @@ func (s *SocketClientImpl) updateConn(conn net.Conn) {
 		s.connectedTime = time.Now().Unix()
 		s.localAddr = conn.LocalAddr().String()
 		s.remoteAddr = conn.RemoteAddr().String()
+	} else {
+		if s.connection != nil {
+			s.connection.Close()
+		}
+		s.connection = nil
+		s.message.Flush()
 	}
 }
 

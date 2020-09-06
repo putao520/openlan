@@ -527,12 +527,11 @@ func (t *SocketWorker) Read() {
 		}
 		t.lock.Unlock()
 		data, err := t.client.ReadMsg()
-		t.lock.Lock()
 		if err != nil {
 			t.out.Error("SocketWorker.Read: %s", err)
-			t.lock.Unlock()
 			break
 		}
+		t.lock.Lock()
 		if t.out.Has(libol.DEBUG) {
 			t.out.Debug("SocketWorker.Read: %x", data)
 		}
