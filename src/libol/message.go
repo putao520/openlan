@@ -40,49 +40,49 @@ func isControl(data []byte) bool {
 	return false
 }
 
-type Ip4Proto struct {
+type FrameProto struct {
 	// public
-	Eth  *Ether
-	Vlan *Vlan
-	Arp  *Arp
-	Ip4  *Ipv4
-	Udp  *Udp
-	Tcp  *Tcp
-	// private
-	err   error
-	frame []byte
+	Eth   *Ether
+	Vlan  *Vlan
+	Arp   *Arp
+	Ip4   *Ipv4
+	Udp   *Udp
+	Tcp   *Tcp
+	Err   error
+	Frame []byte
 }
 
-func (i *Ip4Proto) Decode() error {
-	data := i.frame
-	if i.Eth, i.err = NewEtherFromFrame(data); i.err != nil {
-		return i.err
+func (i *FrameProto) Decode() error {
+	data := i.Frame
+	if i.Eth, i.Err = NewEtherFromFrame(data); i.Err != nil {
+		return i.Err
 	}
 	data = data[i.Eth.Len:]
 	if i.Eth.IsVlan() {
-		if i.Vlan, i.err = NewVlanFromFrame(data); i.err != nil {
-			return i.err
+		if i.Vlan, i.Err = NewVlanFromFrame(data); i.Err != nil {
+			return i.Err
 		}
 		data = data[i.Vlan.Len:]
 	}
-	if i.Eth.IsIP4() {
-		if i.Ip4, i.err = NewIpv4FromFrame(data); i.err != nil {
-			return i.err
+	switch i.Eth.Type {
+	case EthIp4:
+		if i.Ip4, i.Err = NewIpv4FromFrame(data); i.Err != nil {
+			return i.Err
 		}
 		data = data[i.Ip4.Len:]
 		switch i.Ip4.Protocol {
 		case IpTcp:
-			if i.Tcp, i.err = NewTcpFromFrame(data); i.err != nil {
-				return i.err
+			if i.Tcp, i.Err = NewTcpFromFrame(data); i.Err != nil {
+				return i.Err
 			}
 		case IpUdp:
-			if i.Udp, i.err = NewUdpFromFrame(data); i.err != nil {
-				return i.err
+			if i.Udp, i.Err = NewUdpFromFrame(data); i.Err != nil {
+				return i.Err
 			}
 		}
-	} else if i.Eth.IsArp() {
-		if i.Arp, i.err = NewArpFromFrame(data); i.err != nil {
-			return i.err
+	case EthArp:
+		if i.Arp, i.Err = NewArpFromFrame(data); i.Err != nil {
+			return i.Err
 		}
 	}
 	return nil
@@ -97,7 +97,7 @@ type FrameMessage struct {
 	size    int
 	total   int
 	frame   []byte
-	proto   *Ip4Proto
+	proto   *FrameProto
 	lock    *sync.RWMutex
 	next    *FrameMessage
 	tail    *FrameMessage
@@ -165,11 +165,11 @@ func (m *FrameMessage) SetSize(v int) {
 	m.size = v
 }
 
-func (m *FrameMessage) Proto() (*Ip4Proto, error) {
+func (m *FrameMessage) Proto() (*FrameProto, error) {
 	if m.proto != nil {
-		return m.proto, m.proto.err
+		return m.proto, m.proto.Err
 	}
-	m.proto = &Ip4Proto{frame: m.frame}
+	m.proto = &FrameProto{Frame: m.frame}
 	err := m.proto.Decode()
 	return m.proto, err
 }
@@ -232,7 +232,7 @@ func (s *StreamMessagerImpl) write(conn net.Conn, tmp []byte) (int, error) {
 	return n, nil
 }
 
-func (s *StreamMessagerImpl) writeFull(conn net.Conn, buf []byte) error {
+func (s *StreamMessagerImpl) writeX(conn net.Conn, buf []byte) error {
 	if conn == nil {
 		return NewErr("connection is nil")
 	}
@@ -240,20 +240,20 @@ func (s *StreamMessagerImpl) writeFull(conn net.Conn, buf []byte) error {
 	size := len(buf)
 	left := size - offset
 	if HasLog(LOG) {
-		Log("writeFull: %s %d", conn.RemoteAddr(), size)
-		Log("writeFull: %s Data %x", conn.RemoteAddr(), buf)
+		Log("StreamMessagerImpl.writeX: %s %d", conn.RemoteAddr(), size)
+		Log("StreamMessagerImpl.writeX: %s Data %x", conn.RemoteAddr(), buf)
 	}
 	for left > 0 {
 		tmp := buf[offset:]
 		if HasLog(LOG) {
-			Log("writeFull: tmp %s %d", conn.RemoteAddr(), len(tmp))
+			Log("StreamMessagerImpl.writeX: tmp %s %d", conn.RemoteAddr(), len(tmp))
 		}
 		n, err := s.write(conn, tmp)
 		if err != nil {
 			return err
 		}
 		if HasLog(LOG) {
-			Log("writeFull: %s snd %d, size %d", conn.RemoteAddr(), n, size)
+			Log("StreamMessagerImpl.writeX: %s snd %d, size %d", conn.RemoteAddr(), n, size)
 		}
 		offset += n
 		left = size - offset
@@ -268,7 +268,7 @@ func (s *StreamMessagerImpl) Send(conn net.Conn, frame *FrameMessage) (int, erro
 	if s.block != nil {
 		s.block.Encrypt(frame.frame, frame.frame)
 	}
-	if err := s.writeFull(conn, frame.buffer[:frame.size+4]); err != nil {
+	if err := s.writeX(conn, frame.buffer[:frame.size+4]); err != nil {
 		return 0, err
 	}
 	return frame.size, nil
@@ -288,14 +288,14 @@ func (s *StreamMessagerImpl) read(conn net.Conn, tmp []byte) (int, error) {
 	return n, nil
 }
 
-func (s *StreamMessagerImpl) readFull(conn net.Conn, buf []byte) error {
+func (s *StreamMessagerImpl) readX(conn net.Conn, buf []byte) error {
 	if conn == nil {
 		return NewErr("connection is nil")
 	}
 	offset := 0
 	left := len(buf)
 	if HasLog(LOG) {
-		Log("readFull: %s %d", conn.RemoteAddr(), len(buf))
+		Log("StreamMessagerImpl.readX: %s %d", conn.RemoteAddr(), len(buf))
 	}
 	for left > 0 {
 		tmp := make([]byte, left)
@@ -308,7 +308,7 @@ func (s *StreamMessagerImpl) readFull(conn net.Conn, buf []byte) error {
 		left -= n
 	}
 	if HasLog(LOG) {
-		Log("readFull: Data %s %x", conn.RemoteAddr(), buf)
+		Log("StreamMessagerImpl.readX: Data %s %x", conn.RemoteAddr(), buf)
 	}
 	return nil
 }
@@ -316,7 +316,7 @@ func (s *StreamMessagerImpl) readFull(conn net.Conn, buf []byte) error {
 func (s *StreamMessagerImpl) Receive(conn net.Conn, max, min int) (*FrameMessage, error) {
 	frame := NewFrameMessage()
 	h := frame.buffer[:4]
-	if err := s.readFull(conn, h); err != nil {
+	if err := s.readX(conn, h); err != nil {
 		return nil, err
 	}
 	if !bytes.Equal(h[:2], MAGIC[:2]) {
@@ -327,7 +327,7 @@ func (s *StreamMessagerImpl) Receive(conn net.Conn, max, min int) (*FrameMessage
 		return nil, NewErr("%s: wrong size %d", conn.RemoteAddr(), size)
 	}
 	tmp := frame.buffer[4 : 4+size]
-	if err := s.readFull(conn, tmp); err != nil {
+	if err := s.readX(conn, tmp); err != nil {
 		return nil, err
 	}
 	if s.block != nil {
