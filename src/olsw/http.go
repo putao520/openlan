@@ -157,17 +157,25 @@ func (h *Http) Start() {
 	h.Initialize()
 
 	libol.Info("Http.Start %s", h.listen)
-	if h.keyFile == "" || h.crtFile == "" {
-		if err := h.server.ListenAndServe(); err != nil {
-			libol.Error("Http.Start on %s: %s", h.listen, err)
-			return
-		}
-	} else {
-		if err := h.server.ListenAndServeTLS(h.crtFile, h.keyFile); err != nil {
-			libol.Error("Http.Start on %s: %s", h.listen, err)
-			return
-		}
+	promise := &libol.Promise{
+		First:  time.Second * 2,
+		MaxInt: time.Minute,
+		MinInt: time.Second * 10,
 	}
+	promise.Done(func() error {
+		if h.keyFile == "" || h.crtFile == "" {
+			if err := h.server.ListenAndServe(); err != nil {
+				libol.Error("Http.Start on %s: %s", h.listen, err)
+				return err
+			}
+		} else {
+			if err := h.server.ListenAndServeTLS(h.crtFile, h.keyFile); err != nil {
+				libol.Error("Http.Start on %s: %s", h.listen, err)
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 func (h *Http) Shutdown() {

@@ -10,6 +10,14 @@ type Promise struct {
 	MaxInt time.Duration // the max delay time.
 }
 
+func NewPromise(first, min, max time.Duration) *Promise {
+	return &Promise{
+		First:  first,
+		MaxInt: max,
+		MinInt: min,
+	}
+}
+
 func (p *Promise) Done(call func() error) {
 	for {
 		p.Count++
