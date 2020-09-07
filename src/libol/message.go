@@ -371,7 +371,7 @@ func (s *StreamMessagerImpl) Receive(conn net.Conn, max, min int) (*FrameMessage
 		copy(tmp[:bs], s.buffer[:bs])
 	}
 	for { // loop forever until socket error or find one message.
-		rn, err := conn.Read(tmp[bs:])
+		rn, err := s.read(conn, tmp[bs:])
 		if err != nil {
 			return nil, err
 		}
