@@ -460,9 +460,9 @@ func (v *Switch) DelLink(tenant, addr string) {
 }
 
 func (v *Switch) ReadTap(device network.Taper, readAt func(f *libol.FrameMessage) error) {
-	defer device.Close()
 	name := device.Name()
 	v.out.Info("Switch.ReadTap: %s", name)
+	done := make(chan bool, 2)
 	queue := make(chan *libol.FrameMessage, 1024*2)
 	libol.Go(func() {
 		for {
@@ -470,6 +470,7 @@ func (v *Switch) ReadTap(device network.Taper, readAt func(f *libol.FrameMessage
 			n, err := device.Read(frame.Frame())
 			if err != nil {
 				v.out.Error("Switch.ReadTap: %s", err)
+				done <- true
 				break
 			}
 			frame.SetSize(n)
@@ -479,13 +480,16 @@ func (v *Switch) ReadTap(device network.Taper, readAt func(f *libol.FrameMessage
 			queue <- frame
 		}
 	})
+	defer device.Close()
 	for {
 		select {
 		case frame := <-queue:
 			if err := readAt(frame); err != nil {
 				v.out.Error("Switch.ReadTap: readAt %s %s", name, err)
-				break
+				return
 			}
+		case <-done:
+			return
 		}
 	}
 }

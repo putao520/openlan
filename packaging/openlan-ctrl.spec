@@ -1,5 +1,5 @@
 Name: openlan-ctrl
-Version: 5.3.35
+Version: 5.3.38
 Release: 1%{?dist}
 Summary: OpenLan's Controller Software
 Group: Applications/Communications
