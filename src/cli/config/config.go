@@ -16,20 +16,27 @@ type Queue struct {
 	TapRd  int `json:"trd"` // per frames
 }
 
+var (
+	QdSwr = 1024 * 4
+	QdSrd = 8
+	QdTwr = 1024 * 2
+	QdTrd = 2
+)
+
 func (q *Queue) Default() {
 	if q.SockWr == 0 {
-		q.SockWr = 1024 * 16
+		q.SockWr = QdSwr
 	}
 	if q.SockRd == 0 {
-		q.SockRd = 8
+		q.SockRd = QdSrd
 	}
 	if q.TapWr == 0 {
-		q.TapWr = 1024 * 8
+		q.TapWr = QdTwr
 	}
 	if q.TapRd == 0 {
-		q.TapRd = 2
+		q.TapRd = QdTrd
 	}
-	libol.Info("Queue.Default %v", q)
+	libol.Debug("Queue.Default %v", q)
 }
 
 type Log struct {
