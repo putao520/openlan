@@ -463,20 +463,29 @@ func (v *Switch) ReadTap(device network.Taper, readAt func(f *libol.FrameMessage
 	defer device.Close()
 	name := device.Name()
 	v.out.Info("Switch.ReadTap: %s", name)
+	queue := make(chan *libol.FrameMessage, 1024*2)
+	libol.Go(func() {
+		for {
+			frame := libol.NewFrameMessage()
+			n, err := device.Read(frame.Frame())
+			if err != nil {
+				v.out.Error("Switch.ReadTap: %s", err)
+				break
+			}
+			frame.SetSize(n)
+			if v.out.Has(libol.LOG) {
+				v.out.Log("Switch.ReadTap: %x\n", frame.Frame()[:n])
+			}
+			queue <- frame
+		}
+	})
 	for {
-		frame := libol.NewFrameMessage()
-		n, err := device.Read(frame.Frame())
-		if err != nil {
-			v.out.Error("Switch.ReadTap: %s", err)
-			break
-		}
-		frame.SetSize(n)
-		if v.out.Has(libol.LOG) {
-			v.out.Log("Switch.ReadTap: %x\n", frame.Frame()[:n])
-		}
-		if err := readAt(frame); err != nil {
-			v.out.Error("Switch.ReadTap: readAt %s %s", name, err)
-			break
+		select {
+		case frame := <-queue:
+			if err := readAt(frame); err != nil {
+				v.out.Error("Switch.ReadTap: readAt %s %s", name, err)
+				break
+			}
 		}
 	}
 }

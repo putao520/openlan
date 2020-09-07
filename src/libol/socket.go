@@ -406,6 +406,18 @@ func (t *SocketServerImpl) Loop(call ServerListener) {
 
 func (t *SocketServerImpl) Read(client SocketClient, ReadAt ReadClient) {
 	Log("SocketServerImpl.Read: %s", client)
+	queue := make(chan *FrameMessage, 1024)
+	Go(func() {
+		for {
+			select {
+			case frame := <-queue:
+				if err := ReadAt(client, frame); err != nil {
+					Error("SocketServerImpl.Read: readAt %s", err)
+					break
+				}
+			}
+		}
+	})
 	for {
 		frame, err := client.ReadMsg()
 		if err != nil || frame.size <= 0 {
@@ -422,10 +434,7 @@ func (t *SocketServerImpl) Read(client SocketClient, ReadAt ReadClient) {
 			Log("SocketServerImpl.Read: length: %d ", frame.size)
 			Log("SocketServerImpl.Read: frame : %x", frame)
 		}
-		if err := ReadAt(client, frame); err != nil {
-			Error("SocketServerImpl.Read: readAt %s", err)
-			break
-		}
+		queue <- frame
 	}
 }
 

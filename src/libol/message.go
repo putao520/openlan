@@ -6,13 +6,16 @@ import (
 	"fmt"
 	"github.com/xtaci/kcp-go/v5"
 	"net"
-	"sync"
 	"time"
 )
 
 const (
-	MaxBuf = 4096
-	HlSize = 0x04
+	MaxFrame = 1600
+	MaxBuf   = 4096
+	HlMI     = 0x02
+	HlLI     = 0x04
+	HlSize   = 0x04
+	EthDI    = 0x06
 )
 
 var MAGIC = []byte{0xff, 0xff}
@@ -34,7 +37,7 @@ func isControl(data []byte) bool {
 	if len(data) < 6 {
 		return false
 	}
-	if bytes.Equal(data[:6], EthZero[:6]) {
+	if bytes.Equal(data[:EthDI], EthZero[:EthDI]) {
 		return true
 	}
 	return false
@@ -98,7 +101,6 @@ type FrameMessage struct {
 	total   int
 	frame   []byte
 	proto   *FrameProto
-	header  *FrameLLHeader
 }
 
 func NewFrameMessage() *FrameMessage {
@@ -125,8 +127,8 @@ func NewFrameMessageFromBytes(buffer []byte) *FrameMessage {
 func (m *FrameMessage) Decode() bool {
 	m.control = isControl(m.frame)
 	if m.control {
-		m.action = string(m.frame[6:12])
-		m.params = m.frame[12:]
+		m.action = string(m.frame[EthDI : 2*EthDI])
+		m.params = m.frame[2*EthDI:]
 	}
 	return m.control
 }
@@ -172,60 +174,11 @@ func (m *FrameMessage) SetSize(v int) {
 }
 
 func (m *FrameMessage) Proto() (*FrameProto, error) {
-	if m.proto != nil {
-		return m.proto, m.proto.Err
+	if m.proto == nil {
+		m.proto = &FrameProto{Frame: m.frame}
+		_ = m.proto.Decode()
 	}
-	m.proto = &FrameProto{Frame: m.frame}
-	err := m.proto.Decode()
-	return m.proto, err
-}
-
-const (
-	FmsNew   = 0
-	FmsWrFin = 1
-	FmsRdFin = 2
-)
-
-type FrameLLNode struct {
-	next *FrameLLNode
-	data *FrameMessage
-}
-
-type FrameLLHeader struct {
-	lock  *sync.RWMutex
-	state int
-	tail  *FrameLLNode
-	next  *FrameLLNode
-}
-
-func (l *FrameLLHeader) Have(state int) bool {
-	l.lock.RLock()
-	defer l.lock.RUnlock()
-	return l.state == state
-}
-
-func (l *FrameLLHeader) State(state int) {
-	l.lock.Lock()
-	defer l.lock.Unlock()
-	l.state = state
-}
-
-func (l *FrameLLHeader) Next() *FrameLLNode {
-	l.lock.RLock()
-	defer l.lock.RUnlock()
-	return l.next
-}
-
-func (l *FrameLLHeader) Add(data *FrameMessage) {
-	l.lock.Lock()
-	defer l.lock.Unlock()
-	next := &FrameLLNode{data: data}
-	if l.tail == nil {
-		l.tail = next
-	} else if l.tail != nil {
-		l.tail.next = next
-		l.tail = next
-	}
+	return m.proto, m.proto.Err
 }
 
 type ControlMessage struct {
@@ -322,17 +275,22 @@ func (s *StreamMessagerImpl) writeX(conn net.Conn, buf []byte) error {
 	return nil
 }
 
-func (s *StreamMessagerImpl) Send(conn net.Conn, frame *FrameMessage) (int, error) {
+func (s *StreamMessagerImpl) decode(frame *FrameMessage) {
 	frame.buffer[0] = MAGIC[0]
 	frame.buffer[1] = MAGIC[1]
-	binary.BigEndian.PutUint16(frame.buffer[2:4], uint16(frame.size))
+	binary.BigEndian.PutUint16(frame.buffer[HlMI:HlLI], uint16(frame.size))
 	if s.block != nil {
 		s.block.Encrypt(frame.frame, frame.frame)
 	}
-	if err := s.writeX(conn, frame.buffer[:frame.size+4]); err != nil {
+}
+
+func (s *StreamMessagerImpl) Send(conn net.Conn, frame *FrameMessage) (int, error) {
+	s.decode(frame)
+	fs := frame.size + HlSize
+	if err := s.writeX(conn, frame.buffer[:fs]); err != nil {
 		return 0, err
 	}
-	return frame.size, nil
+	return fs, nil
 }
 
 func (s *StreamMessagerImpl) read(conn net.Conn, tmp []byte) (int, error) {
@@ -375,15 +333,15 @@ func (s *StreamMessagerImpl) readX(conn net.Conn, buf []byte) error {
 	return nil
 }
 
-func (s *StreamMessagerImpl) fetchFrame(tmp []byte, min int) (*FrameMessage, error) {
+func (s *StreamMessagerImpl) encode(tmp []byte, min int) (*FrameMessage, error) {
 	ts := len(tmp)
 	if ts < min {
 		return nil, nil
 	}
-	if !bytes.Equal(tmp[:2], MAGIC[:2]) {
+	if !bytes.Equal(tmp[:HlMI], MAGIC[:HlMI]) {
 		return nil, NewErr("wrong magic")
 	}
-	ps := binary.BigEndian.Uint16(tmp[2:4])
+	ps := binary.BigEndian.Uint16(tmp[HlMI:HlLI])
 	fs := int(ps) + HlSize
 	if ts >= fs {
 		s.buffer = tmp[fs:]
@@ -397,7 +355,7 @@ func (s *StreamMessagerImpl) fetchFrame(tmp []byte, min int) (*FrameMessage, err
 
 // 430Mib
 func (s *StreamMessagerImpl) Receive(conn net.Conn, max, min int) (*FrameMessage, error) {
-	frame, err := s.fetchFrame(s.buffer, min)
+	frame, err := s.encode(s.buffer, min)
 	if err != nil {
 		return nil, err
 	}
@@ -418,7 +376,7 @@ func (s *StreamMessagerImpl) Receive(conn net.Conn, max, min int) (*FrameMessage
 			return nil, err
 		}
 		rs := bs + rn
-		frame, err := s.fetchFrame(tmp[:rs], min)
+		frame, err := s.encode(tmp[:rs], min)
 		if err != nil {
 			return nil, err
 		}
@@ -442,7 +400,7 @@ func (s *PacketMessagerImpl) Flush() {
 func (s *PacketMessagerImpl) Send(conn net.Conn, frame *FrameMessage) (int, error) {
 	frame.buffer[0] = MAGIC[0]
 	frame.buffer[1] = MAGIC[1]
-	binary.BigEndian.PutUint16(frame.buffer[2:4], uint16(frame.size))
+	binary.BigEndian.PutUint16(frame.buffer[HlMI:HlLI], uint16(frame.size))
 	if s.block != nil {
 		s.block.Encrypt(frame.frame, frame.frame)
 	}
@@ -455,7 +413,7 @@ func (s *PacketMessagerImpl) Send(conn net.Conn, frame *FrameMessage) (int, erro
 			return 0, err
 		}
 	}
-	if _, err := conn.Write(frame.buffer[:4+frame.size]); err != nil {
+	if _, err := conn.Write(frame.buffer[:HlSize+frame.size]); err != nil {
 		return 0, err
 	}
 	return frame.size, nil
@@ -482,14 +440,14 @@ func (s *PacketMessagerImpl) Receive(conn net.Conn, max, min int) (*FrameMessage
 	if n <= 4 {
 		return nil, NewErr("%s: small frame", conn.RemoteAddr())
 	}
-	if !bytes.Equal(frame.buffer[:2], MAGIC[:2]) {
+	if !bytes.Equal(frame.buffer[:HlMI], MAGIC[:HlMI]) {
 		return nil, NewErr("%s: wrong magic", conn.RemoteAddr())
 	}
-	size := int(binary.BigEndian.Uint16(frame.buffer[2:4]))
+	size := int(binary.BigEndian.Uint16(frame.buffer[HlMI:HlLI]))
 	if size > max || size < min {
 		return nil, NewErr("%s: wrong size %d", conn.RemoteAddr(), size)
 	}
-	tmp := frame.buffer[4 : 4+size]
+	tmp := frame.buffer[HlSize : HlSize+size]
 	if s.block != nil {
 		s.block.Decrypt(tmp, tmp)
 	}

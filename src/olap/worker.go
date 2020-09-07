@@ -96,6 +96,7 @@ type SocketWorker struct {
 	jobber     []jobTimer
 	record     *libol.SafeStrInt64
 	out        *libol.SubLogger
+	wlFrame    *libol.FrameMessage // Last frame from write.
 }
 
 func NewSocketWorker(client libol.SocketClient, c *config.Point) *SocketWorker {
@@ -113,7 +114,7 @@ func NewSocketWorker(client libol.SocketClient, c *config.Point) *SocketWorker {
 		},
 		pinCfg:     c,
 		eventQueue: make(chan SocketEvent, 32),
-		writeQueue: make(chan *libol.FrameMessage, 1024),
+		writeQueue: make(chan *libol.FrameMessage, 1024*12),
 		jobber:     make([]jobTimer, 0, 32),
 		out:        libol.NewSubLogger(c.Id()),
 	}
@@ -593,6 +594,11 @@ func (t *SocketWorker) DoWrite(frame *libol.FrameMessage) error {
 	return nil
 }
 
+func (t *SocketWorker) Write(frame *libol.FrameMessage) error {
+	t.writeQueue <- frame
+	return nil
+}
+
 func (t *SocketWorker) Auth() (string, string) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
@@ -651,7 +657,7 @@ func NewTapWorker(devCfg network.TapConfig, c *config.Point) (a *TapWorker) {
 		pointCfg:   c,
 		openAgain:  false,
 		done:       make(chan bool, 2),
-		writeQueue: make(chan *libol.FrameMessage, 1024),
+		writeQueue: make(chan *libol.FrameMessage, 1024*10),
 		recvIpAddr: make(chan string, 1024),
 		out:        libol.NewSubLogger(c.Id()),
 	}
@@ -878,6 +884,11 @@ func (a *TapWorker) DoWrite(frame *libol.FrameMessage) error {
 	return nil
 }
 
+func (a *TapWorker) Write(frame *libol.FrameMessage) error {
+	a.writeQueue <- frame
+	return nil
+}
+
 // learn source from arp
 func (a *TapWorker) toArp(data []byte) bool {
 	a.out.Debug("TapWorker.toArp")
@@ -1072,10 +1083,7 @@ func (p *Worker) Initialize() {
 		OnClose:   p.OnClose,
 		OnSuccess: p.OnSuccess,
 		OnIpAddr:  p.OnIpAddr,
-		ReadAt: func(frame *libol.FrameMessage) error {
-			p.tapWorker.writeQueue <- frame
-			return nil
-		},
+		ReadAt:    p.tapWorker.Write,
 	}
 	p.conWorker.Initialize()
 
@@ -1094,10 +1102,7 @@ func (p *Worker) Initialize() {
 			}
 			return nil
 		},
-		ReadAt: func(frame *libol.FrameMessage) error {
-			p.conWorker.writeQueue <- frame
-			return nil
-		},
+		ReadAt:   p.conWorker.Write,
 		FindNext: p.FindNext,
 	}
 	p.tapWorker.Initialize()
