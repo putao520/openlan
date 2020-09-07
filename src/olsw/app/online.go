@@ -12,17 +12,17 @@ import (
 
 type Online struct {
 	lock     sync.RWMutex
-	max      int
+	maxSize  int
 	lines    map[string]*models.Line
 	lineList *list.List
 	master   Master
 }
 
 func NewOnline(m Master, c config.Switch) *Online {
-	max := 64
+	ms := c.Perf.OnLine
 	return &Online{
-		max:      max,
-		lines:    make(map[string]*models.Line, max),
+		maxSize:  ms,
+		lines:    make(map[string]*models.Line, ms),
 		lineList: list.New(),
 		master:   m,
 	}
@@ -64,7 +64,7 @@ func (o *Online) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) e
 }
 
 func (o *Online) pop() {
-	if o.lineList.Len() >= o.max {
+	if o.lineList.Len() >= o.maxSize {
 		e := o.lineList.Front()
 		if e == nil {
 			return

@@ -146,11 +146,12 @@ func (p *Proxy) Right() {
 	libol.Debug("Proxy.Right Tcp %v", p.Tcp)
 }
 
-var fd = Perf{
+var pfd = Perf{
 	Point:    1024,
 	Neighbor: 1024,
 	OnLine:   64,
 	Link:     1024,
+	User:     1024,
 }
 
 type Perf struct {
@@ -158,20 +159,24 @@ type Perf struct {
 	Neighbor int `json:"neighbor"`
 	OnLine   int `json:"online"`
 	Link     int `json:"link"`
+	User     int `json:"user"`
 }
 
 func (p *Perf) Right() {
 	if p.Point == 0 {
-		p.Point = fd.Point
+		p.Point = pfd.Point
 	}
 	if p.Neighbor == 0 {
-		p.Neighbor = fd.Neighbor
+		p.Neighbor = pfd.Neighbor
 	}
 	if p.OnLine == 0 {
-		p.OnLine = fd.OnLine
+		p.OnLine = pfd.OnLine
 	}
 	if p.Link == 0 {
-		p.Link = fd.Link
+		p.Link = pfd.Link
+	}
+	if p.User == 0 {
+		p.User = pfd.User
 	}
 }
 
@@ -206,7 +211,7 @@ var sd = Switch{
 		Listen: "0.0.0.0:10000",
 	},
 	Listen: "0.0.0.0:10002",
-	Perf:   &fd,
+	Perf:   &pfd,
 }
 
 func NewSwitch() (c Switch) {
@@ -253,7 +258,7 @@ func (c *Switch) Right() {
 	if c.Perf != nil {
 		c.Perf.Right()
 	} else {
-		c.Perf = &fd
+		c.Perf = &pfd
 	}
 }
 

@@ -8,7 +8,7 @@ import (
 )
 
 func ResponseJson(w http.ResponseWriter, v interface{}) {
-	str, err := json.MarshalIndent(v, "", "    ")
+	str, err := json.MarshalIndent(v, "", "  ")
 	if err == nil {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write(str)
