@@ -11,6 +11,8 @@ type TcpConfig struct {
 	Tls     *tls.Config
 	Block   kcp.BlockCrypt
 	Timeout time.Duration // ns
+	RdQus   int           // per frames
+	WrQus   int           // per frames
 }
 
 // Server Implement
@@ -26,6 +28,7 @@ func NewTcpServer(listen string, cfg *TcpConfig) *TcpServer {
 		tcpCfg:           cfg,
 		SocketServerImpl: NewSocketServer(listen),
 	}
+	t.WrQus = cfg.WrQus
 	t.close = t.Close
 	return t
 }
@@ -98,6 +101,7 @@ func NewTcpClient(addr string, cfg *TcpConfig) *TcpClient {
 		SocketClientImpl: NewSocketClient(addr, &StreamMessagerImpl{
 			block:   cfg.Block,
 			timeout: cfg.Timeout,
+			bufSize: cfg.RdQus * MaxFrame,
 		}),
 	}
 	t.connector = t.Connect
@@ -111,6 +115,7 @@ func NewTcpClientFromConn(conn net.Conn, cfg *TcpConfig) *TcpClient {
 		SocketClientImpl: NewSocketClient(addr, &StreamMessagerImpl{
 			block:   cfg.Block,
 			timeout: cfg.Timeout,
+			bufSize: cfg.RdQus * MaxFrame,
 		}),
 	}
 	t.updateConn(conn)

@@ -34,6 +34,8 @@ type WebConfig struct {
 	Ca      *WebCa
 	Block   kcp.BlockCrypt
 	Timeout time.Duration // ns
+	RdQus   int           // per frames
+	WrQus   int           // per frames
 }
 
 // Server Implement
@@ -49,6 +51,7 @@ func NewWebServer(listen string, cfg *WebConfig) *WebServer {
 		webCfg:           cfg,
 		SocketServerImpl: NewSocketServer(listen),
 	}
+	t.WrQus = cfg.WrQus
 	t.close = t.Close
 	return t
 }
@@ -118,6 +121,8 @@ type WebClient struct {
 	*SocketClientImpl
 	webCfg *WebConfig
 	done   chan bool
+	RdBuf  int // per frames
+	WrBuf  int // per frames
 }
 
 func NewWebClient(addr string, cfg *WebConfig) *WebClient {
@@ -126,6 +131,7 @@ func NewWebClient(addr string, cfg *WebConfig) *WebClient {
 		SocketClientImpl: NewSocketClient(addr, &StreamMessagerImpl{
 			block:   cfg.Block,
 			timeout: cfg.Timeout,
+			bufSize: cfg.RdQus * MaxFrame,
 		}),
 		done: make(chan bool, 2),
 	}
@@ -140,6 +146,7 @@ func NewWebClientFromConn(conn net.Conn, cfg *WebConfig) *WebClient {
 		SocketClientImpl: NewSocketClient(addr, &StreamMessagerImpl{
 			block:   cfg.Block,
 			timeout: cfg.Timeout,
+			bufSize: cfg.RdQus * MaxFrame,
 		}),
 		done: make(chan bool, 2),
 	}

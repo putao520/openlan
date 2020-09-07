@@ -26,6 +26,8 @@ func GetSocketServer(c config.Switch) libol.SocketServer {
 		cfg := &libol.TcpConfig{
 			Block:   config.GetBlock(c.Crypt),
 			Timeout: time.Duration(c.Timeout) * time.Second,
+			RdQus:   c.Queue.SockRd,
+			WrQus:   c.Queue.SockWr,
 		}
 		return libol.NewTcpServer(c.Listen, cfg)
 	case "udp":
@@ -38,6 +40,8 @@ func GetSocketServer(c config.Switch) libol.SocketServer {
 		cfg := &libol.WebConfig{
 			Block:   config.GetBlock(c.Crypt),
 			Timeout: time.Duration(c.Timeout) * time.Second,
+			RdQus:   c.Queue.SockRd,
+			WrQus:   c.Queue.SockWr,
 		}
 		return libol.NewWebServer(c.Listen, cfg)
 	case "wss":
@@ -48,12 +52,16 @@ func GetSocketServer(c config.Switch) libol.SocketServer {
 			},
 			Block:   config.GetBlock(c.Crypt),
 			Timeout: time.Duration(c.Timeout) * time.Second,
+			RdQus:   c.Queue.SockRd,
+			WrQus:   c.Queue.SockWr,
 		}
 		return libol.NewWebServer(c.Listen, cfg)
 	default:
 		cfg := &libol.TcpConfig{
 			Block:   config.GetBlock(c.Crypt),
 			Timeout: time.Duration(c.Timeout) * time.Second,
+			RdQus:   c.Queue.SockRd,
+			WrQus:   c.Queue.SockWr,
 		}
 		if c.Cert != nil {
 			cfg.Tls = config.GetTlsCfg(*c.Cert)
@@ -465,7 +473,7 @@ func (v *Switch) ReadTap(device network.Taper, readAt func(f *libol.FrameMessage
 	name := device.Name()
 	v.out.Info("Switch.ReadTap: %s", name)
 	done := make(chan bool, 2)
-	queue := make(chan *libol.FrameMessage, 1024*2)
+	queue := make(chan *libol.FrameMessage, v.cfg.Queue.TapWr)
 	libol.Go(func() {
 		for {
 			frame := libol.NewFrameMessage()

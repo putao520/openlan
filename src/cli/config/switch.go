@@ -190,6 +190,7 @@ type Switch struct {
 	Network   []*Network  `json:"network,omitempty"`
 	FireWall  []FlowRules `json:"firewall,omitempty"`
 	Inspect   string      `json:"inspect"`
+	Queue     *Queue      `json:"queue"`
 	ConfDir   string      `json:"-" yaml:"-"`
 	TokenFile string      `json:"-" yaml:"-"`
 	SaveFile  string      `json:"-" yaml:"-"`
@@ -267,6 +268,10 @@ func (c *Switch) Default() {
 	if c.Crypt != nil {
 		c.Crypt.Default()
 	}
+	if c.Queue == nil {
+		c.Queue = &Queue{}
+	}
+	c.Queue.Default()
 	files, err := filepath.Glob(c.ConfDir + "/network/*.json")
 	if err != nil {
 		libol.Error("Switch.Default %s", err)

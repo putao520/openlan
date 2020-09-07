@@ -29,6 +29,7 @@ type Point struct {
 	PProf       string    `json:"pprof"`
 	RequestAddr bool      `json:"-" yaml:"-"`
 	SaveFile    string    `json:"-" yaml:"-"`
+	Queue       *Queue    `json:"queue"`
 }
 
 var pd = Point{
@@ -97,6 +98,10 @@ func (c *Point) Right() {
 
 func (c *Point) Default() {
 	c.Right()
+	if c.Queue == nil {
+		c.Queue = &Queue{}
+	}
+	c.Queue.Default()
 	//reset zero value to default
 	if c.Connection == "" {
 		c.Connection = pd.Connection

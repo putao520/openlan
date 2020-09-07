@@ -114,7 +114,7 @@ func NewSocketWorker(client libol.SocketClient, c *config.Point) *SocketWorker {
 		},
 		pinCfg:     c,
 		eventQueue: make(chan SocketEvent, 32),
-		writeQueue: make(chan *libol.FrameMessage, 1024*12),
+		writeQueue: make(chan *libol.FrameMessage, c.Queue.SockWr),
 		jobber:     make([]jobTimer, 0, 32),
 		out:        libol.NewSubLogger(c.Id()),
 	}
@@ -658,7 +658,7 @@ func NewTapWorker(devCfg network.TapConfig, c *config.Point) (a *TapWorker) {
 		pointCfg:   c,
 		openAgain:  false,
 		done:       make(chan bool, 2),
-		writeQueue: make(chan *libol.FrameMessage, 1024*10),
+		writeQueue: make(chan *libol.FrameMessage, c.Queue.TapWr),
 		recvIpAddr: make(chan string, 1024),
 		out:        libol.NewSubLogger(c.Id()),
 	}
@@ -1000,6 +1000,8 @@ func GetSocketClient(c *config.Point) libol.SocketClient {
 	case "tcp":
 		cfg := &libol.TcpConfig{
 			Block: config.GetBlock(c.Crypt),
+			RdQus: c.Queue.SockRd,
+			WrQus: c.Queue.SockWr,
 		}
 		return libol.NewTcpClient(c.Connection, cfg)
 	case "udp":
@@ -1011,18 +1013,24 @@ func GetSocketClient(c *config.Point) libol.SocketClient {
 	case "ws":
 		cfg := &libol.WebConfig{
 			Block: config.GetBlock(c.Crypt),
+			RdQus: c.Queue.SockRd,
+			WrQus: c.Queue.SockWr,
 		}
 		return libol.NewWebClient(c.Connection, cfg)
 	case "wss":
 		cfg := &libol.WebConfig{
 			Ca:    &libol.WebCa{},
 			Block: config.GetBlock(c.Crypt),
+			RdQus: c.Queue.SockRd,
+			WrQus: c.Queue.SockWr,
 		}
 		return libol.NewWebClient(c.Connection, cfg)
 	default:
 		cfg := &libol.TcpConfig{
 			Tls:   &tls.Config{InsecureSkipVerify: true},
 			Block: config.GetBlock(c.Crypt),
+			RdQus: c.Queue.SockRd,
+			WrQus: c.Queue.SockWr,
 		}
 		return libol.NewTcpClient(c.Connection, cfg)
 	}

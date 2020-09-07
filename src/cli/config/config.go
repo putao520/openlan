@@ -9,6 +9,29 @@ import (
 	"strings"
 )
 
+type Queue struct {
+	SockWr int `json:"swr"` // per frames about 1572(1514+4+20+20+14)bytes
+	SockRd int `json:"srd"` // per frames
+	TapWr  int `json:"twr"` // per frames about 1572((1514+4+20+20+14))bytes
+	TapRd  int `json:"trd"` // per frames
+}
+
+func (q *Queue) Default() {
+	if q.SockWr == 0 {
+		q.SockWr = 1024 * 16
+	}
+	if q.SockRd == 0 {
+		q.SockRd = 8
+	}
+	if q.TapWr == 0 {
+		q.TapWr = 1024 * 8
+	}
+	if q.TapRd == 0 {
+		q.TapRd = 2
+	}
+	libol.Info("Queue.Default %v", q)
+}
+
 type Log struct {
 	File    string `json:"file,omitempty"`
 	Verbose int    `json:"level,omitempty"`

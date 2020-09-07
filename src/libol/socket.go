@@ -328,6 +328,7 @@ type SocketServerImpl struct {
 	offClients chan SocketClient
 	close      func()
 	timeout    int64 // sec for read and write timeout
+	WrQus      int   // per frames.
 }
 
 func NewSocketServer(listen string) *SocketServerImpl {
@@ -338,6 +339,7 @@ func NewSocketServer(listen string) *SocketServerImpl {
 		clients:    NewSafeStrMap(1024),
 		onClients:  make(chan SocketClient, 1024),
 		offClients: make(chan SocketClient, 1024),
+		WrQus:      1024,
 	}
 }
 
@@ -407,7 +409,7 @@ func (t *SocketServerImpl) Loop(call ServerListener) {
 func (t *SocketServerImpl) Read(client SocketClient, ReadAt ReadClient) {
 	Log("SocketServerImpl.Read: %s", client)
 	done := make(chan bool, 2)
-	queue := make(chan *FrameMessage, 1024)
+	queue := make(chan *FrameMessage, t.WrQus)
 	Go(func() {
 		for {
 			select {
