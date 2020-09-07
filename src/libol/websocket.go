@@ -124,7 +124,8 @@ func NewWebClient(addr string, cfg *WebConfig) *WebClient {
 	t := &WebClient{
 		webCfg: cfg,
 		SocketClientImpl: NewSocketClient(addr, &StreamMessagerImpl{
-			block: cfg.Block,
+			block:   cfg.Block,
+			timeout: cfg.Timeout,
 		}),
 		done: make(chan bool, 2),
 	}
@@ -137,7 +138,8 @@ func NewWebClientFromConn(conn net.Conn, cfg *WebConfig) *WebClient {
 	t := &WebClient{
 		webCfg: cfg,
 		SocketClientImpl: NewSocketClient(addr, &StreamMessagerImpl{
-			block: cfg.Block,
+			block:   cfg.Block,
+			timeout: cfg.Timeout,
 		}),
 		done: make(chan bool, 2),
 	}

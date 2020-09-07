@@ -96,7 +96,8 @@ func NewTcpClient(addr string, cfg *TcpConfig) *TcpClient {
 	t := &TcpClient{
 		tcpCfg: cfg,
 		SocketClientImpl: NewSocketClient(addr, &StreamMessagerImpl{
-			block: cfg.Block,
+			block:   cfg.Block,
+			timeout: cfg.Timeout,
 		}),
 	}
 	t.connector = t.Connect
@@ -108,7 +109,8 @@ func NewTcpClientFromConn(conn net.Conn, cfg *TcpConfig) *TcpClient {
 	t := &TcpClient{
 		tcpCfg: cfg,
 		SocketClientImpl: NewSocketClient(addr, &StreamMessagerImpl{
-			block: cfg.Block,
+			block:   cfg.Block,
+			timeout: cfg.Timeout,
 		}),
 	}
 	t.updateConn(conn)

@@ -24,7 +24,8 @@ func GetSocketServer(c config.Switch) libol.SocketServer {
 		return libol.NewKcpServer(c.Listen, cfg)
 	case "tcp":
 		cfg := &libol.TcpConfig{
-			Block: config.GetBlock(c.Crypt),
+			Block:   config.GetBlock(c.Crypt),
+			Timeout: time.Duration(c.Timeout) * time.Second,
 		}
 		return libol.NewTcpServer(c.Listen, cfg)
 	case "udp":
@@ -51,7 +52,8 @@ func GetSocketServer(c config.Switch) libol.SocketServer {
 		return libol.NewWebServer(c.Listen, cfg)
 	default:
 		cfg := &libol.TcpConfig{
-			Block: config.GetBlock(c.Crypt),
+			Block:   config.GetBlock(c.Crypt),
+			Timeout: time.Duration(c.Timeout) * time.Second,
 		}
 		if c.Cert != nil {
 			cfg.Tls = config.GetTlsCfg(*c.Cert)

@@ -472,8 +472,9 @@ func (t *SocketWorker) doJobber() error {
 }
 
 func (t *SocketWorker) doTicker() error {
-	_ = t.doAlive()
-	_ = t.doJobber()
+	t.deadCheck()    // period to check whether dead.
+	_ = t.doAlive()  // send ping and wait pong to keep alive.
+	_ = t.doJobber() // check job timer.
 	return nil
 }
 
@@ -575,7 +576,7 @@ func (t *SocketWorker) DoWrite(frame *libol.FrameMessage) error {
 		t.out.Debug("SocketWorker.DoWrite: %x", frame)
 	}
 	t.lock.Lock()
-	t.deadCheck()
+	t.deadCheck() // dead check immediately
 	if t.client == nil {
 		t.lock.Unlock()
 		return libol.NewErr("client is nil")
