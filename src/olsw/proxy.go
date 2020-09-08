@@ -234,6 +234,7 @@ type Proxy struct {
 	tcp   []*TcpProxy
 	socks *socks5.Server
 	http  *http.Server
+	https *http.Server
 }
 
 func NewProxy(cfg *config.Proxy) *Proxy {
@@ -268,18 +269,18 @@ func (p *Proxy) initSocks() {
 	p.socks = server
 }
 
-func (p *Proxy) initHttp() {
-	if p.cfg.Http == nil || p.cfg.Http.Listen == "" {
-		return
+func (p *Proxy) initHttp(c *config.HttpProxy) *http.Server {
+	if c == nil || c.Listen == "" {
+		return nil
 	}
-	addr := p.cfg.Http.Listen
-	auth := p.cfg.Http.Auth
+	addr := c.Listen
+	auth := c.Auth
 	hp := NewHttpProxy(addr)
 	if len(auth.Username) > 0 {
 		hp.users = make(map[string]string, 1)
 		hp.users[auth.Username] = auth.Password
 	}
-	p.http = &http.Server{
+	return &http.Server{
 		Addr:    addr,
 		Handler: hp,
 	}
@@ -331,22 +332,23 @@ func (p *Proxy) Initialize() {
 		return
 	}
 	p.initSocks()
-	p.initHttp()
+	p.http = p.initHttp(p.cfg.Http)
+	p.https = p.initHttp(p.cfg.Https)
 	p.initTcp()
 }
 
-func (p *Proxy) startHttp() {
-	if p.http == nil {
+func (p *Proxy) startHttp(s *http.Server, c *config.HttpProxy) {
+	if s == nil || c == nil {
 		return
 	}
-	crt := p.cfg.Http.Cert
+	crt := c.Cert
 	if crt == nil || crt.KeyFile == "" {
-		libol.Info("Proxy.startHttp %s", p.http.Addr)
+		libol.Info("Proxy.startHttp %s", s.Addr)
 	} else {
-		libol.Info("Proxy.startHttps %s", p.http.Addr)
+		libol.Info("Proxy.startHttps %s", s.Addr)
 	}
 	libol.Go(func() {
-		defer p.http.Shutdown(nil)
+		defer s.Shutdown(nil)
 		promise := &libol.Promise{
 			First:  time.Second * 2,
 			MaxInt: time.Minute,
@@ -354,12 +356,12 @@ func (p *Proxy) startHttp() {
 		}
 		promise.Done(func() error {
 			if crt == nil || crt.KeyFile == "" {
-				if err := p.http.ListenAndServe(); err != nil {
+				if err := s.ListenAndServe(); err != nil {
 					libol.Warn("Proxy.startHttp %s", err)
 					return err
 				}
 			} else {
-				if err := p.http.ListenAndServeTLS(crt.CrtFile, crt.KeyFile); err != nil {
+				if err := s.ListenAndServeTLS(crt.CrtFile, crt.KeyFile); err != nil {
 					libol.Error("Proxy.startHttps %s", err)
 					return err
 				}
@@ -376,7 +378,8 @@ func (p *Proxy) Start() {
 	libol.Info("Proxy.Start")
 	libol.Go(p.startTcp)
 	libol.Go(p.startSocks)
-	libol.Go(p.startHttp)
+	p.startHttp(p.http, p.cfg.Http)
+	p.startHttp(p.https, p.cfg.Https)
 }
 
 func (p *Proxy) stopTcp() {

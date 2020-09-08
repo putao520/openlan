@@ -128,6 +128,7 @@ type TcpProxy struct {
 type Proxy struct {
 	Socks *Socks      `json:"socks,omitempty"`
 	Http  *HttpProxy  `json:"http,omitempty"`
+	Https *HttpProxy  `json:"https,omitempty"`
 	Tcp   []*TcpProxy `json:"tcp,omitempty"`
 }
 
@@ -139,8 +140,11 @@ func (p *Proxy) Right() {
 	libol.Debug("Proxy.Right Http %v", p.Http)
 	if p.Http != nil {
 		RightAddr(&p.Http.Listen, 11082)
-		if p.Http.Cert != nil {
-			p.Http.Cert.Right()
+	}
+	if p.Https != nil {
+		RightAddr(&p.Https.Listen, 11083)
+		if p.Https.Cert != nil {
+			p.Https.Cert.Right()
 		}
 	}
 	libol.Debug("Proxy.Right Tcp %v", p.Tcp)

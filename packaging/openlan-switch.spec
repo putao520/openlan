@@ -47,8 +47,8 @@ cp -R %_source_dir/src/olsw/public %{buildroot}/var/openlan
   echo "YOU NEED ALLOW TCP/UDP PORT:10002."
 }
 /usr/bin/firewall-cmd --permanent --zone=public --permanent \
- --add-port=11080/tcp --add-port=11082/tcp --add-port=10000/tcp || {
-  echo "YOU NEED ALLOW TCP PORT:11080, 10082 and 10000."
+  --add-port=10000/tcp --add-port=11080-11084/tcp || {
+  echo "YOU NEED ALLOW TCP PORT:10000 and 11080-11084"
 }
 firewall-cmd --reload || :
 
