@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
@@ -393,4 +394,11 @@ func (p *Proxy) Stop() {
 	}
 	libol.Info("Proxy.Stop")
 	p.stopTcp()
+}
+
+func init() {
+	// HTTP/2.0 not support upgrade for Hijacker
+	if err := os.Setenv("GODEBUG", "http2server=0"); err != nil {
+		libol.Warn("proxy.init %s")
+	}
 }

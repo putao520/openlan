@@ -13,3 +13,5 @@ v5.2.12: 2 vcpu / 1G memory
 * openlan-no-trace-xor-crypt:   41MiB / 57MiB
 * openlan-with-trace-xor-crypt: 30MiB / 57MiB
 
+# Protocol
+tcp > ws > tls > wss > udp > kcp
