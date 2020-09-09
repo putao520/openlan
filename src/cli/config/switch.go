@@ -109,7 +109,7 @@ type FlowRules struct {
 	Jump     string `json:"jump"` // SNAT/RETURN/MASQUERADE
 }
 
-type Socks struct {
+type SocksProxy struct {
 	Listen string   `json:"listen,omitempty"`
 	Auth   Password `json:"auth,omitempty"`
 }
@@ -121,33 +121,22 @@ type HttpProxy struct {
 }
 
 type TcpProxy struct {
-	Listen string `json:"listen,omitempty"`
-	Target string `json:"target,omitempty"`
+	Listen string   `json:"listen,omitempty"`
+	Target []string `json:"target,omitempty"`
 }
 
 type Proxy struct {
-	Socks *Socks      `json:"socks,omitempty"`
-	Http  *HttpProxy  `json:"http,omitempty"`
-	Https *HttpProxy  `json:"https,omitempty"`
-	Tcp   []*TcpProxy `json:"tcp,omitempty"`
+	Socks []*SocksProxy `json:"socks,omitempty"`
+	Http  []*HttpProxy  `json:"http,omitempty"`
+	Tcp   []*TcpProxy   `json:"tcp,omitempty"`
 }
 
 func (p *Proxy) Right() {
-	libol.Debug("Proxy.Right Socks %v", p.Socks)
-	if p.Socks != nil {
-		RightAddr(&p.Socks.Listen, 11080)
-	}
-	libol.Debug("Proxy.Right Http %v", p.Http)
-	if p.Http != nil {
-		RightAddr(&p.Http.Listen, 11082)
-	}
-	if p.Https != nil {
-		RightAddr(&p.Https.Listen, 11083)
-		if p.Https.Cert != nil {
-			p.Https.Cert.Right()
+	for _, h := range p.Http {
+		if h.Cert != nil {
+			h.Cert.Right()
 		}
 	}
-	libol.Debug("Proxy.Right Tcp %v", p.Tcp)
 }
 
 var pfd = Perf{

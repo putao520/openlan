@@ -14,9 +14,10 @@ import (
 )
 
 type HttpProxy struct {
-	listen string
 	users  map[string]string
 	out    *libol.SubLogger
+	server *http.Server
+	cfg    *config.HttpProxy
 }
 
 var (
@@ -41,11 +42,21 @@ func parseBasicAuth(auth string) (username, password string, ok bool) {
 	return cs[:s], cs[s+1:], true
 }
 
-func NewHttpProxy(addr string) *HttpProxy {
-	return &HttpProxy{
-		listen: addr,
-		out:    libol.NewSubLogger(addr),
+func NewHttpProxy(cfg *config.HttpProxy) *HttpProxy {
+	h := &HttpProxy{
+		out: libol.NewSubLogger(cfg.Listen),
+		cfg: cfg,
 	}
+	h.server = &http.Server{
+		Addr:    cfg.Listen,
+		Handler: h,
+	}
+	auth := cfg.Auth
+	if len(auth.Username) > 0 {
+		h.users = make(map[string]string, 1)
+		h.users[auth.Username] = auth.Password
+	}
+	return h
 }
 
 func (t *HttpProxy) isAuth(username, password string) bool {
@@ -146,18 +157,53 @@ func (t *HttpProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type TcpProxy struct {
-	listen   string
-	target   string
-	listener net.Listener
-	out      *libol.SubLogger
+func (t *HttpProxy) Start() {
+	if t.server == nil || t.cfg == nil {
+		return
+	}
+	crt := t.cfg.Cert
+	if crt == nil || crt.KeyFile == "" {
+		t.out.Info("HttpProxy.start http://%s", t.server.Addr)
+	} else {
+		t.out.Info("HttpProxy.start https://%s", t.server.Addr)
+	}
+	libol.Go(func() {
+		defer t.server.Shutdown(nil)
+		promise := &libol.Promise{
+			First:  time.Second * 2,
+			MaxInt: time.Minute,
+			MinInt: time.Second * 10,
+		}
+		promise.Done(func() error {
+			if crt == nil || crt.KeyFile == "" {
+				if err := t.server.ListenAndServe(); err != nil {
+					t.out.Warn("HttpProxy.start %s", err)
+					return err
+				}
+			} else {
+				if err := t.server.ListenAndServeTLS(crt.CrtFile, crt.KeyFile); err != nil {
+					t.out.Error("HttpProxy.start %s", err)
+					return err
+				}
+			}
+			return nil
+		})
+	})
 }
 
-func NewTcpProxy(listen, target string) *TcpProxy {
+type TcpProxy struct {
+	listen   string
+	target   []string
+	listener net.Listener
+	out      *libol.SubLogger
+	rr       uint64
+}
+
+func NewTcpProxy(cfg *config.TcpProxy) *TcpProxy {
 	return &TcpProxy{
-		listen: listen,
-		target: target,
-		out:    libol.NewSubLogger(listen),
+		listen: cfg.Listen,
+		target: cfg.Target,
+		out:    libol.NewSubLogger(cfg.Listen),
 	}
 }
 
@@ -180,6 +226,12 @@ func (t *TcpProxy) tunnel(src net.Conn, dst net.Conn) {
 	})
 	wait.Wait()
 	t.out.Debug("TcpProxy.tunnel %s exit", dst.RemoteAddr())
+}
+
+func (t *TcpProxy) loadBalance() string {
+	i := t.rr % uint64(len(t.target))
+	t.rr++
+	return t.target[i]
 }
 
 func (t *TcpProxy) Start() {
@@ -208,7 +260,8 @@ func (t *TcpProxy) Start() {
 				break
 			}
 			// connect target and pipe it.
-			target, err := net.Dial("tcp", t.target)
+			backend := t.loadBalance()
+			target, err := net.Dial("tcp", backend)
 			if err != nil {
 				t.out.Error("TcpProxy.Accept %s", err)
 				continue
@@ -229,26 +282,19 @@ func (t *TcpProxy) Stop() {
 	t.listener = nil
 }
 
-type Proxy struct {
-	cfg   *config.Proxy
-	tcp   []*TcpProxy
-	socks *socks5.Server
-	http  *http.Server
-	https *http.Server
+type SocksProxy struct {
+	server *socks5.Server
+	out    *libol.SubLogger
+	cfg    *config.SocksProxy
 }
 
-func NewProxy(cfg *config.Proxy) *Proxy {
-	return &Proxy{
+func NewSocksProxy(cfg *config.SocksProxy) *SocksProxy {
+	s := &SocksProxy{
 		cfg: cfg,
-	}
-}
-
-func (p *Proxy) initSocks() {
-	if p.cfg.Socks == nil || p.cfg.Socks.Listen == "" {
-		return
+		out: libol.NewSubLogger(cfg.Listen),
 	}
 	// Create a SOCKS5 server
-	auth := p.cfg.Socks.Auth
+	auth := cfg.Auth
 	authMethods := make([]socks5.Authenticator, 0, 2)
 	if len(auth.Username) > 0 {
 		author := socks5.UserPassAuthenticator{
@@ -258,50 +304,22 @@ func (p *Proxy) initSocks() {
 		}
 		authMethods = append(authMethods, author)
 	}
-	conf := &socks5.Config{
-		AuthMethods: authMethods,
-	}
+	conf := &socks5.Config{AuthMethods: authMethods}
 	server, err := socks5.New(conf)
 	if err != nil {
-		libol.Error("Proxy.initSocks %s", err)
-		return
-	}
-	p.socks = server
-}
-
-func (p *Proxy) initHttp(c *config.HttpProxy) *http.Server {
-	if c == nil || c.Listen == "" {
+		s.out.Error("NewSocksProxy %s", err)
 		return nil
 	}
-	addr := c.Listen
-	auth := c.Auth
-	hp := NewHttpProxy(addr)
-	if len(auth.Username) > 0 {
-		hp.users = make(map[string]string, 1)
-		hp.users[auth.Username] = auth.Password
-	}
-	return &http.Server{
-		Addr:    addr,
-		Handler: hp,
-	}
+	s.server = server
+	return s
 }
 
-func (p *Proxy) initTcp() {
-	if len(p.cfg.Tcp) == 0 {
+func (s *SocksProxy) Start() {
+	if s.server == nil || s.cfg == nil {
 		return
 	}
-	p.tcp = make([]*TcpProxy, 0, 32)
-	for _, c := range p.cfg.Tcp {
-		p.tcp = append(p.tcp, NewTcpProxy(c.Listen, c.Target))
-	}
-}
-
-func (p *Proxy) startSocks() {
-	if p.cfg.Socks == nil || p.socks == nil {
-		return
-	}
-	addr := p.cfg.Socks.Listen
-	libol.Info("Proxy.startSocks %s", addr)
+	addr := s.cfg.Listen
+	s.out.Info("Proxy.startSocks")
 	libol.Go(func() {
 		promise := &libol.Promise{
 			First:  time.Second * 2,
@@ -309,8 +327,8 @@ func (p *Proxy) startSocks() {
 			MinInt: time.Second * 10,
 		}
 		promise.Done(func() error {
-			if err := p.socks.ListenAndServe("tcp", addr); err != nil {
-				libol.Warn("Proxy.startSocks %s", err)
+			if err := s.server.ListenAndServe("tcp", addr); err != nil {
+				s.out.Warn("Proxy.startSocks %s", err)
 				return err
 			}
 			return nil
@@ -318,12 +336,19 @@ func (p *Proxy) startSocks() {
 	})
 }
 
-func (p *Proxy) startTcp() {
-	if len(p.tcp) == 0 {
-		return
-	}
-	for _, t := range p.tcp {
-		t.Start()
+type Proxy struct {
+	cfg   *config.Proxy
+	tcp   map[string]*TcpProxy
+	socks map[string]*SocksProxy
+	http  map[string]*HttpProxy
+}
+
+func NewProxy(cfg *config.Proxy) *Proxy {
+	return &Proxy{
+		cfg:   cfg,
+		socks: make(map[string]*SocksProxy, 32),
+		tcp:   make(map[string]*TcpProxy, 32),
+		http:  make(map[string]*HttpProxy, 32),
 	}
 }
 
@@ -331,44 +356,23 @@ func (p *Proxy) Initialize() {
 	if p.cfg == nil {
 		return
 	}
-	p.initSocks()
-	p.http = p.initHttp(p.cfg.Http)
-	p.https = p.initHttp(p.cfg.Https)
-	p.initTcp()
-}
-
-func (p *Proxy) startHttp(s *http.Server, c *config.HttpProxy) {
-	if s == nil || c == nil {
-		return
-	}
-	crt := c.Cert
-	if crt == nil || crt.KeyFile == "" {
-		libol.Info("Proxy.startHttp %s", s.Addr)
-	} else {
-		libol.Info("Proxy.startHttps %s", s.Addr)
-	}
-	libol.Go(func() {
-		defer s.Shutdown(nil)
-		promise := &libol.Promise{
-			First:  time.Second * 2,
-			MaxInt: time.Minute,
-			MinInt: time.Second * 10,
+	for _, c := range p.cfg.Socks {
+		s := NewSocksProxy(c)
+		if s == nil {
+			continue
 		}
-		promise.Done(func() error {
-			if crt == nil || crt.KeyFile == "" {
-				if err := s.ListenAndServe(); err != nil {
-					libol.Warn("Proxy.startHttp %s", err)
-					return err
-				}
-			} else {
-				if err := s.ListenAndServeTLS(crt.CrtFile, crt.KeyFile); err != nil {
-					libol.Error("Proxy.startHttps %s", err)
-					return err
-				}
-			}
-			return nil
-		})
-	})
+		p.socks[c.Listen] = s
+	}
+	for _, c := range p.cfg.Tcp {
+		p.tcp[c.Listen] = NewTcpProxy(c)
+	}
+	for _, c := range p.cfg.Http {
+		if c == nil || c.Listen == "" {
+			continue
+		}
+		h := NewHttpProxy(c)
+		p.http[c.Listen] = h
+	}
 }
 
 func (p *Proxy) Start() {
@@ -376,18 +380,14 @@ func (p *Proxy) Start() {
 		return
 	}
 	libol.Info("Proxy.Start")
-	libol.Go(p.startTcp)
-	libol.Go(p.startSocks)
-	p.startHttp(p.http, p.cfg.Http)
-	p.startHttp(p.https, p.cfg.Https)
-}
-
-func (p *Proxy) stopTcp() {
-	if len(p.tcp) == 0 {
-		return
+	for _, s := range p.socks {
+		s.Start()
 	}
 	for _, t := range p.tcp {
-		t.Stop()
+		t.Start()
+	}
+	for _, h := range p.http {
+		h.Start()
 	}
 }
 
@@ -396,7 +396,9 @@ func (p *Proxy) Stop() {
 		return
 	}
 	libol.Info("Proxy.Stop")
-	p.stopTcp()
+	for _, t := range p.tcp {
+		t.Stop()
+	}
 }
 
 func init() {
