@@ -15,6 +15,7 @@ const (
 	OutputC      = "OUTPUT"
 	PostRoutingC = "POSTROUTING"
 	PreRoutingC  = "PREROUTING"
+	MasqueradeC  = "MASQUERADE"
 	OlInputC     = "openlan-IN"
 	OlForwardC   = "openlan-FWD"
 	OlOutputC    = "openlan-OUT"
@@ -53,44 +54,52 @@ func NewFireWall(flows []config.FlowRule) *FireWall {
 
 func (f *FireWall) Initialize() {
 	// Init chains
-	f.chains = append(f.chains, libol.IptChain{
+	f.AddChain(libol.IptChain{
 		Table: FilterT,
 		Name:  OlInputC,
 	})
-	f.chains = append(f.chains, libol.IptChain{
+	f.AddChain(libol.IptChain{
 		Table: FilterT,
 		Name:  OlForwardC,
 	})
-	f.chains = append(f.chains, libol.IptChain{
+	f.AddChain(libol.IptChain{
 		Table: FilterT,
 		Name:  OlOutputC,
 	})
-	f.chains = append(f.chains, libol.IptChain{
+	f.AddChain(libol.IptChain{
 		Table: NatT,
 		Name:  OlPostC,
 	})
 	// Enable chains
-	f.rules = append(f.rules, libol.IptRule{
+	f.AddRule(libol.IptRule{
 		Table: FilterT,
 		Chain: InputC,
 		Jump:  OlInputC,
 	})
-	f.rules = append(f.rules, libol.IptRule{
+	f.AddRule(libol.IptRule{
 		Table: FilterT,
 		Chain: ForwardC,
 		Jump:  OlForwardC,
 	})
-	f.rules = append(f.rules, libol.IptRule{
+	f.AddRule(libol.IptRule{
 		Table: FilterT,
 		Chain: OutputC,
 		Jump:  OlOutputC,
 	})
-	f.rules = append(f.rules, libol.IptRule{
+	f.AddRule(libol.IptRule{
 		Table: NatT,
 		Chain: PostRoutingC,
 		Jump:  OlPostC,
 	})
 	libol.Info("FireWall.Initialize total %d rules", len(f.rules))
+}
+
+func (f *FireWall) AddChain(chain libol.IptChain) {
+	f.chains = append(f.chains, chain)
+}
+
+func (f *FireWall) AddRule(rule libol.IptRule) {
+	f.rules = append(f.rules, rule)
 }
 
 func (f *FireWall) install() {

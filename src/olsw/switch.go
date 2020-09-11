@@ -122,66 +122,65 @@ func (v *Switch) acceptBridge(bridge string) {
 }
 
 func (v *Switch) acceptRoute(source, prefix string) {
-	rules := v.firewall.rules
 	v.out.Info("Switch.acceptRoute %s, %s", source, prefix)
 	// allowed forward between source and prefix.
-	rules = append(rules, libol.IptRule{
+	v.firewall.AddRule(libol.IptRule{
 		Table:  FilterT,
 		Chain:  OlForwardC,
 		Source: source,
 		Dest:   prefix,
 	})
-	rules = append(rules, libol.IptRule{
+	v.firewall.AddRule(libol.IptRule{
 		Table:  FilterT,
 		Chain:  OlForwardC,
 		Source: prefix,
 		Dest:   source,
 	})
 	// allowed input from source to prefix.
-	rules = append(rules, libol.IptRule{
+	v.firewall.AddRule(libol.IptRule{
 		Table:  FilterT,
 		Chain:  OlInputC,
 		Source: source,
 		Dest:   prefix,
 	})
 	// enable masquerade between source and prefix.
-	rules = append(rules, libol.IptRule{
+	v.firewall.AddRule(libol.IptRule{
 		Table:  NatT,
 		Chain:  OlPostC,
 		Source: source,
 		Dest:   prefix,
-		Jump:   "MASQUERADE",
+		Jump:   MasqueradeC,
 	})
-	rules = append(rules, libol.IptRule{
+	v.firewall.AddRule(libol.IptRule{
 		Table:  NatT,
 		Chain:  OlPostC,
 		Source: prefix,
 		Dest:   source,
-		Jump:   "MASQUERADE",
+		Jump:   MasqueradeC,
 	})
-	v.firewall.rules = rules
 }
 
 func (v *Switch) initNetwork() {
 	crypt := v.cfg.Crypt
 	for _, nCfg := range v.cfg.Network {
 		name := nCfg.Name
+		v.worker[name] = NewNetworkWorker(*nCfg, crypt)
+
 		brCfg := nCfg.Bridge
 		// Forward traffic in bridge.
 		v.acceptBridge(brCfg.Name)
-
 		source := brCfg.Address
 		ifAddr := strings.SplitN(source, "/", 2)[0]
-		if ifAddr != "" {
-			for _, rt := range nCfg.Routes {
-				if rt.NextHop != ifAddr {
-					continue
-				}
-				// MASQUERADE and allowed forward it.
-				v.acceptRoute(source, rt.Prefix)
-			}
+		if ifAddr == "" {
+			continue
 		}
-		v.worker[name] = NewNetworkWorker(*nCfg, crypt)
+		// Enable MASQUERADE, and allowed forward.
+		for _, rt := range nCfg.Routes {
+			if rt.NextHop != ifAddr {
+				continue
+			}
+			v.acceptRoute(source, rt.Prefix)
+		}
 	}
 }
 
