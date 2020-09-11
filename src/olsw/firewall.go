@@ -95,12 +95,12 @@ func (f *FireWall) Initialize() {
 
 func (f *FireWall) install() {
 	for _, c := range f.chains {
-		if _, err := libol.IptCCmd(c, "-N"); err != nil {
+		if _, err := libol.IptChainOpr(c, "-N"); err != nil {
 			libol.Warn("FireWall.install %s", err)
 		}
 	}
 	for _, r := range f.rules {
-		if ret, err := libol.IptRCmd(r, "-I"); err != nil {
+		if ret, err := libol.IptRuleOpr(r, "-I"); err != nil {
 			libol.Warn("FireWall.install %s", ret)
 		}
 	}
@@ -121,12 +121,12 @@ func (f *FireWall) Start() {
 
 func (f *FireWall) uninstall() {
 	for _, rule := range f.rules {
-		if ret, err := libol.IptRCmd(rule, "-D"); err != nil {
+		if ret, err := libol.IptRuleOpr(rule, "-D"); err != nil {
 			libol.Warn("FireWall.uninstall %s", ret)
 		}
 	}
 	for _, c := range f.chains {
-		if _, err := libol.IptCCmd(c, "-X"); err != nil {
+		if _, err := libol.IptChainOpr(c, "-X"); err != nil {
 			libol.Warn("FireWall.uninstall %s", err)
 		}
 	}
