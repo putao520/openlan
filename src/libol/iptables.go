@@ -5,7 +5,12 @@ import (
 	"runtime"
 )
 
-type IpTableRule struct {
+type IptChain struct {
+	Table string
+	Name  string
+}
+
+type IptRule struct {
 	Table    string
 	Chain    string
 	Input    string
@@ -18,7 +23,7 @@ type IpTableRule struct {
 	Jump     string
 }
 
-func (rule IpTableRule) Args() []string {
+func (rule IptRule) Args() []string {
 	var args []string
 	if rule.Source != "" {
 		args = append(args, "-s", rule.Source)
@@ -46,8 +51,8 @@ func (rule IpTableRule) Args() []string {
 	return args
 }
 
-func IpTableCmd(rule IpTableRule, opr string) ([]byte, error) {
-	Debug("IpTableCmd: %s, %v", opr, rule)
+func IptRCmd(rule IptRule, opr string) ([]byte, error) {
+	Debug("IptRCmd: %s, %v", opr, rule)
 	table := iptables.Table(rule.Table)
 	chain := rule.Chain
 	switch runtime.GOOS {
@@ -65,7 +70,31 @@ func IpTableCmd(rule IpTableRule, opr string) ([]byte, error) {
 	}
 }
 
-func IpTableInit() {
+func IptCCmd(chain IptChain, opr string) ([]byte, error) {
+	Debug("IptCCmd: %s, %v", opr, chain)
+	table := iptables.Table(chain.Table)
+	name := chain.Name
+	switch runtime.GOOS {
+	case "linux":
+		if opr == "-N" {
+			if iptables.ExistChain(name, table) {
+				return nil, nil
+			}
+			if _, err := iptables.NewChain(name, table, true); err != nil {
+				return nil, err
+			}
+		} else if opr == "-X" { // -X
+			if err := iptables.RemoveExistingChain(name, table); err != nil {
+				return nil, err
+			}
+		}
+	default:
+		return nil, NewErr("IpTable notSupport %s", runtime.GOOS)
+	}
+	return nil, nil
+}
+
+func IptInit() {
 	if err := iptables.FirewalldInit(); err != nil {
 		Error("IpTables.init %s", err)
 	}

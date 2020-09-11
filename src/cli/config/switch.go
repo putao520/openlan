@@ -96,7 +96,7 @@ func (c *Cert) Right() {
 	}
 }
 
-type FlowRules struct {
+type FlowRule struct {
 	Table    string `json:"table"`
 	Chain    string `json:"chain"`
 	Input    string `json:"input"`
@@ -174,24 +174,24 @@ func (p *Perf) Right() {
 }
 
 type Switch struct {
-	Alias     string      `json:"alias"`
-	Perf      *Perf       `json:"perf,omitempty"`
-	Protocol  string      `json:"protocol"` // tcp, tls, udp, kcp, ws and wss.
-	Listen    string      `json:"listen"`
-	Timeout   int         `json:"timeout"`
-	Http      *Http       `json:"http,omitempty"`
-	Log       Log         `json:"log"`
-	Cert      *Cert       `json:"cert,omitempty"`
-	Crypt     *Crypt      `json:"crypt,omitempty"`
-	Proxy     *Proxy      `json:"proxy,omitempty"`
-	PProf     string      `json:"pprof"`
-	Network   []*Network  `json:"network,omitempty"`
-	FireWall  []FlowRules `json:"firewall,omitempty"`
-	Inspect   string      `json:"inspect"`
-	Queue     *Queue      `json:"queue"`
-	ConfDir   string      `json:"-" yaml:"-"`
-	TokenFile string      `json:"-" yaml:"-"`
-	SaveFile  string      `json:"-" yaml:"-"`
+	Alias     string     `json:"alias"`
+	Perf      *Perf      `json:"perf,omitempty"`
+	Protocol  string     `json:"protocol"` // tcp, tls, udp, kcp, ws and wss.
+	Listen    string     `json:"listen"`
+	Timeout   int        `json:"timeout"`
+	Http      *Http      `json:"http,omitempty"`
+	Log       Log        `json:"log"`
+	Cert      *Cert      `json:"cert,omitempty"`
+	Crypt     *Crypt     `json:"crypt,omitempty"`
+	Proxy     *Proxy     `json:"proxy,omitempty"`
+	PProf     string     `json:"pprof"`
+	Network   []*Network `json:"network,omitempty"`
+	FireWall  []FlowRule `json:"firewall,omitempty"`
+	Inspect   string     `json:"inspect"`
+	Queue     *Queue     `json:"queue"`
+	ConfDir   string     `json:"-" yaml:"-"`
+	TokenFile string     `json:"-" yaml:"-"`
+	SaveFile  string     `json:"-" yaml:"-"`
 }
 
 var sd = Switch{

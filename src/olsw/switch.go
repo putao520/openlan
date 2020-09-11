@@ -84,7 +84,7 @@ type Switch struct {
 	lock     sync.Mutex
 	cfg      config.Switch
 	apps     Apps
-	firewall FireWall
+	firewall *FireWall
 	hooks    []Hook
 	http     *Http
 	server   libol.SocketServer
@@ -98,16 +98,14 @@ type Switch struct {
 func NewSwitch(c config.Switch) *Switch {
 	server := GetSocketServer(c)
 	v := Switch{
-		cfg: c,
-		firewall: FireWall{
-			rules: make([]libol.IpTableRule, 0, 32),
-		},
-		worker:  make(map[string]*NetworkWorker, 32),
-		server:  server,
-		newTime: time.Now().Unix(),
-		proxy:   NewProxy(c.Proxy),
-		hooks:   make([]Hook, 0, 64),
-		out:     libol.NewSubLogger(c.Alias),
+		cfg:      c,
+		firewall: NewFireWall(c.FireWall),
+		worker:   make(map[string]*NetworkWorker, 32),
+		server:   server,
+		newTime:  time.Now().Unix(),
+		proxy:    NewProxy(c.Proxy),
+		hooks:    make([]Hook, 0, 64),
+		out:      libol.NewSubLogger(c.Alias),
 	}
 	return &v
 }
@@ -115,9 +113,9 @@ func NewSwitch(c config.Switch) *Switch {
 func (v *Switch) acceptBridge(bridge string) {
 	rules := v.firewall.rules
 	v.out.Info("Switch.acceptBridge %s", bridge)
-	rules = append(rules, libol.IpTableRule{
-		Table: "filter",
-		Chain: "FORWARD",
+	rules = append(rules, libol.IptRule{
+		Table: FilterT,
+		Chain: OlForwardC,
 		Input: bridge,
 	})
 	v.firewall.rules = rules
@@ -127,36 +125,36 @@ func (v *Switch) acceptRoute(source, prefix string) {
 	rules := v.firewall.rules
 	v.out.Info("Switch.acceptRoute %s, %s", source, prefix)
 	// allowed forward between source and prefix.
-	rules = append(rules, libol.IpTableRule{
-		Table:  "filter",
-		Chain:  "FORWARD",
+	rules = append(rules, libol.IptRule{
+		Table:  FilterT,
+		Chain:  OlForwardC,
 		Source: source,
 		Dest:   prefix,
 	})
-	rules = append(rules, libol.IpTableRule{
-		Table:  "filter",
-		Chain:  "FORWARD",
+	rules = append(rules, libol.IptRule{
+		Table:  FilterT,
+		Chain:  OlForwardC,
 		Source: prefix,
 		Dest:   source,
 	})
 	// allowed input from source to prefix.
-	rules = append(rules, libol.IpTableRule{
-		Table:  "filter",
-		Chain:  "INPUT",
+	rules = append(rules, libol.IptRule{
+		Table:  FilterT,
+		Chain:  OlInputC,
 		Source: source,
 		Dest:   prefix,
 	})
 	// enable masquerade between source and prefix.
-	rules = append(rules, libol.IpTableRule{
-		Table:  "nat",
-		Chain:  "POSTROUTING",
+	rules = append(rules, libol.IptRule{
+		Table:  NatT,
+		Chain:  OlPostC,
 		Source: source,
 		Dest:   prefix,
 		Jump:   "MASQUERADE",
 	})
-	rules = append(rules, libol.IpTableRule{
-		Table:  "nat",
-		Chain:  "POSTROUTING",
+	rules = append(rules, libol.IptRule{
+		Table:  NatT,
+		Chain:  OlPostC,
 		Source: prefix,
 		Dest:   source,
 		Jump:   "MASQUERADE",
@@ -209,24 +207,6 @@ func (v *Switch) initHook() {
 	}
 }
 
-func (v *Switch) initFirewall() {
-	for _, rule := range v.cfg.FireWall {
-		v.firewall.rules = append(v.firewall.rules, libol.IpTableRule{
-			Table:    rule.Table,
-			Chain:    rule.Chain,
-			Source:   rule.Source,
-			Dest:     rule.Dest,
-			Jump:     rule.Jump,
-			ToSource: rule.ToSource,
-			ToDest:   rule.ToDest,
-			Comment:  rule.Comment,
-			Input:    rule.Input,
-			Output:   rule.Output,
-		})
-	}
-	v.out.Info("Switch.initFirewall total %d rules", len(v.firewall.rules))
-}
-
 func (v *Switch) initCtrl() {
 	ctrls.Load(v.cfg.ConfDir + "/ctrl.json")
 	if ctrls.Ctrl.Name == "" {
@@ -246,7 +226,7 @@ func (v *Switch) Initialize() {
 	// Controller
 	v.initCtrl()
 	// FireWall
-	v.initFirewall()
+	v.firewall.Initialize()
 	for _, w := range v.worker {
 		w.Initialize()
 	}
