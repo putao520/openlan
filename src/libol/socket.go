@@ -16,6 +16,28 @@ const (
 	ClClosed     = 0x06
 )
 
+type SocketStatus uint8
+
+func (s SocketStatus) String() string {
+	switch s {
+	case ClInit:
+		return "initialized"
+	case ClConnected:
+		return "connected"
+	case ClUnAuth:
+		return "unauthenticated"
+	case ClAuth:
+		return "authenticated"
+	case ClClosed:
+		return "closed"
+	case ClConnecting:
+		return "connecting"
+	case ClTerminal:
+		return "terminal"
+	}
+	return ""
+}
+
 const (
 	CsSendOkay  = "send"
 	CsRecvOkay  = "recv"
@@ -26,7 +48,7 @@ const (
 type ClientListener struct {
 	OnClose     func(client SocketClient) error
 	OnConnected func(client SocketClient) error
-	OnStatus    func(client SocketClient, old, new uint8)
+	OnStatus    func(client SocketClient, old, new SocketStatus)
 }
 
 type SocketClient interface {
@@ -36,20 +58,19 @@ type SocketClient interface {
 	Close()
 	WriteMsg(frame *FrameMessage) error
 	ReadMsg() (*FrameMessage, error)
-	State() string
 	UpTime() int64
 	AliveTime() int64
 	String() string
 	Terminal()
 	Private() interface{}
 	SetPrivate(v interface{})
-	Status() uint8
-	SetStatus(v uint8)
+	Status() SocketStatus
+	SetStatus(v SocketStatus)
 	MaxSize() int
 	SetMaxSize(value int)
 	MinSize() int
 	IsOk() bool
-	Have(status uint8) bool
+	Have(status SocketStatus) bool
 	Address() string
 	Statistics() map[string]int64
 	SetListener(listener ClientListener)
@@ -121,7 +142,7 @@ type SocketClientImpl struct {
 	newTime       int64
 	connectedTime int64
 	private       interface{}
-	status        uint8
+	status        SocketStatus
 	timeout       int64 // sec for read and write timeout
 	remoteAddr    string
 	localAddr     string
@@ -149,26 +170,6 @@ func (s *SocketClientImpl) Out() *SubLogger {
 	return s.out
 }
 
-func (s *SocketClientImpl) State() string {
-	switch s.Status() {
-	case ClInit:
-		return "initialized"
-	case ClConnected:
-		return "connected"
-	case ClUnAuth:
-		return "unauthenticated"
-	case ClAuth:
-		return "authenticated"
-	case ClClosed:
-		return "closed"
-	case ClConnecting:
-		return "connecting"
-	case ClTerminal:
-		return "terminal"
-	}
-	return ""
-}
-
 func (s *SocketClientImpl) Retry() bool {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -181,7 +182,7 @@ func (s *SocketClientImpl) Retry() bool {
 	return true
 }
 
-func (s *SocketClientImpl) Status() uint8 {
+func (s *SocketClientImpl) Status() SocketStatus {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 	return s.status
@@ -231,7 +232,7 @@ func (s *SocketClientImpl) MinSize() int {
 	return s.minSize
 }
 
-func (s *SocketClientImpl) Have(state uint8) bool {
+func (s *SocketClientImpl) Have(state SocketStatus) bool {
 	return s.Status() == state
 }
 

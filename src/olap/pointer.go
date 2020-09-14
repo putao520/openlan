@@ -7,7 +7,7 @@ import (
 )
 
 type Pointer interface {
-	State() string
+	Status() string
 	Addr() string
 	IfName() string
 	IfAddr() string
@@ -48,8 +48,8 @@ func (p *MixPoint) UUID() string {
 	return p.uuid
 }
 
-func (p *MixPoint) State() string {
-	return p.worker.State()
+func (p *MixPoint) Status() libol.SocketStatus {
+	return p.worker.Status()
 }
 
 func (p *MixPoint) Addr() string {

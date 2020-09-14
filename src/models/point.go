@@ -32,7 +32,7 @@ func NewPoint(c libol.SocketClient, d network.Taper) (w *Point) {
 func (p *Point) Update() *Point {
 	if p.Client != nil {
 		p.Uptime = p.Client.UpTime()
-		p.Status = p.Client.State()
+		p.Status = p.Client.Status().String()
 	}
 	if p.Device != nil {
 		p.IfName = p.Device.Name()

@@ -249,7 +249,7 @@ func (t *SocketWorker) reconnect() {
 			t.out.Debug("SocketWorker.reconnect: on jobber")
 			rtConn := t.record.Get(rtConnected)
 			rtReCon := t.record.Get(rtReConnect)
-			rtLast  := t.record.Get(rtLast)
+			rtLast := t.record.Get(rtLast)
 			if rtConn >= rtReCon { // already connected after.
 				t.out.Cmd("SocketWorker.reconnect: dissed by connected")
 				return nil
@@ -589,8 +589,7 @@ func (t *SocketWorker) DoWrite(frame *libol.FrameMessage) error {
 	}
 	t.lock.Unlock()
 	if err := t.client.WriteMsg(frame); err != nil {
-		t.out.Error("SocketWorker.DoWrite: %s", err)
-		t.eventQueue <- NewEvent(EvSocRecon, "from write")
+		t.out.Debug("SocketWorker.DoWrite: %s", err)
 		return err
 	}
 	return nil
@@ -1181,12 +1180,12 @@ func (p *Worker) UpTime() int64 {
 	return 0
 }
 
-func (p *Worker) State() string {
+func (p *Worker) Status() libol.SocketStatus {
 	client := p.Client()
 	if client != nil {
-		return client.State()
+		return client.Status()
 	}
-	return ""
+	return 0xff
 }
 
 func (p *Worker) Addr() string {

@@ -18,7 +18,7 @@ func NewPointSchema(p *Point) schema.Point {
 		RxBytes:   sts[libol.CsRecvOkay],
 		TxBytes:   sts[libol.CsSendOkay],
 		ErrPkt:    sts[libol.CsSendError],
-		State:     client.State(),
+		State:     client.Status().String(),
 		Network:   p.Network,
 		AliveTime: client.AliveTime(),
 	}
@@ -33,7 +33,7 @@ func NewLinkSchema(p *Point) schema.Link {
 		Uptime:    client.UpTime(),
 		Device:    dev.Name(),
 		Address:   client.Address(),
-		State:     client.State(),
+		State:     client.Status().String(),
 		RxBytes:   sts[libol.CsRecvOkay],
 		TxBytes:   sts[libol.CsSendOkay],
 		ErrPkt:    sts[libol.CsSendError],

@@ -168,7 +168,7 @@ func (t *TcpClient) Terminal() {
 	t.Close()
 }
 
-func (t *TcpClient) SetStatus(v uint8) {
+func (t *TcpClient) SetStatus(v SocketStatus) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	if t.status != v {

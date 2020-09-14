@@ -29,7 +29,7 @@ func (p *link) Add(m *pp.Point) {
 		Network: m.Tenant(),
 		Server:  m.Addr(),
 		Uptime:  m.UpTime(),
-		Status:  m.State(),
+		Status:  m.Status().String(),
 		Client:  m.Client(),
 		Device:  m.Device(),
 		IfName:  m.IfName(),

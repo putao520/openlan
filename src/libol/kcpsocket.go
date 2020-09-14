@@ -172,7 +172,7 @@ func (c *KcpClient) Terminal() {
 	c.Close()
 }
 
-func (c *KcpClient) SetStatus(v uint8) {
+func (c *KcpClient) SetStatus(v SocketStatus) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	if c.status != v {

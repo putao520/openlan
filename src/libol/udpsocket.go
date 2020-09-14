@@ -154,7 +154,7 @@ func (c *UdpClient) Terminal() {
 	c.Close()
 }
 
-func (c *UdpClient) SetStatus(v uint8) {
+func (c *UdpClient) SetStatus(v SocketStatus) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	if c.status != v {

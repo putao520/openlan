@@ -206,7 +206,7 @@ func (t *WebClient) Terminal() {
 	t.Close()
 }
 
-func (t *WebClient) SetStatus(v uint8) {
+func (t *WebClient) SetStatus(v SocketStatus) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	if t.status != v {
