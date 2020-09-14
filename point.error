@@ -1,0 +1,10 @@
+2020/09/14 00:24:19 INFO Point.Start linux.
+2020/09/14 00:24:19 INFO MixPoint.Initialize
+2020/09/14 00:24:19 INFO Worker.Initialize
+2020/09/14 00:24:19 INFO TcpWorker.Initialize
+2020/09/14 00:24:19 INFO TapWorker.Initialize
+2020/09/14 00:24:19 INFO TapWorker.Open tap2
+2020/09/14 00:24:19 INFO Point.OnTap
+2020/09/14 00:24:19 INFO TcpClient.Connect tcp://openlan.net:10002
+2020/09/14 00:24:19 INFO TapWorker.Read
+2020/09/14 00:24:19 INFO TapWorker.Loop

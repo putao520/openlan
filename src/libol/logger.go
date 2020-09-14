@@ -16,7 +16,7 @@ const (
 	STACK = 06
 	DEBUG = 10
 	CMD   = 15
-	CMD1  = 16
+	EVENT = 16
 	INFO  = 20
 	WARN  = 30
 	ERROR = 40
@@ -36,7 +36,7 @@ var levels = map[int]string{
 	DEBUG: "DEBUG",
 	STACK: "STACK",
 	CMD:   "CMD",
-	CMD1:  "CMD1",
+	EVENT: "EVENT",
 	INFO:  "INFO",
 	WARN:  "WARN",
 	ERROR: "ERROR",
@@ -211,8 +211,8 @@ func (s *SubLogger) Cmd(format string, v ...interface{}) {
 	s.logger.Write(CMD, s.Fmt(format), v...)
 }
 
-func (s *SubLogger) Cmd1(format string, v ...interface{}) {
-	s.logger.Write(CMD1, s.Fmt(format), v...)
+func (s *SubLogger) Event(format string, v ...interface{}) {
+	s.logger.Write(EVENT, s.Fmt(format), v...)
 }
 
 func (s *SubLogger) Info(format string, v ...interface{}) {
