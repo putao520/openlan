@@ -104,7 +104,6 @@ func NewTcpClient(addr string, cfg *TcpConfig) *TcpClient {
 			bufSize: cfg.RdQus * MaxFrame,
 		}),
 	}
-	t.connector = t.Connect
 	return t
 }
 
@@ -119,7 +118,6 @@ func NewTcpClientFromConn(conn net.Conn, cfg *TcpConfig) *TcpClient {
 		}),
 	}
 	t.updateConn(conn)
-	t.connector = t.Connect
 	return t
 }
 

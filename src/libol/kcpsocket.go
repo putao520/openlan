@@ -108,7 +108,6 @@ func NewKcpClient(addr string, cfg *KcpConfig) *KcpClient {
 			timeout: cfg.Timeout,
 		}),
 	}
-	c.connector = c.Connect
 	return c
 }
 
@@ -123,7 +122,6 @@ func NewKcpClientFromConn(conn net.Conn, cfg *KcpConfig) *KcpClient {
 		}),
 	}
 	c.updateConn(conn)
-	c.connector = c.Connect
 	return c
 }
 

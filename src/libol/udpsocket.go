@@ -96,7 +96,6 @@ func NewUdpClient(addr string, cfg *UdpConfig) *UdpClient {
 			block:   cfg.Block,
 		}),
 	}
-	c.connector = c.Connect
 	return c
 }
 
@@ -112,7 +111,6 @@ func NewUdpClientFromConn(conn net.Conn, cfg *UdpConfig) *UdpClient {
 		}),
 	}
 	c.updateConn(conn)
-	c.connector = c.Connect
 	return c
 }
 

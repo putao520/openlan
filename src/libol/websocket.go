@@ -135,7 +135,6 @@ func NewWebClient(addr string, cfg *WebConfig) *WebClient {
 		}),
 		done: make(chan bool, 2),
 	}
-	t.connector = t.Connect
 	return t
 }
 
@@ -151,7 +150,6 @@ func NewWebClientFromConn(conn net.Conn, cfg *WebConfig) *WebClient {
 		done: make(chan bool, 2),
 	}
 	t.updateConn(conn)
-	t.connector = t.Connect
 	return t
 }
 

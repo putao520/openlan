@@ -63,15 +63,15 @@ type StreamSocket struct {
 	statistics *SafeStrInt64
 	maxSize    int
 	minSize    int
-	connector  func() error
 	out        *SubLogger
+	address    string
 }
 
 func (t *StreamSocket) String() string {
 	if t.connection != nil {
 		return t.connection.RemoteAddr().String()
 	}
-	return "unknown"
+	return t.address
 }
 
 func (t *StreamSocket) IsOk() bool {
@@ -79,9 +79,9 @@ func (t *StreamSocket) IsOk() bool {
 }
 
 func (t *StreamSocket) WriteMsg(frame *FrameMessage) error {
-	if err := t.connector(); err != nil {
+	if !t.IsOk() {
 		t.statistics.Add(CsDropped, 1)
-		return err
+		return NewErr("%s not okay", t)
 	}
 	if t.message == nil { // default is stream message
 		t.message = &StreamMessagerImpl{}
@@ -100,7 +100,7 @@ func (t *StreamSocket) ReadMsg() (*FrameMessage, error) {
 		Log("StreamSocket.ReadMsg: %s", t)
 	}
 	if !t.IsOk() {
-		return nil, NewErr("%s: not okay", t)
+		return nil, NewErr("%s not okay", t)
 	}
 	if t.message == nil { // default is stream message
 		t.message = &StreamMessagerImpl{}
@@ -118,7 +118,6 @@ type SocketClientImpl struct {
 	*StreamSocket
 	lock          sync.RWMutex
 	listener      ClientListener
-	address       string
 	newTime       int64
 	connectedTime int64
 	private       interface{}
@@ -130,13 +129,13 @@ type SocketClientImpl struct {
 
 func NewSocketClient(address string, message Messager) *SocketClientImpl {
 	return &SocketClientImpl{
-		address: address,
 		StreamSocket: &StreamSocket{
 			maxSize:    1514,
 			minSize:    15,
 			message:    message,
 			statistics: NewSafeStrInt64(),
 			out:        NewSubLogger(address),
+			address:    address,
 		},
 		newTime: time.Now().Unix(),
 		status:  ClInit,

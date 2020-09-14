@@ -76,7 +76,7 @@ type jobTimer struct {
 const (
 	rtLast      = "last"      // record time last frame received or connected.
 	rtConnected = "connected" // record last connected time.
-	rtReconnect = "reconnect" // record time when triggered reconnected.
+	rtReConnect = "reconnect" // record time when triggered reconnected.
 	rtSuccess   = "reSuccess" // record success time when login.
 	rtSleeps    = "sleeps"    // record times to control connecting delay.
 	rtClosed    = "closed"
@@ -159,7 +159,7 @@ func (t *SocketWorker) Initialize() {
 		},
 	})
 	t.record.Set(rtLast, time.Now().Unix())
-	t.record.Set(rtReconnect, time.Now().Unix())
+	t.record.Set(rtReConnect, time.Now().Unix())
 }
 
 func (t *SocketWorker) Start() {
@@ -242,20 +242,23 @@ func (t *SocketWorker) reconnect() {
 	if t.isStopped() {
 		return
 	}
-	t.record.Set(rtReconnect, time.Now().Unix())
+	t.record.Set(rtReConnect, time.Now().Unix())
 	job := jobTimer{
 		Time: time.Now().Unix() + t.sleepIdle(),
 		Call: func() error {
 			t.out.Debug("SocketWorker.reconnect: on jobber")
-			if t.record.Get(rtConnected) >= t.record.Get(rtReconnect) { // already connected after.
+			rtConn := t.record.Get(rtConnected)
+			rtReCon := t.record.Get(rtReConnect)
+			rtLast  := t.record.Get(rtLast)
+			if rtConn >= rtReCon { // already connected after.
 				t.out.Cmd("SocketWorker.reconnect: dissed by connected")
 				return nil
 			}
-			if t.record.Get(rtLast) >= t.record.Get(rtReconnect) { // ignored immediately connect.
+			if rtLast >= rtReCon { // ignored immediately connect.
 				t.out.Info("SocketWorker.reconnect: dissed by last")
 				return nil
 			}
-			t.out.Info("SocketWorker.reconnect: %v", t.record.Data())
+			t.out.Info("SocketWorker.reconnect: last %d, conn %d, re %d", rtLast, rtConn, rtReCon)
 			return t.connect()
 		},
 	}
@@ -562,7 +565,7 @@ func (t *SocketWorker) deadCheck() {
 	if now-t.record.Get(rtLast) < out {
 		return
 	}
-	if now-t.record.Get(rtReconnect) < out { // timeout and avoid send reconn frequently.
+	if now-t.record.Get(rtReConnect) < out { // timeout and avoid send reconn frequently.
 		t.out.Cmd("SocketWorker.deadCheck: reconn frequently")
 		return
 	}
