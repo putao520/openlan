@@ -85,6 +85,7 @@ func (o *Online) AddLine(line *models.Line) {
 		libol.Log("Online.AddLine %s", line)
 		libol.Log("Online.AddLine %d", o.lineList.Len())
 	}
+	// TODO improve performance
 	find, ok := o.lines[line.String()]
 	if !ok {
 		o.pop()

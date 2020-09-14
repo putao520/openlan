@@ -229,7 +229,7 @@ func (t *SocketWorker) connect() error {
 	t.client.Close()
 	s := t.client.Status()
 	if s != libol.ClInit {
-		t.out.Warn("SocketWorker.connect: %s and status %d", t.client, s)
+		t.out.Warn("SocketWorker.connect: %s %s", t.client, s)
 		t.client.SetStatus(libol.ClInit)
 	}
 	t.record.Add(rtConnects, 1)
@@ -254,10 +254,6 @@ func (t *SocketWorker) reconnect() {
 			rtLast := t.record.Get(rtLast)
 			if rtConn >= rtReCon { // already connected after.
 				t.out.Cmd("SocketWorker.reconnect: dissed by connected")
-				return nil
-			}
-			if rtLast >= rtReCon { // ignored immediately connect.
-				t.out.Info("SocketWorker.reconnect: dissed by last")
 				return nil
 			}
 			t.out.Info("SocketWorker.reconnect: last %d, conn %d, re %d", rtLast, rtConn, rtReCon)
@@ -541,7 +537,6 @@ func (t *SocketWorker) Read(client libol.SocketClient) {
 		if t.out.Has(libol.DEBUG) {
 			t.out.Debug("SocketWorker.Read: %x", data)
 		}
-		t.record.Set(rtLast, time.Now().Unix())
 		if data.Size() <= 0 {
 			continue
 		}
@@ -552,6 +547,7 @@ func (t *SocketWorker) Read(client libol.SocketClient) {
 			t.lock.Unlock()
 			continue
 		}
+		t.record.Set(rtLast, time.Now().Unix())
 		if t.listener.ReadAt != nil {
 			_ = t.listener.ReadAt(data)
 		}
