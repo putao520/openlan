@@ -89,3 +89,9 @@ func (p *MixPoint) User() string {
 	}
 	return ""
 }
+
+func (p *Point) Record() map[string]int64 {
+	rt := p.worker.conWorker.record
+	// TODO padding data from tapWorker
+	return rt.Data()
+}

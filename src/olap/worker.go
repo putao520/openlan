@@ -74,14 +74,15 @@ type jobTimer struct {
 }
 
 const (
-	rtLast      = "last"      // record time last frame received or connected.
-	rtConnected = "connected" // record last connected time.
-	rtReConnect = "reconnect" // record time when triggered reconnected.
-	rtSuccess   = "reSuccess" // record success time when login.
-	rtSleeps    = "sleeps"    // record times to control connecting delay.
-	rtClosed    = "closed"
-	rtLive      = "live"   // record received pong frame time.
-	rtIpAddr    = "ipAddr" // record last receive ipAddr message after success.
+	rtLast      = "lastAt"   // record time last frame received or connected.
+	rtConnected = "connAt"   // record last connected time.
+	rtReConnect = "reconnAt" // record time when triggered reconnected.
+	rtSuccess   = "succAt"   // record success time when login.
+	rtSleeps    = "sleeps"   // record times to control connecting delay.
+	rtClosed    = "clsAt"    // close time
+	rtLive      = "liveAt"   // record received pong frame time.
+	rtIpAddr    = "addrAt"   // record last receive ipAddr message after success.
+	rtConnects  = "conns"    // record times of reconnecting
 )
 
 type SocketWorker struct {
@@ -231,6 +232,7 @@ func (t *SocketWorker) connect() error {
 		t.out.Warn("SocketWorker.connect: %s and status %d", t.client, s)
 		t.client.SetStatus(libol.ClInit)
 	}
+	t.record.Add(rtConnects, 1)
 	if err := t.client.Connect(); err != nil {
 		t.out.Error("SocketWorker.connect: %s %s", t.client, err)
 		return err
