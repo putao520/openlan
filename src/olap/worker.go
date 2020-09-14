@@ -804,7 +804,7 @@ func (a *TapWorker) Read(device network.Taper) {
 		if a.IsTun() {
 			data = data[libol.EtherLen:]
 		}
-		if n, err := a.device.Read(data); err != nil {
+		if n, err := device.Read(data); err != nil {
 			a.out.Error("TapWorker.Read: %s", err)
 			break
 		} else {
