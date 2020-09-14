@@ -29,38 +29,75 @@ func (k *KeepAlive) Update() {
 	k.LastTime = time.Now().Unix()
 }
 
+var (
+	EvSocConed   = "conned"
+	EvSocRecon   = "reconn"
+	EvSocClosed  = "closed"
+	EvSocSuccess = "success"
+	EvSocSignIn  = "signIn"
+	EvSocLogin   = "login"
+	EvTapIpAddr  = "ipAddr"
+	EvTapReadErr = "readErr"
+	EvTapReset   = "reset"
+	EvTapOpenErr = "openErr"
+)
+
+type WorkerEvent struct {
+	Type   string
+	Reason string
+	Time   int64
+	Finish chan bool
+	Data   interface{}
+}
+
+func (e *WorkerEvent) String() string {
+	return e.Type + " " + e.Reason
+}
+
+func (e *WorkerEvent) Wait() {
+	if e.Finish != nil {
+		<-e.Finish
+	}
+}
+
+func (e *WorkerEvent) Done() {
+	if e.Finish != nil {
+		e.Finish <- true
+	}
+}
+
+func NewEvent(newType, reason string) *WorkerEvent {
+	return &WorkerEvent{
+		Type:   newType,
+		Time:   time.Now().Unix(),
+		Reason: reason,
+		Finish: nil,
+	}
+}
+
+func NewSynEvent(newType, reason string) *WorkerEvent {
+	return &WorkerEvent{
+		Type:   newType,
+		Time:   time.Now().Unix(),
+		Reason: reason,
+		Finish: make(chan bool, 32),
+	}
+}
+
+func CloneEvent(newType string, ev *WorkerEvent) *WorkerEvent {
+	return &WorkerEvent{
+		Type:   newType,
+		Time:   time.Now().Unix(),
+		Reason: ev.Reason,
+		Finish: ev.Finish,
+	}
+}
+
 type SocketWorkerListener struct {
 	OnClose   func(w *SocketWorker) error
 	OnSuccess func(w *SocketWorker) error
 	OnIpAddr  func(w *SocketWorker, n *models.Network) error
 	ReadAt    func(frame *libol.FrameMessage) error
-}
-
-var (
-	EventConed   = "conned"
-	EventRecon   = "reconn"
-	EventClosed  = "closed"
-	EventSuccess = "success"
-	EventSignIn  = "signIn"
-	EventLogin   = "login"
-)
-
-type SocketEvent struct {
-	Type   string
-	Reason string
-	Time   int64
-}
-
-func (e SocketEvent) String() string {
-	return e.Type + " " + e.Reason
-}
-
-func NewEvent(typ, reason string) SocketEvent {
-	return SocketEvent{
-		Type:   typ,
-		Time:   time.Now().Unix(),
-		Reason: reason,
-	}
 }
 
 type jobTimer struct {
@@ -91,7 +128,7 @@ type SocketWorker struct {
 	done       chan bool
 	ticker     *time.Ticker
 	pinCfg     *config.Point
-	eventQueue chan SocketEvent
+	eventQueue chan *WorkerEvent
 	writeQueue chan *libol.FrameMessage
 	jobber     []jobTimer
 	record     *libol.SafeStrInt64
@@ -113,7 +150,7 @@ func NewSocketWorker(client libol.SocketClient, c *config.Point) *SocketWorker {
 			LastTime: time.Now().Unix(),
 		},
 		pinCfg:     c,
-		eventQueue: make(chan SocketEvent, 32),
+		eventQueue: make(chan *WorkerEvent, 32),
 		writeQueue: make(chan *libol.FrameMessage, c.Queue.SockWr),
 		jobber:     make([]jobTimer, 0, 32),
 		out:        libol.NewSubLogger(c.Id()),
@@ -144,12 +181,12 @@ func (t *SocketWorker) Initialize() {
 	t.client.SetListener(libol.ClientListener{
 		OnConnected: func(client libol.SocketClient) error {
 			t.record.Set(rtConnected, time.Now().Unix())
-			t.eventQueue <- NewEvent(EventConed, "from socket")
+			t.eventQueue <- NewEvent(EvSocConed, "from socket")
 			return nil
 		},
 		OnClose: func(client libol.SocketClient) error {
 			t.record.Set(rtClosed, time.Now().Unix())
-			t.eventQueue <- NewEvent(EventClosed, "from socket")
+			t.eventQueue <- NewEvent(EvSocClosed, "from socket")
 			return nil
 		},
 	})
@@ -335,7 +372,7 @@ func (t *SocketWorker) onLogin(resp []byte) error {
 		t.record.Set(rtSleeps, 0)
 		t.record.Set(rtIpAddr, 0)
 		t.record.Set(rtSuccess, time.Now().Unix())
-		t.eventQueue <- NewEvent(EventSuccess, "from login")
+		t.eventQueue <- NewEvent(EvSocSuccess, "from login")
 		t.out.Info("SocketWorker.onLogin: success")
 	} else {
 		t.client.SetStatus(libol.ClUnAuth)
@@ -370,7 +407,7 @@ func (t *SocketWorker) onLeft(resp []byte) error {
 func (t *SocketWorker) onSignIn(resp []byte) error {
 	t.out.Info("SocketWorker.onSignIn")
 	t.out.Cmd("SocketWorker.onSignIn: %s", resp)
-	t.eventQueue <- NewEvent(EventSignIn, "request from server")
+	t.eventQueue <- NewEvent(EvSocSignIn, "request from server")
 	return nil
 }
 
@@ -478,19 +515,19 @@ func (t *SocketWorker) doTicker() error {
 	return nil
 }
 
-func (t *SocketWorker) dispatch(ev SocketEvent) {
+func (t *SocketWorker) dispatch(ev *WorkerEvent) {
 	t.out.Info("SocketWorker.dispatch: %v", ev)
 	switch ev.Type {
-	case EventConed:
+	case EvSocConed:
 		if t.client != nil {
 			libol.Go(t.Read)
 			_ = t.toLogin(t.client)
 		}
-	case EventSuccess:
+	case EvSocSuccess:
 		_ = t.toNetwork(t.client)
-	case EventRecon:
+	case EvSocRecon:
 		t.reconnect()
-	case EventSignIn, EventLogin:
+	case EvSocSignIn, EvSocLogin:
 		_ = t.toLogin(t.client)
 	}
 }
@@ -554,7 +591,7 @@ func (t *SocketWorker) Read() {
 		}
 	}
 	if !t.isStopped() {
-		t.eventQueue <- NewEvent(EventRecon, "from read")
+		t.eventQueue <- NewEvent(EvSocRecon, "from read")
 	}
 }
 
@@ -568,7 +605,7 @@ func (t *SocketWorker) deadCheck() {
 		t.out.Cmd("SocketWorker.deadCheck: reconn frequently")
 		return
 	}
-	t.eventQueue <- NewEvent(EventRecon, "from dead check")
+	t.eventQueue <- NewEvent(EvSocRecon, "from dead check")
 }
 
 func (t *SocketWorker) DoWrite(frame *libol.FrameMessage) error {
@@ -589,7 +626,7 @@ func (t *SocketWorker) DoWrite(frame *libol.FrameMessage) error {
 	t.lock.Unlock()
 	if err := t.client.WriteMsg(frame); err != nil {
 		t.out.Error("SocketWorker.DoWrite: %s", err)
-		t.eventQueue <- NewEvent(EventRecon, "from write")
+		t.eventQueue <- NewEvent(EvSocRecon, "from write")
 		return err
 	}
 	return nil
@@ -641,26 +678,24 @@ type TapWorker struct {
 	listener   TapWorkerListener
 	ether      TunEther
 	neighbor   Neighbors
-	openAgain  bool
-	deviceCfg  network.TapConfig
-	pointCfg   *config.Point
+	devCfg     network.TapConfig
+	pinCfg     *config.Point
 	ifAddr     string
 	writeQueue chan *libol.FrameMessage
 	done       chan bool
-	recvIpAddr chan string
 	out        *libol.SubLogger
+	eventQueue chan *WorkerEvent
 }
 
 func NewTapWorker(devCfg network.TapConfig, c *config.Point) (a *TapWorker) {
 	a = &TapWorker{
 		device:     nil,
-		deviceCfg:  devCfg,
-		pointCfg:   c,
-		openAgain:  false,
+		devCfg:     devCfg,
+		pinCfg:     c,
 		done:       make(chan bool, 2),
 		writeQueue: make(chan *libol.FrameMessage, c.Queue.TapWr),
-		recvIpAddr: make(chan string, 1024),
 		out:        libol.NewSubLogger(c.Id()),
+		eventQueue: make(chan *WorkerEvent, 32),
 	}
 	return
 }
@@ -685,12 +720,16 @@ func (a *TapWorker) Initialize() {
 			},
 		},
 	}
-	a.open()
-	if a.device != nil && a.device.IsTun() {
-		a.setEther(a.pointCfg.Interface.Address)
+	_ = a.open(nil)
+	if a.IsTun() {
+		a.setEther(a.pinCfg.Interface.Address)
 		a.ether.HwAddr = libol.GenEthAddr(6)
 		a.out.Info("TapWorker.Initialize: src %x", a.ether.HwAddr)
 	}
+}
+
+func (a *TapWorker) IsTun() bool {
+	return a.devCfg.Type == network.TUN
 }
 
 func (a *TapWorker) setEther(addr string) {
@@ -708,32 +747,33 @@ func (a *TapWorker) setEther(addr string) {
 	// changed address need open device again.
 	if a.ifAddr != "" && a.ifAddr != addr {
 		a.out.Warn("TapWorker.setEther changed %s->%s", a.ifAddr, addr)
-		a.openAgain = true
+		a.eventQueue <- NewEvent(EvTapReset, "ifAddr changed")
 	}
 	a.ifAddr = addr
 }
 
 func (a *TapWorker) OnIpAddr(addr string) {
-	a.recvIpAddr <- addr
+	a.eventQueue <- NewEvent(EvTapIpAddr, addr)
 }
 
-func (a *TapWorker) open() {
-	if a.device != nil {
-		a.close()
-		if !a.openAgain {
-			time.Sleep(5 * time.Second) // sleep 5s and release cpu.
-		}
-	}
-	device, err := network.NewKernelTap(a.pointCfg.Network, a.deviceCfg)
+func (a *TapWorker) open(ev *WorkerEvent) error {
+	a.close()
+	device, err := network.NewKernelTap(a.pinCfg.Network, a.devCfg)
 	if err != nil {
 		a.out.Error("TapWorker.open: %s", err)
-		return
+		if ev == nil {
+			a.eventQueue <- NewEvent(EvTapOpenErr, "open failed")
+		} else {
+			a.eventQueue <- CloneEvent(EvTapOpenErr, ev)
+		}
+		return err
 	}
 	a.out.Info("TapWorker.open: >>> %s <<<", device.Name())
 	a.device = device
 	if a.listener.OnOpen != nil {
 		_ = a.listener.OnOpen(a)
 	}
+	return nil
 }
 
 func (a *TapWorker) newEth(t uint16, dst []byte) *libol.Ether {
@@ -798,25 +838,25 @@ func (a *TapWorker) onFrame(frame *libol.FrameMessage, data []byte) int {
 func (a *TapWorker) Read() {
 	for {
 		a.lock.Lock()
-		if a.device == nil {
+		if a.isStopped() {
 			a.lock.Unlock()
 			break
 		}
 		frame := libol.NewFrameMessage()
 		data := frame.Frame()
-		if a.device.IsTun() {
+		if a.IsTun() {
 			data = data[libol.EtherLen:]
 		}
 		a.lock.Unlock()
 		n, err := a.device.Read(data)
-		a.lock.Lock()
-		if err != nil || a.openAgain || a.device == nil {
-			a.out.Warn("TapWorker.Read: %s", err)
-			a.open()
-			a.openAgain = false // clear openAgain flags
-			a.lock.Unlock()
+		if err != nil {
+			a.out.Error("TapWorker.Read: %s", err)
+			e := NewSynEvent(EvTapReadErr, err.Error())
+			a.eventQueue <- e
+			e.Wait() // wait until open device successfully.
 			continue
 		}
+		a.lock.Lock()
 		if a.out.Has(libol.DEBUG) {
 			a.out.Debug("TapWorker.Read: %x", data[:n])
 		}
@@ -831,6 +871,18 @@ func (a *TapWorker) Read() {
 	}
 }
 
+func (a *TapWorker) dispatch(ev *WorkerEvent) {
+	a.out.Info("TapWorker.dispatch: %s", ev)
+	switch ev.Type {
+	case EvTapReadErr, EvTapOpenErr, EvTapReset:
+		if err := a.open(ev); err == nil {
+			ev.Done()
+		}
+	case EvTapIpAddr:
+		a.setEther(ev.Reason)
+	}
+}
+
 func (a *TapWorker) Loop() {
 	for {
 		select {
@@ -838,9 +890,9 @@ func (a *TapWorker) Loop() {
 			return
 		case d := <-a.writeQueue:
 			_ = a.DoWrite(d)
-		case addr := <-a.recvIpAddr:
+		case ev := <-a.eventQueue:
 			a.lock.Lock()
-			a.setEther(addr)
+			a.dispatch(ev)
 			a.lock.Unlock()
 		}
 	}
@@ -954,7 +1006,6 @@ func (a *TapWorker) close() {
 			a.listener.OnClose(a)
 		}
 		_ = a.device.Close()
-		a.device = nil
 	}
 }
 
@@ -967,6 +1018,10 @@ func (a *TapWorker) Start() {
 	libol.Go(a.neighbor.Start)
 }
 
+func (a *TapWorker) isStopped() bool {
+	return a.device == nil
+}
+
 func (a *TapWorker) Stop() {
 	a.lock.Lock()
 	defer a.lock.Unlock()
@@ -974,6 +1029,7 @@ func (a *TapWorker) Stop() {
 	a.done <- true
 	a.neighbor.Stop()
 	a.close()
+	a.device = nil
 }
 
 type WorkerListener struct {
