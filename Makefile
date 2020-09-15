@@ -88,7 +88,7 @@ windows-zip: env windows ## build windows packages
 	@popd
 
 windows-syso: ## build windows syso
-	rsrc -manifest main/point_windows-main.manifest -ico ./src/cli/point_windows-main.ico  -o ./src/cli/point_windows-main.syso
+	rsrc -manifest ./src/cli/point_windows/main.manifest -ico ./src/cli/point_windows/main.ico  -o ./src/cli/point_windows/main.syso
 
 ## cross build for osx
 osx: darwin

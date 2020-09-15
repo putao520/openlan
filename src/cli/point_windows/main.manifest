@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
     <assemblyIdentity
-            version="9.0.0.0"
+            version="1.0.0.0"
             processorArchitecture="x86"
-            name="point.windows.x86_64.exe"
+            name="uradiam.openlan.openlan-point"
             type="win32"
     />
-    <description>OpenLAN Point Software</description>
+    <description>Uradiam OpenLAN Point Software</description>
     <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
         <security>
             <requestedPrivileges>
