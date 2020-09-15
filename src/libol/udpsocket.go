@@ -131,13 +131,13 @@ func (c *UdpClient) Connect() error {
 }
 
 func (c *UdpClient) Close() {
-	c.out.Info("UdpClient.Close: %v", c.IsOk())
+	c.out.Debug("UdpClient.Close: %v", c.IsOk())
 	c.lock.Lock()
 	if c.connection != nil {
 		if c.status != ClTerminal {
 			c.status = ClClosed
 		}
-		c.out.Info("UdpClient.Close")
+		c.out.Debug("UdpClient.Close")
 		c.updateConn(nil)
 		c.private = nil
 		c.lock.Unlock()

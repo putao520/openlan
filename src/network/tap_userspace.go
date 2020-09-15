@@ -54,26 +54,28 @@ func (t *UserSpaceTap) Read(p []byte) (n int, err error) {
 		return 0, libol.NewErr("Close")
 	}
 	t.lock.Unlock()
-
 	result := <-t.readQueue
 	return copy(p, result), nil
 }
 
 func (t *UserSpaceTap) InRead(p []byte) (n int, err error) {
-	libol.Debug("UserSpaceTap.InRead: %s % x", t, p[:20])
+	if libol.HasLog(libol.DEBUG) {
+		libol.Debug("UserSpaceTap.InRead: %s % x", t, p[:20])
+	}
 	t.lock.Lock()
 	if t.closed {
 		t.lock.Unlock()
 		return 0, libol.NewErr("Close")
 	}
 	t.lock.Unlock()
-
 	t.readQueue <- p
 	return len(p), nil
 }
 
 func (t *UserSpaceTap) Write(p []byte) (n int, err error) {
-	libol.Debug("UserSpaceTap.Write: %s % x", t, p[:20])
+	if libol.HasLog(libol.DEBUG) {
+		libol.Debug("UserSpaceTap.Write: %s % x", t, p[:20])
+	}
 	t.lock.Lock()
 	if t.closed {
 		t.lock.Unlock()
@@ -92,7 +94,6 @@ func (t *UserSpaceTap) OutWrite() ([]byte, error) {
 		return nil, libol.NewErr("Close")
 	}
 	t.lock.Unlock()
-
 	return <-t.writeQueue, nil
 }
 
@@ -102,7 +103,9 @@ func (t *UserSpaceTap) Deliver() {
 		if err != nil || data == nil {
 			break
 		}
-		libol.Debug("UserSpaceTap.Deliver: %s % x", t, data[:20])
+		if libol.HasLog(libol.DEBUG) {
+			libol.Debug("UserSpaceTap.Deliver: %s % x", t, data[:20])
+		}
 		if t.bridge == nil {
 			continue
 		}
@@ -114,7 +117,6 @@ func (t *UserSpaceTap) Deliver() {
 func (t *UserSpaceTap) Close() error {
 	t.lock.Lock()
 	defer t.lock.Unlock()
-
 	if t.closed {
 		return nil
 	}
@@ -146,7 +148,6 @@ func (t *UserSpaceTap) Up() {
 	}
 	t.closed = false
 	t.lock.Unlock()
-
 	libol.Go(t.Deliver)
 }
 

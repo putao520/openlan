@@ -145,7 +145,7 @@ func (t *TcpClient) Connect() error {
 }
 
 func (t *TcpClient) Close() {
-	t.out.Info("TcpClient.Close: %v", t.IsOk())
+	t.out.Debug("TcpClient.Close: %v", t.IsOk())
 	t.lock.Lock()
 	if t.connection != nil {
 		if t.status != ClTerminal {
@@ -157,7 +157,7 @@ func (t *TcpClient) Close() {
 		if t.listener.OnClose != nil {
 			_ = t.listener.OnClose(t)
 		}
-		t.out.Info("TcpClient.Close: %d", t.status)
+		t.out.Debug("TcpClient.Close: %d", t.status)
 	} else {
 		t.lock.Unlock()
 	}

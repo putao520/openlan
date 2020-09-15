@@ -55,7 +55,6 @@ func (t *KernelTap) Read(p []byte) (n int, err error) {
 		return 0, libol.NewErr("Closed")
 	}
 	t.lock.Unlock()
-
 	return t.device.Read(p)
 }
 
@@ -66,7 +65,6 @@ func (t *KernelTap) InRead(p []byte) (n int, err error) {
 		return 0, libol.NewErr("Closed")
 	}
 	t.lock.Unlock()
-
 	return 0, nil
 }
 
@@ -77,14 +75,13 @@ func (t *KernelTap) Write(p []byte) (n int, err error) {
 		return 0, libol.NewErr("Closed")
 	}
 	t.lock.Unlock()
-
 	return t.device.Write(p)
 }
 
 func (t *KernelTap) Close() error {
 	t.lock.Lock()
 	defer t.lock.Unlock()
-	libol.Info("KernelTap.Close %s", t.name)
+	libol.Debug("KernelTap.Close %s", t.name)
 	if t.device == nil {
 		return nil
 	}
@@ -95,7 +92,6 @@ func (t *KernelTap) Close() error {
 	}
 	err := t.device.Close()
 	t.device = nil
-
 	return err
 }
 
@@ -108,7 +104,7 @@ func (t *KernelTap) Slave(bridge Bridger) {
 func (t *KernelTap) Up() {
 	t.lock.Lock()
 	defer t.lock.Unlock()
-	libol.Info("KernelTap.Up %s", t.name)
+	libol.Debug("KernelTap.Up %s", t.name)
 	if t.device == nil {
 		device, err := WaterNew(t.config)
 		if err != nil {

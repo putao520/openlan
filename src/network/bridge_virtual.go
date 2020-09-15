@@ -168,12 +168,12 @@ func (b *VirtualBridge) Input(m *Framer) error {
 
 func (b *VirtualBridge) Output(m *Framer) error {
 	var err error
-
-	libol.Debug("VirtualBridge.Output: % x", m.Data[:20])
+	if libol.HasLog(libol.DEBUG) {
+		libol.Debug("VirtualBridge.Output: % x", m.Data[:20])
+	}
 	if dev := m.Output; dev != nil {
 		_, err = dev.InRead(m.Data)
 	}
-
 	return err
 }
 
@@ -190,13 +190,11 @@ func (b *VirtualBridge) Learn(m *Framer) {
 	if source[0]&0x01 == 0x01 {
 		return
 	}
-
 	index := b.Eth2Str(source)
 	if l := b.FindDest(index); l != nil {
 		b.UpdateDest(index)
 		return
 	}
-
 	learn := &Learner{
 		Device:  m.Source,
 		Uptime:  time.Now().Unix(),
@@ -204,7 +202,6 @@ func (b *VirtualBridge) Learn(m *Framer) {
 	}
 	learn.Dest = make([]byte, 6)
 	copy(learn.Dest, source)
-
 	libol.Info("VirtualBridge.Learn: %s on %s", index, m.Source)
 	b.AddDest(index, learn)
 }
@@ -228,7 +225,6 @@ func (b *VirtualBridge) AddDest(d string, l *Learner) {
 func (b *VirtualBridge) UpdateDest(d string) {
 	b.lock.RLock()
 	defer b.lock.RUnlock()
-
 	if l, ok := b.learners[d]; ok {
 		l.Uptime = time.Now().Unix()
 	}
@@ -239,7 +235,9 @@ func (b *VirtualBridge) Flood(m *Framer) error {
 
 	data := m.Data
 	src := m.Source
-	libol.Debug("VirtualBridge.Flood: % x", data[:20])
+	if libol.HasLog(libol.DEBUG) {
+		libol.Debug("VirtualBridge.Flood: % x", data[:20])
+	}
 	for _, dst := range b.devices {
 		if src == dst {
 			continue
@@ -258,10 +256,12 @@ func (b *VirtualBridge) Unicast(m *Framer) bool {
 		dst := l.Device
 		if dst != src {
 			if _, err := dst.InRead(data); err != nil {
-				libol.Debug("VirtualBridge.Unicast: %s %s", dst, err)
+				libol.Warn("VirtualBridge.Unicast: %s %s", dst, err)
 			}
 		}
-		libol.Debug("VirtualBridge.Unicast: %s to %s % x", src, dst, data[:20])
+		if libol.HasLog(libol.DEBUG) {
+			libol.Debug("VirtualBridge.Unicast: %s to %s % x", src, dst, data[:20])
+		}
 		return true
 	}
 

@@ -149,13 +149,13 @@ func (c *KcpClient) Connect() error {
 }
 
 func (c *KcpClient) Close() {
-	c.out.Info("KcpClient.Close: %v", c.IsOk())
+	c.out.Debug("KcpClient.Close: %v", c.IsOk())
 	c.lock.Lock()
 	if c.connection != nil {
 		if c.status != ClTerminal {
 			c.status = ClClosed
 		}
-		c.out.Info("KcpClient.Close")
+		c.out.Debug("KcpClient.Close")
 		c.updateConn(nil)
 		c.private = nil
 		c.lock.Unlock()

@@ -182,7 +182,7 @@ func (t *WebClient) Connect() error {
 }
 
 func (t *WebClient) Close() {
-	t.out.Info("WebClient.Close: %v", t.IsOk())
+	t.out.Debug("WebClient.Close: %v", t.IsOk())
 	t.lock.Lock()
 	if t.connection != nil {
 		if t.status != ClTerminal {
@@ -195,7 +195,7 @@ func (t *WebClient) Close() {
 		if t.listener.OnClose != nil {
 			_ = t.listener.OnClose(t)
 		}
-		t.out.Info("WebClient.Close: %d", t.status)
+		t.out.Debug("WebClient.Close: %d", t.status)
 	} else {
 		t.lock.Unlock()
 	}
