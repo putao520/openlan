@@ -54,7 +54,7 @@ A OLAP is the endpoint to access OLSW, and all OLAPs behind the same switch can 
 ## on Windows
 ### Firstly, Install tap-windows6
 
-Download [tap-windows-9](https://github.com/danieldin95/openlan-go/releases/download/tap-windows-9/tap-windows-9.21.2.exe), then install it. 
+Download [tap-windows-9](https://github.com/danieldin95/openlan-go/releases/download/v4.0/tap-windows-9.21.2.exe), then install it. 
 
 ### Finally, Configure access authentication
 
