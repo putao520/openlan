@@ -218,66 +218,50 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 	body.Version = schema.NewVersionSchema()
 	body.Worker = api.NewWorkerSchema(h.switcher)
 
-	sortAp := func(i *models.Point, j *models.Point) bool {
-		return i.Network+i.Client.String() > j.Network+j.Client.String()
-	}
 	// display accessed point.
-	pls := make([]*models.Point, 0, 128)
 	for p := range storage.Point.List() {
 		if p == nil {
 			break
 		}
-		pls = append(pls, p)
-	}
-	sort.SliceStable(pls, func(i, j int) bool {
-		return sortAp(pls[i], pls[j])
-	})
-	for _, p := range pls {
 		body.Points = append(body.Points, models.NewPointSchema(p))
 	}
+	sort.SliceStable(body.Points, func(i, j int) bool {
+		ii := body.Points[i]
+		jj := body.Points[j]
+		return ii.Network+ii.Address > jj.Network+jj.Address
+	})
 	// display neighbor.
-	nls := make([]*models.Neighbor, 0, 128)
 	for n := range storage.Neighbor.List() {
 		if n == nil {
 			break
 		}
-		nls = append(nls, n)
-	}
-	sort.SliceStable(nls, func(i, j int) bool {
-		return nls[i].IpAddr.String() > nls[j].IpAddr.String()
-	})
-	for _, n := range nls {
 		body.Neighbors = append(body.Neighbors, models.NewNeighborSchema(n))
 	}
+	sort.SliceStable(body.Neighbors, func(i, j int) bool {
+		return body.Neighbors[i].IpAddr > body.Neighbors[j].IpAddr
+	})
 	// display links.
-	lls := make([]*models.Point, 0, 128)
 	for p := range storage.Link.List() {
 		if p == nil {
 			break
 		}
-		lls = append(lls, p)
-	}
-	sort.SliceStable(lls, func(i, j int) bool {
-		return sortAp(lls[i], lls[j])
-	})
-	for _, p := range lls {
 		body.Links = append(body.Links, models.NewLinkSchema(p))
 	}
+	sort.SliceStable(body.Links, func(i, j int) bool {
+		ii := body.Links[i]
+		jj := body.Links[j]
+		return ii.Network+ii.Address > jj.Network+jj.Address
+	})
 	// display online flow.
-	ols := make([]*models.Line, 0, 128)
 	for l := range storage.Online.List() {
 		if l == nil {
 			break
 		}
-		ols = append(ols, l)
-	}
-	sort.SliceStable(ols, func(i, j int) bool {
-		return ols[i].LastTime() < ols[j].LastTime()
-	})
-	for _, l := range ols {
 		body.OnLines = append(body.OnLines, models.NewOnLineSchema(l))
-
 	}
+	sort.SliceStable(body.OnLines, func(i, j int) bool {
+		return body.OnLines[i].HitTime < body.OnLines[j].HitTime
+	})
 	return body
 }
 

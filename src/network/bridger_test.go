@@ -13,20 +13,18 @@ func TestBridgeWriteAndReadByTap(t *testing.T) {
 	br.Open("")
 
 	//open tap device
-	dev01, err := NewKernelTap(true, "")
+	dev01, err := NewKernelTap("true", TapConfig{Type: TAP})
 	if err != nil {
 		t.Errorf("Tap.Open %s", err)
 		return
 	}
-
-	dev02, err := NewKernelTap(true, "")
+	dev02, err := NewKernelTap("true", TapConfig{Type: TAP})
 	if err != nil {
 		t.Errorf("Tap.Open %s", err)
 		return
 	}
-
-	br.AddSlave(dev01)
-	br.AddSlave(dev02)
+	_ = br.AddSlave(dev01)
+	_ = br.AddSlave(dev02)
 
 	wg.Add(1)
 	go func() {
