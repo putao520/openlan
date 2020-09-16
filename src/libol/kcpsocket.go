@@ -129,9 +129,9 @@ func (c *KcpClient) Connect() error {
 	if !c.Retry() {
 		return nil
 	}
-	c.out.Info("KcpClient.Connect: kcp://%s", c.remoteAddr)
+	c.out.Info("KcpClient.Connect: kcp://%s", c.address)
 	conn, err := kcp.DialWithOptions(
-		c.remoteAddr,
+		c.address,
 		c.kcpCfg.Block,
 		c.kcpCfg.DataShards,
 		c.kcpCfg.DataShards)

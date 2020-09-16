@@ -128,11 +128,11 @@ func (t *TcpClient) Connect() error {
 	var err error
 	var conn net.Conn
 	if t.tcpCfg.Tls != nil {
-		t.out.Info("TcpClient.Connect: tls://%s", t.remoteAddr)
-		conn, err = tls.Dial("tcp", t.remoteAddr, t.tcpCfg.Tls)
+		t.out.Info("TcpClient.Connect: tls://%s", t.address)
+		conn, err = tls.Dial("tcp", t.address, t.tcpCfg.Tls)
 	} else {
-		t.out.Info("TcpClient.Connect: tcp://%s", t.remoteAddr)
-		conn, err = net.Dial("tcp", t.remoteAddr)
+		t.out.Info("TcpClient.Connect: tcp://%s", t.address)
+		conn, err = net.Dial("tcp", t.address)
 	}
 	if err != nil {
 		return err

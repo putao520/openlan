@@ -159,11 +159,11 @@ func (t *WebClient) Connect() error {
 	}
 	var url string
 	if t.webCfg.Ca != nil {
-		t.out.Info("WebClient.Connect: wss://%s", t.remoteAddr)
-		url = "wss://" + t.remoteAddr
+		t.out.Info("WebClient.Connect: wss://%s", t.address)
+		url = "wss://" + t.address
 	} else {
-		t.out.Info("WebClient.Connect: ws://%s", t.remoteAddr)
-		url = "ws://" + t.remoteAddr
+		t.out.Info("WebClient.Connect: ws://%s", t.address)
+		url = "ws://" + t.address
 	}
 	config, err := websocket.NewConfig(url, url)
 	if err != nil {

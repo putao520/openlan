@@ -86,6 +86,7 @@ type StreamSocket struct {
 	out        *SubLogger
 	remoteAddr string
 	localAddr  string
+	address    string
 }
 
 func (t *StreamSocket) LocalAddr() string {
@@ -97,7 +98,7 @@ func (t *StreamSocket) RemoteAddr() string {
 }
 
 func (t *StreamSocket) String() string {
-	return t.remoteAddr
+	return t.address
 }
 
 func (t *StreamSocket) IsOk() bool {
@@ -160,6 +161,7 @@ func NewSocketClient(address string, message Messager) *SocketClientImpl {
 			statistics: NewSafeStrInt64(),
 			out:        NewSubLogger(address),
 			remoteAddr: address,
+			address:    address,
 		},
 		newTime: time.Now().Unix(),
 		status:  ClInit,
@@ -168,7 +170,7 @@ func NewSocketClient(address string, message Messager) *SocketClientImpl {
 
 func (s *SocketClientImpl) Out() *SubLogger {
 	if s.out == nil {
-		s.out = NewSubLogger(s.remoteAddr)
+		s.out = NewSubLogger(s.address)
 	}
 	return s.out
 }
