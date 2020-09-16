@@ -32,7 +32,7 @@ type Point struct {
 	Queue       *Queue    `json:"queue"`
 }
 
-var pd = Point{
+var pd = &Point{
 	Alias:      "",
 	Connection: "openlan.net",
 	Protocol:   "tls", // udp, kcp, tcp, tls, ws and wss etc.
@@ -57,9 +57,6 @@ func NewPoint() (c *Point) {
 		RequestAddr: true,
 		Crypt:       &Crypt{},
 	}
-	if runtime.GOOS == "linux" {
-		pd.Log.File = "/var/log/openlan-point.log"
-	}
 	flag.StringVar(&c.Alias, "alias", pd.Alias, "alias for this point")
 	flag.StringVar(&c.Network, "net", pd.Network, "Network name")
 	flag.StringVar(&c.Connection, "conn", pd.Connection, "Virtual switch connect to")
@@ -78,12 +75,20 @@ func NewPoint() (c *Point) {
 	flag.StringVar(&c.Crypt.Algo, "crypt:algo", pd.Crypt.Algo, "Crypt algorithm")
 	flag.StringVar(&c.PProf, "pprof", pd.PProf, "Configure file for CPU prof")
 	flag.Parse()
+	c.Initialize()
+	return c
+}
+
+func (c *Point) Id() string {
+	return c.Connection + ":" + c.Network
+}
+
+func (c *Point) Initialize() {
 	if err := c.Load(); err != nil {
 		libol.Warn("NewPoint.load %s", err)
 	}
 	c.Default()
 	libol.SetLogger(c.Log.File, c.Log.Verbose)
-	return c
 }
 
 func (c *Point) Right() {
@@ -124,10 +129,9 @@ func (c *Point) Load() error {
 	return nil
 }
 
-func (c *Point) Id() string {
-	return c.Connection + ":" + c.Network
-}
-
 func init() {
 	pd.Right()
+	if runtime.GOOS == "linux" {
+		pd.Log.File = "/var/log/openlan-point.log"
+	}
 }

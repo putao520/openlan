@@ -194,7 +194,7 @@ type Switch struct {
 	SaveFile  string     `json:"-" yaml:"-"`
 }
 
-var sd = Switch{
+var sd = &Switch{
 	Timeout: 5 * 60,
 	Log: Log{
 		File:    "./openlan-switch.log",
@@ -208,14 +208,16 @@ var sd = Switch{
 }
 
 func NewSwitch() (c Switch) {
-	if runtime.GOOS == "linux" {
-		sd.Log.File = "/var/log/openlan-switch.log"
-	}
 	flag.StringVar(&c.Log.File, "log:file", sd.Log.File, "Configure log file")
 	flag.IntVar(&c.Log.Verbose, "log:level", sd.Log.Verbose, "Configure log level")
 	flag.StringVar(&c.ConfDir, "conf:dir", sd.ConfDir, "Configure virtual switch directory")
 	flag.StringVar(&c.PProf, "prof", sd.PProf, "Configure file for CPU prof")
 	flag.Parse()
+	c.Initialize()
+	return c
+}
+
+func (c *Switch) Initialize() {
 	c.SaveFile = fmt.Sprintf("%s/switch.json", c.ConfDir)
 	if err := c.Load(); err != nil {
 		libol.Error("NewSwitch.load %s", err)
@@ -223,7 +225,6 @@ func NewSwitch() (c Switch) {
 	libol.SetLogger(c.Log.File, c.Log.Verbose)
 	c.Default()
 	libol.Debug("NewSwitch %v", c)
-	return c
 }
 
 func (c *Switch) Right() {
@@ -299,4 +300,7 @@ func (c *Switch) Load() error {
 
 func init() {
 	sd.Right()
+	if runtime.GOOS == "linux" {
+		sd.Log.File = "/var/log/openlan-switch.log"
+	}
 }
