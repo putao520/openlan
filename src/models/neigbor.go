@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	"net"
 	"time"
 
@@ -17,7 +16,10 @@ type Neighbor struct {
 }
 
 func (e *Neighbor) String() string {
-	return fmt.Sprintf("%s,%s,%s", e.HwAddr, e.IpAddr, e.Client)
+	str := e.HwAddr.String()
+	str += ":" + e.IpAddr.String()
+	str += ":" + e.Client.String()
+	return str
 }
 
 func NewNeighbor(hwAddr net.HardwareAddr, ipAddr net.IP, client libol.SocketClient) (e *Neighbor) {

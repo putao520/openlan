@@ -1,8 +1,8 @@
 package models
 
 import (
-	"fmt"
 	"net"
+	"strconv"
 	"time"
 )
 
@@ -19,19 +19,21 @@ type Line struct {
 
 func NewLine(t uint16) *Line {
 	l := &Line{
-		EthType:    t,
-		IpSource:   nil,
-		IpProtocol: 0,
-		PortDest:   0,
-		NewTime:    time.Now().Unix(),
-		HitTime:    time.Now().Unix(),
+		EthType: t,
+		NewTime: time.Now().Unix(),
+		HitTime: time.Now().Unix(),
 	}
 	return l
 }
 
 func (l *Line) String() string {
-	return fmt.Sprintf("%d:%s:%s:%d:%d:%d",
-		l.EthType, l.IpSource, l.IpDest, l.IpProtocol, l.PortSource, l.PortDest)
+	str := strconv.FormatUint(uint64(l.EthType), 10)
+	str += ":" + l.IpSource.String()
+	str += ":" + l.IpDest.String()
+	str += ":" + strconv.FormatUint(uint64(l.IpProtocol), 10)
+	str += ":" + strconv.FormatUint(uint64(l.PortSource), 10)
+	str += ":" + strconv.FormatUint(uint64(l.PortDest), 10)
+	return str
 }
 
 func (l *Line) UpTime() int64 {

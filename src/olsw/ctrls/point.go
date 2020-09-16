@@ -44,7 +44,7 @@ func (p *Point) GetCtl(id string, m libctrl.Message) error {
 			if u == nil {
 				break
 			}
-			p.Add(u.Client.Address(), u)
+			p.Add(u.Client.String(), u)
 		}
 	} else {
 		// TODO reply one POINT.

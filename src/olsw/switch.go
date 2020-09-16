@@ -248,7 +248,7 @@ func (v *Switch) onFrame(client libol.SocketClient, frame *libol.FrameMessage) e
 
 func (v *Switch) OnClient(client libol.SocketClient) error {
 	client.SetStatus(libol.ClConnected)
-	v.out.Info("Switch.onClient: %s", client.Address())
+	v.out.Info("Switch.onClient: %s", client.String())
 	return nil
 }
 
@@ -276,7 +276,7 @@ func (v *Switch) SignIn(client libol.SocketClient) error {
 }
 
 func (v *Switch) ReadClient(client libol.SocketClient, frame *libol.FrameMessage) error {
-	addr := client.Address()
+	addr := client.RemoteAddr()
 	if v.out.Has(libol.LOG) {
 		v.out.Log("Switch.ReadClient: %s %x", addr, frame.Frame())
 	}
@@ -310,7 +310,7 @@ func (v *Switch) ReadClient(client libol.SocketClient, frame *libol.FrameMessage
 }
 
 func (v *Switch) OnClose(client libol.SocketClient) error {
-	addr := client.Address()
+	addr := client.RemoteAddr()
 	v.out.Info("Switch.OnClose: %s", addr)
 	// already not need support free list for device.
 	uuid := storage.Point.GetUUID(addr)

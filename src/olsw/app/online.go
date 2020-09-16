@@ -13,7 +13,7 @@ import (
 type Online struct {
 	lock     sync.RWMutex
 	maxSize  int
-	lines    map[string]*models.Line
+	lineMap  map[string]*models.Line
 	lineList *list.List
 	master   Master
 }
@@ -22,7 +22,7 @@ func NewOnline(m Master, c config.Switch) *Online {
 	ms := c.Perf.OnLine
 	return &Online{
 		maxSize:  ms,
-		lines:    make(map[string]*models.Line, ms),
+		lineMap:  make(map[string]*models.Line, ms),
 		lineList: list.New(),
 		master:   m,
 	}
@@ -54,26 +54,22 @@ func (o *Online) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) e
 			udp := proto.Udp
 			line.PortDest = udp.Destination
 			line.PortSource = udp.Source
-		} else {
-			line.PortDest = 0
-			line.PortSource = 0
 		}
 		o.AddLine(line)
 	}
 	return nil
 }
 
-func (o *Online) pop() {
+func (o *Online) popLine() {
 	if o.lineList.Len() >= o.maxSize {
 		e := o.lineList.Front()
 		if e == nil {
 			return
 		}
-		lastLine, ok := e.Value.(*models.Line)
-		if ok {
+		if lastLine, ok := e.Value.(*models.Line); ok {
 			o.lineList.Remove(e)
 			storage.Online.Del(lastLine.String())
-			delete(o.lines, lastLine.String())
+			delete(o.lineMap, lastLine.String())
 		}
 	}
 }
@@ -82,15 +78,13 @@ func (o *Online) AddLine(line *models.Line) {
 	o.lock.Lock()
 	defer o.lock.Unlock()
 	if libol.HasLog(libol.LOG) {
-		libol.Log("Online.AddLine %s", line)
-		libol.Log("Online.AddLine %d", o.lineList.Len())
+		libol.Log("Online.AddLine %s and len %d", line, o.lineList.Len())
 	}
-	// TODO improve performance
-	find, ok := o.lines[line.String()]
-	if !ok {
-		o.pop()
+	key := line.String()
+	if find, ok := o.lineMap[key]; !ok {
+		o.popLine()
 		o.lineList.PushBack(line)
-		o.lines[line.String()] = line
+		o.lineMap[key] = line
 		storage.Online.Add(line)
 	} else if find != nil {
 		find.HitTime = time.Now().Unix()

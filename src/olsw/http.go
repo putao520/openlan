@@ -219,7 +219,7 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 	body.Worker = api.NewWorkerSchema(h.switcher)
 
 	sortAp := func(i *models.Point, j *models.Point) bool {
-		return i.Network+i.Client.Address() > j.Network+j.Client.Address()
+		return i.Network+i.Client.String() > j.Network+j.Client.String()
 	}
 	// display accessed point.
 	pls := make([]*models.Point, 0, 128)

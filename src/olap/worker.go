@@ -1189,7 +1189,7 @@ func (p *Worker) Status() libol.SocketStatus {
 func (p *Worker) Addr() string {
 	client := p.Client()
 	if client != nil {
-		return client.Address()
+		return client.String()
 	}
 	return ""
 }

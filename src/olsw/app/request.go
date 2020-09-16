@@ -95,7 +95,7 @@ func (r *WithRequest) GetLease(ifAddr string, p *models.Point, n *models.Network
 	}
 	if lease != nil {
 		lease.Network = network
-		lease.Client = p.Client.Address()
+		lease.Client = p.Client.String()
 	}
 	return lease
 }
@@ -120,7 +120,7 @@ func (r *WithRequest) OnIpAddr(client libol.SocketClient, data []byte) {
 		return
 	}
 	out.Cmd("WithRequest.OnIpAddr: find %s", n)
-	p := storage.Point.Get(client.Address())
+	p := storage.Point.Get(client.String())
 	if p == nil {
 		out.Error("WithRequest.OnIpAddr: point notFound")
 		return

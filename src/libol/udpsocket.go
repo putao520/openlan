@@ -118,8 +118,8 @@ func (c *UdpClient) Connect() error {
 	if !c.Retry() {
 		return nil
 	}
-	c.out.Info("UdpClient.Connect: udp://%s", c.address)
-	conn, err := net.Dial("udp", c.address)
+	c.out.Info("UdpClient.Connect: udp://%s", c.remoteAddr)
+	conn, err := net.Dial("udp", c.remoteAddr)
 	if err != nil {
 		return err
 	}

@@ -71,7 +71,6 @@ type SocketClient interface {
 	MinSize() int
 	IsOk() bool
 	Have(status SocketStatus) bool
-	Address() string
 	Statistics() map[string]int64
 	SetListener(listener ClientListener)
 	SetTimeout(v int64)
@@ -85,14 +84,20 @@ type StreamSocket struct {
 	maxSize    int
 	minSize    int
 	out        *SubLogger
-	address    string
+	remoteAddr string
+	localAddr  string
+}
+
+func (t *StreamSocket) LocalAddr() string {
+	return t.localAddr
+}
+
+func (t *StreamSocket) RemoteAddr() string {
+	return t.remoteAddr
 }
 
 func (t *StreamSocket) String() string {
-	if t.connection != nil {
-		return t.connection.RemoteAddr().String()
-	}
-	return t.address
+	return t.remoteAddr
 }
 
 func (t *StreamSocket) IsOk() bool {
@@ -144,8 +149,6 @@ type SocketClientImpl struct {
 	private       interface{}
 	status        SocketStatus
 	timeout       int64 // sec for read and write timeout
-	remoteAddr    string
-	localAddr     string
 }
 
 func NewSocketClient(address string, message Messager) *SocketClientImpl {
@@ -156,7 +159,7 @@ func NewSocketClient(address string, message Messager) *SocketClientImpl {
 			message:    message,
 			statistics: NewSafeStrInt64(),
 			out:        NewSubLogger(address),
-			address:    address,
+			remoteAddr: address,
 		},
 		newTime: time.Now().Unix(),
 		status:  ClInit,
@@ -165,7 +168,7 @@ func NewSocketClient(address string, message Messager) *SocketClientImpl {
 
 func (s *SocketClientImpl) Out() *SubLogger {
 	if s.out == nil {
-		s.out = NewSubLogger(s.address)
+		s.out = NewSubLogger(s.remoteAddr)
 	}
 	return s.out
 }
@@ -197,15 +200,6 @@ func (s *SocketClientImpl) AliveTime() int64 {
 		return 0
 	}
 	return time.Now().Unix() - s.connectedTime
-}
-
-// Get server address for client or remote address from server.
-func (s *SocketClientImpl) Address() string {
-	return s.address
-}
-
-func (s *SocketClientImpl) String() string {
-	return s.Address()
 }
 
 func (s *SocketClientImpl) Private() interface{} {
@@ -246,16 +240,6 @@ func (s *SocketClientImpl) SetListener(listener ClientListener) {
 	s.listener = listener
 }
 
-// Get actual local address
-func (s *SocketClientImpl) LocalAddr() string {
-	return s.localAddr
-}
-
-// Get actual remote address
-func (s *SocketClientImpl) RemoteAddr() string {
-	return s.remoteAddr
-}
-
 func (s *SocketClientImpl) SetTimeout(v int64) {
 	s.timeout = v
 }
@@ -268,7 +252,7 @@ func (s *SocketClientImpl) updateConn(conn net.Conn) {
 		s.remoteAddr = conn.RemoteAddr().String()
 	} else {
 		if s.connection != nil {
-			s.connection.Close()
+			_ = s.connection.Close()
 		}
 		s.connection = nil
 		s.message.Flush()
