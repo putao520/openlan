@@ -252,11 +252,13 @@ func (t *SocketWorker) reconnect() {
 			rtConn := t.record.Get(rtConnected)
 			rtReCon := t.record.Get(rtReConnect)
 			rtLast := t.record.Get(rtLast)
+			rtLive := t.record.Get(rtLive)
 			if rtConn >= rtReCon { // already connected after.
 				t.out.Cmd("SocketWorker.reconnect: dissed by connected")
 				return nil
 			}
-			t.out.Info("SocketWorker.reconnect: last %d, conn %d, re %d", rtLast, rtConn, rtReCon)
+			t.out.Info("SocketWorker.reconnect: l: %d a: %d", rtLast, rtLive)
+			t.out.Info("SocketWorker.reconnect: c: %d r: %d", rtConn, rtReCon)
 			return t.connect()
 		},
 	}
@@ -497,6 +499,7 @@ func (t *SocketWorker) dispatch(ev *WorkerEvent) {
 	case EvSocSuccess:
 		_ = t.toNetwork(t.client)
 	case EvSocRecon:
+		t.out.Info("SocketWorker.dispatch: %v", ev)
 		t.reconnect()
 	case EvSocSignIn, EvSocLogin:
 		_ = t.toLogin(t.client)
@@ -560,7 +563,7 @@ func (t *SocketWorker) Read(client libol.SocketClient) {
 func (t *SocketWorker) deadCheck() {
 	out := int64(t.pinCfg.Timeout)
 	now := time.Now().Unix()
-	if now-t.record.Get(rtLast) < out {
+	if now-t.record.Get(rtLast) < out || now-t.record.Get(rtLive) < out {
 		return
 	}
 	if now-t.record.Get(rtReConnect) < out { // timeout and avoid send reconn frequently.
