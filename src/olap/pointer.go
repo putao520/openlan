@@ -1,67 +1,40 @@
 package olap
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/chzyer/readline"
 	"github.com/danieldin95/openlan-go/src/cli/config"
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/network"
-	"io"
-	"os"
-	"strings"
 )
 
 type Pointer interface {
-	Status() string
 	Addr() string
 	IfName() string
 	IfAddr() string
 	Client() libol.SocketClient
 	Device() network.Taper
+	Status() libol.SocketStatus
 	UpTime() int64
 	UUID() string
 	User() string
+	Record() map[string]int64
+	Tenant() string
+	Alias() string
+	Config() *config.Point
 }
 
 type MixPoint struct {
-	// private
-	uuid          string
-	worker        *Worker
-	config        *config.Point
-	out           *libol.SubLogger
-	autoCompleter readline.AutoCompleter
-	readLineCfg   *readline.Config
+	uuid   string
+	worker *Worker
+	config *config.Point
+	out    *libol.SubLogger
 }
 
 func NewMixPoint(config *config.Point) MixPoint {
-	p := MixPoint{
+	return MixPoint{
 		worker: NewWorker(config),
 		config: config,
 		out:    libol.NewSubLogger(config.Id()),
 	}
-	p.autoCompleter = readline.NewPrefixCompleter(
-		readline.PcItem("mode",
-			readline.PcItem("vi"),
-			readline.PcItem("emacs"),
-		),
-		readline.PcItem("show",
-			readline.PcItem("record"),
-			readline.PcItem("statistics"),
-		),
-		readline.PcItem("bye"),
-		readline.PcItem("help"),
-	)
-	p.readLineCfg = &readline.Config{
-		Prompt:            ">>",
-		HistoryFile:       ".history",
-		AutoComplete:      p.autoCompleter,
-		InterruptPrompt:   "^C",
-		EOFPrompt:         "quit",
-		HistorySearchFold: true,
-	}
-	p.readLineCfg.Prompt = "[" + p.config.Alias + "@olap]# "
-	return p
 }
 
 func (p *MixPoint) Initialize() {
@@ -106,17 +79,15 @@ func (p *MixPoint) IfAddr() string {
 }
 
 func (p *MixPoint) Tenant() string {
-	if p.config != nil {
-		return p.config.Network
-	}
-	return ""
+	return p.config.Network
 }
 
 func (p *MixPoint) User() string {
-	if p.config != nil {
-		return p.config.Username
-	}
-	return ""
+	return p.config.Username
+}
+
+func (p *MixPoint) Alias() string {
+	return p.config.Alias
 }
 
 func (p *MixPoint) Record() map[string]int64 {
@@ -125,69 +96,6 @@ func (p *MixPoint) Record() map[string]int64 {
 	return rt.Data()
 }
 
-func (p *MixPoint) CmdShow(args string) {
-	switch args {
-	case "record":
-		fmt.Printf("%-15s: %v\n", "Record", p.Record())
-	case "statistics":
-		if c := p.Client(); c != nil {
-			fmt.Printf("%-15s: %v\n", "Statistics", c.Statistics())
-		}
-	case "config":
-		if str, err := json.MarshalIndent(p.config, "", "  "); err == nil {
-			fmt.Printf("%s\n", str)
-		} else {
-			fmt.Printf("Point.CmdShow %s\n", err)
-		}
-	default:
-		c := p.Client()
-		fmt.Printf("%-15s: %s\n", "UUID", p.UUID())
-		fmt.Printf("%-15s: %d\n", "UpTime", p.UpTime())
-		fmt.Printf("%-15s: %s\n", "Device", p.IfName())
-		if c != nil {
-			fmt.Printf("%-15s: %s\n", "Status", c.Status())
-		}
-	}
-}
-
-func (p *MixPoint) ReadLine() {
-	l, err := readline.NewEx(p.readLineCfg)
-	if err != nil {
-		p.out.Error("Point.ReadLine %s", err)
-	}
-	defer l.Close()
-	for {
-		line, err := l.Readline()
-		if err == readline.ErrInterrupt {
-			if len(line) == 0 {
-				break
-			} else {
-				continue
-			}
-		} else if err == io.EOF {
-			break
-		}
-		line = strings.TrimSpace(line)
-		switch {
-		case strings.HasPrefix(line, "mode "):
-			switch line[5:] {
-			case "vi":
-				l.SetVimMode(true)
-			case "emacs":
-				l.SetVimMode(false)
-			}
-		case line == "show", line == "":
-			p.CmdShow("")
-		case line == "bye", line == "quit":
-			if proc, err := os.FindProcess(os.Getpid()); err == nil {
-				_ = proc.Signal(os.Kill)
-			} else {
-				fmt.Printf("Point.ReadLine %s", err)
-			}
-			goto quit
-		case strings.HasPrefix(line, "show "):
-			p.CmdShow(line[5:])
-		}
-	}
-quit:
+func (p *MixPoint) Config() *config.Point {
+	return p.config
 }

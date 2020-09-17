@@ -17,7 +17,8 @@ func main() {
 	p.Initialize()
 	libol.Go(p.Start)
 	if !c.Daemon {
-		libol.Go(p.ReadLine)
+		t := olap.NewTerminal(p)
+		libol.Go(t.Start)
 	}
 	if c.Daemon {
 		libol.SdNotify()
