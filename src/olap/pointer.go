@@ -1,6 +1,7 @@
 package olap
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/chzyer/readline"
 	"github.com/danieldin95/openlan-go/src/cli/config"
@@ -25,10 +26,12 @@ type Pointer interface {
 
 type MixPoint struct {
 	// private
-	uuid   string
-	worker *Worker
-	config *config.Point
-	out    *libol.SubLogger
+	uuid          string
+	worker        *Worker
+	config        *config.Point
+	out           *libol.SubLogger
+	autoCompleter readline.AutoCompleter
+	readLineCfg   *readline.Config
 }
 
 func NewMixPoint(config *config.Point) MixPoint {
@@ -37,6 +40,27 @@ func NewMixPoint(config *config.Point) MixPoint {
 		config: config,
 		out:    libol.NewSubLogger(config.Id()),
 	}
+	p.autoCompleter = readline.NewPrefixCompleter(
+		readline.PcItem("mode",
+			readline.PcItem("vi"),
+			readline.PcItem("emacs"),
+		),
+		readline.PcItem("show",
+			readline.PcItem("record"),
+			readline.PcItem("statistics"),
+		),
+		readline.PcItem("bye"),
+		readline.PcItem("help"),
+	)
+	p.readLineCfg = &readline.Config{
+		Prompt:            ">>",
+		HistoryFile:       ".history",
+		AutoComplete:      p.autoCompleter,
+		InterruptPrompt:   "^C",
+		EOFPrompt:         "quit",
+		HistorySearchFold: true,
+	}
+	p.readLineCfg.Prompt = "[" + p.config.Alias + "@olap]# "
 	return p
 }
 
@@ -101,36 +125,6 @@ func (p *MixPoint) Record() map[string]int64 {
 	return rt.Data()
 }
 
-var AutoCompleter = readline.NewPrefixCompleter(
-	readline.PcItem("mode",
-		readline.PcItem("vi"),
-		readline.PcItem("emacs"),
-	),
-	readline.PcItem("show",
-		readline.PcItem("record"),
-		readline.PcItem("statistics"),
-	),
-	readline.PcItem("bye"),
-	readline.PcItem("help"),
-)
-
-var ReadLineCfg = &readline.Config{
-	Prompt:            ">>",
-	HistoryFile:       ".history",
-	AutoComplete:      AutoCompleter,
-	InterruptPrompt:   "^C",
-	EOFPrompt:         "quit",
-	HistorySearchFold: true,
-	FuncFilterInputRune: func(r rune) (rune, bool) {
-		switch r {
-		// block CtrlZ feature
-		case readline.CharCtrlZ:
-			return r, false
-		}
-		return r, true
-	},
-}
-
 func (p *MixPoint) CmdShow(args string) {
 	switch args {
 	case "record":
@@ -138,6 +132,12 @@ func (p *MixPoint) CmdShow(args string) {
 	case "statistics":
 		if c := p.Client(); c != nil {
 			fmt.Printf("%-15s: %v\n", "Statistics", c.Statistics())
+		}
+	case "config":
+		if str, err := json.MarshalIndent(p.config, "", "  "); err == nil {
+			fmt.Printf("%s\n", str)
+		} else {
+			fmt.Printf("Point.CmdShow %s\n", err)
 		}
 	default:
 		c := p.Client()
@@ -151,8 +151,7 @@ func (p *MixPoint) CmdShow(args string) {
 }
 
 func (p *MixPoint) ReadLine() {
-	ReadLineCfg.Prompt = "[" + p.config.Alias + "@olap]# "
-	l, err := readline.NewEx(ReadLineCfg)
+	l, err := readline.NewEx(p.readLineCfg)
 	if err != nil {
 		p.out.Error("Point.ReadLine %s", err)
 	}
@@ -183,7 +182,7 @@ func (p *MixPoint) ReadLine() {
 			if proc, err := os.FindProcess(os.Getpid()); err == nil {
 				_ = proc.Signal(os.Kill)
 			} else {
-				p.out.Error("Point.ReadLine %s", err)
+				fmt.Printf("Point.ReadLine %s", err)
 			}
 			goto quit
 		case strings.HasPrefix(line, "show "):
