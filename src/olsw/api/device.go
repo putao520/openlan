@@ -22,13 +22,9 @@ func (h Device) List(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		st := schema.Device{
-			Name: t.Name(),
-			Mtu:  t.Mtu(),
-		}
-		if t.IsTun() {
-			st.Type = "tun"
-		} else if t.IsTap() {
-			st.Type = "tap"
+			Name:     t.Name(),
+			Mtu:      t.Mtu(),
+			Provider: t.Type(),
 		}
 		dev = append(dev, st)
 	}
@@ -40,8 +36,9 @@ func (h Device) Get(w http.ResponseWriter, r *http.Request) {
 	dev := network.Tapers.Get(vars["id"])
 	if dev != nil {
 		ResponseJson(w, schema.Device{
-			Name: dev.Name(),
-			Mtu:  dev.Mtu(),
+			Name:     dev.Name(),
+			Mtu:      dev.Mtu(),
+			Provider: dev.Type(),
 		})
 	} else {
 		http.Error(w, vars["id"], http.StatusNotFound)

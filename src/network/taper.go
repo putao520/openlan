@@ -6,8 +6,8 @@ import (
 )
 
 type Taper interface {
+	Type() string
 	IsTun() bool
-	IsTap() bool
 	Name() string
 	Read([]byte) (int, error)  // read data from kernel to user space
 	Write([]byte) (int, error) // write data from user space to kernel
@@ -26,7 +26,7 @@ func NewTaper(tap, tenant string, c TapConfig) (Taper, error) {
 	if tap == "linux" {
 		return NewKernelTap(tenant, c)
 	}
-	return NewUserSpaceTap(tenant, c)
+	return NewVirtualTap(tenant, c)
 }
 
 type tapers struct {
@@ -97,7 +97,9 @@ const (
 )
 
 type TapConfig struct {
-	Type    int
-	Network string
-	Name    string
+	Type     int
+	Network  string
+	Name     string
+	WriteBuf int
+	SendBuf  int
 }

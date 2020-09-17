@@ -10,7 +10,7 @@ const (
 	UsUp    = uint(0x04)
 )
 
-type UserSpaceTap struct {
+type VirtualTap struct {
 	lock    sync.Mutex
 	kernel  chan []byte
 	virtual chan []byte
@@ -22,52 +22,51 @@ type UserSpaceTap struct {
 	ifMtu   int
 }
 
-func NewUserSpaceTap(tenant string, c TapConfig) (*UserSpaceTap, error) {
+func NewVirtualTap(tenant string, c TapConfig) (*VirtualTap, error) {
 	if c.Name == "" {
 		c.Name = Tapers.GenName()
 	}
-	tap := &UserSpaceTap{
+	tap := &VirtualTap{
 		tenant: tenant,
 		name:   c.Name,
 		ifMtu:  1514,
 		config: c,
 	}
 	Tapers.Add(tap)
-
 	return tap, nil
 }
 
-func (t *UserSpaceTap) Tenant() string {
+func (t *VirtualTap) Type() string {
+	return "virtual"
+}
+
+func (t *VirtualTap) Tenant() string {
 	return t.tenant
 }
 
-func (t *UserSpaceTap) IsTun() bool {
+func (t *VirtualTap) IsTun() bool {
 	return t.config.Type == TUN
 }
 
-func (t *UserSpaceTap) IsTap() bool {
-	return t.config.Type == TAP
-}
-
-func (t *UserSpaceTap) Name() string {
+func (t *VirtualTap) Name() string {
 	return t.name
 }
 
-func (t *UserSpaceTap) hasFlags(flags uint) bool {
+func (t *VirtualTap) hasFlags(flags uint) bool {
 	return t.flags&flags == flags
 }
 
-func (t *UserSpaceTap) setFlags(flags uint) {
+func (t *VirtualTap) setFlags(flags uint) {
 	t.flags |= flags
 }
 
-func (t *UserSpaceTap) clearFlags(flags uint) {
+func (t *VirtualTap) clearFlags(flags uint) {
 	t.flags &= ^flags
 }
 
-func (t *UserSpaceTap) Write(p []byte) (int, error) {
+func (t *VirtualTap) Write(p []byte) (int, error) {
 	if libol.HasLog(libol.DEBUG) {
-		libol.Debug("UserSpaceTap.Write: %s % x", t, p[:20])
+		libol.Debug("VirtualTap.Write: %s % x", t, p[:20])
 	}
 	t.lock.Lock()
 	if !t.hasFlags(UsUp) {
@@ -79,7 +78,7 @@ func (t *UserSpaceTap) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-func (t *UserSpaceTap) Read(p []byte) (int, error) {
+func (t *VirtualTap) Read(p []byte) (int, error) {
 	t.lock.Lock()
 	if !t.hasFlags(UsUp) {
 		t.lock.Unlock()
@@ -90,7 +89,7 @@ func (t *UserSpaceTap) Read(p []byte) (int, error) {
 	return copy(p, data), nil
 }
 
-func (t *UserSpaceTap) Recv(p []byte) (int, error) {
+func (t *VirtualTap) Recv(p []byte) (int, error) {
 	t.lock.Lock()
 	if !t.hasFlags(UsUp) {
 		t.lock.Unlock()
@@ -101,9 +100,9 @@ func (t *UserSpaceTap) Recv(p []byte) (int, error) {
 	return copy(p, data), nil
 }
 
-func (t *UserSpaceTap) Send(p []byte) (int, error) {
+func (t *VirtualTap) Send(p []byte) (int, error) {
 	if libol.HasLog(libol.DEBUG) {
-		libol.Debug("UserSpaceTap.Send: %s % x", t, p[:20])
+		libol.Debug("VirtualTap.Send: %s % x", t, p[:20])
 	}
 	t.lock.Lock()
 	if !t.hasFlags(UsUp) {
@@ -115,7 +114,7 @@ func (t *UserSpaceTap) Send(p []byte) (int, error) {
 	return len(p), nil
 }
 
-func (t *UserSpaceTap) Close() error {
+func (t *VirtualTap) Close() error {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	if t.hasFlags(UsClose) {
@@ -131,21 +130,21 @@ func (t *UserSpaceTap) Close() error {
 	return nil
 }
 
-func (t *UserSpaceTap) Slave(bridge Bridger) {
+func (t *VirtualTap) Slave(bridge Bridger) {
 	if t.bridge == nil {
 		t.bridge = bridge
 	}
 }
 
-func (t *UserSpaceTap) Up() {
+func (t *VirtualTap) Up() {
 	t.lock.Lock()
-	t.kernel = make(chan []byte, 1024*32)
-	t.virtual = make(chan []byte, 1024*16)
+	t.kernel = make(chan []byte, t.config.SendBuf)
+	t.virtual = make(chan []byte, t.config.WriteBuf)
 	t.setFlags(UsUp)
 	t.lock.Unlock()
 }
 
-func (t *UserSpaceTap) Down() {
+func (t *VirtualTap) Down() {
 	t.lock.Lock()
 	t.clearFlags(UsUp)
 	t.kernel = nil
@@ -153,14 +152,14 @@ func (t *UserSpaceTap) Down() {
 	t.lock.Unlock()
 }
 
-func (t *UserSpaceTap) String() string {
+func (t *VirtualTap) String() string {
 	return t.name
 }
 
-func (t *UserSpaceTap) Mtu() int {
+func (t *VirtualTap) Mtu() int {
 	return t.ifMtu
 }
 
-func (t *UserSpaceTap) SetMtu(mtu int) {
+func (t *VirtualTap) SetMtu(mtu int) {
 	t.ifMtu = mtu
 }

@@ -32,16 +32,16 @@ func NewKernelTap(tenant string, c TapConfig) (*KernelTap, error) {
 	return tap, nil
 }
 
+func (t *KernelTap) Type() string {
+	return "kernel"
+}
+
 func (t *KernelTap) Tenant() string {
 	return t.tenant
 }
 
 func (t *KernelTap) IsTun() bool {
 	return t.config.Type == TUN
-}
-
-func (t *KernelTap) IsTap() bool {
-	return t.config.Type == TAP
 }
 
 func (t *KernelTap) Name() string {

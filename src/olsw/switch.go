@@ -392,6 +392,14 @@ func (v *Switch) Server() libol.SocketServer {
 	return v.server
 }
 
+func (v *Switch) GetBridge(tenant string) (network.Bridger, error) {
+	w, ok := v.worker[tenant]
+	if !ok {
+		return nil, libol.NewErr("notFound bridge %s", tenant)
+	}
+	return w.bridge, nil
+}
+
 func (v *Switch) NewTap(tenant string) (network.Taper, error) {
 	v.lock.Lock()
 	defer v.lock.Unlock()
@@ -399,12 +407,15 @@ func (v *Switch) NewTap(tenant string) (network.Taper, error) {
 
 	// already not need support free list for device.
 	// dropped firstly packages during 15s because of forwarding delay.
-	w, ok := v.worker[tenant]
-	if !ok {
-		return nil, libol.NewErr("Not found bridge %s", tenant)
+	br, err := v.GetBridge(tenant)
+	if err != nil {
+		return nil, err
 	}
-	br := w.bridge
-	dev, err := network.NewTaper(br.Type(), tenant, network.TapConfig{Type: network.TAP})
+	dev, err := network.NewTaper(br.Type(), tenant, network.TapConfig{
+		Type:     network.TAP,
+		WriteBuf: v.cfg.Queue.VirWrt,
+		SendBuf:  v.cfg.Queue.VirSnd,
+	})
 	if err != nil {
 		v.out.Error("Switch.NewTap: %s", err)
 		return nil, err
