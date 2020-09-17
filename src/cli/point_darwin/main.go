@@ -12,7 +12,7 @@ func main() {
 	c := config.NewPoint()
 	p := olap.NewPoint(c)
 	p.Initialize()
-	p.Start()
+	libol.Go(p.Start)
 	libol.Wait()
 	p.Stop()
 }

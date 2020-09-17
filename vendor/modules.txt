@@ -2,6 +2,8 @@
 github.com/Sirupsen/logrus
 # github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5
 github.com/armon/go-socks5
+# github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e
+github.com/chzyer/readline
 # github.com/coreos/go-systemd/v22 v22.0.0
 github.com/coreos/go-systemd/v22/daemon
 # github.com/davecgh/go-spew v1.1.0
@@ -56,8 +58,8 @@ golang.org/x/net/bpf
 golang.org/x/net/internal/iana
 golang.org/x/net/internal/socket
 # golang.org/x/sys v0.0.0 => github.com/golang/sys v0.0.0-20190209173611-3b5209105503
-golang.org/x/sys/windows/registry
 golang.org/x/sys/unix
+golang.org/x/sys/windows/registry
 golang.org/x/sys/windows
 # gopkg.in/yaml.v2 v2.2.2
 gopkg.in/yaml.v2

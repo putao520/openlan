@@ -13,7 +13,7 @@ func main() {
 	p := olap.NewPoint(c)
 	libol.PreNotify()
 	p.Initialize()
-	p.Start()
+	libol.Go(p.Start)
 	libol.SdNotify()
 	libol.Wait()
 	p.Stop()
