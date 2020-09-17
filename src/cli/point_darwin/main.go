@@ -13,6 +13,9 @@ func main() {
 	p := olap.NewPoint(c)
 	p.Initialize()
 	libol.Go(p.Start)
+	if !c.Daemon {
+		libol.Go(p.ReadLine)
+	}
 	libol.Wait()
 	p.Stop()
 }

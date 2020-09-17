@@ -101,7 +101,7 @@ func (p *MixPoint) Record() map[string]int64 {
 	return rt.Data()
 }
 
-var completer = readline.NewPrefixCompleter(
+var AutoCompleter = readline.NewPrefixCompleter(
 	readline.PcItem("mode",
 		readline.PcItem("vi"),
 		readline.PcItem("emacs"),
@@ -114,14 +114,13 @@ var completer = readline.NewPrefixCompleter(
 	readline.PcItem("help"),
 )
 
-var cfg = &readline.Config{
+var ReadLineCfg = &readline.Config{
 	Prompt:            ">>",
 	HistoryFile:       ".history",
-	AutoComplete:      completer,
+	AutoComplete:      AutoCompleter,
 	InterruptPrompt:   "^C",
 	EOFPrompt:         "quit",
 	HistorySearchFold: true,
-	VimMode:           true,
 	FuncFilterInputRune: func(r rune) (rune, bool) {
 		switch r {
 		// block CtrlZ feature
@@ -152,8 +151,8 @@ func (p *MixPoint) CmdShow(args string) {
 }
 
 func (p *MixPoint) ReadLine() {
-	cfg.Prompt = "[" + p.config.Alias + "@olap]# "
-	l, err := readline.NewEx(cfg)
+	ReadLineCfg.Prompt = "[" + p.config.Alias + "@olap]# "
+	l, err := readline.NewEx(ReadLineCfg)
 	if err != nil {
 		p.out.Error("Point.ReadLine %s", err)
 	}
