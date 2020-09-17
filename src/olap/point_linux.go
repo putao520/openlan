@@ -3,6 +3,7 @@ package olap
 import (
 	"github.com/danieldin95/openlan-go/src/cli/config"
 	"github.com/danieldin95/openlan-go/src/models"
+	"github.com/danieldin95/openlan-go/src/network"
 	"github.com/vishvananda/netlink"
 	"net"
 )
@@ -95,15 +96,28 @@ func (p *Point) UpBr(name string) *netlink.Bridge {
 
 func (p *Point) OnTap(w *TapWorker) error {
 	p.out.Info("Point.OnTap")
-
-	name := w.device.Name()
+	tap := w.device
+	name := tap.Name()
+	if tap.Type() == "virtual" { // virtual device
+		tap.Up()
+		br := network.Bridges.Get(p.brName)
+		_ = br.AddSlave(name)
+		link, err := netlink.LinkByName(br.Kernel())
+		if err != nil {
+			p.out.Error("Point.OnTap: Get %s: %s", p.brName, err)
+			return err
+		}
+		p.link = link
+		return nil
+	}
+	// kernel device
 	link, err := netlink.LinkByName(name)
 	if err != nil {
-		p.out.Error("Point.OnTap: Get dev %s: %s", name, err)
+		p.out.Error("Point.OnTap: Get %s: %s", name, err)
 		return err
 	}
 	if err := netlink.LinkSetUp(link); err != nil {
-		p.out.Error("Point.OnTap.SetLinkUp: %s: %s", name, err)
+		p.out.Error("Point.OnTap.LinkUp: %s", err)
 		return err
 	}
 	if br := p.UpBr(p.brName); br != nil {
@@ -112,7 +126,7 @@ func (p *Point) OnTap(w *TapWorker) error {
 		}
 		link, err = netlink.LinkByName(p.brName)
 		if err != nil {
-			p.out.Error("Point.OnTap: Get dev %s: %s", p.brName, err)
+			p.out.Error("Point.OnTap: Get %s: %s", p.brName, err)
 		}
 	}
 	p.link = link

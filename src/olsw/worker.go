@@ -255,10 +255,11 @@ func (w *NetworkWorker) UpTime() int64 {
 
 func (w *NetworkWorker) AddLink(c *config.Point) {
 	c.Alias = w.alias
-	c.Interface.Bridge = w.cfg.Bridge.Name //Reset bridge name.
 	c.RequestAddr = false
 	c.Network = w.cfg.Name
+	c.Interface.Bridge = w.cfg.Bridge.Name // reset bridge name.
 	c.Interface.Address = w.cfg.Bridge.Address
+	c.Interface.Provider = w.cfg.Bridge.Provider
 	libol.Go(func() {
 		p := olap.NewPoint(c)
 		p.Initialize()

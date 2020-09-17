@@ -650,14 +650,13 @@ type TapWorker struct {
 	eventQueue chan *WorkerEvent
 }
 
-func NewTapWorker(devCfg network.TapConfig, c *config.Point) (a *TapWorker) {
+func NewTapWorker(devCfg network.TapConfig, pinCfg *config.Point) (a *TapWorker) {
 	a = &TapWorker{
-		device:     nil,
 		devCfg:     devCfg,
-		pinCfg:     c,
+		pinCfg:     pinCfg,
 		done:       make(chan bool, 2),
-		writeQueue: make(chan *libol.FrameMessage, c.Queue.TapWr),
-		out:        libol.NewSubLogger(c.Id()),
+		writeQueue: make(chan *libol.FrameMessage, pinCfg.Queue.TapWr),
+		out:        libol.NewSubLogger(pinCfg.Id()),
 		eventQueue: make(chan *WorkerEvent, 32),
 	}
 	return
@@ -724,7 +723,7 @@ func (a *TapWorker) OnIpAddr(addr string) {
 
 func (a *TapWorker) open() error {
 	a.close()
-	device, err := network.NewKernelTap(a.pinCfg.Network, a.devCfg)
+	device, err := network.NewTaper(a.pinCfg.Network, a.devCfg)
 	if err != nil {
 		a.out.Error("TapWorker.open: %s", err)
 		return err
@@ -1047,19 +1046,19 @@ func GetSocketClient(c *config.Point) libol.SocketClient {
 }
 
 func GetTapCfg(c *config.Point) network.TapConfig {
-	if c.Interface.Provider == "tun" {
-		return network.TapConfig{
-			Type:    network.TUN,
-			Name:    c.Interface.Name,
-			Network: c.Interface.Address,
-		}
-	} else {
-		return network.TapConfig{
-			Type:    network.TAP,
-			Name:    c.Interface.Name,
-			Network: c.Interface.Address,
-		}
+	cfg := network.TapConfig{
+		Provider: c.Interface.Provider,
+		Name:     c.Interface.Name,
+		Network:  c.Interface.Address,
+		SendBuf:  c.Queue.VirSnd,
+		WriteBuf: c.Queue.VirWrt,
 	}
+	if c.Interface.Provider == "tun" {
+		cfg.Type = network.TUN
+	} else {
+		cfg.Type = network.TAP
+	}
+	return cfg
 }
 
 type Worker struct {

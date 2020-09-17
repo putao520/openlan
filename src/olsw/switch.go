@@ -411,7 +411,8 @@ func (v *Switch) NewTap(tenant string) (network.Taper, error) {
 	if err != nil {
 		return nil, err
 	}
-	dev, err := network.NewTaper(br.Type(), tenant, network.TapConfig{
+	dev, err := network.NewTaper(tenant, network.TapConfig{
+		Provider: br.Type(),
 		Type:     network.TAP,
 		WriteBuf: v.cfg.Queue.VirWrt,
 		SendBuf:  v.cfg.Queue.VirSnd,

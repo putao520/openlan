@@ -39,6 +39,7 @@ func NewVirtualBridge(name string, mtu int) *VirtualBridge {
 		timeout:  5 * 60,
 		out:      libol.NewSubLogger(name),
 	}
+	Bridges.Add(b)
 	return b
 }
 
@@ -68,6 +69,10 @@ func (b *VirtualBridge) Open(addr string) {
 	libol.Go(b.Start)
 }
 
+func (b *VirtualBridge) Kernel() string {
+	return b.kernel.Name()
+}
+
 func (b *VirtualBridge) Close() error {
 	if b.kernel != nil {
 		out, err := libol.IpAddrDel(b.kernel.Name(), b.address)
@@ -83,7 +88,7 @@ func (b *VirtualBridge) Close() error {
 func (b *VirtualBridge) AddSlave(name string) error {
 	b.lock.Lock()
 	defer b.lock.Unlock()
-	tap := Tapers.Get(name)
+	tap := Taps.Get(name)
 	if tap == nil {
 		return libol.NewErr("%s notFound", name)
 	}
@@ -227,7 +232,6 @@ func (b *VirtualBridge) Learn(m *Framer) {
 func (b *VirtualBridge) FindDest(d string) *Learner {
 	b.lock.RLock()
 	defer b.lock.RUnlock()
-
 	if l, ok := b.learners[d]; ok {
 		return l
 	}
@@ -255,6 +259,8 @@ func (b *VirtualBridge) Flood(m *Framer) error {
 	if b.out.Has(libol.DEBUG) {
 		b.out.Debug("VirtualBridge.Flood: % x", data[:20])
 	}
+	b.lock.RLock()
+	defer b.lock.RUnlock()
 	for _, dst := range b.devices {
 		if src == dst {
 			continue

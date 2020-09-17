@@ -24,7 +24,7 @@ type VirtualTap struct {
 
 func NewVirtualTap(tenant string, c TapConfig) (*VirtualTap, error) {
 	if c.Name == "" {
-		c.Name = Tapers.GenName()
+		c.Name = Taps.GenName()
 	}
 	tap := &VirtualTap{
 		tenant: tenant,
@@ -32,7 +32,7 @@ func NewVirtualTap(tenant string, c TapConfig) (*VirtualTap, error) {
 		ifMtu:  1514,
 		config: c,
 	}
-	Tapers.Add(tap)
+	Taps.Add(tap)
 	return tap, nil
 }
 
@@ -120,7 +120,7 @@ func (t *VirtualTap) Close() error {
 	if t.hasFlags(UsClose) {
 		return nil
 	}
-	Tapers.Del(t.name)
+	Taps.Del(t.name)
 	if t.bridge != nil {
 		_ = t.bridge.DelSlave(t.name)
 		t.bridge = nil
@@ -147,7 +147,9 @@ func (t *VirtualTap) Up() {
 func (t *VirtualTap) Down() {
 	t.lock.Lock()
 	t.clearFlags(UsUp)
+	close(t.kernel)
 	t.kernel = nil
+	close(t.virtual)
 	t.virtual = nil
 	t.lock.Unlock()
 }

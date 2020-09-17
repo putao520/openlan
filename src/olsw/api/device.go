@@ -17,28 +17,43 @@ func (h Device) Router(router *mux.Router) {
 
 func (h Device) List(w http.ResponseWriter, r *http.Request) {
 	dev := make([]schema.Device, 0, 1024)
-	for t := range network.Tapers.List() {
+	for t := range network.Taps.List() {
 		if t == nil {
 			break
 		}
-		st := schema.Device{
+		dev = append(dev, schema.Device{
 			Name:     t.Name(),
 			Mtu:      t.Mtu(),
 			Provider: t.Type(),
+		})
+	}
+	for t := range network.Bridges.List() {
+		if t == nil {
+			break
 		}
-		dev = append(dev, st)
+		dev = append(dev, schema.Device{
+			Name:     t.Name(),
+			Mtu:      t.Mtu(),
+			Provider: t.Type(),
+		})
 	}
 	ResponseJson(w, dev)
 }
 
 func (h Device) Get(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	dev := network.Tapers.Get(vars["id"])
-	if dev != nil {
+	name := vars["id"]
+	if dev := network.Taps.Get(name); dev != nil {
 		ResponseJson(w, schema.Device{
 			Name:     dev.Name(),
 			Mtu:      dev.Mtu(),
 			Provider: dev.Type(),
+		})
+	} else if br := network.Bridges.Get(name); br != nil {
+		ResponseJson(w, schema.Device{
+			Name:     br.Name(),
+			Mtu:      br.Mtu(),
+			Provider: br.Type(),
 		})
 	} else {
 		http.Error(w, vars["id"], http.StatusNotFound)

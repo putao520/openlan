@@ -44,7 +44,7 @@ var pd = &Point{
 	},
 	Interface: Interface{
 		IfMtu:    1518,
-		Provider: "tap",
+		Provider: "kernel",
 		Name:     "",
 	},
 	SaveFile:    "./point.json",

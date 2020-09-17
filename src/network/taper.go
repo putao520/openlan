@@ -22,11 +22,11 @@ type Taper interface {
 	SetMtu(mtu int)
 }
 
-func NewTaper(tap, tenant string, c TapConfig) (Taper, error) {
-	if tap == "linux" {
-		return NewKernelTap(tenant, c)
+func NewTaper(tenant string, c TapConfig) (Taper, error) {
+	if c.Provider == "virtual" {
+		return NewVirtualTap(tenant, c)
 	}
-	return NewVirtualTap(tenant, c)
+	return NewKernelTap(tenant, c)
 }
 
 type tapers struct {
@@ -88,7 +88,7 @@ func (t *tapers) List() <-chan Taper {
 	return data
 }
 
-var Tapers = &tapers{}
+var Taps = &tapers{}
 
 const (
 	_ = iota
@@ -97,6 +97,7 @@ const (
 )
 
 type TapConfig struct {
+	Provider string
 	Type     int
 	Network  string
 	Name     string

@@ -19,7 +19,12 @@ func NewLinuxBridge(name string, mtu int) *LinuxBridge {
 		ifMtu: mtu,
 		ctl:   libol.NewBrCtl(name),
 	}
+	Bridges.Add(b)
 	return b
+}
+
+func (b *LinuxBridge) Kernel() string {
+	return b.name
 }
 
 func (b *LinuxBridge) Open(addr string) {

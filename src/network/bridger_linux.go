@@ -1,8 +1,8 @@
 package network
 
-func NewBridger(bridge, name string, ifMtu int) Bridger {
-	if bridge == "linux" {
-		return NewLinuxBridge(name, ifMtu)
+func NewBridger(provider, name string, ifMtu int) Bridger {
+	if provider == "virtual" {
+		return NewVirtualBridge(name, ifMtu)
 	}
-	return NewVirtualBridge(name, ifMtu)
+	return NewLinuxBridge(name, ifMtu)
 }

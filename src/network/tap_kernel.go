@@ -28,7 +28,7 @@ func NewKernelTap(tenant string, c TapConfig) (*KernelTap, error) {
 		config: c,
 		ifMtu:  1514,
 	}
-	Tapers.Add(tap)
+	Taps.Add(tap)
 	return tap, nil
 }
 
@@ -87,7 +87,7 @@ func (t *KernelTap) Close() error {
 	if t.device == nil {
 		return nil
 	}
-	Tapers.Del(t.name)
+	Taps.Del(t.name)
 	if t.bridge != nil {
 		_ = t.bridge.DelSlave(t.name)
 		t.bridge = nil
