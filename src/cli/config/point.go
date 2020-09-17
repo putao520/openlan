@@ -30,7 +30,7 @@ type Point struct {
 	RequestAddr bool      `json:"-" yaml:"-"`
 	SaveFile    string    `json:"-" yaml:"-"`
 	Queue       *Queue    `json:"queue"`
-	Daemon      bool      `json:"-"`
+	Terminal    string    `json:"-"`
 }
 
 var pd = &Point{
@@ -51,6 +51,7 @@ var pd = &Point{
 	Network:     "default",
 	RequestAddr: true,
 	Crypt:       &Crypt{},
+	Terminal:    "on",
 }
 
 func NewPoint() (c *Point) {
@@ -59,7 +60,7 @@ func NewPoint() (c *Point) {
 		Crypt:       &Crypt{},
 	}
 	flag.StringVar(&c.Alias, "alias", pd.Alias, "alias for this point")
-	flag.BoolVar(&c.Daemon, "daemon", pd.Daemon, "run as a daemon")
+	flag.StringVar(&c.Terminal, "terminal", pd.Terminal, "run interactive terminal")
 	flag.StringVar(&c.Network, "net", pd.Network, "Network name")
 	flag.StringVar(&c.Connection, "conn", pd.Connection, "Virtual switch connect to")
 	flag.StringVar(&c.Username, "user", pd.Username, "Accessed username")

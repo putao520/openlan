@@ -11,17 +11,16 @@ import (
 func main() {
 	c := config.NewPoint()
 	p := olap.NewPoint(c)
-	if c.Daemon {
+	if c.Terminal == "off" {
 		libol.PreNotify()
 	}
 	p.Initialize()
 	libol.Go(p.Start)
-	if !c.Daemon {
-		libol.Go(p.ReadLine)
-	}
-	if c.Daemon {
+	if c.Terminal == "on" {
+		olap.NewTerminal(p).Start()
+	} else {
 		libol.SdNotify()
+		libol.Wait()
 	}
-	libol.Wait()
 	p.Stop()
 }
