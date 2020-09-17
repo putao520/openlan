@@ -32,6 +32,7 @@ func NewTerminal(pointer Pointer) *Terminal {
 			readline.PcItem("connection"),
 		),
 	)
+
 	config := &readline.Config{
 		Prompt:            t.Prompt(),
 		HistoryFile:       ".history",
