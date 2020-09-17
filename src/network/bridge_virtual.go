@@ -45,40 +45,43 @@ func NewVirtualBridge(name string, mtu int) *VirtualBridge {
 
 func (b *VirtualBridge) Open(addr string) {
 	b.out.Info("VirtualBridge.Open %s", addr)
-	if addr != "" {
-		tap, err := NewKernelTap("default", TapConfig{Type: TAP})
-		if err != nil {
-			b.out.Error("VirtualBridge.Open new kernel %s", err)
-		} else {
-			out, err := libol.IpLinkUp(tap.Name())
-			if err != nil {
-				b.out.Error("VirtualBridge.Open IpAddr %s:%s", err, out)
-			}
-			b.address = addr
-			b.kernel = tap
-			out, err = libol.IpAddrAdd(b.kernel.Name(), b.address)
-			if err != nil {
-				b.out.Error("VirtualBridge.Open IpAddr %s:%s", err, out)
-			}
-			b.out.Info("VirtualBridge.Open %s", tap.Name())
-			_ = b.AddSlave(tap.name)
-		}
-	} else {
-		b.out.Warn("VirtualBridge.Open notSupport address")
-	}
+
 	libol.Go(b.Start)
+	if tap, err := NewKernelTap("", TapConfig{Type: TAP}); err != nil {
+		b.out.Error("VirtualBridge.Open new kernel %s", err)
+	} else {
+		out, err := libol.IpLinkUp(tap.Name())
+		if err != nil {
+			b.out.Error("VirtualBridge.Open IpAddr %s:%s", err, out)
+		}
+		b.kernel = tap
+		b.out.Info("VirtualBridge.Open %s", tap.Name())
+		_ = b.AddSlave(tap.name)
+	}
+	if addr != "" && b.kernel != nil {
+		b.address = addr
+		if out, err := libol.IpAddrAdd(b.kernel.Name(), b.address); err != nil {
+			b.out.Error("VirtualBridge.Open IpAddr %s:%s", err, out)
+		}
+	}
 }
 
 func (b *VirtualBridge) Kernel() string {
+	if b.kernel == nil {
+		return ""
+	}
 	return b.kernel.Name()
 }
 
 func (b *VirtualBridge) Close() error {
 	if b.kernel != nil {
-		out, err := libol.IpAddrDel(b.kernel.Name(), b.address)
-		if err != nil {
-			b.out.Error("VirtualBridge.Close: IpAddr %s:%s", err, out)
+		if b.address != "" {
+			out, err := libol.IpAddrDel(b.kernel.Name(), b.address)
+			if err != nil {
+				b.out.Error("VirtualBridge.Close: IpAddr %s:%s", err, out)
+			}
 		}
+		b.kernel.Close()
 	}
 	b.ticker.Stop()
 	b.done <- true

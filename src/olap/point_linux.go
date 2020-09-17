@@ -2,6 +2,7 @@ package olap
 
 import (
 	"github.com/danieldin95/openlan-go/src/cli/config"
+	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
 	"github.com/danieldin95/openlan-go/src/network"
 	"github.com/vishvananda/netlink"
@@ -101,6 +102,10 @@ func (p *Point) OnTap(w *TapWorker) error {
 	if tap.Type() == "virtual" { // virtual device
 		tap.Up()
 		br := network.Bridges.Get(p.brName)
+		if br == nil {
+			p.out.Error("Point.OnTap: Get notFound", p.brName)
+			return libol.NewErr("%s notFound", p.brName)
+		}
 		_ = br.AddSlave(name)
 		link, err := netlink.LinkByName(br.Kernel())
 		if err != nil {

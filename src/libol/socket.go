@@ -354,7 +354,7 @@ func (t *SocketServerImpl) OffClient(client SocketClient) {
 }
 
 func (t *SocketServerImpl) doOnClient(call ServerListener, client SocketClient) {
-	Info("SocketServerImpl.doOnClient: %s ?", client)
+	Info("SocketServerImpl.doOnClient: +<%s>", client)
 	_ = t.clients.Set(client.RemoteAddr(), client)
 	if call.OnClient != nil {
 		_ = call.OnClient(client)
@@ -365,7 +365,7 @@ func (t *SocketServerImpl) doOnClient(call ServerListener, client SocketClient) 
 }
 
 func (t *SocketServerImpl) doOffClient(call ServerListener, client SocketClient) {
-	Info("SocketServerImpl.doOffClient: %s ?", client)
+	Info("SocketServerImpl.doOffClient: -<%s>", client)
 	addr := client.RemoteAddr()
 	if _, ok := t.clients.GetEx(addr); ok {
 		Info("SocketServerImpl.doOffClient: close %s", addr)
