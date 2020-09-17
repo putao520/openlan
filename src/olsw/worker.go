@@ -156,6 +156,20 @@ func (w *NetworkWorker) UnLoadRoutes() {
 	}
 }
 
+func (w *NetworkWorker) UpBridge(cfg config.Bridge) {
+	w.bridge.Open(cfg.Address)
+	if cfg.Stp == "on" {
+		if err := w.bridge.Stp(true); err != nil {
+			w.out.Warn("NetworkWorker.Start: Stp %s", err)
+		}
+	} else {
+		_ = w.bridge.Stp(false)
+	}
+	if err := w.bridge.Delay(cfg.Delay); err != nil {
+		w.out.Warn("NetworkWorker.Start: Delay %s", err)
+	}
+}
+
 func (w *NetworkWorker) UpPeer(cfg config.Bridge) {
 	if cfg.Peer == "" {
 		return
@@ -166,50 +180,39 @@ func (w *NetworkWorker) UpPeer(cfg config.Bridge) {
 		LinkAttrs: netlink.LinkAttrs{Name: in},
 		PeerName:  ex,
 	}
-	err := netlink.LinkAdd(link)
-	if err != nil {
-		w.out.Error("NetworkWorker.UpPeer: %s", err)
-		return
+	br := libol.NewBrCtl(cfg.Peer)
+	promise := &libol.Promise{
+		First:  time.Second * 2,
+		MaxInt: time.Minute,
+		MinInt: time.Second * 10,
 	}
-	bridge := libol.NewBrCtl(cfg.Name)
-	if err := bridge.AddPort(in); err != nil {
-		w.out.Error("NetworkWorker.UpPeer: %s", err)
-	}
-	peer := libol.NewBrCtl(cfg.Peer)
-	if err := peer.AddPort(ex); err != nil {
-		w.out.Error("NetworkWorker.UpPeer: %s", err)
-	}
+	promise.Go(func() error {
+		if !br.Has() {
+			w.out.Warn("%s notFound", br.Name)
+			return libol.NewErr("notFound")
+		}
+		err := netlink.LinkAdd(link)
+		if err != nil {
+			w.out.Error("NetworkWorker.UpPeer: %s", err)
+			return nil
+		}
+		bridge := libol.NewBrCtl(cfg.Name)
+		if err := bridge.AddPort(in); err != nil {
+			w.out.Error("NetworkWorker.UpPeer: %s", err)
+		}
+		peer := libol.NewBrCtl(cfg.Peer)
+		if err := peer.AddPort(ex); err != nil {
+			w.out.Error("NetworkWorker.UpPeer: %s", err)
+		}
+		return nil
+	})
 }
 
 func (w *NetworkWorker) Start(v api.Switcher) {
 	w.out.Info("NetworkWorker.Start")
 	brCfg := w.cfg.Bridge
-	w.bridge.Open(brCfg.Address)
-	if brCfg.Stp == "on" {
-		if err := w.bridge.Stp(true); err != nil {
-			w.out.Warn("NetworkWorker.Start: Stp %s", err)
-		}
-	} else {
-		_ = w.bridge.Stp(false)
-	}
-	if err := w.bridge.Delay(brCfg.Delay); err != nil {
-		w.out.Warn("NetworkWorker.Start: Delay %s", err)
-	}
-	if brCfg.Peer != "" {
-		br := libol.NewBrCtl(brCfg.Peer)
-		promise := &libol.Promise{
-			First:  time.Second * 2,
-			MaxInt: time.Minute,
-			MinInt: time.Second * 10,
-		}
-		promise.Go(func() error {
-			if br.Has() {
-				w.UpPeer(brCfg)
-				return nil
-			}
-			return libol.NewErr("notFound")
-		})
-	}
+	w.UpBridge(brCfg)
+	w.UpPeer(brCfg)
 	w.uuid = v.UUID()
 	w.startTime = time.Now().Unix()
 	w.LoadLinks()
