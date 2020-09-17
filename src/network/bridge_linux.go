@@ -10,12 +10,14 @@ type LinuxBridge struct {
 	ifMtu   int
 	name    string
 	device  netlink.Link
+	ctl     *libol.BrCtl
 }
 
 func NewLinuxBridge(name string, mtu int) *LinuxBridge {
 	b := &LinuxBridge{
 		name:  name,
 		ifMtu: mtu,
+		ctl:   libol.NewBrCtl(name),
 	}
 	return b
 }
@@ -23,10 +25,14 @@ func NewLinuxBridge(name string, mtu int) *LinuxBridge {
 func (b *LinuxBridge) Open(addr string) {
 	libol.Debug("LinuxBridge.Open: %s", b.name)
 
-	la := netlink.LinkAttrs{TxQLen: -1, Name: b.name}
-	br := &netlink.Bridge{LinkAttrs: la}
 	link, _ := netlink.LinkByName(b.name)
 	if link == nil {
+		br := &netlink.Bridge{
+			LinkAttrs: netlink.LinkAttrs{
+				TxQLen: -1,
+				Name:   b.name,
+			},
+		}
 		err := netlink.LinkAdd(br)
 		if err != nil {
 			libol.Error("LinuxBridge.Open: %s", err)
@@ -57,7 +63,6 @@ func (b *LinuxBridge) Open(addr string) {
 
 func (b *LinuxBridge) Close() error {
 	var err error
-
 	if b.device != nil && b.address != nil {
 		if err = netlink.AddrDel(b.device, b.address); err != nil {
 			libol.Error("LinuxBridge.Close: UnsetLinkIp %s : %s", b.name, err)
@@ -66,37 +71,18 @@ func (b *LinuxBridge) Close() error {
 	return err
 }
 
-func (b *LinuxBridge) AddSlave(dev Taper) error {
-	name := dev.Name()
-	link, err := netlink.LinkByName(name)
-	if err != nil {
-		libol.Error("LinuxBridge.AddSlave: Get %s: %s", name, err)
+func (b *LinuxBridge) AddSlave(name string) error {
+	if err := b.ctl.AddPort(name); err != nil {
+		libol.Error("LinuxBridge.AddSlave: %s %s", name, b.name)
 		return err
 	}
-	if err := netlink.LinkSetUp(link); err != nil {
-		libol.Error("LinuxBridge.AddSlave: LinkUp: %s %s", name, err)
-		return err
-	}
-	la := netlink.LinkAttrs{TxQLen: -1, Name: b.name}
-	br := &netlink.Bridge{LinkAttrs: la}
-	if err := netlink.LinkSetMaster(link, br); err != nil {
-		libol.Error("LinuxBridge.AddSlave: master %s: %s", name, err)
-		return err
-	}
-	dev.Slave(b)
 	libol.Info("LinuxBridge.AddSlave: %s %s", name, b.name)
 	return nil
 }
 
-func (b *LinuxBridge) DelSlave(dev Taper) error {
-	name := dev.Name()
-	link, err := netlink.LinkByName(name)
-	if err != nil {
-		libol.Error("LinuxBridge.DelSlave: Get %s: %s", name, err)
-		return err
-	}
-	if err := netlink.LinkSetNoMaster(link); err != nil {
-		libol.Error("LinuxBridge.DelSlave: noMaster %s: %s", name, err)
+func (b *LinuxBridge) DelSlave(name string) error {
+	if err := b.ctl.DelPort(name); err != nil {
+		libol.Error("LinuxBridge.DelSlave: %s %s", name, b.name)
 		return err
 	}
 	libol.Info("LinuxBridge.DelSlave: %s %s", name, b.name)
@@ -128,16 +114,14 @@ func (b *LinuxBridge) Mtu() int {
 }
 
 func (b *LinuxBridge) Stp(enable bool) error {
-	brCtl := libol.NewBrCtl(b.name)
-	if err := brCtl.Stp(enable); err != nil {
+	if err := b.ctl.Stp(enable); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (b *LinuxBridge) Delay(value int) error {
-	brCtl := libol.NewBrCtl(b.name)
-	if err := brCtl.Delay(value); err != nil {
+	if err := b.ctl.Delay(value); err != nil {
 		return err
 	}
 	return nil

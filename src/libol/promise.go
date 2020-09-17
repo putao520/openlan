@@ -33,3 +33,9 @@ func (p *Promise) Done(call func() error) {
 		}
 	}
 }
+
+func (p *Promise) Go(call func() error) {
+	Go(func() {
+		p.Done(call)
+	})
+}

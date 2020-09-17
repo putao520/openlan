@@ -10,6 +10,7 @@ import (
 )
 
 type Bridge struct {
+	Peer     string `json:"peer"`
 	Name     string `json:"name"`
 	IfMtu    int    `json:"mtu"`
 	Address  string `json:"address,omitempty"`

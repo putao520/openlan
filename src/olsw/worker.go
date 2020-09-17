@@ -16,7 +16,6 @@ import (
 )
 
 type NetworkWorker struct {
-	// private
 	alias     string
 	cfg       config.Network
 	newTime   int64
@@ -157,6 +156,31 @@ func (w *NetworkWorker) UnLoadRoutes() {
 	}
 }
 
+func (w *NetworkWorker) UpPeer(cfg config.Bridge) {
+	if cfg.Peer == "" {
+		return
+	}
+	in := cfg.Name + "-in"
+	ex := cfg.Name + "-ex"
+	link := &netlink.Veth{
+		LinkAttrs: netlink.LinkAttrs{Name: in},
+		PeerName:  ex,
+	}
+	err := netlink.LinkAdd(link)
+	if err != nil {
+		w.out.Error("NetworkWorker.UpPeer: %s", err)
+		return
+	}
+	bridge := libol.NewBrCtl(cfg.Name)
+	if err := bridge.AddPort(in); err != nil {
+		w.out.Error("NetworkWorker.UpPeer: %s", err)
+	}
+	peer := libol.NewBrCtl(cfg.Peer)
+	if err := peer.AddPort(ex); err != nil {
+		w.out.Error("NetworkWorker.UpPeer: %s", err)
+	}
+}
+
 func (w *NetworkWorker) Start(v api.Switcher) {
 	w.out.Info("NetworkWorker.Start")
 	brCfg := w.cfg.Bridge
@@ -171,10 +195,42 @@ func (w *NetworkWorker) Start(v api.Switcher) {
 	if err := w.bridge.Delay(brCfg.Delay); err != nil {
 		w.out.Warn("NetworkWorker.Start: Delay %s", err)
 	}
+	if brCfg.Peer != "" {
+		br := libol.NewBrCtl(brCfg.Peer)
+		promise := &libol.Promise{
+			First:  time.Second * 2,
+			MaxInt: time.Minute,
+			MinInt: time.Second * 10,
+		}
+		promise.Go(func() error {
+			if br.Has() {
+				w.UpPeer(brCfg)
+				return nil
+			}
+			return libol.NewErr("notFound")
+		})
+	}
 	w.uuid = v.UUID()
 	w.startTime = time.Now().Unix()
 	w.LoadLinks()
 	w.LoadRoutes()
+}
+
+func (w *NetworkWorker) DownPeer(cfg config.Bridge) {
+	if cfg.Peer == "" {
+		return
+	}
+	in := cfg.Name + "-in"
+	ex := cfg.Name + "-ex"
+	link := &netlink.Veth{
+		LinkAttrs: netlink.LinkAttrs{Name: in},
+		PeerName:  ex,
+	}
+	err := netlink.LinkDel(link)
+	if err != nil {
+		w.out.Error("NetworkWorker.DownPeer: %s", err)
+		return
+	}
 }
 
 func (w *NetworkWorker) Stop() {
@@ -183,6 +239,8 @@ func (w *NetworkWorker) Stop() {
 	w.UnLoadLinks()
 	w.startTime = 0
 	_ = w.bridge.Close()
+	brCfg := w.cfg.Bridge
+	w.DownPeer(brCfg)
 }
 
 func (w *NetworkWorker) UpTime() int64 {

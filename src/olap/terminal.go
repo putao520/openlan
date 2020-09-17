@@ -16,7 +16,7 @@ type Terminal struct {
 func NewTerminal(pointer Pointer) *Terminal {
 	t := &Terminal{Pointer: pointer}
 	completer := readline.NewPrefixCompleter(
-		readline.PcItem("bye"),
+		readline.PcItem("quit"),
 		readline.PcItem("help"),
 		readline.PcItem("mode",
 			readline.PcItem("vi"),
@@ -129,7 +129,7 @@ func (t *Terminal) Start() {
 			t.CmdMode(t.Trim(line[5:]))
 		case line == "show":
 			t.CmdShow("")
-		case line == "bye", line == "quit":
+		case line == "quit":
 			t.CmdBye()
 			goto quit
 		case strings.HasPrefix(line, "show "):

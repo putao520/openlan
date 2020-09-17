@@ -167,27 +167,25 @@ func (t *HttpProxy) Start() {
 	} else {
 		t.out.Info("HttpProxy.start https://%s", t.server.Addr)
 	}
-	libol.Go(func() {
-		defer t.server.Shutdown(nil)
-		promise := &libol.Promise{
-			First:  time.Second * 2,
-			MaxInt: time.Minute,
-			MinInt: time.Second * 10,
-		}
-		promise.Done(func() error {
-			if crt == nil || crt.KeyFile == "" {
-				if err := t.server.ListenAndServe(); err != nil {
-					t.out.Warn("HttpProxy.start %s", err)
-					return err
-				}
-			} else {
-				if err := t.server.ListenAndServeTLS(crt.CrtFile, crt.KeyFile); err != nil {
-					t.out.Error("HttpProxy.start %s", err)
-					return err
-				}
+	defer t.server.Shutdown(nil)
+	promise := &libol.Promise{
+		First:  time.Second * 2,
+		MaxInt: time.Minute,
+		MinInt: time.Second * 10,
+	}
+	promise.Go(func() error {
+		if crt == nil || crt.KeyFile == "" {
+			if err := t.server.ListenAndServe(); err != nil {
+				t.out.Warn("HttpProxy.start %s", err)
+				return err
 			}
-			return nil
-		})
+		} else {
+			if err := t.server.ListenAndServeTLS(crt.CrtFile, crt.KeyFile); err != nil {
+				t.out.Error("HttpProxy.start %s", err)
+				return err
+			}
+		}
+		return nil
 	})
 }
 
@@ -320,19 +318,18 @@ func (s *SocksProxy) Start() {
 	}
 	addr := s.cfg.Listen
 	s.out.Info("Proxy.startSocks")
-	libol.Go(func() {
-		promise := &libol.Promise{
-			First:  time.Second * 2,
-			MaxInt: time.Minute,
-			MinInt: time.Second * 10,
+
+	promise := &libol.Promise{
+		First:  time.Second * 2,
+		MaxInt: time.Minute,
+		MinInt: time.Second * 10,
+	}
+	promise.Go(func() error {
+		if err := s.server.ListenAndServe("tcp", addr); err != nil {
+			s.out.Warn("Proxy.startSocks %s", err)
+			return err
 		}
-		promise.Done(func() error {
-			if err := s.server.ListenAndServe("tcp", addr); err != nil {
-				s.out.Warn("Proxy.startSocks %s", err)
-				return err
-			}
-			return nil
-		})
+		return nil
 	})
 }
 

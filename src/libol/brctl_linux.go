@@ -2,6 +2,7 @@ package libol
 
 import (
 	"fmt"
+	"github.com/vishvananda/netlink"
 	"os"
 	"strconv"
 )
@@ -16,6 +17,13 @@ func NewBrCtl(name string) (b *BrCtl) {
 		Name: name,
 	}
 	return
+}
+
+func (b *BrCtl) Has() bool {
+	if _, err := netlink.LinkByName(b.Name); err == nil {
+		return true
+	}
+	return false
 }
 
 func (b *BrCtl) SysPath(fun string) string {
@@ -52,6 +60,33 @@ func (b *BrCtl) Delay(delay int) error { // by second
 	}
 	defer fp.Close()
 	if _, err := fp.Write([]byte(strconv.Itoa(delay * 100))); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (b *BrCtl) AddPort(port string) error {
+	link, err := netlink.LinkByName(port)
+	if err != nil {
+		return err
+	}
+	if err := netlink.LinkSetUp(link); err != nil {
+		return err
+	}
+	la := netlink.LinkAttrs{TxQLen: -1, Name: b.Name}
+	bridge := &netlink.Bridge{LinkAttrs: la}
+	if err := netlink.LinkSetMaster(link, bridge); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (b *BrCtl) DelPort(port string) error {
+	link, err := netlink.LinkByName(port)
+	if err != nil {
+		return err
+	}
+	if err := netlink.LinkSetNoMaster(link); err != nil {
 		return err
 	}
 	return nil

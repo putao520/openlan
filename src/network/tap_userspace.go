@@ -5,13 +5,18 @@ import (
 	"sync"
 )
 
+const (
+	UsClose = uint(0x02)
+	UsUp    = uint(0x04)
+)
+
 type UserSpaceTap struct {
 	lock       sync.Mutex
 	writeQueue chan []byte
 	readQueue  chan []byte
 	bridge     Bridger
 	tenant     string
-	closed     bool
+	flags      uint
 	config     TapConfig
 	name       string
 	ifMtu      int
@@ -47,11 +52,23 @@ func (t *UserSpaceTap) Name() string {
 	return t.name
 }
 
+func (t *UserSpaceTap) hasFlags(flags uint) bool {
+	return t.flags&flags == flags
+}
+
+func (t *UserSpaceTap) setFlags(flags uint) {
+	t.flags |= flags
+}
+
+func (t *UserSpaceTap) clearFlags(flags uint) {
+	t.flags &= ^flags
+}
+
 func (t *UserSpaceTap) Read(p []byte) (n int, err error) {
 	t.lock.Lock()
-	if t.closed {
+	if !t.hasFlags(UsUp) {
 		t.lock.Unlock()
-		return 0, libol.NewErr("Close")
+		return 0, libol.NewErr("notUp")
 	}
 	t.lock.Unlock()
 	result := <-t.readQueue
@@ -63,9 +80,9 @@ func (t *UserSpaceTap) InRead(p []byte) (n int, err error) {
 		libol.Debug("UserSpaceTap.InRead: %s % x", t, p[:20])
 	}
 	t.lock.Lock()
-	if t.closed {
+	if !t.hasFlags(UsUp) {
 		t.lock.Unlock()
-		return 0, libol.NewErr("Close")
+		return 0, libol.NewErr("notUp")
 	}
 	t.lock.Unlock()
 	t.readQueue <- p
@@ -77,9 +94,9 @@ func (t *UserSpaceTap) Write(p []byte) (n int, err error) {
 		libol.Debug("UserSpaceTap.Write: %s % x", t, p[:20])
 	}
 	t.lock.Lock()
-	if t.closed {
+	if !t.hasFlags(UsUp) {
 		t.lock.Unlock()
-		return 0, libol.NewErr("Close")
+		return 0, libol.NewErr("notUp")
 	}
 	t.lock.Unlock()
 
@@ -89,9 +106,9 @@ func (t *UserSpaceTap) Write(p []byte) (n int, err error) {
 
 func (t *UserSpaceTap) OutWrite() ([]byte, error) {
 	t.lock.Lock()
-	if t.closed {
+	if !t.hasFlags(UsUp) {
 		t.lock.Unlock()
-		return nil, libol.NewErr("Close")
+		return nil, libol.NewErr("notUp")
 	}
 	t.lock.Unlock()
 	return <-t.writeQueue, nil
@@ -117,15 +134,16 @@ func (t *UserSpaceTap) Deliver() {
 func (t *UserSpaceTap) Close() error {
 	t.lock.Lock()
 	defer t.lock.Unlock()
-	if t.closed {
+	if t.hasFlags(UsClose) {
 		return nil
 	}
 	Tapers.Del(t.name)
 	if t.bridge != nil {
-		_ = t.bridge.DelSlave(t)
+		_ = t.bridge.DelSlave(t.name)
 		t.bridge = nil
 	}
-	t.closed = true
+	t.setFlags(UsClose)
+	t.clearFlags(^UsUp)
 	return nil
 }
 
@@ -137,18 +155,19 @@ func (t *UserSpaceTap) Slave(bridge Bridger) {
 
 func (t *UserSpaceTap) Up() {
 	t.lock.Lock()
-	if t.closed {
-		Tapers.Add(t)
-	}
-	if t.writeQueue == nil {
-		t.writeQueue = make(chan []byte, 1024*32)
-	}
-	if t.readQueue == nil {
-		t.readQueue = make(chan []byte, 1024*16)
-	}
-	t.closed = false
+	t.writeQueue = make(chan []byte, 1024*32)
+	t.readQueue = make(chan []byte, 1024*16)
+	t.setFlags(UsUp)
 	t.lock.Unlock()
 	libol.Go(t.Deliver)
+}
+
+func (t *UserSpaceTap) Down() {
+	t.lock.Lock()
+	t.clearFlags(UsUp)
+	t.writeQueue = nil
+	t.readQueue = nil
+	t.lock.Unlock()
 }
 
 func (t *UserSpaceTap) String() string {

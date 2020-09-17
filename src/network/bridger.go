@@ -6,8 +6,8 @@ type Bridger interface {
 	SetName(value string)
 	Open(addr string)
 	Close() error
-	AddSlave(dev Taper) error
-	DelSlave(dev Taper) error
+	AddSlave(name string) error
+	DelSlave(name string) error
 	Input(m *Framer) error
 	SetTimeout(value int)
 	Mtu() int

@@ -411,8 +411,10 @@ func (v *Switch) NewTap(tenant string) (network.Taper, error) {
 	}
 	mtu := br.Mtu()
 	dev.SetMtu(mtu)
+	dev.Slave(br)
 	dev.Up()
-	_ = br.AddSlave(dev)
+	// add new tap to bridge.
+	_ = br.AddSlave(dev.Name())
 	v.out.Info("Switch.NewTap: %s on %s", dev.Name(), tenant)
 	return dev, nil
 }
@@ -428,7 +430,7 @@ func (v *Switch) FreeTap(dev network.Taper) error {
 		return libol.NewErr("Not found bridge %s", tenant)
 	}
 	br := w.bridge
-	_ = br.DelSlave(dev)
+	_ = br.DelSlave(dev.Name())
 	v.out.Info("Switch.FreeTap: %s", name)
 	return nil
 }

@@ -77,23 +77,22 @@ func (b *VirtualBridge) Close() error {
 	return nil
 }
 
-func (b *VirtualBridge) AddSlave(dev Taper) error {
-	dev.Slave(b)
-
+func (b *VirtualBridge) AddSlave(name string) error {
 	b.lock.Lock()
 	defer b.lock.Unlock()
-	b.devices[dev.Name()] = dev
-	libol.Info("VirtualBridge.AddSlave: %s %s", dev.Name(), b.name)
+	dev := Tapers.Get(name)
+	b.devices[name] = dev
+	libol.Info("VirtualBridge.AddSlave: %s %s", name, b.name)
 	return nil
 }
 
-func (b *VirtualBridge) DelSlave(dev Taper) error {
+func (b *VirtualBridge) DelSlave(name string) error {
 	b.lock.Lock()
 	defer b.lock.Unlock()
-	if _, ok := b.devices[dev.Name()]; ok {
-		delete(b.devices, dev.Name())
+	if _, ok := b.devices[name]; ok {
+		delete(b.devices, name)
 	}
-	libol.Info("VirtualBridge.DelSlave: %s %s", dev.Name(), b.name)
+	libol.Info("VirtualBridge.DelSlave: %s %s", name, b.name)
 	return nil
 }
 

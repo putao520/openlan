@@ -15,6 +15,7 @@ type Taper interface {
 	Close() error
 	Slave(br Bridger)
 	Up()
+	Down()
 	Tenant() string
 	Mtu() int
 	SetMtu(mtu int)

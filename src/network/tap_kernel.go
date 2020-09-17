@@ -87,7 +87,7 @@ func (t *KernelTap) Close() error {
 	}
 	Tapers.Del(t.name)
 	if t.bridge != nil {
-		_ = t.bridge.DelSlave(t)
+		_ = t.bridge.DelSlave(t.name)
 		t.bridge = nil
 	}
 	err := t.device.Close()
@@ -105,15 +105,14 @@ func (t *KernelTap) Up() {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	libol.Debug("KernelTap.Up %s", t.name)
-	if t.device == nil {
-		device, err := WaterNew(t.config)
-		if err != nil {
-			libol.Error("KernelTap.Up %s", err)
-			return
-		}
-		t.device = device
-		Tapers.Add(t)
-	}
+	_, _ = libol.IpLinkUp(t.name)
+}
+
+func (t *KernelTap) Down() {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+	libol.Debug("KernelTap.Up %s", t.name)
+	_, _ = libol.IpLinkDown(t.name)
 }
 
 func (t *KernelTap) String() string {
