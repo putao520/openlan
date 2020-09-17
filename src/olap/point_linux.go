@@ -2,7 +2,6 @@ package olap
 
 import (
 	"github.com/danieldin95/openlan-go/src/cli/config"
-	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
 	"github.com/vishvananda/netlink"
 	"net"
@@ -33,16 +32,6 @@ func (p *Point) Initialize() {
 	p.worker.listener.DelRoutes = p.DelRoutes
 	p.worker.listener.OnTap = p.OnTap
 	p.MixPoint.Initialize()
-}
-
-func (p *Point) Start() {
-	p.out.Info("Point.Start: linux.")
-	p.worker.Start()
-}
-
-func (p *Point) Stop() {
-	defer libol.Catch("Point.Stop")
-	p.worker.Stop()
 }
 
 func (p *Point) DelAddr(ipStr string) error {

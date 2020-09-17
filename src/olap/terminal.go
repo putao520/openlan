@@ -24,6 +24,7 @@ func NewTerminal(pointer Pointer) *Terminal {
 		),
 		readline.PcItem("show",
 			readline.PcItem("config"),
+			readline.PcItem("network"),
 			readline.PcItem("record"),
 			readline.PcItem("statistics"),
 		),
@@ -67,6 +68,13 @@ func (t *Terminal) CmdShow(args string) {
 		}
 	case "config":
 		cfg := t.Pointer.Config()
+		if str, err := json.MarshalIndent(cfg, "", "  "); err == nil {
+			fmt.Printf("%s\n", str)
+		} else {
+			fmt.Printf("Point.CmdShow %s\n", err)
+		}
+	case "network":
+		cfg := t.Pointer.Network()
 		if str, err := json.MarshalIndent(cfg, "", "  "); err == nil {
 			fmt.Printf("%s\n", str)
 		} else {

@@ -31,16 +31,6 @@ func (p *Point) Initialize() {
 	p.MixPoint.Initialize()
 }
 
-func (p *Point) Start() {
-	p.out.Info("Point.Start: Darwin.")
-	p.worker.Start()
-}
-
-func (p *Point) Stop() {
-	defer libol.Catch("Point.Stop")
-	p.worker.Stop()
-}
-
 func (p *Point) AddAddr(ipStr string) error {
 	if ipStr == "" {
 		return nil

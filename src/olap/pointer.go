@@ -3,7 +3,10 @@ package olap
 import (
 	"github.com/danieldin95/openlan-go/src/cli/config"
 	"github.com/danieldin95/openlan-go/src/libol"
+	"github.com/danieldin95/openlan-go/src/models"
 	"github.com/danieldin95/openlan-go/src/network"
+	"github.com/danieldin95/openlan-go/src/olap/http"
+	"runtime"
 )
 
 type Pointer interface {
@@ -20,6 +23,7 @@ type Pointer interface {
 	Tenant() string
 	Alias() string
 	Config() *config.Point
+	Network() *models.Network
 }
 
 type MixPoint struct {
@@ -27,6 +31,7 @@ type MixPoint struct {
 	worker *Worker
 	config *config.Point
 	out    *libol.SubLogger
+	http   *http.Http
 }
 
 func NewMixPoint(config *config.Point) MixPoint {
@@ -41,6 +46,26 @@ func (p *MixPoint) Initialize() {
 	libol.Info("MixPoint.Initialize")
 	p.worker.SetUUID(p.UUID())
 	p.worker.Initialize()
+	if p.config.Http != nil {
+		p.http = http.NewHttp(p)
+	}
+}
+
+func (p *MixPoint) Start() {
+	p.out.Info("MixPoint.Start %s", runtime.GOOS)
+	if p.config.PProf != "" {
+		f := libol.PProf{Listen: p.config.PProf}
+		f.Start()
+	}
+	p.worker.Start()
+}
+
+func (p *MixPoint) Stop() {
+	defer libol.Catch("MixPoint.Stop")
+	if p.http != nil {
+		p.http.Shutdown()
+	}
+	p.worker.Stop()
 }
 
 func (p *MixPoint) UUID() string {
@@ -51,23 +76,37 @@ func (p *MixPoint) UUID() string {
 }
 
 func (p *MixPoint) Status() libol.SocketStatus {
-	return p.worker.Status()
+	client := p.Client()
+	if client == nil {
+		return 0
+	}
+	return client.Status()
 }
 
 func (p *MixPoint) Addr() string {
-	return p.worker.Addr()
+	return p.config.Connection
 }
 
 func (p *MixPoint) IfName() string {
-	return p.worker.IfName()
+	device := p.Device()
+	if device == nil {
+		return ""
+	}
+	return device.Name()
 }
 
 func (p *MixPoint) Client() libol.SocketClient {
-	return p.worker.Client()
+	if p.worker.conWorker == nil {
+		return nil
+	}
+	return p.worker.conWorker.client
 }
 
 func (p *MixPoint) Device() network.Taper {
-	return p.worker.Device()
+	if p.worker.tapWorker == nil {
+		return nil
+	}
+	return p.worker.tapWorker.device
 }
 
 func (p *MixPoint) UpTime() int64 {
@@ -98,4 +137,8 @@ func (p *MixPoint) Record() map[string]int64 {
 
 func (p *MixPoint) Config() *config.Point {
 	return p.config
+}
+
+func (p *MixPoint) Network() *models.Network {
+	return p.worker.network
 }

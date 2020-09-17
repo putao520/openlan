@@ -9,7 +9,6 @@ import (
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
 	"github.com/danieldin95/openlan-go/src/network"
-	"github.com/danieldin95/openlan-go/src/olap/http"
 	"net"
 	"strings"
 	"sync"
@@ -1067,7 +1066,6 @@ type Worker struct {
 	// private
 	ifAddr    string
 	listener  WorkerListener
-	http      *http.Http
 	conWorker *SocketWorker
 	tapWorker *TapWorker
 	cfg       *config.Point
@@ -1086,170 +1084,111 @@ func NewWorker(cfg *config.Point) *Worker {
 	}
 }
 
-func (p *Worker) Initialize() {
-	if p.cfg == nil {
+func (w *Worker) Initialize() {
+	if w.cfg == nil {
 		return
 	}
-	p.out.Info("Worker.Initialize")
-	client := GetSocketClient(p.cfg)
-	p.conWorker = NewSocketWorker(client, p.cfg)
+	w.out.Info("Worker.Initialize")
+	client := GetSocketClient(w.cfg)
+	w.conWorker = NewSocketWorker(client, w.cfg)
 
-	tapCfg := GetTapCfg(p.cfg)
+	tapCfg := GetTapCfg(w.cfg)
 	// register listener
-	p.tapWorker = NewTapWorker(tapCfg, p.cfg)
+	w.tapWorker = NewTapWorker(tapCfg, w.cfg)
 
-	p.conWorker.SetUUID(p.UUID())
-	p.conWorker.listener = SocketWorkerListener{
-		OnClose:   p.OnClose,
-		OnSuccess: p.OnSuccess,
-		OnIpAddr:  p.OnIpAddr,
-		ReadAt:    p.tapWorker.Write,
+	w.conWorker.SetUUID(w.UUID())
+	w.conWorker.listener = SocketWorkerListener{
+		OnClose:   w.OnClose,
+		OnSuccess: w.OnSuccess,
+		OnIpAddr:  w.OnIpAddr,
+		ReadAt:    w.tapWorker.Write,
 	}
-	p.conWorker.Initialize()
+	w.conWorker.Initialize()
 
-	p.tapWorker.listener = TapWorkerListener{
-		OnOpen: func(w *TapWorker) error {
-			if p.listener.OnTap != nil {
-				if err := p.listener.OnTap(w); err != nil {
+	w.tapWorker.listener = TapWorkerListener{
+		OnOpen: func(t *TapWorker) error {
+			if w.listener.OnTap != nil {
+				if err := w.listener.OnTap(t); err != nil {
 					return err
 				}
 			}
-			if p.network != nil {
-				n := p.network
+			if w.network != nil {
+				n := w.network
 				// remove older firstly
-				p.FreeIpAddr()
-				_ = p.OnIpAddr(p.conWorker, n)
+				w.FreeIpAddr()
+				_ = w.OnIpAddr(w.conWorker, n)
 			}
 			return nil
 		},
-		ReadAt:   p.conWorker.Write,
-		FindNext: p.FindNext,
+		ReadAt:   w.conWorker.Write,
+		FindNext: w.FindNext,
 	}
-	p.tapWorker.Initialize()
-
-	if p.cfg.Http != nil {
-		p.http = http.NewHttp(p)
-	}
+	w.tapWorker.Initialize()
 }
 
-func (p *Worker) Start() {
-	p.out.Debug("Worker.Start linux.")
-	if p.cfg.PProf != "" {
-		f := libol.PProf{Listen: p.cfg.PProf}
-		f.Start()
-	}
-	p.tapWorker.Start()
-	p.conWorker.Start()
-	if p.http != nil {
-		libol.Go(p.http.Start)
-	}
+func (w *Worker) Start() {
+	w.out.Debug("Worker.Start linux.")
+	w.tapWorker.Start()
+	w.conWorker.Start()
 }
 
-func (p *Worker) Stop() {
-	if p.tapWorker == nil || p.conWorker == nil {
+func (w *Worker) Stop() {
+	if w.tapWorker == nil || w.conWorker == nil {
 		return
 	}
-	if p.http != nil {
-		p.http.Shutdown()
-	}
-	p.FreeIpAddr()
-	p.conWorker.Stop()
-	p.tapWorker.Stop()
-	p.conWorker = nil
-	p.tapWorker = nil
+	w.FreeIpAddr()
+	w.conWorker.Stop()
+	w.tapWorker.Stop()
+	w.conWorker = nil
+	w.tapWorker = nil
 }
 
-func (p *Worker) Client() libol.SocketClient {
-	if p.conWorker != nil {
-		return p.conWorker.client
-	}
-	return nil
-}
-
-func (p *Worker) Device() network.Taper {
-	if p.tapWorker != nil {
-		return p.tapWorker.device
-	}
-	return nil
-}
-
-func (p *Worker) UpTime() int64 {
-	client := p.Client()
+func (w *Worker) UpTime() int64 {
+	client := w.conWorker.client
 	if client != nil {
 		return client.AliveTime()
 	}
 	return 0
 }
 
-func (p *Worker) Status() libol.SocketStatus {
-	client := p.Client()
-	if client != nil {
-		return client.Status()
-	}
-	return 0xff
-}
-
-func (p *Worker) Addr() string {
-	client := p.Client()
-	if client != nil {
-		return client.String()
-	}
-	return ""
-}
-
-func (p *Worker) IfName() string {
-	dev := p.Device()
-	if dev != nil {
-		return dev.Name()
-	}
-	return ""
-}
-
-func (p *Worker) Worker() *SocketWorker {
-	if p.conWorker != nil {
-		return p.conWorker
-	}
-	return nil
-}
-
-func (p *Worker) FindNext(dest []byte) []byte {
-	for _, rt := range p.routes {
+func (w *Worker) FindNext(dest []byte) []byte {
+	for _, rt := range w.routes {
 		if !rt.Destination.Contains(dest) {
 			continue
 		}
 		if rt.Type == 0x00 {
 			break
 		}
-		if p.out.Has(libol.DEBUG) {
-			p.out.Debug("Worker.FindNext %v to %v", dest, rt.NextHop)
+		if w.out.Has(libol.DEBUG) {
+			w.out.Debug("Worker.FindNext %v to %v", dest, rt.NextHop)
 		}
 		return rt.NextHop.To4()
 	}
 	return dest
 }
 
-func (p *Worker) OnIpAddr(w *SocketWorker, n *models.Network) error {
+func (w *Worker) OnIpAddr(s *SocketWorker, n *models.Network) error {
 	addr := fmt.Sprintf("%s/%s", n.IfAddr, n.Netmask)
-	if models.NetworkEqual(p.network, n) {
-		p.out.Debug("Worker.OnIpAddr: %s noChanged", addr)
+	if models.NetworkEqual(w.network, n) {
+		w.out.Debug("Worker.OnIpAddr: %s noChanged", addr)
 		return nil
 	}
-	p.out.Cmd("Worker.OnIpAddr: %s", addr)
-	p.out.Cmd("Worker.OnIpAddr: %s", n.Routes)
+	w.out.Cmd("Worker.OnIpAddr: %s", addr)
+	w.out.Cmd("Worker.OnIpAddr: %s", n.Routes)
 	prefix := libol.Netmask2Len(n.Netmask)
 	ipStr := fmt.Sprintf("%s/%d", n.IfAddr, prefix)
-	p.tapWorker.OnIpAddr(ipStr)
-	if p.listener.AddAddr != nil {
-		_ = p.listener.AddAddr(ipStr)
+	w.tapWorker.OnIpAddr(ipStr)
+	if w.listener.AddAddr != nil {
+		_ = w.listener.AddAddr(ipStr)
 	}
-	if p.listener.AddRoutes != nil {
-		_ = p.listener.AddRoutes(n.Routes)
+	if w.listener.AddRoutes != nil {
+		_ = w.listener.AddRoutes(n.Routes)
 	}
-	p.network = n
+	w.network = n
 	// update routes
-	ip := net.ParseIP(p.network.IfAddr)
-	m := net.IPMask(net.ParseIP(p.network.Netmask).To4())
-	p.routes = append(p.routes, PrefixRule{
+	ip := net.ParseIP(w.network.IfAddr)
+	m := net.IPMask(net.ParseIP(w.network.Netmask).To4())
+	w.routes = append(w.routes, PrefixRule{
 		Type:        0x00,
 		Destination: net.IPNet{IP: ip.Mask(m), Mask: m},
 		NextHop:     libol.EthZero,
@@ -1260,7 +1199,7 @@ func (p *Worker) OnIpAddr(w *SocketWorker, n *models.Network) error {
 			continue
 		}
 		nxt := net.ParseIP(rt.NextHop)
-		p.routes = append(p.routes, PrefixRule{
+		w.routes = append(w.routes, PrefixRule{
 			Type:        0x01,
 			Destination: *dest,
 			NextHop:     nxt,
@@ -1269,47 +1208,43 @@ func (p *Worker) OnIpAddr(w *SocketWorker, n *models.Network) error {
 	return nil
 }
 
-func (p *Worker) FreeIpAddr() {
-	if p.network == nil {
+func (w *Worker) FreeIpAddr() {
+	if w.network == nil {
 		return
 	}
-	if p.listener.DelRoutes != nil {
-		_ = p.listener.DelRoutes(p.network.Routes)
+	if w.listener.DelRoutes != nil {
+		_ = w.listener.DelRoutes(w.network.Routes)
 	}
-	if p.listener.DelAddr != nil {
-		prefix := libol.Netmask2Len(p.network.Netmask)
-		ipStr := fmt.Sprintf("%s/%d", p.network.IfAddr, prefix)
-		_ = p.listener.DelAddr(ipStr)
+	if w.listener.DelAddr != nil {
+		prefix := libol.Netmask2Len(w.network.Netmask)
+		ipStr := fmt.Sprintf("%s/%d", w.network.IfAddr, prefix)
+		_ = w.listener.DelAddr(ipStr)
 	}
-	p.network = nil
-	p.routes = make([]PrefixRule, 0, 32)
+	w.network = nil
+	w.routes = make([]PrefixRule, 0, 32)
 }
 
-func (p *Worker) OnClose(w *SocketWorker) error {
-	p.out.Info("Worker.OnClose")
-	p.FreeIpAddr()
+func (w *Worker) OnClose(s *SocketWorker) error {
+	w.out.Info("Worker.OnClose")
+	w.FreeIpAddr()
 	return nil
 }
 
-func (p *Worker) OnSuccess(w *SocketWorker) error {
-	p.out.Info("Worker.OnSuccess")
-	if p.listener.AddAddr != nil {
-		_ = p.listener.AddAddr(p.ifAddr)
+func (w *Worker) OnSuccess(s *SocketWorker) error {
+	w.out.Info("Worker.OnSuccess")
+	if w.listener.AddAddr != nil {
+		_ = w.listener.AddAddr(w.ifAddr)
 	}
 	return nil
 }
 
-func (p *Worker) UUID() string {
-	if p.uuid == "" {
-		p.uuid = libol.GenToken(32)
+func (w *Worker) UUID() string {
+	if w.uuid == "" {
+		w.uuid = libol.GenToken(32)
 	}
-	return p.uuid
+	return w.uuid
 }
 
-func (p *Worker) SetUUID(v string) {
-	p.uuid = v
-}
-
-func (p *Worker) Config() *config.Point {
-	return p.cfg
+func (w *Worker) SetUUID(v string) {
+	w.uuid = v
 }

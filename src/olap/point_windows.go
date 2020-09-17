@@ -33,16 +33,6 @@ func (p *Point) Initialize() {
 	p.MixPoint.Initialize()
 }
 
-func (p *Point) Start() {
-	p.out.Info("Point.Start: Windows.")
-	p.worker.Start()
-}
-
-func (p *Point) Stop() {
-	defer libol.Catch("Point.Stop")
-	p.worker.Stop()
-}
-
 func (p *Point) OnTap(w *TapWorker) error {
 	// clean routes previous
 	routes := make([]*models.Route, 0, 32)
