@@ -118,6 +118,7 @@ func (t *Terminal) Start() {
 		line = t.Trim(line)
 		switch {
 		case strings.HasPrefix(line, "mode "):
+			t.CmdMode(t.Trim(line[5:]))
 		case line == "show":
 			t.CmdShow("")
 		case line == "bye", line == "quit":

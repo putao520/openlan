@@ -17,7 +17,8 @@ func main() {
 	p.Initialize()
 	libol.Go(p.Start)
 	if c.Terminal == "on" {
-		olap.NewTerminal(p).Start()
+		t := olap.NewTerminal(p)
+		t.Start()
 	} else {
 		libol.SdNotify()
 		libol.Wait()
