@@ -38,7 +38,6 @@ type tapers struct {
 func (t *tapers) GenName() string {
 	t.lock.Lock()
 	defer t.lock.Unlock()
-
 	t.index++
 	return fmt.Sprintf("vir%d", t.index)
 }

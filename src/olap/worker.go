@@ -728,6 +728,7 @@ func (a *TapWorker) open() error {
 		a.out.Error("TapWorker.open: %s", err)
 		return err
 	}
+	device.Up() // up device firstly
 	libol.Go(func() {
 		a.Read(device)
 	})

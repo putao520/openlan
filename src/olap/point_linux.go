@@ -100,7 +100,6 @@ func (p *Point) OnTap(w *TapWorker) error {
 	tap := w.device
 	name := tap.Name()
 	if tap.Type() == "virtual" { // virtual device
-		tap.Up()
 		br := network.Bridges.Get(p.brName)
 		if br == nil {
 			p.out.Error("Point.OnTap: Get notFound", p.brName)
@@ -119,10 +118,6 @@ func (p *Point) OnTap(w *TapWorker) error {
 	link, err := netlink.LinkByName(name)
 	if err != nil {
 		p.out.Error("Point.OnTap: Get %s: %s", name, err)
-		return err
-	}
-	if err := netlink.LinkSetUp(link); err != nil {
-		p.out.Error("Point.OnTap.LinkUp: %s", err)
 		return err
 	}
 	if br := p.UpBr(p.brName); br != nil {
