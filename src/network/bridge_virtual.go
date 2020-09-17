@@ -1,8 +1,8 @@
 package network
 
 import (
-	"fmt"
 	"github.com/danieldin95/openlan-go/src/libol"
+	"net"
 	"sync"
 	"time"
 )
@@ -200,8 +200,7 @@ func (b *VirtualBridge) Eth2Str(addr []byte) string {
 	if len(addr) < 6 {
 		return ""
 	}
-	return fmt.Sprintf("%02x%02x%02x%02x%02x%02x",
-		addr[0], addr[1], addr[2], addr[3], addr[4], addr[5])
+	return net.HardwareAddr(addr).String()
 }
 
 func (b *VirtualBridge) Learn(m *Framer) {
