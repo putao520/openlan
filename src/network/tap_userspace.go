@@ -11,15 +11,15 @@ const (
 )
 
 type UserSpaceTap struct {
-	lock       sync.Mutex
-	writeQueue chan []byte
-	readQueue  chan []byte
-	bridge     Bridger
-	tenant     string
-	flags      uint
-	config     TapConfig
-	name       string
-	ifMtu      int
+	lock    sync.Mutex
+	kernel  chan []byte
+	virtual chan []byte
+	bridge  Bridger
+	tenant  string
+	flags   uint
+	config  TapConfig
+	name    string
+	ifMtu   int
 }
 
 func NewUserSpaceTap(tenant string, c TapConfig) (*UserSpaceTap, error) {
@@ -30,6 +30,7 @@ func NewUserSpaceTap(tenant string, c TapConfig) (*UserSpaceTap, error) {
 		tenant: tenant,
 		name:   c.Name,
 		ifMtu:  1514,
+		config: c,
 	}
 	Tapers.Add(tap)
 
@@ -64,32 +65,7 @@ func (t *UserSpaceTap) clearFlags(flags uint) {
 	t.flags &= ^flags
 }
 
-func (t *UserSpaceTap) Read(p []byte) (n int, err error) {
-	t.lock.Lock()
-	if !t.hasFlags(UsUp) {
-		t.lock.Unlock()
-		return 0, libol.NewErr("notUp")
-	}
-	t.lock.Unlock()
-	result := <-t.readQueue
-	return copy(p, result), nil
-}
-
-func (t *UserSpaceTap) InRead(p []byte) (n int, err error) {
-	if libol.HasLog(libol.DEBUG) {
-		libol.Debug("UserSpaceTap.InRead: %s % x", t, p[:20])
-	}
-	t.lock.Lock()
-	if !t.hasFlags(UsUp) {
-		t.lock.Unlock()
-		return 0, libol.NewErr("notUp")
-	}
-	t.lock.Unlock()
-	t.readQueue <- p
-	return len(p), nil
-}
-
-func (t *UserSpaceTap) Write(p []byte) (n int, err error) {
+func (t *UserSpaceTap) Write(p []byte) (int, error) {
 	if libol.HasLog(libol.DEBUG) {
 		libol.Debug("UserSpaceTap.Write: %s % x", t, p[:20])
 	}
@@ -99,36 +75,44 @@ func (t *UserSpaceTap) Write(p []byte) (n int, err error) {
 		return 0, libol.NewErr("notUp")
 	}
 	t.lock.Unlock()
-
-	t.writeQueue <- p
+	t.virtual <- p
 	return len(p), nil
 }
 
-func (t *UserSpaceTap) OutWrite() ([]byte, error) {
+func (t *UserSpaceTap) Read(p []byte) (int, error) {
 	t.lock.Lock()
 	if !t.hasFlags(UsUp) {
 		t.lock.Unlock()
-		return nil, libol.NewErr("notUp")
+		return 0, libol.NewErr("notUp")
 	}
 	t.lock.Unlock()
-	return <-t.writeQueue, nil
+	data := <-t.kernel
+	return copy(p, data), nil
 }
 
-func (t *UserSpaceTap) Deliver() {
-	for {
-		data, err := t.OutWrite()
-		if err != nil || data == nil {
-			break
-		}
-		if libol.HasLog(libol.DEBUG) {
-			libol.Debug("UserSpaceTap.Deliver: %s % x", t, data[:20])
-		}
-		if t.bridge == nil {
-			continue
-		}
-		m := &Framer{Data: data, Source: t}
-		_ = t.bridge.Input(m)
+func (t *UserSpaceTap) Recv(p []byte) (int, error) {
+	t.lock.Lock()
+	if !t.hasFlags(UsUp) {
+		t.lock.Unlock()
+		return 0, libol.NewErr("notUp")
 	}
+	t.lock.Unlock()
+	data := <-t.virtual
+	return copy(p, data), nil
+}
+
+func (t *UserSpaceTap) Send(p []byte) (int, error) {
+	if libol.HasLog(libol.DEBUG) {
+		libol.Debug("UserSpaceTap.Send: %s % x", t, p[:20])
+	}
+	t.lock.Lock()
+	if !t.hasFlags(UsUp) {
+		t.lock.Unlock()
+		return 0, libol.NewErr("notUp")
+	}
+	t.lock.Unlock()
+	t.kernel <- p
+	return len(p), nil
 }
 
 func (t *UserSpaceTap) Close() error {
@@ -155,18 +139,17 @@ func (t *UserSpaceTap) Slave(bridge Bridger) {
 
 func (t *UserSpaceTap) Up() {
 	t.lock.Lock()
-	t.writeQueue = make(chan []byte, 1024*32)
-	t.readQueue = make(chan []byte, 1024*16)
+	t.kernel = make(chan []byte, 1024*32)
+	t.virtual = make(chan []byte, 1024*16)
 	t.setFlags(UsUp)
 	t.lock.Unlock()
-	libol.Go(t.Deliver)
 }
 
 func (t *UserSpaceTap) Down() {
 	t.lock.Lock()
 	t.clearFlags(UsUp)
-	t.writeQueue = nil
-	t.readQueue = nil
+	t.kernel = nil
+	t.virtual = nil
 	t.lock.Unlock()
 }
 

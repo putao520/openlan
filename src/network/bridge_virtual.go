@@ -24,7 +24,8 @@ type VirtualBridge struct {
 	ticker   *time.Ticker
 	timeout  int
 	address  string
-	device   Taper
+	kernel   Taper
+	out      *libol.SubLogger
 }
 
 func NewVirtualBridge(name string, mtu int) *VirtualBridge {
@@ -36,40 +37,42 @@ func NewVirtualBridge(name string, mtu int) *VirtualBridge {
 		done:     make(chan bool),
 		ticker:   time.NewTicker(5 * time.Second),
 		timeout:  5 * 60,
+		out:      libol.NewSubLogger(name),
 	}
 	return b
 }
 
 func (b *VirtualBridge) Open(addr string) {
-	libol.Info("VirtualBridge.Open %s", addr)
+	b.out.Info("VirtualBridge.Open %s", addr)
 	if addr != "" {
 		tap, err := NewKernelTap("default", TapConfig{Type: TAP})
 		if err != nil {
-			libol.Error("VirtualBridge.Open new kernel %s", err)
+			b.out.Error("VirtualBridge.Open new kernel %s", err)
 		} else {
 			out, err := libol.IpLinkUp(tap.Name())
 			if err != nil {
-				libol.Error("VirtualBridge.Open: IpAddr %s:%s", err, out)
+				b.out.Error("VirtualBridge.Open IpAddr %s:%s", err, out)
 			}
 			b.address = addr
-			b.device = tap
-			out, err = libol.IpAddrAdd(b.device.Name(), b.address)
+			b.kernel = tap
+			out, err = libol.IpAddrAdd(b.kernel.Name(), b.address)
 			if err != nil {
-				libol.Error("VirtualBridge.Open: IpAddr %s:%s", err, out)
+				b.out.Error("VirtualBridge.Open IpAddr %s:%s", err, out)
 			}
-			libol.Info("VirtualBridge.Open %s", tap.Name())
+			b.out.Info("VirtualBridge.Open %s", tap.Name())
+			_ = b.AddSlave(tap.name)
 		}
 	} else {
-		libol.Warn("VirtualBridge.Open: not support address")
+		b.out.Warn("VirtualBridge.Open notSupport address")
 	}
 	libol.Go(b.Start)
 }
 
 func (b *VirtualBridge) Close() error {
-	if b.device != nil {
-		out, err := libol.IpAddrDel(b.device.Name(), b.address)
+	if b.kernel != nil {
+		out, err := libol.IpAddrDel(b.kernel.Name(), b.address)
 		if err != nil {
-			libol.Error("VirtualBridge.Close: IpAddr %s:%s", err, out)
+			b.out.Error("VirtualBridge.Close: IpAddr %s:%s", err, out)
 		}
 	}
 	b.ticker.Stop()
@@ -80,9 +83,26 @@ func (b *VirtualBridge) Close() error {
 func (b *VirtualBridge) AddSlave(name string) error {
 	b.lock.Lock()
 	defer b.lock.Unlock()
-	dev := Tapers.Get(name)
-	b.devices[name] = dev
-	libol.Info("VirtualBridge.AddSlave: %s %s", name, b.name)
+	tap := Tapers.Get(name)
+	if tap == nil {
+		return libol.NewErr("%s notFound", name)
+	}
+	b.devices[name] = tap
+	b.out.Info("VirtualBridge.AddSlave: %s", name)
+	libol.Go(func() {
+		for {
+			data := make([]byte, b.ifMtu)
+			n, err := tap.Recv(data)
+			if err != nil || n == 0 {
+				break
+			}
+			if libol.HasLog(libol.DEBUG) {
+				libol.Debug("VirtualBridge.KernelTap: %s % x", tap.Name(), data[:20])
+			}
+			m := &Framer{Data: data[:n], Source: tap}
+			_ = b.Input(m)
+		}
+	})
 	return nil
 }
 
@@ -92,7 +112,7 @@ func (b *VirtualBridge) DelSlave(name string) error {
 	if _, ok := b.devices[name]; ok {
 		delete(b.devices, name)
 	}
-	libol.Info("VirtualBridge.DelSlave: %s %s", name, b.name)
+	b.out.Info("VirtualBridge.DelSlave: %s", name)
 	return nil
 }
 
@@ -132,13 +152,13 @@ func (b *VirtualBridge) Expire() error {
 	}
 	b.lock.RUnlock()
 
-	libol.Debug("VirtualBridge.Expire delete %d", len(deletes))
+	b.out.Debug("VirtualBridge.Expire delete %d", len(deletes))
 	//execute delete.
 	b.lock.Lock()
 	for _, d := range deletes {
 		if _, ok := b.learners[d]; ok {
 			delete(b.learners, d)
-			libol.Info("VirtualBridge.Expire: delete %s", d)
+			b.out.Info("VirtualBridge.Expire: delete %s", d)
 		}
 	}
 	b.lock.Unlock()
@@ -153,7 +173,7 @@ func (b *VirtualBridge) Start() {
 			case <-b.done:
 				return
 			case t := <-b.ticker.C:
-				libol.Debug("VirtualBridge.Start: Tick at %s", t)
+				b.out.Log("VirtualBridge.Start: Tick at %s", t)
 				_ = b.Expire()
 			}
 		}
@@ -167,11 +187,11 @@ func (b *VirtualBridge) Input(m *Framer) error {
 
 func (b *VirtualBridge) Output(m *Framer) error {
 	var err error
-	if libol.HasLog(libol.DEBUG) {
-		libol.Debug("VirtualBridge.Output: % x", m.Data[:20])
+	if b.out.Has(libol.DEBUG) {
+		b.out.Debug("VirtualBridge.Output: % x", m.Data[:20])
 	}
 	if dev := m.Output; dev != nil {
-		_, err = dev.InRead(m.Data)
+		_, err = dev.Send(m.Data)
 	}
 	return err
 }
@@ -201,7 +221,7 @@ func (b *VirtualBridge) Learn(m *Framer) {
 	}
 	learn.Dest = make([]byte, 6)
 	copy(learn.Dest, source)
-	libol.Info("VirtualBridge.Learn: %s on %s", index, m.Source)
+	b.out.Info("VirtualBridge.Learn: %s on %s", index, m.Source)
 	b.AddDest(index, learn)
 }
 
@@ -231,17 +251,16 @@ func (b *VirtualBridge) UpdateDest(d string) {
 
 func (b *VirtualBridge) Flood(m *Framer) error {
 	var err error
-
 	data := m.Data
 	src := m.Source
-	if libol.HasLog(libol.DEBUG) {
-		libol.Debug("VirtualBridge.Flood: % x", data[:20])
+	if b.out.Has(libol.DEBUG) {
+		b.out.Debug("VirtualBridge.Flood: % x", data[:20])
 	}
 	for _, dst := range b.devices {
 		if src == dst {
 			continue
 		}
-		_, err = dst.InRead(data)
+		_, err = dst.Send(data)
 	}
 	return err
 }
@@ -254,16 +273,15 @@ func (b *VirtualBridge) Unicast(m *Framer) bool {
 	if l := b.FindDest(index); l != nil {
 		dst := l.Device
 		if dst != src {
-			if _, err := dst.InRead(data); err != nil {
-				libol.Warn("VirtualBridge.Unicast: %s %s", dst, err)
+			if _, err := dst.Send(data); err != nil {
+				b.out.Warn("VirtualBridge.Unicast: %s %s", dst, err)
 			}
 		}
-		if libol.HasLog(libol.DEBUG) {
-			libol.Debug("VirtualBridge.Unicast: %s to %s % x", src, dst, data[:20])
+		if b.out.Has(libol.DEBUG) {
+			b.out.Debug("VirtualBridge.Unicast: %s to %s % x", src, dst, data[:20])
 		}
 		return true
 	}
-
 	return false
 }
 
@@ -272,9 +290,9 @@ func (b *VirtualBridge) Mtu() int {
 }
 
 func (b *VirtualBridge) Stp(enable bool) error {
-	return libol.NewErr("operation not support")
+	return libol.NewErr("operation notSupport")
 }
 
 func (b *VirtualBridge) Delay(value int) error {
-	return libol.NewErr("operation not support")
+	return libol.NewErr("operation notSupport")
 }

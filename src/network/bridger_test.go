@@ -12,7 +12,7 @@ func TestBridgeWriteAndReadByTap(t *testing.T) {
 	br := NewBridger("linux", "br-test", 1500)
 	br.Open("")
 
-	//open tap device
+	//open tap kernel
 	dev01, err := NewKernelTap("true", TapConfig{Type: TAP})
 	if err != nil {
 		t.Errorf("Tap.Open %s", err)

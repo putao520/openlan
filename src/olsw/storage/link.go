@@ -64,6 +64,5 @@ func (p *link) List() <-chan *models.Point {
 		})
 		c <- nil //Finish channel by nil.
 	}()
-
 	return c
 }

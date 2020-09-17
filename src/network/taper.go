@@ -9,9 +9,10 @@ type Taper interface {
 	IsTun() bool
 	IsTap() bool
 	Name() string
-	Read(p []byte) (n int, err error)
-	InRead(p []byte) (n int, err error)
-	Write(p []byte) (n int, err error)
+	Read([]byte) (int, error)  // read data from kernel to user space
+	Write([]byte) (int, error) // write data from user space to kernel
+	Send([]byte) (int, error)  // send data from virtual bridge to kernel
+	Recv([]byte) (int, error)  // recv data from kernel to virtual bridge
 	Close() error
 	Slave(br Bridger)
 	Up()
@@ -45,7 +46,6 @@ func (t *tapers) GenName() string {
 func (t *tapers) Add(tap Taper) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
-
 	if t.devices == nil {
 		t.devices = make(map[string]Taper, 1024)
 	}
@@ -55,7 +55,6 @@ func (t *tapers) Add(tap Taper) {
 func (t *tapers) Get(name string) Taper {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
-
 	if t.devices == nil {
 		return nil
 	}
@@ -68,13 +67,25 @@ func (t *tapers) Get(name string) Taper {
 func (t *tapers) Del(name string) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
-
 	if t.devices == nil {
 		return
 	}
 	if _, ok := t.devices[name]; ok {
 		delete(t.devices, name)
 	}
+}
+
+func (t *tapers) List() <-chan Taper {
+	data := make(chan Taper, 32)
+	go func() {
+		t.lock.RLock()
+		defer t.lock.RUnlock()
+		for _, obj := range t.devices {
+			data <- obj
+		}
+		data <- nil
+	}()
+	return data
 }
 
 var Tapers = &tapers{}

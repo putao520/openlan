@@ -48,27 +48,21 @@ func (t *KernelTap) Name() string {
 	return t.name
 }
 
-func (t *KernelTap) Read(p []byte) (n int, err error) {
+func (t *KernelTap) Read(p []byte) (int, error) {
 	t.lock.Lock()
 	if t.device == nil {
 		t.lock.Unlock()
 		return 0, libol.NewErr("Closed")
 	}
 	t.lock.Unlock()
-	return t.device.Read(p)
-}
-
-func (t *KernelTap) InRead(p []byte) (n int, err error) {
-	t.lock.Lock()
-	if t.device == nil {
-		t.lock.Unlock()
-		return 0, libol.NewErr("Closed")
+	if n, err := t.device.Read(p); err == nil {
+		return n, nil
+	} else {
+		return 0, err
 	}
-	t.lock.Unlock()
-	return 0, nil
 }
 
-func (t *KernelTap) Write(p []byte) (n int, err error) {
+func (t *KernelTap) Write(p []byte) (int, error) {
 	t.lock.Lock()
 	if t.device == nil {
 		t.lock.Unlock()
@@ -76,6 +70,14 @@ func (t *KernelTap) Write(p []byte) (n int, err error) {
 	}
 	t.lock.Unlock()
 	return t.device.Write(p)
+}
+
+func (t *KernelTap) Recv(p []byte) (int, error) {
+	return t.Read(p)
+}
+
+func (t *KernelTap) Send(p []byte) (int, error) {
+	return t.Write(p)
 }
 
 func (t *KernelTap) Close() error {
