@@ -29,7 +29,6 @@ func (b *LinuxBridge) Kernel() string {
 
 func (b *LinuxBridge) Open(addr string) {
 	libol.Debug("LinuxBridge.Open: %s", b.name)
-
 	link, _ := netlink.LinkByName(b.name)
 	if link == nil {
 		br := &netlink.Bridge{

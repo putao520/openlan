@@ -95,6 +95,7 @@ func (b *VirtualBridge) AddSlave(name string) error {
 	if tap == nil {
 		return libol.NewErr("%s notFound", name)
 	}
+	tap.SetMtu(b.Mtu()) // consistent mtu value.
 	b.devices[name] = tap
 	b.out.Info("VirtualBridge.AddSlave: %s", name)
 	libol.Go(func() {

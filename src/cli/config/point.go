@@ -66,8 +66,6 @@ func NewPoint() (c *Point) {
 	flag.StringVar(&c.Username, "user", pd.Username, "Accessed username")
 	flag.StringVar(&c.Password, "pass", pd.Password, "Accessed password")
 	flag.StringVar(&c.Protocol, "proto", pd.Protocol, "Connection protocol")
-	flag.IntVar(&c.Timeout, "timeout", pd.Timeout, "Time in secs socket dead")
-	flag.IntVar(&c.Log.Verbose, "log:level", pd.Log.Verbose, "Log level")
 	flag.StringVar(&c.Log.File, "log:file", pd.Log.File, "Log saved to file")
 	flag.StringVar(&c.Interface.Name, "if:name", pd.Interface.Name, "Configure interface name")
 	flag.StringVar(&c.Interface.Address, "if:addr", pd.Interface.Address, "Configure interface address")
@@ -77,6 +75,8 @@ func NewPoint() (c *Point) {
 	flag.StringVar(&c.Crypt.Secret, "crypt:secret", pd.Crypt.Secret, "Crypt secret")
 	flag.StringVar(&c.Crypt.Algo, "crypt:algo", pd.Crypt.Algo, "Crypt algorithm")
 	flag.StringVar(&c.PProf, "pprof", pd.PProf, "Configure file for CPU prof")
+	flag.IntVar(&c.Timeout, "timeout", pd.Timeout, "Time in secs socket dead")
+	flag.IntVar(&c.Log.Verbose, "log:level", pd.Log.Verbose, "Log level")
 	flag.Parse()
 	c.Initialize()
 	return c

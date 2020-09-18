@@ -168,7 +168,9 @@ func (v *Switch) initNetwork() {
 
 		brCfg := nCfg.Bridge
 		// Forward traffic in bridge.
-		v.acceptBridge(brCfg.Name)
+		if brCfg.Provider != network.ProviderVir {
+			v.acceptBridge(brCfg.Name)
+		}
 		source := brCfg.Address
 		ifAddr := strings.SplitN(source, "/", 2)[0]
 		if ifAddr == "" {
@@ -421,9 +423,6 @@ func (v *Switch) NewTap(tenant string) (network.Taper, error) {
 		v.out.Error("Switch.NewTap: %s", err)
 		return nil, err
 	}
-	mtu := br.Mtu()
-	dev.SetMtu(mtu)
-	dev.Slave(br)
 	dev.Up()
 	// add new tap to bridge.
 	_ = br.AddSlave(dev.Name())

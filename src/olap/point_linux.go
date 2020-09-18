@@ -99,7 +99,7 @@ func (p *Point) OnTap(w *TapWorker) error {
 	p.out.Info("Point.OnTap")
 	tap := w.device
 	name := tap.Name()
-	if tap.Type() == "virtual" { // virtual device
+	if tap.Type() == network.ProviderVir { // virtual device
 		br := network.Bridges.Get(p.brName)
 		if br == nil {
 			p.out.Error("Point.OnTap: Get notFound", p.brName)

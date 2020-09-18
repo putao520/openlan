@@ -210,9 +210,9 @@ var sd = &Switch{
 
 func NewSwitch() (c Switch) {
 	flag.StringVar(&c.Log.File, "log:file", sd.Log.File, "Configure log file")
-	flag.IntVar(&c.Log.Verbose, "log:level", sd.Log.Verbose, "Configure log level")
 	flag.StringVar(&c.ConfDir, "conf:dir", sd.ConfDir, "Configure virtual switch directory")
 	flag.StringVar(&c.PProf, "prof", sd.PProf, "Configure file for CPU prof")
+	flag.IntVar(&c.Log.Verbose, "log:level", sd.Log.Verbose, "Configure log level")
 	flag.Parse()
 	c.Initialize()
 	return c

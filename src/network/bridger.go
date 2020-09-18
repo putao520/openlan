@@ -4,6 +4,12 @@ import (
 	"sync"
 )
 
+const (
+	ProviderVir = "virtual"
+	ProviderKer = "kernel"
+	ProviderLin = "linux"
+)
+
 type Bridger interface {
 	Type() string
 	Name() string
