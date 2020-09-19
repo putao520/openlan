@@ -13,7 +13,7 @@ type Point struct {
 	Server  string             `json:"server"`
 	Uptime  int64              `json:"uptime"`
 	Status  string             `json:"status"`
-	IfName  string             `json:"ifName"`
+	IfName  string             `json:"device"`
 	Client  libol.SocketClient `json:"-"`
 	Device  network.Taper      `json:"-"`
 }
@@ -30,12 +30,14 @@ func NewPoint(c libol.SocketClient, d network.Taper) (w *Point) {
 }
 
 func (p *Point) Update() *Point {
-	if p.Client != nil {
-		p.Uptime = p.Client.UpTime()
-		p.Status = p.Client.Status().String()
+	client := p.Client
+	if client != nil {
+		p.Uptime = client.UpTime()
+		p.Status = client.Status().String()
 	}
-	if p.Device != nil {
-		p.IfName = p.Device.Name()
+	device := p.Device
+	if device != nil {
+		p.IfName = device.Name()
 	}
 	return p
 }

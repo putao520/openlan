@@ -296,19 +296,22 @@ func (v *Switch) ReadClient(client libol.SocketClient, frame *libol.FrameMessage
 	}
 	// process ethernet frame message.
 	private := client.Private()
-	if private != nil {
-		point := private.(*models.Point)
-		device := point.Device
-		if point == nil || device == nil {
-			return libol.NewErr("Tap devices is nil")
-		}
-		if _, err := device.Write(frame.Frame()); err != nil {
-			v.out.Error("Switch.ReadClient: %s", err)
-			return err
-		}
-		return nil
+	if private == nil {
+		return libol.NewErr("point %s notFound.", addr)
 	}
-	return libol.NewErr("point %s not found.", addr)
+	point, ok := private.(*models.Point)
+	if !ok {
+		return libol.NewErr("point %s notRight.", addr)
+	}
+	device := point.Device
+	if point == nil || device == nil {
+		return libol.NewErr("Tap devices is nil")
+	}
+	if _, err := device.Write(frame.Frame()); err != nil {
+		v.out.Error("Switch.ReadClient: %s", err)
+		return err
+	}
+	return nil
 }
 
 func (v *Switch) OnClose(client libol.SocketClient) error {

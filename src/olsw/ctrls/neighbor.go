@@ -43,7 +43,7 @@ func (p *Neighbor) GetCtl(id string, m libctrl.Message) error {
 		if u == nil {
 			break
 		}
-		p.Add(u.Client.String(), u)
+		p.Add(u.Client, u)
 	}
 	return nil
 }

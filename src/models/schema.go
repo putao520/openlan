@@ -44,10 +44,12 @@ func NewLinkSchema(p *Point) schema.Link {
 
 func NewNeighborSchema(n *Neighbor) schema.Neighbor {
 	return schema.Neighbor{
-		Uptime: n.UpTime(),
-		HwAddr: n.HwAddr.String(),
-		IpAddr: n.IpAddr.String(),
-		Client: n.Client.String(),
+		Uptime:  n.UpTime(),
+		HwAddr:  n.HwAddr.String(),
+		IpAddr:  n.IpAddr.String(),
+		Client:  n.Client,
+		Network: n.Network,
+		Device:  n.Device,
 	}
 }
 

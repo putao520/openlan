@@ -2,12 +2,11 @@ package app
 
 import (
 	"github.com/danieldin95/openlan-go/src/cli/config"
+	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
 	"github.com/danieldin95/openlan-go/src/olsw/storage"
 	"net"
 	"time"
-
-	"github.com/danieldin95/openlan-go/src/libol"
 )
 
 type Neighbors struct {
@@ -40,20 +39,20 @@ func (e *Neighbors) OnFrame(client libol.SocketClient, frame *libol.FrameMessage
 	if arp.IsIP4() {
 		if arp.OpCode == libol.ArpRequest || arp.OpCode == libol.ArpReply {
 			n := models.NewNeighbor(arp.SHwAddr, arp.SIpAddr, client)
-			e.AddNeighbor(n)
+			e.AddNeighbor(n, client)
 		}
 	}
 	return nil
 }
 
-func (e *Neighbors) AddNeighbor(neb *models.Neighbor) {
-	if n := storage.Neighbor.Get(neb.IpAddr.String()); n != nil {
-		libol.Log("Neighbors.AddNeighbor: update %s.", neb)
-		n.Client = neb.Client
+func (e *Neighbors) AddNeighbor(new *models.Neighbor, client libol.SocketClient) {
+	if n := storage.Neighbor.Get(new.IpAddr.String()); n != nil {
+		libol.Log("Neighbors.AddNeighbor: update %s.", new)
+		n.Update(client)
 		n.HitTime = time.Now().Unix()
 	} else {
-		libol.Log("Neighbors.AddNeighbor: new %s.", neb)
-		storage.Neighbor.Add(neb)
+		libol.Log("Neighbors.AddNeighbor: new %s.", new)
+		storage.Neighbor.Add(new)
 	}
 }
 
