@@ -8,3 +8,14 @@ type Device struct {
 	Provider string `json:"provider"`
 	Mtu      int    `json:"mtu"`
 }
+
+type HwMacInfo struct {
+	Uptime  int64  `json:"uptime"`
+	Address string `json:"address"`
+	Device  string `json:"device"`
+}
+
+type Bridge struct {
+	Device
+	Macs []HwMacInfo `json:"macs"`
+}

@@ -4,7 +4,9 @@ import (
 	"github.com/danieldin95/openlan-go/src/network"
 	"github.com/danieldin95/openlan-go/src/olsw/schema"
 	"github.com/gorilla/mux"
+	"net"
 	"net/http"
+	"time"
 )
 
 type Device struct {
@@ -50,10 +52,25 @@ func (h Device) Get(w http.ResponseWriter, r *http.Request) {
 			Provider: dev.Type(),
 		})
 	} else if br := network.Bridges.Get(name); br != nil {
-		ResponseJson(w, schema.Device{
-			Name:     br.Name(),
-			Mtu:      br.Mtu(),
-			Provider: br.Type(),
+		now := time.Now().Unix()
+		macs := make([]schema.HwMacInfo, 0, 32)
+		for addr := range br.ListMac() {
+			if addr == nil {
+				break
+			}
+			macs = append(macs, schema.HwMacInfo{
+				Address: net.HardwareAddr(addr.Address).String(),
+				Device:  addr.Device.String(),
+				Uptime:  now - addr.Uptime,
+			})
+		}
+		ResponseJson(w, schema.Bridge{
+			Device: schema.Device{
+				Name:     br.Name(),
+				Mtu:      br.Mtu(),
+				Provider: br.Type(),
+			},
+			Macs: macs,
 		})
 	} else {
 		http.Error(w, vars["id"], http.StatusNotFound)

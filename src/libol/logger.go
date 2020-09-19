@@ -15,6 +15,7 @@ const (
 	LOG   = 05
 	STACK = 06
 	DEBUG = 10
+	FLOW  = 11
 	CMD   = 15
 	EVENT = 16
 	INFO  = 20
@@ -35,6 +36,7 @@ var levels = map[int]string{
 	LOG:   "LOG",
 	DEBUG: "DEBUG",
 	STACK: "STACK",
+	FLOW:  "FLOW",
 	CMD:   "CMD",
 	EVENT: "EVENT",
 	INFO:  "INFO",
@@ -205,6 +207,10 @@ func (s *SubLogger) Stack(format string, v ...interface{}) {
 
 func (s *SubLogger) Debug(format string, v ...interface{}) {
 	s.logger.Write(DEBUG, s.Fmt(format), v...)
+}
+
+func (s *SubLogger) Flow(format string, v ...interface{}) {
+	s.logger.Write(FLOW, s.Fmt(format), v...)
 }
 
 func (s *SubLogger) Cmd(format string, v ...interface{}) {
