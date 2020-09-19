@@ -185,13 +185,13 @@ func (b *VirtualBridge) Eth2Str(addr []byte) string {
 }
 
 func (b *VirtualBridge) Learn(m *Framer) {
-	source := m.Data[6:12]
-	if source[0]&0x01 == 0x01 {
+	mac := m.Data[6:12]
+	if mac[0]&0x01 == 0x01 {
 		return
 	}
-	key := b.Eth2Str(source)
+	key := b.Eth2Str(mac)
 	if l := b.GetMac(key); l != nil {
-		b.UpdateMac(key)
+		b.UpdateMac(key, m.Source)
 		return
 	}
 	learn := &MacFdb{
@@ -200,7 +200,7 @@ func (b *VirtualBridge) Learn(m *Framer) {
 		NewTime: time.Now().Unix(),
 		Address: make([]byte, 6),
 	}
-	copy(learn.Address, source)
+	copy(learn.Address, mac)
 	b.out.Event("VirtualBridge.Learn: %s on %s", key, m.Source)
 	b.AddMac(key, learn)
 }
@@ -220,11 +220,12 @@ func (b *VirtualBridge) AddMac(mac string, fdb *MacFdb) {
 	b.macs[mac] = fdb
 }
 
-func (b *VirtualBridge) UpdateMac(mac string) {
+func (b *VirtualBridge) UpdateMac(mac string, device Taper) {
 	b.lock.RLock()
 	defer b.lock.RUnlock()
 	if fdb, ok := b.macs[mac]; ok {
 		fdb.Uptime = time.Now().Unix()
+		fdb.Device = device
 	}
 }
 

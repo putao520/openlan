@@ -129,6 +129,12 @@ func (p *Point) OnTap(w *TapWorker) error {
 			p.out.Error("Point.OnTap: Get %s: %s", p.brName, err)
 		}
 	}
+	if p.config.Interface.Cost != 0 {
+		port := libol.NewBrPort(name)
+		if err := port.Cost(p.config.Interface.Cost); err != nil {
+			p.out.Error("Point.OnTap: Cost %s: %s", err)
+		}
+	}
 	p.link = link
 	return nil
 }
@@ -137,7 +143,6 @@ func (p *Point) AddRoutes(routes []*models.Route) error {
 	if routes == nil || p.link == nil {
 		return nil
 	}
-
 	for _, route := range routes {
 		_, dst, err := net.ParseCIDR(route.Prefix)
 		if err != nil {

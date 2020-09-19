@@ -13,10 +13,9 @@ type BrCtl struct {
 }
 
 func NewBrCtl(name string) (b *BrCtl) {
-	b = &BrCtl{
+	return &BrCtl{
 		Name: name,
 	}
-	return
 }
 
 func (b *BrCtl) Has() bool {
@@ -87,6 +86,37 @@ func (b *BrCtl) DelPort(port string) error {
 		return err
 	}
 	if err := netlink.LinkSetNoMaster(link); err != nil {
+		return err
+	}
+	return nil
+}
+
+type BrPort struct {
+	Name string
+	Path string
+}
+
+func NewBrPort(name string) (p *BrPort) {
+	return &BrPort{
+		Name: name,
+	}
+}
+
+func (p *BrPort) SysPath(fun string) string {
+	if p.Path == "" {
+		p.Path = fmt.Sprintf("/sys/devices/virtual/net/%s/brport/", p.Name)
+	}
+	return fmt.Sprintf("%s/%s", p.Path, fun)
+}
+
+func (p *BrPort) Cost(cost int) error {
+	file := p.SysPath("path_cost")
+	fp, err := os.OpenFile(file, os.O_RDWR, 0600)
+	if err != nil {
+		return err
+	}
+	defer fp.Close()
+	if _, err := fp.Write([]byte(strconv.Itoa(cost))); err != nil {
 		return err
 	}
 	return nil

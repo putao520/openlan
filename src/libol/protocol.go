@@ -250,6 +250,14 @@ func (a *Arp) IsIP4() bool {
 	return a.ProCode == EthIp4
 }
 
+func (a *Arp) IsReply() bool {
+	return a.OpCode == ArpReply
+}
+
+func (a *Arp) IsRequest() bool {
+	return a.OpCode == ArpRequest
+}
+
 const (
 	Ipv4Ver = 0x04
 	Ipv6Ver = 0x06

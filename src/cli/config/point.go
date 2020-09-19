@@ -12,6 +12,7 @@ type Interface struct {
 	Address  string `json:"address,omitempty"`
 	Bridge   string `json:"bridge,omitempty"`
 	Provider string `json:"provider,omitempty"`
+	Cost     int    `json:"cost"`
 }
 
 type Point struct {

@@ -1,9 +1,9 @@
 package models
 
 import (
+	"github.com/danieldin95/openlan-go/src/libol"
 	"net"
 	"time"
-	"github.com/danieldin95/openlan-go/src/libol"
 )
 
 type Neighbor struct {

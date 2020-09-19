@@ -31,16 +31,13 @@ func (e *Neighbors) OnFrame(client libol.SocketClient, frame *libol.FrameMessage
 		libol.Warn("Neighbors.OnFrame %s", err)
 		return err
 	}
-	eth := proto.Eth
-	if !eth.IsArp() {
+	if eth := proto.Eth; !eth.IsArp() {
 		return nil
 	}
 	arp := proto.Arp
-	if arp.IsIP4() {
-		if arp.OpCode == libol.ArpRequest || arp.OpCode == libol.ArpReply {
-			n := models.NewNeighbor(arp.SHwAddr, arp.SIpAddr, client)
-			e.AddNeighbor(n, client)
-		}
+	if arp.IsIP4() && (arp.IsReply() || arp.IsRequest()) {
+		n := models.NewNeighbor(arp.SHwAddr, arp.SIpAddr, client)
+		e.AddNeighbor(n, client)
 	}
 	return nil
 }
