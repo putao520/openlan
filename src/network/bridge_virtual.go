@@ -1,6 +1,7 @@
 package network
 
 import (
+	"errors"
 	"github.com/danieldin95/openlan-go/src/libol"
 	"net"
 	"sync"
@@ -18,7 +19,7 @@ type VirtualBridge struct {
 	ifMtu    int
 	name     string
 	lock     sync.RWMutex
-	devices  map[string]Taper
+	ports    map[string]Taper
 	learners map[string]*Learner
 	done     chan bool
 	ticker   *time.Ticker
@@ -32,7 +33,7 @@ func NewVirtualBridge(name string, mtu int) *VirtualBridge {
 	b := &VirtualBridge{
 		name:     name,
 		ifMtu:    mtu,
-		devices:  make(map[string]Taper, 1024),
+		ports:    make(map[string]Taper, 1024),
 		learners: make(map[string]*Learner, 1024),
 		done:     make(chan bool),
 		ticker:   time.NewTicker(5 * time.Second),
@@ -89,14 +90,14 @@ func (b *VirtualBridge) Close() error {
 }
 
 func (b *VirtualBridge) AddSlave(name string) error {
-	b.lock.Lock()
-	defer b.lock.Unlock()
 	tap := Taps.Get(name)
 	if tap == nil {
 		return libol.NewErr("%s notFound", name)
 	}
-	tap.SetMtu(b.Mtu()) // consistent mtu value.
-	b.devices[name] = tap
+	tap.SetMtu(b.ifMtu) // consistent mtu value.
+	b.lock.Lock()
+	b.ports[name] = tap
+	b.lock.Unlock()
 	b.out.Info("VirtualBridge.AddSlave: %s", name)
 	libol.Go(func() {
 		for {
@@ -118,8 +119,8 @@ func (b *VirtualBridge) AddSlave(name string) error {
 func (b *VirtualBridge) DelSlave(name string) error {
 	b.lock.Lock()
 	defer b.lock.Unlock()
-	if _, ok := b.devices[name]; ok {
-		delete(b.devices, name)
+	if _, ok := b.ports[name]; ok {
+		delete(b.ports, name)
 	}
 	b.out.Info("VirtualBridge.DelSlave: %s", name)
 	return nil
@@ -142,7 +143,7 @@ func (b *VirtualBridge) SetTimeout(value int) {
 }
 
 func (b *VirtualBridge) Forward(m *Framer) error {
-	if is := b.Unicast(m); !is {
+	if err := b.UniCast(m); err != nil {
 		_ = b.Flood(m)
 	}
 	return nil
@@ -150,7 +151,6 @@ func (b *VirtualBridge) Forward(m *Framer) error {
 
 func (b *VirtualBridge) Expire() error {
 	deletes := make([]string, 0, 1024)
-
 	//collect need deleted.
 	b.lock.RLock()
 	for index, learn := range b.learners {
@@ -160,7 +160,6 @@ func (b *VirtualBridge) Expire() error {
 		}
 	}
 	b.lock.RUnlock()
-
 	b.out.Debug("VirtualBridge.Expire delete %d", len(deletes))
 	//execute delete.
 	b.lock.Lock()
@@ -171,7 +170,6 @@ func (b *VirtualBridge) Expire() error {
 		}
 	}
 	b.lock.Unlock()
-
 	return nil
 }
 
@@ -218,8 +216,8 @@ func (b *VirtualBridge) Learn(m *Framer) {
 		return
 	}
 	index := b.Eth2Str(source)
-	if l := b.FindDest(index); l != nil {
-		b.UpdateDest(index)
+	if l := b.GetLearn(index); l != nil {
+		b.UpdateLearn(index)
 		return
 	}
 	learn := &Learner{
@@ -230,10 +228,10 @@ func (b *VirtualBridge) Learn(m *Framer) {
 	learn.Dest = make([]byte, 6)
 	copy(learn.Dest, source)
 	b.out.Info("VirtualBridge.Learn: %s on %s", index, m.Source)
-	b.AddDest(index, learn)
+	b.AddLearn(index, learn)
 }
 
-func (b *VirtualBridge) FindDest(d string) *Learner {
+func (b *VirtualBridge) GetLearn(d string) *Learner {
 	b.lock.RLock()
 	defer b.lock.RUnlock()
 	if l, ok := b.learners[d]; ok {
@@ -242,13 +240,13 @@ func (b *VirtualBridge) FindDest(d string) *Learner {
 	return nil
 }
 
-func (b *VirtualBridge) AddDest(d string, l *Learner) {
+func (b *VirtualBridge) AddLearn(d string, l *Learner) {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	b.learners[d] = l
 }
 
-func (b *VirtualBridge) UpdateDest(d string) {
+func (b *VirtualBridge) UpdateLearn(d string) {
 	b.lock.RLock()
 	defer b.lock.RUnlock()
 	if l, ok := b.learners[d]; ok {
@@ -257,41 +255,49 @@ func (b *VirtualBridge) UpdateDest(d string) {
 }
 
 func (b *VirtualBridge) Flood(m *Framer) error {
-	var err error
 	data := m.Data
 	src := m.Source
 	if b.out.Has(libol.DEBUG) {
 		b.out.Debug("VirtualBridge.Flood: % x", data[:20])
 	}
+	outs := make([]Taper, 0, 32)
 	b.lock.RLock()
-	defer b.lock.RUnlock()
-	for _, dst := range b.devices {
-		if src == dst {
+	for _, port := range b.ports {
+		if src == port {
 			continue
 		}
-		_, err = dst.Send(data)
+		outs = append(outs, src)
 	}
-	return err
+	b.lock.RUnlock()
+	for _, port := range outs {
+		if src == port {
+			continue
+		}
+		if _, err := port.Send(data); err != nil {
+			b.out.Error("VirtualBridge.Flood: %s %s", port, err)
+		}
+	}
+	return nil
 }
 
-func (b *VirtualBridge) Unicast(m *Framer) bool {
+func (b *VirtualBridge) UniCast(m *Framer) error {
 	data := m.Data
 	src := m.Source
 	index := b.Eth2Str(data[:6])
-
-	if l := b.FindDest(index); l != nil {
-		dst := l.Device
-		if dst != src {
-			if _, err := dst.Send(data); err != nil {
-				b.out.Warn("VirtualBridge.Unicast: %s %s", dst, err)
-			}
-		}
-		if b.out.Has(libol.DEBUG) {
-			b.out.Debug("VirtualBridge.Unicast: %s to %s % x", src, dst, data[:20])
-		}
-		return true
+	learn := b.GetLearn(index)
+	if learn == nil {
+		return errors.New(index + " notFound")
 	}
-	return false
+	dst := learn.Device
+	if dst != src {
+		if _, err := dst.Send(data); err != nil {
+			b.out.Warn("VirtualBridge.UniCast: %s %s", dst, err)
+		}
+	}
+	if b.out.Has(libol.DEBUG) {
+		b.out.Debug("VirtualBridge.UniCast: %s to %s % x", src, dst, data[:20])
+	}
+	return nil
 }
 
 func (b *VirtualBridge) Mtu() int {

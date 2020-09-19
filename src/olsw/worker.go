@@ -189,7 +189,7 @@ func (w *NetworkWorker) UpPeer(cfg config.Bridge) {
 	promise.Go(func() error {
 		if !br.Has() {
 			w.out.Warn("%s notFound", br.Name)
-			return libol.NewErr("notFound")
+			return libol.NewErr("%s notFound", br.Name)
 		}
 		err := netlink.LinkAdd(link)
 		if err != nil {

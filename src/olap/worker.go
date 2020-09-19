@@ -479,7 +479,7 @@ func (t *SocketWorker) doJobber() error {
 }
 
 func (t *SocketWorker) doTicker() error {
-	t.deadCheck()    // period to check whether dead.
+	t.checkAlive()   // period to check whether alive.
 	_ = t.doAlive()  // send ping and wait pong to keep alive.
 	_ = t.doJobber() // check job timer.
 	return nil
@@ -559,25 +559,25 @@ func (t *SocketWorker) Read(client libol.SocketClient) {
 	}
 }
 
-func (t *SocketWorker) deadCheck() {
+func (t *SocketWorker) checkAlive() {
 	out := int64(t.pinCfg.Timeout)
 	now := time.Now().Unix()
 	if now-t.record.Get(rtLast) < out || now-t.record.Get(rtLive) < out {
 		return
 	}
 	if now-t.record.Get(rtReConnect) < out { // timeout and avoid send reconn frequently.
-		t.out.Cmd("SocketWorker.deadCheck: reconn frequently")
+		t.out.Cmd("SocketWorker.checkAlive: reconn frequently")
 		return
 	}
-	t.eventQueue <- NewEvent(EvSocRecon, "from dead check")
+	t.eventQueue <- NewEvent(EvSocRecon, "from alive check")
 }
 
 func (t *SocketWorker) DoWrite(frame *libol.FrameMessage) error {
 	if t.out.Has(libol.DEBUG) {
 		t.out.Debug("SocketWorker.DoWrite: %x", frame)
 	}
+	t.checkAlive() // alive check immediately
 	t.lock.Lock()
-	t.deadCheck() // dead check immediately
 	if t.client == nil {
 		t.lock.Unlock()
 		return libol.NewErr("client is nil")

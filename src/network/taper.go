@@ -20,6 +20,7 @@ type Taper interface {
 	Tenant() string
 	Mtu() int
 	SetMtu(mtu int)
+	String() string
 }
 
 func NewTaper(tenant string, c TapConfig) (Taper, error) {

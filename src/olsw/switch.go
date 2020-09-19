@@ -397,7 +397,7 @@ func (v *Switch) Server() libol.SocketServer {
 func (v *Switch) GetBridge(tenant string) (network.Bridger, error) {
 	w, ok := v.worker[tenant]
 	if !ok {
-		return nil, libol.NewErr("notFound bridge %s", tenant)
+		return nil, libol.NewErr("bridge %s notFound", tenant)
 	}
 	return w.bridge, nil
 }
@@ -411,6 +411,7 @@ func (v *Switch) NewTap(tenant string) (network.Taper, error) {
 	// dropped firstly packages during 15s because of forwarding delay.
 	br, err := v.GetBridge(tenant)
 	if err != nil {
+		v.out.Error("Switch.NewTap: %s", err)
 		return nil, err
 	}
 	dev, err := network.NewTaper(tenant, network.TapConfig{
@@ -438,7 +439,7 @@ func (v *Switch) FreeTap(dev network.Taper) error {
 	v.out.Debug("Switch.FreeTap %s", name)
 	w, ok := v.worker[tenant]
 	if !ok {
-		return libol.NewErr("Not found bridge %s", tenant)
+		return libol.NewErr("bridge %s notFound", tenant)
 	}
 	br := w.bridge
 	_ = br.DelSlave(dev.Name())
