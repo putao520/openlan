@@ -14,7 +14,7 @@ type Taper interface {
 	Send([]byte) (int, error)  // send data from virtual bridge to kernel
 	Recv([]byte) (int, error)  // recv data from kernel to virtual bridge
 	Close() error
-	Slave(br Bridger)
+	Master(dev Bridger)
 	Up()
 	Down()
 	Tenant() string

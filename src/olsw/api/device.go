@@ -64,13 +64,25 @@ func (h Device) Get(w http.ResponseWriter, r *http.Request) {
 				Uptime:  now - addr.Uptime,
 			})
 		}
+		slaves := make([]schema.Device, 0, 32)
+		for dev := range br.ListSlave() {
+			if dev == nil {
+				break
+			}
+			slaves = append(slaves, schema.Device{
+				Name:     dev.Name(),
+				Mtu:      dev.Mtu(),
+				Provider: dev.Type(),
+			})
+		}
 		ResponseJson(w, schema.Bridge{
 			Device: schema.Device{
 				Name:     br.Name(),
 				Mtu:      br.Mtu(),
 				Provider: br.Type(),
 			},
-			Macs: macs,
+			Macs:   macs,
+			Slaves: slaves,
 		})
 	} else {
 		http.Error(w, vars["id"], http.StatusNotFound)

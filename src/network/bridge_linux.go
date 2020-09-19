@@ -95,8 +95,21 @@ func (b *LinuxBridge) DelSlave(name string) error {
 	return nil
 }
 
+func (b *LinuxBridge) ListSlave() <-chan Taper {
+	data := make(chan Taper, 32)
+	go func() {
+		data <- nil
+	}()
+	b.out.Warn("LinuxBridge.ListSlave: notSupport")
+	return data
+}
+
 func (b *LinuxBridge) Type() string {
 	return "linux"
+}
+
+func (b *LinuxBridge) String() string {
+	return b.name
 }
 
 func (b *LinuxBridge) Name() string {

@@ -9,7 +9,7 @@ import (
 type KernelTap struct {
 	lock   sync.Mutex
 	device *water.Interface
-	bridge Bridger
+	master Bridger
 	tenant string
 	name   string
 	config TapConfig
@@ -88,18 +88,22 @@ func (t *KernelTap) Close() error {
 		return nil
 	}
 	Taps.Del(t.name)
-	if t.bridge != nil {
-		_ = t.bridge.DelSlave(t.name)
-		t.bridge = nil
+	if t.master != nil {
+		_ = t.master.DelSlave(t.name)
+		t.master = nil
 	}
 	err := t.device.Close()
 	t.device = nil
 	return err
 }
 
-func (t *KernelTap) Slave(bridge Bridger) {
-	if t.bridge == nil {
-		t.bridge = bridge
+func (t *KernelTap) Master(dev Bridger) {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+	if t.master == nil {
+		t.master = dev
+	} else {
+		libol.Warn("KernelTap.Master already for %s", t.master)
 	}
 }
 

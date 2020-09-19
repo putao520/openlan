@@ -14,7 +14,7 @@ type VirtualTap struct {
 	lock    sync.Mutex
 	kernel  chan []byte
 	virtual chan []byte
-	bridge  Bridger
+	master  Bridger
 	tenant  string
 	flags   uint
 	config  TapConfig
@@ -121,18 +121,22 @@ func (t *VirtualTap) Close() error {
 		return nil
 	}
 	Taps.Del(t.name)
-	if t.bridge != nil {
-		_ = t.bridge.DelSlave(t.name)
-		t.bridge = nil
+	if t.master != nil {
+		_ = t.master.DelSlave(t.name)
+		t.master = nil
 	}
 	t.setFlags(UsClose)
-	t.clearFlags(^UsUp)
+	t.clearFlags(UsUp)
 	return nil
 }
 
-func (t *VirtualTap) Slave(bridge Bridger) {
-	if t.bridge == nil {
-		t.bridge = bridge
+func (t *VirtualTap) Master(dev Bridger) {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+	if t.master == nil {
+		t.master = dev
+	} else {
+		libol.Warn("VirtualTap.Master already for %s", t.master)
 	}
 }
 

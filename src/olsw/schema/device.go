@@ -2,11 +2,11 @@ package schema
 
 type Device struct {
 	Name     string `json:"name"`
-	Address  string `json:"address"`
-	Mac      string `json:"mac"`
-	Type     string `json:"type"`
+	Address  string `json:"address,omitempty"`
+	Mac      string `json:"mac,omitempty"`
+	Type     string `json:"type,omitempty"`
 	Provider string `json:"provider"`
-	Mtu      int    `json:"mtu"`
+	Mtu      int    `json:"mtu,omitempty"`
 }
 
 type HwMacInfo struct {
@@ -17,5 +17,6 @@ type HwMacInfo struct {
 
 type Bridge struct {
 	Device
-	Macs []HwMacInfo `json:"macs"`
+	Macs   []HwMacInfo `json:"macs"`
+	Slaves []Device    `json:"slaves"`
 }

@@ -24,11 +24,13 @@ type Bridger interface {
 	Close() error
 	AddSlave(name string) error
 	DelSlave(name string) error
+	ListSlave() <-chan Taper
 	Mtu() int
 	Stp(enable bool) error
 	Delay(value int) error
 	Kernel() string // name in kernel.
 	ListMac() <-chan *MacFdb
+	String() string
 }
 
 type bridger struct {

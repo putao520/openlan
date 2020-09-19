@@ -87,6 +87,7 @@ func (b *VirtualBridge) AddSlave(name string) error {
 	if tap == nil {
 		return libol.NewErr("%s notFound", name)
 	}
+	tap.Master(b)
 	tap.SetMtu(b.ifMtu) // consistent mtu value.
 	b.lock.Lock()
 	b.ports[name] = tap
@@ -119,8 +120,25 @@ func (b *VirtualBridge) DelSlave(name string) error {
 	return nil
 }
 
+func (b *VirtualBridge) ListSlave() <-chan Taper {
+	data := make(chan Taper, 32)
+	go func() {
+		b.lock.RLock()
+		defer b.lock.RUnlock()
+		for _, obj := range b.ports {
+			data <- obj
+		}
+		data <- nil
+	}()
+	return data
+}
+
 func (b *VirtualBridge) Type() string {
 	return "virtual"
+}
+
+func (b *VirtualBridge) String() string {
+	return b.name
 }
 
 func (b *VirtualBridge) Name() string {
