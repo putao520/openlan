@@ -437,9 +437,9 @@ func (t *SocketWorker) sendPing(client libol.SocketClient) error {
 	return nil
 }
 
-func (t *SocketWorker) doAlive() error {
+func (t *SocketWorker) keepAlive() {
 	if !t.keepalive.Should() {
-		return nil
+		return
 	}
 	t.keepalive.Update()
 	if t.client.Have(libol.ClAuth) {
@@ -450,20 +450,17 @@ func (t *SocketWorker) doAlive() error {
 			_ = t.toNetwork(t.client)
 		}
 		if err := t.sendPing(t.client); err != nil {
-			t.out.Error("SocketWorker.doAlive: %s", err)
-			return err
+			t.out.Error("SocketWorker.keepAlive: %s", err)
 		}
 	} else {
 		if err := t.sendLogin(t.client); err != nil {
-			t.out.Error("SocketWorker.doAlive: %s", err)
-			return err
+			t.out.Error("SocketWorker.keepAlive: %s", err)
 		}
 	}
-	return nil
 }
 
-func (t *SocketWorker) doJobber() error {
-	// travel jobber and execute expired.
+func (t *SocketWorker) checkJobber() {
+	// travel jobber and execute it expired.
 	now := time.Now().Unix()
 	newTimer := make([]jobTimer, 0, 32)
 	for _, t := range t.jobber {
@@ -474,14 +471,26 @@ func (t *SocketWorker) doJobber() error {
 		}
 	}
 	t.jobber = newTimer
-	t.out.Debug("SocketWorker.doJobber: %d", len(t.jobber))
-	return nil
+	t.out.Debug("SocketWorker.checkJobber: %d", len(t.jobber))
+}
+
+func (t *SocketWorker) checkAlive() {
+	out := int64(t.pinCfg.Timeout)
+	now := time.Now().Unix()
+	if now-t.record.Get(rtLast) < out || now-t.record.Get(rtLive) < out {
+		return
+	}
+	if now-t.record.Get(rtReConnect) < out { // timeout and avoid send reconn frequently.
+		t.out.Cmd("SocketWorker.checkAlive: reconn frequently")
+		return
+	}
+	t.eventQueue <- NewEvent(EvSocRecon, "from alive check")
 }
 
 func (t *SocketWorker) doTicker() error {
-	t.checkAlive()   // period to check whether alive.
-	_ = t.doAlive()  // send ping and wait pong to keep alive.
-	_ = t.doJobber() // check job timer.
+	t.checkAlive()  // period to check whether alive.
+	t.keepAlive()   // send ping and wait pong to keep alive.
+	t.checkJobber() // period to check job whether timeout.
 	return nil
 }
 
@@ -557,19 +566,6 @@ func (t *SocketWorker) Read(client libol.SocketClient) {
 	if !t.isStopped() {
 		t.eventQueue <- NewEvent(EvSocRecon, "from read")
 	}
-}
-
-func (t *SocketWorker) checkAlive() {
-	out := int64(t.pinCfg.Timeout)
-	now := time.Now().Unix()
-	if now-t.record.Get(rtLast) < out || now-t.record.Get(rtLive) < out {
-		return
-	}
-	if now-t.record.Get(rtReConnect) < out { // timeout and avoid send reconn frequently.
-		t.out.Cmd("SocketWorker.checkAlive: reconn frequently")
-		return
-	}
-	t.eventQueue <- NewEvent(EvSocRecon, "from alive check")
 }
 
 func (t *SocketWorker) DoWrite(frame *libol.FrameMessage) error {
