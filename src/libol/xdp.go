@@ -138,6 +138,9 @@ func (c *XDPConn) Read(b []byte) (n int, err error) {
 	case <-outChan:
 		return 0, NewErr("read timeout")
 	case d := <-c.readQueue:
+		if timeout != nil {
+			timeout.Stop()
+		}
 		return copy(b, d), nil
 	}
 }

@@ -167,13 +167,13 @@ func (t *HttpProxy) Start() {
 	} else {
 		t.out.Info("HttpProxy.start https://%s", t.server.Addr)
 	}
-	defer t.server.Shutdown(nil)
 	promise := &libol.Promise{
 		First:  time.Second * 2,
 		MaxInt: time.Minute,
 		MinInt: time.Second * 10,
 	}
 	promise.Go(func() error {
+		defer t.server.Shutdown(nil)
 		if crt == nil || crt.KeyFile == "" {
 			if err := t.server.ListenAndServe(); err != nil {
 				t.out.Warn("HttpProxy.start %s", err)

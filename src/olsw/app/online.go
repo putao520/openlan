@@ -61,16 +61,17 @@ func (o *Online) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) e
 }
 
 func (o *Online) popLine() {
-	if o.lineList.Len() >= o.maxSize {
-		e := o.lineList.Front()
-		if e == nil {
-			return
-		}
-		if lastLine, ok := e.Value.(*models.Line); ok {
-			o.lineList.Remove(e)
-			storage.Online.Del(lastLine.String())
-			delete(o.lineMap, lastLine.String())
-		}
+	if o.lineList.Len() < o.maxSize {
+		return
+	}
+	e := o.lineList.Front()
+	if e == nil {
+		return
+	}
+	if lastLine, ok := e.Value.(*models.Line); ok {
+		o.lineList.Remove(e)
+		storage.Online.Del(lastLine.String())
+		delete(o.lineMap, lastLine.String())
 	}
 }
 

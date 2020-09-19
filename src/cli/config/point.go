@@ -12,7 +12,7 @@ type Interface struct {
 	Address  string `json:"address,omitempty"`
 	Bridge   string `json:"bridge,omitempty"`
 	Provider string `json:"provider,omitempty"`
-	Cost     int    `json:"cost"`
+	Cost     int    `json:"cost,omitempty"`
 }
 
 type Point struct {
@@ -27,7 +27,7 @@ type Point struct {
 	Log         Log       `json:"log"`
 	Http        *Http     `json:"http,omitempty"`
 	Crypt       *Crypt    `json:"crypt,omitempty"`
-	PProf       string    `json:"pprof"`
+	PProf       string    `json:"pprof,omitempty"`
 	RequestAddr bool      `json:"-" yaml:"-"`
 	SaveFile    string    `json:"-" yaml:"-"`
 	Queue       *Queue    `json:"queue"`
