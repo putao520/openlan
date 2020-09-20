@@ -420,8 +420,8 @@ func (v *Switch) NewTap(tenant string) (network.Taper, error) {
 	dev, err := network.NewTaper(tenant, network.TapConfig{
 		Provider: br.Type(),
 		Type:     network.TAP,
-		WriteBuf: v.cfg.Queue.VirWrt,
-		SendBuf:  v.cfg.Queue.VirSnd,
+		VirtBuf:  v.cfg.Queue.VirWrt,
+		KernBuf:  v.cfg.Queue.VirSnd,
 	})
 	if err != nil {
 		v.out.Error("Switch.NewTap: %s", err)

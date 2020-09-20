@@ -87,7 +87,7 @@ func (b *VirtualBridge) AddSlave(name string) error {
 	if tap == nil {
 		return libol.NewErr("%s notFound", name)
 	}
-	tap.Master(b)
+	_ = tap.SetMaster(b)
 	tap.SetMtu(b.ifMtu) // consistent mtu value.
 	b.lock.Lock()
 	b.ports[name] = tap

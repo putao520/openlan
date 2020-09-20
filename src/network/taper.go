@@ -14,7 +14,8 @@ type Taper interface {
 	Send([]byte) (int, error)  // send data from virtual bridge to kernel
 	Recv([]byte) (int, error)  // recv data from kernel to virtual bridge
 	Close() error
-	Master(dev Bridger)
+	Master() Bridger
+	SetMaster(dev Bridger) error
 	Up()
 	Down()
 	Tenant() string
@@ -101,6 +102,6 @@ type TapConfig struct {
 	Type     int
 	Network  string
 	Name     string
-	WriteBuf int
-	SendBuf  int
+	VirtBuf  int
+	KernBuf  int
 }

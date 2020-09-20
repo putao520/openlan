@@ -1047,8 +1047,8 @@ func GetTapCfg(c *config.Point) network.TapConfig {
 		Provider: c.Interface.Provider,
 		Name:     c.Interface.Name,
 		Network:  c.Interface.Address,
-		SendBuf:  c.Queue.VirSnd,
-		WriteBuf: c.Queue.VirWrt,
+		KernBuf:  c.Queue.VirSnd,
+		VirtBuf:  c.Queue.VirWrt,
 	}
 	if c.Interface.Provider == "tun" {
 		cfg.Type = network.TUN

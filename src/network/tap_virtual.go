@@ -11,26 +11,29 @@ const (
 )
 
 type VirtualTap struct {
-	lock    sync.Mutex
-	kernel  chan []byte
-	virtual chan []byte
-	master  Bridger
-	tenant  string
-	flags   uint
-	config  TapConfig
-	name    string
-	ifMtu   int
+	lock   sync.Mutex
+	kernC  int
+	kernQ  chan []byte
+	virtC  int
+	virtQ  chan []byte
+	master Bridger
+	tenant string
+	flags  uint
+	cfg    TapConfig
+	name   string
+	ifMtu  int
 }
 
 func NewVirtualTap(tenant string, c TapConfig) (*VirtualTap, error) {
-	if c.Name == "" {
-		c.Name = Taps.GenName()
+	name := c.Name
+	if name == "" {
+		name = Taps.GenName()
 	}
 	tap := &VirtualTap{
+		cfg:    c,
 		tenant: tenant,
-		name:   c.Name,
+		name:   name,
 		ifMtu:  1514,
-		config: c,
 	}
 	Taps.Add(tap)
 	return tap, nil
@@ -45,23 +48,23 @@ func (t *VirtualTap) Tenant() string {
 }
 
 func (t *VirtualTap) IsTun() bool {
-	return t.config.Type == TUN
+	return t.cfg.Type == TUN
 }
 
 func (t *VirtualTap) Name() string {
 	return t.name
 }
 
-func (t *VirtualTap) hasFlags(flags uint) bool {
-	return t.flags&flags == flags
+func (t *VirtualTap) hasFlags(v uint) bool {
+	return t.flags&v == v
 }
 
-func (t *VirtualTap) setFlags(flags uint) {
-	t.flags |= flags
+func (t *VirtualTap) setFlags(v uint) {
+	t.flags |= v
 }
 
-func (t *VirtualTap) clearFlags(flags uint) {
-	t.flags &= ^flags
+func (t *VirtualTap) clearFlags(v uint) {
+	t.flags &= ^v
 }
 
 func (t *VirtualTap) Write(p []byte) (int, error) {
@@ -69,12 +72,16 @@ func (t *VirtualTap) Write(p []byte) (int, error) {
 		libol.Debug("VirtualTap.Write: %s % x", t, p[:20])
 	}
 	t.lock.Lock()
+	defer t.lock.Unlock()
 	if !t.hasFlags(UsUp) {
-		t.lock.Unlock()
 		return 0, libol.NewErr("notUp")
 	}
-	t.lock.Unlock()
-	t.virtual <- p
+	if t.virtC >= t.cfg.VirtBuf {
+		libol.Warn("VirtualTap.Write: buffer fully")
+		return len(p), nil
+	}
+	t.virtC++
+	t.virtQ <- p
 	return len(p), nil
 }
 
@@ -85,7 +92,10 @@ func (t *VirtualTap) Read(p []byte) (int, error) {
 		return 0, libol.NewErr("notUp")
 	}
 	t.lock.Unlock()
-	data := <-t.kernel
+	data := <-t.kernQ
+	t.lock.Lock()
+	t.kernC--
+	t.lock.Unlock()
 	return copy(p, data), nil
 }
 
@@ -96,7 +106,10 @@ func (t *VirtualTap) Recv(p []byte) (int, error) {
 		return 0, libol.NewErr("notUp")
 	}
 	t.lock.Unlock()
-	data := <-t.virtual
+	data := <-t.virtQ
+	t.lock.Lock()
+	t.virtC--
+	t.lock.Unlock()
 	return copy(p, data), nil
 }
 
@@ -105,12 +118,16 @@ func (t *VirtualTap) Send(p []byte) (int, error) {
 		libol.Debug("VirtualTap.Send: %s % x", t, p[:20])
 	}
 	t.lock.Lock()
+	defer t.lock.Unlock()
 	if !t.hasFlags(UsUp) {
-		t.lock.Unlock()
 		return 0, libol.NewErr("notUp")
 	}
-	t.lock.Unlock()
-	t.kernel <- p
+	if t.kernC >= t.cfg.KernBuf {
+		libol.Warn("VirtualTap.Send: buffer fully")
+		return len(p), nil
+	}
+	t.kernC++
+	t.kernQ <- p
 	return len(p), nil
 }
 
@@ -130,32 +147,39 @@ func (t *VirtualTap) Close() error {
 	return nil
 }
 
-func (t *VirtualTap) Master(dev Bridger) {
+func (t *VirtualTap) Master() Bridger {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+	return t.master
+}
+
+func (t *VirtualTap) SetMaster(dev Bridger) error {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	if t.master == nil {
 		t.master = dev
-	} else {
-		libol.Warn("VirtualTap.Master already for %s", t.master)
 	}
+	return libol.NewErr("already to %s", t.master)
 }
 
 func (t *VirtualTap) Up() {
 	t.lock.Lock()
-	t.kernel = make(chan []byte, t.config.SendBuf)
-	t.virtual = make(chan []byte, t.config.WriteBuf)
+	defer t.lock.Unlock()
+	t.kernC = 0
+	t.kernQ = make(chan []byte, t.cfg.KernBuf)
+	t.virtC = 0
+	t.virtQ = make(chan []byte, t.cfg.VirtBuf)
 	t.setFlags(UsUp)
-	t.lock.Unlock()
 }
 
 func (t *VirtualTap) Down() {
 	t.lock.Lock()
+	defer t.lock.Unlock()
 	t.clearFlags(UsUp)
-	close(t.kernel)
-	t.kernel = nil
-	close(t.virtual)
-	t.virtual = nil
-	t.lock.Unlock()
+	close(t.kernQ)
+	t.kernQ = nil
+	close(t.virtQ)
+	t.virtQ = nil
 }
 
 func (t *VirtualTap) String() string {

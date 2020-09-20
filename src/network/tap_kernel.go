@@ -97,14 +97,19 @@ func (t *KernelTap) Close() error {
 	return err
 }
 
-func (t *KernelTap) Master(dev Bridger) {
+func (t *KernelTap) Master() Bridger {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+	return t.master
+}
+
+func (t *KernelTap) SetMaster(dev Bridger) error {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	if t.master == nil {
 		t.master = dev
-	} else {
-		libol.Warn("KernelTap.Master already for %s", t.master)
 	}
+	return libol.NewErr("already to %s", t.master)
 }
 
 func (t *KernelTap) Up() {
