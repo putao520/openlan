@@ -78,7 +78,7 @@ func (t *VirtualTap) Write(p []byte) (int, error) {
 	}
 	if t.virtC >= t.cfg.VirtBuf {
 		libol.Warn("VirtualTap.Write: buffer fully")
-		return len(p), nil
+		return 0, nil
 	}
 	t.virtC++
 	t.virtQ <- p
@@ -124,7 +124,7 @@ func (t *VirtualTap) Send(p []byte) (int, error) {
 	}
 	if t.kernC >= t.cfg.KernBuf {
 		libol.Warn("VirtualTap.Send: buffer fully")
-		return len(p), nil
+		return 0, nil
 	}
 	t.kernC++
 	t.kernQ <- p
