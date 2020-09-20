@@ -96,12 +96,12 @@ func (t *KernelTap) Close() error {
 	if t.device == nil {
 		return nil
 	}
-	Taps.Del(t.name)
 	if t.master != nil {
 		_ = t.master.DelSlave(t.name)
 		t.master = nil
 	}
 	err := t.device.Close()
+	Taps.Del(t.name)
 	t.device = nil
 	return err
 }
@@ -131,7 +131,7 @@ func (t *KernelTap) Up() {
 func (t *KernelTap) Down() {
 	t.lock.Lock()
 	defer t.lock.Unlock()
-	libol.Debug("KernelTap.Up %s", t.name)
+	libol.Debug("KernelTap.Down %s", t.name)
 	_, _ = libol.IpLinkDown(t.name)
 }
 

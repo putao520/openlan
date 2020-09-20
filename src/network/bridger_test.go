@@ -23,8 +23,8 @@ func TestBridgeWriteAndReadByTap(t *testing.T) {
 		t.Errorf("Tap.Open %s", err)
 		return
 	}
-	_ = br.AddSlave(dev01)
-	_ = br.AddSlave(dev02)
+	_ = br.AddSlave(dev01.name)
+	_ = br.AddSlave(dev02.name)
 
 	wg.Add(1)
 	go func() {

@@ -136,18 +136,19 @@ func (t *VirtualTap) Send(p []byte) (int, error) {
 }
 
 func (t *VirtualTap) Close() error {
+	t.Down()
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	if t.hasFlags(UsClose) {
 		return nil
 	}
-	Taps.Del(t.name)
+	t.setFlags(UsClose)
+	t.clearFlags(UsUp)
 	if t.master != nil {
 		_ = t.master.DelSlave(t.name)
 		t.master = nil
 	}
-	t.setFlags(UsClose)
-	t.clearFlags(UsUp)
+	Taps.Del(t.name)
 	return nil
 }
 
@@ -169,21 +170,25 @@ func (t *VirtualTap) SetMaster(dev Bridger) error {
 func (t *VirtualTap) Up() {
 	t.lock.Lock()
 	defer t.lock.Unlock()
-	t.kernC = 0
-	t.kernQ = make(chan []byte, t.cfg.KernBuf)
-	t.virtC = 0
-	t.virtQ = make(chan []byte, t.cfg.VirtBuf)
-	t.setFlags(UsUp)
+	if !t.hasFlags(UsUp) {
+		t.kernC = 0
+		t.kernQ = make(chan []byte, t.cfg.KernBuf)
+		t.virtC = 0
+		t.virtQ = make(chan []byte, t.cfg.VirtBuf)
+		t.setFlags(UsUp)
+	}
 }
 
 func (t *VirtualTap) Down() {
 	t.lock.Lock()
 	defer t.lock.Unlock()
-	t.clearFlags(UsUp)
-	close(t.kernQ)
-	t.kernQ = nil
-	close(t.virtQ)
-	t.virtQ = nil
+	if t.hasFlags(UsUp) {
+		t.clearFlags(UsUp)
+		close(t.kernQ)
+		t.kernQ = nil
+		close(t.virtQ)
+		t.virtQ = nil
+	}
 }
 
 func (t *VirtualTap) String() string {
