@@ -42,7 +42,7 @@ func (t *KernelTap) Has(v uint) bool {
 }
 
 func (t *KernelTap) Type() string {
-	return "kernel"
+	return ProviderKer
 }
 
 func (t *KernelTap) Tenant() string {

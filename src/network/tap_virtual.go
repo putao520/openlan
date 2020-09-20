@@ -17,6 +17,7 @@ type VirtualTap struct {
 	cfg    TapConfig
 	name   string
 	ifMtu  int
+	sts    DeviceStats
 }
 
 func NewVirtualTap(tenant string, c TapConfig) (*VirtualTap, error) {
@@ -35,7 +36,7 @@ func NewVirtualTap(tenant string, c TapConfig) (*VirtualTap, error) {
 }
 
 func (t *VirtualTap) Type() string {
-	return "virtual"
+	return ProviderVir
 }
 
 func (t *VirtualTap) Tenant() string {
@@ -79,6 +80,7 @@ func (t *VirtualTap) Write(p []byte) (int, error) {
 	}
 	if t.virtC >= t.cfg.VirtBuf {
 		libol.Warn("VirtualTap.Write: buffer fully")
+		t.sts.Drop++
 		return 0, nil
 	}
 	t.virtC++
@@ -124,6 +126,7 @@ func (t *VirtualTap) Send(p []byte) (int, error) {
 		return 0, libol.NewErr("notUp")
 	}
 	if t.kernC >= t.cfg.KernBuf {
+		t.sts.Drop++
 		libol.Warn("VirtualTap.Send: buffer fully")
 		return 0, nil
 	}

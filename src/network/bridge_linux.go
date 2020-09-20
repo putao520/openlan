@@ -106,7 +106,7 @@ func (b *LinuxBridge) ListSlave() <-chan Taper {
 }
 
 func (b *LinuxBridge) Type() string {
-	return "linux"
+	return ProviderLin
 }
 
 func (b *LinuxBridge) String() string {

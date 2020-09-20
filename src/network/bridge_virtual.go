@@ -135,7 +135,7 @@ func (b *VirtualBridge) ListSlave() <-chan Taper {
 }
 
 func (b *VirtualBridge) Type() string {
-	return "virtual"
+	return ProviderVir
 }
 
 func (b *VirtualBridge) String() string {
