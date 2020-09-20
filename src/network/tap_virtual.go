@@ -5,13 +5,8 @@ import (
 	"sync"
 )
 
-const (
-	UsClose = uint(0x02)
-	UsUp    = uint(0x04)
-)
-
 type VirtualTap struct {
-	lock   sync.Mutex
+	lock   sync.RWMutex
 	kernC  int
 	kernQ  chan []byte
 	virtC  int
@@ -65,6 +60,12 @@ func (t *VirtualTap) setFlags(v uint) {
 
 func (t *VirtualTap) clearFlags(v uint) {
 	t.flags &= ^v
+}
+
+func (t *VirtualTap) Has(v uint) bool {
+	t.lock.RLock()
+	defer t.lock.RUnlock()
+	return t.hasFlags(v)
 }
 
 func (t *VirtualTap) Write(p []byte) (int, error) {
@@ -148,8 +149,8 @@ func (t *VirtualTap) Close() error {
 }
 
 func (t *VirtualTap) Master() Bridger {
-	t.lock.Lock()
-	defer t.lock.Unlock()
+	t.lock.RLock()
+	defer t.lock.RUnlock()
 	return t.master
 }
 

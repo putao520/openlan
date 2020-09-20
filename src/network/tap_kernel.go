@@ -32,6 +32,15 @@ func NewKernelTap(tenant string, c TapConfig) (*KernelTap, error) {
 	return tap, nil
 }
 
+func (t *KernelTap) Has(v uint) bool {
+	if v == UsClose {
+		return t.device == nil
+	} else if v == UsUp {
+		return t.device != nil
+	}
+	return false
+}
+
 func (t *KernelTap) Type() string {
 	return "kernel"
 }

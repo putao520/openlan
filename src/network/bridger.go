@@ -31,6 +31,7 @@ type Bridger interface {
 	Kernel() string // name in kernel.
 	ListMac() <-chan *MacFdb
 	String() string
+	Stats() DeviceStats
 }
 
 type bridger struct {

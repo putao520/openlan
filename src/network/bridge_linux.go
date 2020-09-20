@@ -6,6 +6,7 @@ import (
 )
 
 type LinuxBridge struct {
+	sts     DeviceStats
 	address *netlink.Addr
 	ifMtu   int
 	name    string
@@ -141,4 +142,8 @@ func (b *LinuxBridge) ListMac() <-chan *MacFdb {
 	}()
 	b.out.Warn("LinuxBridge.ListMac: notSupport")
 	return data
+}
+
+func (b *LinuxBridge) Stats() DeviceStats {
+	return b.sts
 }

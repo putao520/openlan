@@ -19,4 +19,5 @@ type Bridge struct {
 	Device
 	Macs   []HwMacInfo `json:"macs"`
 	Slaves []Device    `json:"slaves"`
+	Stats  interface{} `json:"stats"`
 }

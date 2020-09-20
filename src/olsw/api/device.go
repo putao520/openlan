@@ -83,6 +83,7 @@ func (h Device) Get(w http.ResponseWriter, r *http.Request) {
 			},
 			Macs:   macs,
 			Slaves: slaves,
+			Stats:  br.Stats(),
 		})
 	} else {
 		http.Error(w, vars["id"], http.StatusNotFound)

@@ -5,6 +5,19 @@ import (
 	"sync"
 )
 
+const (
+	UsClose = uint(0x02)
+	UsUp    = uint(0x04)
+	TUN     = 0x01
+	TAP     = 0x02
+)
+
+type DeviceStats struct {
+	Send int64 `json:"send"`
+	Recv int64 `json:"recv"`
+	Drop int64 `json:"drop"`
+}
+
 type Taper interface {
 	Type() string
 	IsTun() bool
@@ -22,6 +35,7 @@ type Taper interface {
 	Mtu() int
 	SetMtu(mtu int)
 	String() string
+	Has(v uint) bool
 }
 
 func NewTaper(tenant string, c TapConfig) (Taper, error) {
@@ -90,12 +104,6 @@ func (t *tapers) List() <-chan Taper {
 }
 
 var Taps = &tapers{}
-
-const (
-	_ = iota
-	TUN
-	TAP
-)
 
 type TapConfig struct {
 	Provider string

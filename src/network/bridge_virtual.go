@@ -20,6 +20,7 @@ type VirtualBridge struct {
 	address string
 	kernel  Taper
 	out     *libol.SubLogger
+	sts     DeviceStats
 }
 
 func NewVirtualBridge(name string, mtu int) *VirtualBridge {
@@ -191,6 +192,7 @@ func (b *VirtualBridge) Start() {
 }
 
 func (b *VirtualBridge) Input(m *Framer) error {
+	b.sts.Recv++
 	b.Learn(m)
 	return b.Forward(m)
 }
@@ -278,6 +280,7 @@ func (b *VirtualBridge) Flood(m *Framer) error {
 		if b.out.Has(libol.FLOW) {
 			b.out.Flow("VirtualBridge.Flood: %s % x", port, data[:20])
 		}
+		b.sts.Send++
 		if _, err := port.Send(data); err != nil {
 			b.out.Error("VirtualBridge.Flood: %s %s", port, err)
 		}
@@ -294,10 +297,13 @@ func (b *VirtualBridge) UniCast(m *Framer) error {
 		return errors.New(dest + " notFound")
 	}
 	out := learn.Device
-	if out != from {
+	if out != from && out.Has(UsUp) { // out should running
+		b.sts.Send++
 		if _, err := out.Send(data); err != nil {
 			b.out.Warn("VirtualBridge.UniCast: %s %s", out, err)
 		}
+	} else {
+		b.sts.Drop++
 	}
 	if b.out.Has(libol.FLOW) {
 		b.out.Flow("VirtualBridge.UniCast: %s to %s % x", from, out, data[:20])
@@ -315,4 +321,8 @@ func (b *VirtualBridge) Stp(enable bool) error {
 
 func (b *VirtualBridge) Delay(value int) error {
 	return libol.NewErr("operation notSupport")
+}
+
+func (b *VirtualBridge) Stats() DeviceStats {
+	return b.sts
 }
