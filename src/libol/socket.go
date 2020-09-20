@@ -110,6 +110,10 @@ func (t *StreamSocket) WriteMsg(frame *FrameMessage) error {
 		t.statistics.Add(CsDropped, 1)
 		return NewErr("%s not okay", t)
 	}
+	if frame.IsControl() {
+		action, params := frame.CmdAndParams()
+		Cmd("StreamSocket.WriteMsg: %s%s", action, params)
+	}
 	if t.message == nil { // default is stream message
 		t.message = &StreamMessagerImpl{}
 	}
@@ -257,8 +261,11 @@ func (s *SocketClientImpl) updateConn(conn net.Conn) {
 			_ = s.connection.Close()
 		}
 		s.connection = nil
+		s.localAddr = ""
+		s.remoteAddr = ""
 		s.message.Flush()
 	}
+	s.out.Event("SocketClientImpl.updateConn: %s %s", s.localAddr, s.remoteAddr)
 }
 
 func (s *SocketClientImpl) SetConnection(conn net.Conn) {
@@ -354,7 +361,7 @@ func (t *SocketServerImpl) OffClient(client SocketClient) {
 }
 
 func (t *SocketServerImpl) doOnClient(call ServerListener, client SocketClient) {
-	Info("SocketServerImpl.doOnClient: +<%s>", client)
+	Info("SocketServerImpl.doOnClient: +%s", client)
 	_ = t.clients.Set(client.RemoteAddr(), client)
 	if call.OnClient != nil {
 		_ = call.OnClient(client)
@@ -365,7 +372,7 @@ func (t *SocketServerImpl) doOnClient(call ServerListener, client SocketClient) 
 }
 
 func (t *SocketServerImpl) doOffClient(call ServerListener, client SocketClient) {
-	Info("SocketServerImpl.doOffClient: -<%s>", client)
+	Info("SocketServerImpl.doOffClient: -%s", client)
 	addr := client.RemoteAddr()
 	if _, ok := t.clients.GetEx(addr); ok {
 		Info("SocketServerImpl.doOffClient: close %s", addr)

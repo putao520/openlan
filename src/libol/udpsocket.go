@@ -9,10 +9,12 @@ import (
 type UdpConfig struct {
 	Block   kcp.BlockCrypt
 	Timeout time.Duration // ns
+	Clients int
 }
 
 var defaultUdpConfig = UdpConfig{
 	Timeout: 120 * time.Second,
+	Clients: 1024,
 }
 
 type UdpServer struct {
@@ -25,6 +27,9 @@ func NewUdpServer(listen string, cfg *UdpConfig) *UdpServer {
 	if cfg == nil {
 		cfg = &defaultUdpConfig
 	}
+	if cfg.Clients == 0 {
+		cfg.Clients = defaultUdpConfig.Clients
+	}
 	k := &UdpServer{
 		udpCfg:           cfg,
 		SocketServerImpl: NewSocketServer(listen),
@@ -34,7 +39,7 @@ func NewUdpServer(listen string, cfg *UdpConfig) *UdpServer {
 }
 
 func (k *UdpServer) Listen() (err error) {
-	k.listener, err = XDPListen(k.address)
+	k.listener, err = XDPListen(k.address, k.udpCfg.Clients)
 	if err != nil {
 		k.listener = nil
 		return err
@@ -137,7 +142,7 @@ func (c *UdpClient) Close() {
 		if c.status != ClTerminal {
 			c.status = ClClosed
 		}
-		c.out.Debug("UdpClient.Close")
+		c.out.Info("UdpClient.Close")
 		c.updateConn(nil)
 		c.private = nil
 		c.lock.Unlock()

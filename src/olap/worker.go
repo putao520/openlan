@@ -499,10 +499,10 @@ func (t *SocketWorker) dispatch(ev *WorkerEvent) {
 	switch ev.Type {
 	case EvSocConed:
 		if t.client != nil {
+			_ = t.toLogin(t.client)
 			libol.Go(func() {
 				t.Read(t.client)
 			})
-			_ = t.toLogin(t.client)
 		}
 	case EvSocSuccess:
 		_ = t.toNetwork(t.client)
@@ -543,6 +543,7 @@ func (t *SocketWorker) Read(client libol.SocketClient) {
 		data, err := client.ReadMsg()
 		if err != nil {
 			t.out.Error("SocketWorker.Read: %s", err)
+			client.Close()
 			break
 		}
 		if t.out.Has(libol.DEBUG) {

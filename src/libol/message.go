@@ -210,6 +210,9 @@ func NewControlMessage(action, opr string, body []byte) *ControlMessage {
 func (c *ControlMessage) Encode() *FrameMessage {
 	p := fmt.Sprintf("%s%s%s", c.action[:4], c.operator[:2], c.params)
 	frame := NewFrameMessage()
+	frame.control = c.control
+	frame.action = c.action + c.operator
+	frame.params = c.params
 	frame.Append(EthZero[:6])
 	frame.Append([]byte(p))
 	return frame
@@ -435,7 +438,7 @@ func (s *PacketMessagerImpl) Receive(conn net.Conn, max, min int) (*FrameMessage
 		return nil, err
 	}
 	if HasLog(DEBUG) {
-		Debug("PacketMessagerImpl.Receive: %s %x", conn.RemoteAddr(), frame.buffer)
+		Debug("PacketMessagerImpl.Receive: %s %x", conn.RemoteAddr(), frame.buffer[:n])
 	}
 	if n <= 4 {
 		return nil, NewErr("%s: small frame", conn.RemoteAddr())

@@ -15,14 +15,14 @@ type XDP struct {
 	accept     chan *XDPConn
 }
 
-func XDPListen(addr string) (net.Listener, error) {
+func XDPListen(addr string, clients int) (net.Listener, error) {
 	udpAddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {
 		return nil, err
 	}
 	x := &XDP{
 		address:  udpAddr,
-		sessions: NewSafeStrMap(1024),
+		sessions: NewSafeStrMap(clients),
 		accept:   make(chan *XDPConn, 2),
 		bufSize:  MaxBuf,
 	}
@@ -57,9 +57,17 @@ func (x *XDP) Loop() {
 				localAddr:  x.address,
 				readQueue:  make(chan []byte, 1024),
 				closed:     false,
+				onClose: func(conn *XDPConn) {
+					Info("XDP.Loop: onClose %s", conn)
+					x.sessions.Del(addr)
+				},
 			}
-			_ = x.sessions.Set(addr, newConn)
-			x.accept <- newConn
+			if err := x.sessions.Set(addr, newConn); err == nil {
+				x.accept <- newConn
+			} else {
+				Error("XDP.Loop: %s", err)
+				continue
+			}
 		}
 		newConn.toQueue(data[:n])
 	}
@@ -77,13 +85,6 @@ func (x *XDP) Close() error {
 	defer x.lock.Unlock()
 
 	_ = x.connection.Close()
-	// close all connection in sessions.
-	x.sessions.Iter(func(k string, v interface{}) {
-		conn, ok := v.(*XDPConn)
-		if ok {
-			_ = conn.Close()
-		}
-	})
 	return nil
 }
 
@@ -101,6 +102,7 @@ type XDPConn struct {
 	closed     bool
 	readDead   time.Time
 	writeDead  time.Time
+	onClose    func(conn *XDPConn)
 }
 
 func (c *XDPConn) toQueue(b []byte) {
@@ -162,6 +164,9 @@ func (c *XDPConn) Close() error {
 	if c.closed {
 		return nil
 	}
+	if c.onClose != nil {
+		c.onClose(c)
+	}
 	c.connection = nil
 	c.closed = true
 
@@ -196,4 +201,8 @@ func (c *XDPConn) SetWriteDeadline(t time.Time) error {
 	defer c.lock.Unlock()
 	c.writeDead = t
 	return nil
+}
+
+func (c *XDPConn) String() string {
+	return c.remoteAddr.String()
 }
