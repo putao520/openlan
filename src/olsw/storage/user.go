@@ -18,22 +18,19 @@ func (w *user) Init(size int) {
 }
 
 func (w *user) Add(user *models.User) {
-	libol.Debug("user.Add %v", *user)
-	name := user.Name
-	if name == "" {
-		name = user.Token
-	}
-	w.Users.Del(name)
-	_ = w.Users.Set(name, user)
+	libol.Debug("user.Add %v", user)
+	key := user.Id()
+	w.Users.Del(key)
+	_ = w.Users.Set(key, user)
 }
 
-func (w *user) Del(name string) {
-	libol.Debug("user.Add %s", name)
-	w.Users.Del(name)
+func (w *user) Del(key string) {
+	libol.Debug("user.Add %s", key)
+	w.Users.Del(key)
 }
 
-func (w *user) Get(name string) *models.User {
-	if v := w.Users.Get(name); v != nil {
+func (w *user) Get(key string) *models.User {
+	if v := w.Users.Get(key); v != nil {
 		return v.(*models.User)
 	}
 	return nil

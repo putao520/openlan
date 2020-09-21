@@ -15,6 +15,7 @@ type User struct {
 	Password string `json:"password"`
 	Token    string `json:"token"`
 	Alias    string `json:"alias"`
+	Network  string `json:"network"`
 }
 
 type Ctrl struct {

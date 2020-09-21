@@ -10,6 +10,7 @@ import (
 	"github.com/danieldin95/openlan-go/src/models"
 	"github.com/danieldin95/openlan-go/src/network"
 	"net"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -106,25 +107,29 @@ type SocketWorker struct {
 
 func NewSocketWorker(client libol.SocketClient, c *config.Point) *SocketWorker {
 	t := &SocketWorker{
-		client:  client,
-		user:    models.NewUser(c.Username, c.Password),
-		network: models.NewNetwork(c.Network, c.Interface.Address),
-		routes:  make(map[string]*models.Route, 64),
-		record:  libol.NewSafeStrInt64(),
-		done:    make(chan bool, 2),
-		ticker:  time.NewTicker(2 * time.Second),
-		keepalive: KeepAlive{
-			Interval: 15,
-			LastTime: time.Now().Unix(),
-		},
+		client:     client,
+		network:    models.NewNetwork(c.Network, c.Interface.Address),
+		routes:     make(map[string]*models.Route, 64),
+		record:     libol.NewSafeStrInt64(),
+		done:       make(chan bool, 2),
+		ticker:     time.NewTicker(2 * time.Second),
 		pinCfg:     c,
 		eventQueue: make(chan *WorkerEvent, 32),
 		writeQueue: make(chan *libol.FrameMessage, c.Queue.SockWr),
 		jobber:     make([]jobTimer, 0, 32),
 		out:        libol.NewSubLogger(c.Id()),
 	}
-	t.user.Alias = c.Alias
-	t.user.Network = c.Network
+	t.user = &models.User{
+		Alias:    c.Alias,
+		Name:     c.Username,
+		Password: c.Password,
+		Network:  c.Network,
+		System:   runtime.GOOS,
+	}
+	t.keepalive = KeepAlive{
+		Interval: 15,
+		LastTime: time.Now().Unix(),
+	}
 	return t
 }
 

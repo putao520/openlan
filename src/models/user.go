@@ -16,13 +16,13 @@ type User struct {
 	System   string `json:"system"`
 }
 
-func NewUser(name string, password string) (this *User) {
-	this = &User{
+func NewUser(name, network, password string) *User {
+	return &User{
 		Name:     name,
 		Password: password,
+		Network:  network,
 		System:   runtime.GOOS,
 	}
-	return
 }
 
 func (u *User) String() string {
@@ -34,15 +34,23 @@ func (u *User) Update() {
 	if u.Network == "" {
 		if strings.Contains(u.Name, "@") {
 			u.Network = strings.SplitN(u.Name, "@", 2)[1]
-		} else {
-			u.Network = "default"
 		}
 	}
-	if !strings.Contains(u.Name, "@") {
-		u.Name += "@" + u.Network
+	if u.Network == "" {
+		u.Network = "default"
+	}
+	if strings.Contains(u.Name, "@") {
+		u.Name = strings.SplitN(u.Name, "@", 2)[0]
 	}
 	u.Alias = strings.ToLower(u.Alias)
 	if u.UUID == "" {
 		u.UUID = u.Alias
 	}
+}
+
+func (u *User) Id() string {
+	if u.Name == "" {
+		return u.Token
+	}
+	return u.Name + "@" + u.Network
 }

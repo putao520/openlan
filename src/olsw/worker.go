@@ -47,11 +47,13 @@ func (w *NetworkWorker) String() string {
 func (w *NetworkWorker) Initialize() {
 	brCfg := w.cfg.Bridge
 	for _, pass := range w.cfg.Password {
-		user := models.User{
-			Name:     pass.Username + "@" + w.cfg.Name,
+		user := &models.User{
+			Name:     pass.Username,
 			Password: pass.Password,
+			Network:  w.cfg.Name,
 		}
-		storage.User.Add(&user)
+		user.Update()
+		storage.User.Add(user)
 	}
 	n := models.Network{
 		Name:    w.cfg.Name,

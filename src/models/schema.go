@@ -73,6 +73,7 @@ func NewUserSchema(u *User) schema.User {
 		Password: u.Password,
 		Token:    u.Token,
 		Alias:    u.Alias,
+		Network:  u.Network,
 	}
 }
 

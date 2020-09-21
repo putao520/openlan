@@ -65,8 +65,8 @@ func (p *Access) handleLogin(client libol.SocketClient, data []byte) error {
 		return libol.NewErr("Invalid json data.")
 	}
 	user.Update()
-	out.Info("Access.handleLogin: %s on %s", user.Name, user.Alias)
-	nowUser := storage.User.Get(user.Name)
+	out.Info("Access.handleLogin: %s on %s", user.Id(), user.Alias)
+	nowUser := storage.User.Get(user.Id())
 	if nowUser != nil {
 		if nowUser.Password == user.Password {
 			p.success++
