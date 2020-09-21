@@ -32,6 +32,7 @@ type Point struct {
 	SaveFile    string    `json:"-" yaml:"-"`
 	Queue       *Queue    `json:"queue"`
 	Terminal    string    `json:"-"`
+	Cert        Cert      `json:"cert"`
 }
 
 var pd = &Point{

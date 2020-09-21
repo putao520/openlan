@@ -1031,7 +1031,10 @@ func GetSocketClient(c *config.Point) libol.SocketClient {
 		return libol.NewWebClient(c.Connection, cfg)
 	case "wss":
 		cfg := &libol.WebConfig{
-			Ca:    &libol.WebCa{},
+			Cert: &libol.WebCert{
+				Insecure: c.Cert.Insecure,
+				RootCa:   c.Cert.CaFile,
+			},
 			Block: config.GetBlock(c.Crypt),
 			RdQus: c.Queue.SockRd,
 			WrQus: c.Queue.SockWr,
@@ -1039,7 +1042,10 @@ func GetSocketClient(c *config.Point) libol.SocketClient {
 		return libol.NewWebClient(c.Connection, cfg)
 	default:
 		cfg := &libol.TcpConfig{
-			Tls:   &tls.Config{InsecureSkipVerify: true},
+			Tls: &tls.Config{
+				InsecureSkipVerify: c.Cert.Insecure,
+				RootCAs:            config.GetTlsCertPool(c.Cert),
+			},
 			Block: config.GetBlock(c.Crypt),
 			RdQus: c.Queue.SockRd,
 			WrQus: c.Queue.SockWr,

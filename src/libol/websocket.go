@@ -2,8 +2,10 @@ package libol
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"github.com/xtaci/kcp-go/v5"
 	"golang.org/x/net/websocket"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"time"
@@ -25,13 +27,15 @@ func (ws *wsConn) RemoteAddr() net.Addr {
 	return nil
 }
 
-type WebCa struct {
-	CaKey string
-	CaCrt string
+type WebCert struct {
+	Key      string
+	Crt      string
+	RootCa   string
+	Insecure bool
 }
 
 type WebConfig struct {
-	Ca      *WebCa
+	Cert    *WebCert
 	Block   kcp.BlockCrypt
 	Timeout time.Duration // ns
 	RdQus   int           // per frames
@@ -57,7 +61,7 @@ func NewWebServer(listen string, cfg *WebConfig) *WebServer {
 }
 
 func (t *WebServer) Listen() (err error) {
-	if t.webCfg.Ca != nil {
+	if t.webCfg.Cert != nil {
 		Info("WebServer.Listen: wss://%s", t.address)
 	} else {
 		Info("WebServer.Listen: ws://%s", t.address)
@@ -99,14 +103,14 @@ func (t *WebServer) Accept() {
 		MaxInt: 30 * time.Second,
 	}
 	promise.Done(func() error {
-		if t.webCfg.Ca == nil {
+		if t.webCfg.Cert == nil {
 			if err := t.listener.ListenAndServe(); err != nil {
 				Error("WebServer.Accept on %s: %s", t.address, err)
 				return err
 			}
 		} else {
-			ca := t.webCfg.Ca
-			if err := t.listener.ListenAndServeTLS(ca.CaCrt, ca.CaKey); err != nil {
+			ca := t.webCfg.Cert
+			if err := t.listener.ListenAndServeTLS(ca.Crt, ca.Key); err != nil {
 				Error("WebServer.Accept on %s: %s", t.address, err)
 				return err
 			}
@@ -153,23 +157,42 @@ func NewWebClientFromConn(conn net.Conn, cfg *WebConfig) *WebClient {
 	return t
 }
 
+func (t *WebClient) GetCertPool(ca string) *x509.CertPool {
+	caCert, err := ioutil.ReadFile(ca)
+	if err != nil {
+		Error("WebClient.GetCertPool: %s", err)
+		return nil
+	}
+	pool := x509.NewCertPool()
+	if !pool.AppendCertsFromPEM(caCert) {
+		Warn("WebClient.GetCertPool: invalid cert")
+	}
+	return pool
+}
+
 func (t *WebClient) Connect() error {
 	if !t.Retry() {
 		return nil
 	}
-	var url string
-	if t.webCfg.Ca != nil {
+	var err error
+	var config *websocket.Config
+	if t.webCfg.Cert != nil {
 		t.out.Info("WebClient.Connect: wss://%s", t.address)
-		url = "wss://" + t.address
+		url := "wss://" + t.address
+		if config, err = websocket.NewConfig(url, url); err != nil {
+			return err
+		}
+		config.TlsConfig = &tls.Config{
+			InsecureSkipVerify: t.webCfg.Cert.Insecure,
+			RootCAs:            t.GetCertPool(t.webCfg.Cert.RootCa),
+		}
 	} else {
 		t.out.Info("WebClient.Connect: ws://%s", t.address)
-		url = "ws://" + t.address
+		url := "ws://" + t.address
+		if config, err = websocket.NewConfig(url, url); err != nil {
+			return err
+		}
 	}
-	config, err := websocket.NewConfig(url, url)
-	if err != nil {
-		return err
-	}
-	config.TlsConfig = &tls.Config{InsecureSkipVerify: true}
 	conn, err := websocket.DialConfig(config)
 	if err != nil {
 		return err

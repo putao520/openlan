@@ -2,9 +2,11 @@ package config
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/xtaci/kcp-go/v5"
+	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -88,15 +90,52 @@ func GetAlias() string {
 	return libol.GenToken(13)
 }
 
-func GetTlsCfg(cfg Cert) *tls.Config {
-	if cfg.KeyFile != "" && cfg.CrtFile != "" {
-		cer, err := tls.LoadX509KeyPair(cfg.CrtFile, cfg.KeyFile)
-		if err != nil {
-			libol.Error("NewSwitch: %s", err)
-		}
-		return &tls.Config{Certificates: []tls.Certificate{cer}}
+type Cert struct {
+	Dir      string `json:"dir"`
+	CrtFile  string `json:"crt"`
+	KeyFile  string `json:"key"`
+	CaFile   string `json:"ca"`
+	Insecure bool   `json:"insecure"`
+}
+
+func (c *Cert) Right() {
+	if c.Dir == "" {
+		return
 	}
-	return nil
+	if c.CrtFile == "" {
+		c.CrtFile = fmt.Sprintf("%s/crt.pem", c.Dir)
+	}
+	if c.KeyFile == "" {
+		c.KeyFile = fmt.Sprintf("%s/private.key", c.Dir)
+	}
+}
+
+func GetTlsCfg(cfg Cert) *tls.Config {
+	if cfg.KeyFile == "" || cfg.CrtFile == "" {
+		return nil
+	}
+	cer, err := tls.LoadX509KeyPair(cfg.CrtFile, cfg.KeyFile)
+	if err != nil {
+		libol.Error("GetTlsCfg: %s", err)
+		return nil
+	}
+	return &tls.Config{Certificates: []tls.Certificate{cer}}
+}
+
+func GetTlsCertPool(cfg Cert) *x509.CertPool {
+	if cfg.CaFile == "" {
+		return nil
+	}
+	caCert, err := ioutil.ReadFile(cfg.CaFile)
+	if err != nil {
+		libol.Error("GetTlsCertPool: %s", err)
+		return nil
+	}
+	pool := x509.NewCertPool()
+	if !pool.AppendCertsFromPEM(caCert) {
+		libol.Warn("GetTlsCertPool: invalid cert")
+	}
+	return pool
 }
 
 func GetBlock(cfg *Crypt) kcp.BlockCrypt {

@@ -79,24 +79,6 @@ func (n *Network) Right() {
 	}
 }
 
-type Cert struct {
-	Dir     string `json:"dir"`
-	CrtFile string `json:"crt"`
-	KeyFile string `json:"key"`
-}
-
-func (c *Cert) Right() {
-	if c.Dir == "" {
-		return
-	}
-	if c.CrtFile == "" {
-		c.CrtFile = fmt.Sprintf("%s/crt.pem", c.Dir)
-	}
-	if c.KeyFile == "" {
-		c.KeyFile = fmt.Sprintf("%s/private.key", c.Dir)
-	}
-}
-
 type FlowRule struct {
 	Table    string `json:"table"`
 	Chain    string `json:"chain"`

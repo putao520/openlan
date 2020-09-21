@@ -46,9 +46,9 @@ func GetSocketServer(c config.Switch) libol.SocketServer {
 		return libol.NewWebServer(c.Listen, cfg)
 	case "wss":
 		cfg := &libol.WebConfig{
-			Ca: &libol.WebCa{
-				CaCrt: c.Cert.CrtFile,
-				CaKey: c.Cert.KeyFile,
+			Cert: &libol.WebCert{
+				Crt: c.Cert.CrtFile,
+				Key: c.Cert.KeyFile,
 			},
 			Block:   config.GetBlock(c.Crypt),
 			Timeout: time.Duration(c.Timeout) * time.Second,

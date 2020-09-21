@@ -191,7 +191,7 @@
                         <td>{{ prettyTime .AliveTime }}</td>
                         <td>{{ .Device }}.{{ .Network }}</td>
                         <td>{{ .Alias }}</td>
-                        <td><a href="https://{{ getIpAddr .Address }}:10000">{{ .Address }}</a></td>
+                        <td>{{ .Address }}</td>
                         <td>{{ .User }}</td>
                         <td>{{ prettyBytes .RxBytes }}/{{ prettyBytes .TxBytes }}</td>
                         <td><span class="{{ .State }}">{{ .State }}</span></td>
