@@ -1002,55 +1002,59 @@ type PrefixRule struct {
 	NextHop     net.IP
 }
 
-func GetSocketClient(c *config.Point) libol.SocketClient {
-	switch c.Protocol {
+func GetSocketClient(p *config.Point) libol.SocketClient {
+	switch p.Protocol {
 	case "kcp":
-		cfg := &libol.KcpConfig{
-			Block: config.GetBlock(c.Crypt),
+		c := &libol.KcpConfig{
+			Block: config.GetBlock(p.Crypt),
 		}
-		return libol.NewKcpClient(c.Connection, cfg)
+		return libol.NewKcpClient(p.Connection, c)
 	case "tcp":
-		cfg := &libol.TcpConfig{
-			Block: config.GetBlock(c.Crypt),
-			RdQus: c.Queue.SockRd,
-			WrQus: c.Queue.SockWr,
+		c := &libol.TcpConfig{
+			Block: config.GetBlock(p.Crypt),
+			RdQus: p.Queue.SockRd,
+			WrQus: p.Queue.SockWr,
 		}
-		return libol.NewTcpClient(c.Connection, cfg)
+		return libol.NewTcpClient(p.Connection, c)
 	case "udp":
-		cfg := &libol.UdpConfig{
-			Block:   config.GetBlock(c.Crypt),
-			Timeout: time.Duration(c.Timeout) * time.Second,
+		c := &libol.UdpConfig{
+			Block:   config.GetBlock(p.Crypt),
+			Timeout: time.Duration(p.Timeout) * time.Second,
 		}
-		return libol.NewUdpClient(c.Connection, cfg)
+		return libol.NewUdpClient(p.Connection, c)
 	case "ws":
-		cfg := &libol.WebConfig{
-			Block: config.GetBlock(c.Crypt),
-			RdQus: c.Queue.SockRd,
-			WrQus: c.Queue.SockWr,
+		c := &libol.WebConfig{
+			Block: config.GetBlock(p.Crypt),
+			RdQus: p.Queue.SockRd,
+			WrQus: p.Queue.SockWr,
 		}
-		return libol.NewWebClient(c.Connection, cfg)
+		return libol.NewWebClient(p.Connection, c)
 	case "wss":
-		cfg := &libol.WebConfig{
-			Cert: &libol.WebCert{
-				Insecure: c.Cert.Insecure,
-				RootCa:   c.Cert.CaFile,
-			},
-			Block: config.GetBlock(c.Crypt),
-			RdQus: c.Queue.SockRd,
-			WrQus: c.Queue.SockWr,
+		c := &libol.WebConfig{
+			Block: config.GetBlock(p.Crypt),
+			RdQus: p.Queue.SockRd,
+			WrQus: p.Queue.SockWr,
 		}
-		return libol.NewWebClient(c.Connection, cfg)
+		if p.Cert != nil {
+			c.Cert = &libol.WebCert{
+				Insecure: p.Cert.Insecure,
+				RootCa:   p.Cert.CaFile,
+			}
+		}
+		return libol.NewWebClient(p.Connection, c)
 	default:
-		cfg := &libol.TcpConfig{
-			Tls: &tls.Config{
-				InsecureSkipVerify: c.Cert.Insecure,
-				RootCAs:            config.GetTlsCertPool(c.Cert),
-			},
-			Block: config.GetBlock(c.Crypt),
-			RdQus: c.Queue.SockRd,
-			WrQus: c.Queue.SockWr,
+		c := &libol.TcpConfig{
+			Block: config.GetBlock(p.Crypt),
+			RdQus: p.Queue.SockRd,
+			WrQus: p.Queue.SockWr,
 		}
-		return libol.NewTcpClient(c.Connection, cfg)
+		if p.Cert != nil {
+			c.Tls = &tls.Config{
+				InsecureSkipVerify: p.Cert.Insecure,
+				RootCAs:            p.Cert.GetCertPool(),
+			}
+		}
+		return libol.NewTcpClient(p.Connection, c)
 	}
 }
 

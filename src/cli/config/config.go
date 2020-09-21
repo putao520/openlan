@@ -110,11 +110,11 @@ func (c *Cert) Right() {
 	}
 }
 
-func GetTlsCfg(cfg Cert) *tls.Config {
-	if cfg.KeyFile == "" || cfg.CrtFile == "" {
+func (c *Cert) GetTlsCfg() *tls.Config {
+	if c.KeyFile == "" || c.CrtFile == "" {
 		return nil
 	}
-	cer, err := tls.LoadX509KeyPair(cfg.CrtFile, cfg.KeyFile)
+	cer, err := tls.LoadX509KeyPair(c.CrtFile, c.KeyFile)
 	if err != nil {
 		libol.Error("GetTlsCfg: %s", err)
 		return nil
@@ -122,11 +122,11 @@ func GetTlsCfg(cfg Cert) *tls.Config {
 	return &tls.Config{Certificates: []tls.Certificate{cer}}
 }
 
-func GetTlsCertPool(cfg Cert) *x509.CertPool {
-	if cfg.CaFile == "" {
+func (c *Cert) GetCertPool() *x509.CertPool {
+	if c.CaFile == "" {
 		return nil
 	}
-	caCert, err := ioutil.ReadFile(cfg.CaFile)
+	caCert, err := ioutil.ReadFile(c.CaFile)
 	if err != nil {
 		libol.Error("GetTlsCertPool: %s", err)
 		return nil

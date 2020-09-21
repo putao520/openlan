@@ -14,59 +14,61 @@ import (
 	"time"
 )
 
-func GetSocketServer(c config.Switch) libol.SocketServer {
-	switch c.Protocol {
+func GetSocketServer(s config.Switch) libol.SocketServer {
+	switch s.Protocol {
 	case "kcp":
-		cfg := &libol.KcpConfig{
-			Block:   config.GetBlock(c.Crypt),
-			Timeout: time.Duration(c.Timeout) * time.Second,
+		c := &libol.KcpConfig{
+			Block:   config.GetBlock(s.Crypt),
+			Timeout: time.Duration(s.Timeout) * time.Second,
 		}
-		return libol.NewKcpServer(c.Listen, cfg)
+		return libol.NewKcpServer(s.Listen, c)
 	case "tcp":
-		cfg := &libol.TcpConfig{
-			Block:   config.GetBlock(c.Crypt),
-			Timeout: time.Duration(c.Timeout) * time.Second,
-			RdQus:   c.Queue.SockRd,
-			WrQus:   c.Queue.SockWr,
+		c := &libol.TcpConfig{
+			Block:   config.GetBlock(s.Crypt),
+			Timeout: time.Duration(s.Timeout) * time.Second,
+			RdQus:   s.Queue.SockRd,
+			WrQus:   s.Queue.SockWr,
 		}
-		return libol.NewTcpServer(c.Listen, cfg)
+		return libol.NewTcpServer(s.Listen, c)
 	case "udp":
-		cfg := &libol.UdpConfig{
-			Block:   config.GetBlock(c.Crypt),
-			Timeout: time.Duration(c.Timeout) * time.Second,
+		c := &libol.UdpConfig{
+			Block:   config.GetBlock(s.Crypt),
+			Timeout: time.Duration(s.Timeout) * time.Second,
 		}
-		return libol.NewUdpServer(c.Listen, cfg)
+		return libol.NewUdpServer(s.Listen, c)
 	case "ws":
-		cfg := &libol.WebConfig{
-			Block:   config.GetBlock(c.Crypt),
-			Timeout: time.Duration(c.Timeout) * time.Second,
-			RdQus:   c.Queue.SockRd,
-			WrQus:   c.Queue.SockWr,
+		c := &libol.WebConfig{
+			Block:   config.GetBlock(s.Crypt),
+			Timeout: time.Duration(s.Timeout) * time.Second,
+			RdQus:   s.Queue.SockRd,
+			WrQus:   s.Queue.SockWr,
 		}
-		return libol.NewWebServer(c.Listen, cfg)
+		return libol.NewWebServer(s.Listen, c)
 	case "wss":
-		cfg := &libol.WebConfig{
-			Cert: &libol.WebCert{
-				Crt: c.Cert.CrtFile,
-				Key: c.Cert.KeyFile,
-			},
-			Block:   config.GetBlock(c.Crypt),
-			Timeout: time.Duration(c.Timeout) * time.Second,
-			RdQus:   c.Queue.SockRd,
-			WrQus:   c.Queue.SockWr,
+		c := &libol.WebConfig{
+			Block:   config.GetBlock(s.Crypt),
+			Timeout: time.Duration(s.Timeout) * time.Second,
+			RdQus:   s.Queue.SockRd,
+			WrQus:   s.Queue.SockWr,
 		}
-		return libol.NewWebServer(c.Listen, cfg)
+		if s.Cert != nil {
+			c.Cert = &libol.WebCert{
+				Crt: s.Cert.CrtFile,
+				Key: s.Cert.KeyFile,
+			}
+		}
+		return libol.NewWebServer(s.Listen, c)
 	default:
-		cfg := &libol.TcpConfig{
-			Block:   config.GetBlock(c.Crypt),
-			Timeout: time.Duration(c.Timeout) * time.Second,
-			RdQus:   c.Queue.SockRd,
-			WrQus:   c.Queue.SockWr,
+		c := &libol.TcpConfig{
+			Block:   config.GetBlock(s.Crypt),
+			Timeout: time.Duration(s.Timeout) * time.Second,
+			RdQus:   s.Queue.SockRd,
+			WrQus:   s.Queue.SockWr,
 		}
-		if c.Cert != nil {
-			cfg.Tls = config.GetTlsCfg(*c.Cert)
+		if s.Cert != nil {
+			c.Tls = s.Cert.GetTlsCfg()
 		}
-		return libol.NewTcpServer(c.Listen, cfg)
+		return libol.NewTcpServer(s.Listen, c)
 	}
 }
 
