@@ -193,13 +193,18 @@ func (v *Switch) initHook() {
 	// Append request process
 	v.apps.Request = app.NewWithRequest(v, v.cfg)
 	v.hooks = append(v.hooks, v.apps.Request.OnFrame)
+
+	inspect := ""
+	for _, v := range v.cfg.Inspect {
+		inspect += v
+	}
 	// Check whether inspect neighbor
-	if strings.Contains(v.cfg.Inspect, "neighbor") {
+	if strings.Contains(inspect, "neighbor") {
 		v.apps.Neighbor = app.NewNeighbors(v, v.cfg)
 		v.hooks = append(v.hooks, v.apps.Neighbor.OnFrame)
 	}
 	// Check whether inspect online flow by five-tuple.
-	if strings.Contains(v.cfg.Inspect, "online") {
+	if strings.Contains(inspect, "online") {
 		v.apps.OnLines = app.NewOnline(v, v.cfg)
 		v.hooks = append(v.hooks, v.apps.OnLines.OnFrame)
 	}

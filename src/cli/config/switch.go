@@ -188,7 +188,7 @@ type Switch struct {
 	PProf     string     `json:"pprof"`
 	Network   []*Network `json:"network,omitempty"`
 	FireWall  []FlowRule `json:"firewall,omitempty"`
-	Inspect   string     `json:"inspect"`
+	Inspect   []string   `json:"inspect"`
 	Queue     *Queue     `json:"queue"`
 	ConfDir   string     `json:"-" yaml:"-"`
 	TokenFile string     `json:"-" yaml:"-"`
@@ -196,7 +196,7 @@ type Switch struct {
 }
 
 var sd = &Switch{
-	Timeout: 5 * 60,
+	Timeout: 120,
 	Log: Log{
 		File:    "./openlan-switch.log",
 		Verbose: libol.INFO,

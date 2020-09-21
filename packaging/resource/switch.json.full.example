@@ -74,5 +74,9 @@
         }
       ]
     }
+  ],
+  "inspect": [
+    "neighbor",
+    "online"
   ]
 }
