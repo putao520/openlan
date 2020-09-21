@@ -6,33 +6,32 @@ import (
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
 	"github.com/danieldin95/openlan-go/src/olsw/storage"
-	"strings"
 )
 
-type PointAuth struct {
+type Access struct {
 	success int
 	failed  int
 	master  Master
 }
 
-func NewPointAuth(m Master, c config.Switch) *PointAuth {
-	return &PointAuth{
+func NewAccess(m Master, c config.Switch) *Access {
+	return &Access{
 		master: m,
 	}
 }
 
-func (p *PointAuth) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) error {
+func (p *Access) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) error {
 	out := client.Out()
 	if out.Has(libol.LOG) {
-		out.Log("PointAuth.OnFrame %s.", frame)
+		out.Log("Access.OnFrame %s.", frame)
 	}
 	if frame.IsControl() {
 		action, params := frame.CmdAndParams()
-		out.Debug("PointAuth.OnFrame: %s", action)
+		out.Debug("Access.OnFrame: %s", action)
 		switch action {
 		case libol.LoginReq:
 			if err := p.handleLogin(client, params); err != nil {
-				out.Error("PointAuth.OnFrame: %s", err)
+				out.Error("Access.OnFrame: %s", err)
 				m := libol.NewControlFrame(libol.LoginResp, []byte(err.Error()))
 				_ = client.WriteMsg(m)
 				//client.Close()
@@ -48,42 +47,31 @@ func (p *PointAuth) OnFrame(client libol.SocketClient, frame *libol.FrameMessage
 	}
 	//Dropped all frames if not auth.
 	if !client.Have(libol.ClAuth) {
-		out.Debug("PointAuth.OnFrame: unAuth")
+		out.Debug("Access.OnFrame: unAuth")
 		return libol.NewErr("unAuth client.")
 	}
 	return nil
 }
 
-func (p *PointAuth) handleLogin(client libol.SocketClient, data []byte) error {
+func (p *Access) handleLogin(client libol.SocketClient, data []byte) error {
 	out := client.Out()
-	out.Debug("PointAuth.handleLogin: %s", data)
+	out.Debug("Access.handleLogin: %s", data)
 	if client.Have(libol.ClAuth) {
-		out.Warn("PointAuth.handleLogin: already auth")
+		out.Warn("Access.handleLogin: already auth")
 		return nil
 	}
-	user := models.NewUser("", "")
-	if err := json.Unmarshal([]byte(data), user); err != nil {
+	user := &models.User{}
+	if err := json.Unmarshal(data, user); err != nil {
 		return libol.NewErr("Invalid json data.")
 	}
-	// to support lower version
-	if user.Network == "" {
-		if strings.Contains(user.Name, "@") {
-			user.Network = strings.SplitN(user.Name, "@", 2)[1]
-		} else {
-			user.Network = "default"
-		}
-	}
-	name := user.Name
-	if !strings.Contains(name, "@") {
-		name = name + "@" + user.Network
-	}
-	out.Info("PointAuth.handleLogin: %s on %s", name, user.Alias)
-	nowUser := storage.User.Get(name)
+	user.Update()
+	out.Info("Access.handleLogin: %s on %s", user.Name, user.Alias)
+	nowUser := storage.User.Get(user.Name)
 	if nowUser != nil {
 		if nowUser.Password == user.Password {
 			p.success++
 			client.SetStatus(libol.ClAuth)
-			out.Info("PointAuth.handleLogin: success")
+			out.Info("Access.handleLogin: success")
 			_ = p.onAuth(client, user)
 			return nil
 		}
@@ -93,29 +81,22 @@ func (p *PointAuth) handleLogin(client libol.SocketClient, data []byte) error {
 	return libol.NewErr("Auth failed.")
 }
 
-func (p *PointAuth) onAuth(client libol.SocketClient, user *models.User) error {
+func (p *Access) onAuth(client libol.SocketClient, user *models.User) error {
 	out := client.Out()
 	if !client.Have(libol.ClAuth) {
 		return libol.NewErr("not auth.")
 	}
-	out.Info("PointAuth.onAuth")
+	out.Info("Access.onAuth")
 	dev, err := p.master.NewTap(user.Network)
 	if err != nil {
 		return err
 	}
-	alias := strings.ToLower(user.Alias)
-	out.Info("PointAuth.onAuth: on >>> %s <<<", dev.Name())
+	out.Info("Access.onAuth: on >>> %s <<<", dev.Name())
 	m := models.NewPoint(client, dev)
-	m.User = user.Name
-	m.Alias = alias
-	m.UUID = user.UUID
-	m.Network = user.Network
-	if m.UUID == "" {
-		m.UUID = alias
-	}
+	m.SetUser(user)
 	// free point has same uuid.
 	if om := storage.Point.GetByUUID(m.UUID); om != nil {
-		out.Info("PointAuth.onAuth: OffClient %s", om.Client)
+		out.Info("Access.onAuth: OffClient %s", om.Client)
 		p.master.OffClient(om.Client)
 	}
 	client.SetPrivate(m)
@@ -132,6 +113,6 @@ func (p *PointAuth) onAuth(client libol.SocketClient, user *models.User) error {
 	return nil
 }
 
-func (p *PointAuth) Stats() (success, failed int) {
+func (p *Access) Stats() (success, failed int) {
 	return p.success, p.failed
 }

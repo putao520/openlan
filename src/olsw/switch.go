@@ -71,7 +71,7 @@ func GetSocketServer(c config.Switch) libol.SocketServer {
 }
 
 type Apps struct {
-	Auth     *app.PointAuth
+	Auth     *app.Access
 	Request  *app.WithRequest
 	Neighbor *app.Neighbors
 	OnLines  *app.Online
@@ -188,7 +188,7 @@ func (v *Switch) initNetwork() {
 
 func (v *Switch) initHook() {
 	// Append accessed auth for point
-	v.apps.Auth = app.NewPointAuth(v, v.cfg)
+	v.apps.Auth = app.NewAccess(v, v.cfg)
 	v.hooks = append(v.hooks, v.apps.Auth.OnFrame)
 	// Append request process
 	v.apps.Request = app.NewWithRequest(v, v.cfg)

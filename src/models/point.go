@@ -16,17 +16,16 @@ type Point struct {
 	IfName  string             `json:"device"`
 	Client  libol.SocketClient `json:"-"`
 	Device  network.Taper      `json:"-"`
+	System  string             `json:"system"`
 }
 
 func NewPoint(c libol.SocketClient, d network.Taper) (w *Point) {
-	w = &Point{
+	return &Point{
 		Alias:  "",
 		Server: c.LocalAddr(),
 		Client: c,
 		Device: d,
 	}
-
-	return
 }
 
 func (p *Point) Update() *Point {
@@ -40,4 +39,12 @@ func (p *Point) Update() *Point {
 		p.IfName = device.Name()
 	}
 	return p
+}
+
+func (p *Point) SetUser(user *User) {
+	p.User = user.Name
+	p.UUID = user.UUID
+	p.Network = user.Network
+	p.System = user.System
+	p.Alias = user.Alias
 }

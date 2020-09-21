@@ -14,4 +14,5 @@ type Point struct {
 	ErrPkt    int64  `json:"errors"`
 	State     string `json:"state"`
 	AliveTime int64  `json:"aliveTime"`
+	System    string `json:"system"`
 }

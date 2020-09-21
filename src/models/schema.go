@@ -21,6 +21,7 @@ func NewPointSchema(p *Point) schema.Point {
 		State:     client.Status().String(),
 		Network:   p.Network,
 		AliveTime: client.AliveTime(),
+		System:    p.System,
 	}
 }
 

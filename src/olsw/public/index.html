@@ -129,43 +129,6 @@
             </table>
         </div>
     </div>
-    <div class="point">
-        <div class="panel-header">
-            <p>
-                <span>The point accessed to, and total </span><span>{{ len .Points }}</span>.
-            </p>
-        </div>
-        <div class="panel-body">
-            <table class="table-display">
-                <thead>
-                <tr>
-                    <th>UUID</th>
-                    <th>Alive</th>
-                    <th>Network</th>
-                    <th>Alias</th>
-                    <th>Connection</th>
-                    <th>User</th>
-                    <th>r/t|Traffic</th>
-                    <th>State</th>
-                </tr>
-                </thead>
-                <tbody>
-                {{ range .Points }}
-                <tr>
-                    <td>{{ .UUID }}</td>
-                    <td>{{ prettyTime .AliveTime }}</td>
-                    <td>{{ .Device }}.{{ .Network }}</td>
-                    <td>{{ .Alias }}</td>
-                    <td><a href="https://{{ getIpAddr .Address }}:10000">{{ .Address }}</a></td>
-                    <td>{{ .User }}</td>
-                    <td>{{ prettyBytes .RxBytes }}/{{ prettyBytes .TxBytes }}</td>
-                    <td><span class="{{ .State }}">{{ .State }}</span></td>
-                </tr>
-                {{ end }}
-                </tbody>
-            </table>
-        </div>
-    </div>
     <div class="link">
         <div class="panel-header">
             <div>
@@ -193,6 +156,43 @@
                         <td>{{ .Device }}.{{ .Network }}</td>
                         <td>{{ .User }}</td>
                         <td><a href="https://{{ getIpAddr .Address }}:10000">{{ .Address }}</a></td>
+                        <td>{{ prettyBytes .RxBytes }}/{{ prettyBytes .TxBytes }}</td>
+                        <td><span class="{{ .State }}">{{ .State }}</span></td>
+                    </tr>
+                {{ end }}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="point">
+        <div class="panel-header">
+            <p>
+                <span>The point accessed to, and total </span><span>{{ len .Points }}</span>.
+            </p>
+        </div>
+        <div class="panel-body">
+            <table class="table-display">
+                <thead>
+                <tr>
+                    <th>UUID</th>
+                    <th>Alive</th>
+                    <th>Network</th>
+                    <th>Alias</th>
+                    <th>Connection</th>
+                    <th>User</th>
+                    <th>r/t|Traffic</th>
+                    <th>State</th>
+                </tr>
+                </thead>
+                <tbody>
+                {{ range .Points }}
+                    <tr>
+                        <td>{{ .UUID }}</td>
+                        <td>{{ prettyTime .AliveTime }}</td>
+                        <td>{{ .Device }}.{{ .Network }}</td>
+                        <td>{{ .Alias }}</td>
+                        <td><a href="https://{{ getIpAddr .Address }}:10000">{{ .Address }}</a></td>
+                        <td>{{ .User }}</td>
                         <td>{{ prettyBytes .RxBytes }}/{{ prettyBytes .TxBytes }}</td>
                         <td><span class="{{ .State }}">{{ .State }}</span></td>
                     </tr>

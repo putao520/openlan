@@ -12,19 +12,19 @@
   "proxy": {
     "socks": [
       {
-        "listen": "192.168.100.40:11080"
+        "listen": "0.0.0.0:11080"
       }
     ],
     "http": [
       {
-        "listen": "192.168.100.40:11082",
+        "listen": "0.0.0.0:11082",
         "auth": {
           "username": "hi",
           "password": "12345^"
         }
       },
       {
-        "listen": "192.168.100.40:11083",
+        "listen": "0.0.0.0:11083",
         "auth": {
           "username": "hi",
           "password": "12345^"
