@@ -35,6 +35,33 @@ func XDPListen(addr string, clients int) (net.Listener, error) {
 	return x, nil
 }
 
+func (x *XDP) Recv(udpAddr *net.UDPAddr, data []byte) error {
+	// dispatch to XDPConn and new accept
+	addr := udpAddr.String()
+	if obj, ok := x.sessions.GetEx(addr); ok {
+		conn := obj.(*XDPConn)
+		conn.toQueue(data)
+		return nil
+	}
+	conn := &XDPConn{
+		connection: x.connection,
+		remoteAddr: udpAddr,
+		localAddr:  x.address,
+		readQueue:  make(chan []byte, 1024),
+		closed:     false,
+		onClose: func(conn *XDPConn) {
+			Info("XDP.Recv: onClose %s", conn)
+			x.sessions.Del(addr)
+		},
+	}
+	if err := x.sessions.Set(addr, conn); err != nil {
+		return NewErr("session.Set: %s", err)
+	}
+	x.accept <- conn
+	conn.toQueue(data)
+	return nil
+}
+
 // Loop forever
 func (x *XDP) Loop() {
 	for {
@@ -44,32 +71,9 @@ func (x *XDP) Loop() {
 			Error("XDP.Loop %s", err)
 			break
 		}
-		// dispatch to XDPConn and new accept
-		var newConn *XDPConn
-		addr := udpAddr.String()
-		obj, ok := x.sessions.GetEx(addr)
-		if ok {
-			newConn = obj.(*XDPConn)
-		} else {
-			newConn = &XDPConn{
-				connection: x.connection,
-				remoteAddr: udpAddr,
-				localAddr:  x.address,
-				readQueue:  make(chan []byte, 1024),
-				closed:     false,
-				onClose: func(conn *XDPConn) {
-					Info("XDP.Loop: onClose %s", conn)
-					x.sessions.Del(addr)
-				},
-			}
-			if err := x.sessions.Set(addr, newConn); err == nil {
-				x.accept <- newConn
-			} else {
-				Error("XDP.Loop: %s", err)
-				continue
-			}
+		if err := x.Recv(udpAddr, data[:n]); err != nil {
+			Warn("XDP.Loop: %s", err)
 		}
-		newConn.toQueue(data[:n])
 	}
 }
 
