@@ -130,6 +130,10 @@ func (c *Cert) GetCertPool() *x509.CertPool {
 	if c.CaFile == "" {
 		return nil
 	}
+	if err := libol.FileExist(c.CaFile); err != nil {
+		libol.Debug("Cert.GetTlsCertPool: %s not such file", c.CaFile)
+		return nil
+	}
 	caCert, err := ioutil.ReadFile(c.CaFile)
 	if err != nil {
 		libol.Warn("Cert.GetTlsCertPool: %s", err)
