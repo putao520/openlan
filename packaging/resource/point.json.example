@@ -3,5 +3,8 @@
   "connection": "who.openlan.net",
   "username": "hi",
   "password": "12345",
-  "protocol": "tls"
+  "protocol": "tls",
+  "cert": {
+    "insecure": true
+  }
 }

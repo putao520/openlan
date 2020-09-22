@@ -3,7 +3,7 @@ package storage
 import (
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
-	pp "github.com/danieldin95/openlan-go/src/olap"
+	"github.com/danieldin95/openlan-go/src/olap"
 )
 
 type link struct {
@@ -18,7 +18,7 @@ func (p *link) Init(size int) {
 	p.Links = libol.NewSafeStrMap(size)
 }
 
-func (p *link) Add(m *pp.Point) {
+func (p *link) Add(m *olap.Point) {
 	link := &models.Point{
 		Alias:   "",
 		User:    m.User(),

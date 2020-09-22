@@ -3,7 +3,7 @@ package api
 import (
 	"github.com/danieldin95/openlan-go/src/olctl/ctrlc"
 	"github.com/danieldin95/openlan-go/src/olctl/schema"
-	schema1 "github.com/danieldin95/openlan-go/src/olsw/schema"
+	olsws "github.com/danieldin95/openlan-go/src/olsw/schema"
 	"github.com/gorilla/mux"
 	"net/http"
 )
@@ -34,7 +34,7 @@ func (g Graph) GET(w http.ResponseWriter, r *http.Request) {
 	i := 0
 	nn := make(map[string]*schema.Node, 32)
 	ctrlc.Storager.Switch.Iter(func(k string, v interface{}) {
-		s, ok := v.(*schema1.Switch)
+		s, ok := v.(*olsws.Switch)
 		if ok {
 			node := &schema.Node{
 				Name:       s.Alias,
@@ -48,7 +48,7 @@ func (g Graph) GET(w http.ResponseWriter, r *http.Request) {
 		}
 	})
 	ctrlc.Storager.Point.Iter(func(k string, v interface{}) {
-		p, ok := v.(*schema1.Point)
+		p, ok := v.(*olsws.Point)
 		if !ok {
 			return
 		}

@@ -1,9 +1,9 @@
 package olap
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/chzyer/readline"
+	"github.com/danieldin95/openlan-go/src/libol"
 	"io"
 	"strings"
 )
@@ -61,32 +61,41 @@ func (t *Terminal) CmdEdit(args string) {
 func (t *Terminal) CmdShow(args string) {
 	switch args {
 	case "record":
-		fmt.Printf("%-15s: %v\n", "Record", t.Pointer.Record())
+		v := t.Pointer.Record()
+		if out, err := libol.Marshal(v, true); err == nil {
+			fmt.Printf("%s\n", out)
+		}
 	case "statistics":
 		if c := t.Pointer.Client(); c != nil {
-			fmt.Printf("%-15s: %v\n", "Statistics", c.Statistics())
+			v := c.Statistics()
+			if out, err := libol.Marshal(v, true); err == nil {
+				fmt.Printf("%s\n", out)
+			}
 		}
 	case "config":
 		cfg := t.Pointer.Config()
-		if str, err := json.MarshalIndent(cfg, "", "  "); err == nil {
+		if str, err := libol.Marshal(cfg, true); err == nil {
 			fmt.Printf("%s\n", str)
-		} else {
-			fmt.Printf("Point.CmdShow %s\n", err)
 		}
 	case "network":
 		cfg := t.Pointer.Network()
-		if str, err := json.MarshalIndent(cfg, "", "  "); err == nil {
+		if str, err := libol.Marshal(cfg, true); err == nil {
 			fmt.Printf("%s\n", str)
-		} else {
-			fmt.Printf("Point.CmdShow %s\n", err)
 		}
 	default:
-		c := t.Pointer.Client()
-		fmt.Printf("%-15s: %s\n", "UUID", t.Pointer.UUID())
-		fmt.Printf("%-15s: %d\n", "UpTime", t.Pointer.UpTime())
-		fmt.Printf("%-15s: %s\n", "Device", t.Pointer.IfName())
-		if c != nil {
-			fmt.Printf("%-15s: %s\n", "Status", c.Status())
+		v := struct {
+			UUID   string
+			UpTime int64
+			Device string
+			Status string
+		}{
+			UUID:   t.Pointer.UUID(),
+			UpTime: t.Pointer.UpTime(),
+			Device: t.Pointer.IfName(),
+			Status: t.Pointer.Status().String(),
+		}
+		if str, err := libol.Marshal(v, true); err == nil {
+			fmt.Printf("%s\n", str)
 		}
 	}
 }
@@ -129,7 +138,7 @@ func (t *Terminal) Start() {
 			t.CmdMode(t.Trim(line[5:]))
 		case line == "show":
 			t.CmdShow("")
-		case line == "quit":
+		case line == "quit" || line == "exit":
 			t.CmdBye()
 			goto quit
 		case strings.HasPrefix(line, "show "):

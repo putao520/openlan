@@ -10,27 +10,27 @@ import (
 	"strings"
 )
 
-type WithRequest struct {
+type Request struct {
 	master Master
 }
 
-func NewWithRequest(m Master, c config.Switch) *WithRequest {
-	return &WithRequest{
+func NewRequest(m Master, c config.Switch) *Request {
+	return &Request{
 		master: m,
 	}
 }
 
-func (r *WithRequest) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) error {
+func (r *Request) OnFrame(client libol.SocketClient, frame *libol.FrameMessage) error {
 	out := client.Out()
 	if frame.IsEthernet() {
 		return nil
 	}
 	if out.Has(libol.DEBUG) {
-		out.Log("WithRequest.OnFrame %s.", frame)
+		out.Log("Request.OnFrame %s.", frame)
 	}
 	action, body := frame.CmdAndParams()
 	if out.Has(libol.CMD) {
-		out.Cmd("WithRequest.OnFrame: %s %s", action, body)
+		out.Cmd("Request.OnFrame: %s %s", action, body)
 	}
 	switch action {
 	case libol.NeighborReq:
@@ -40,19 +40,19 @@ func (r *WithRequest) OnFrame(client libol.SocketClient, frame *libol.FrameMessa
 	case libol.LeftReq:
 		r.OnLeave(client, body)
 	case libol.LoginReq:
-		out.Debug("WithRequest.OnFrame %s: %s", action, body)
+		out.Debug("Request.OnFrame %s: %s", action, body)
 	default:
 		r.OnDefault(client, body)
 	}
 	return nil
 }
 
-func (r *WithRequest) OnDefault(client libol.SocketClient, data []byte) {
+func (r *Request) OnDefault(client libol.SocketClient, data []byte) {
 	m := libol.NewControlFrame(libol.PongResp, data)
 	_ = client.WriteMsg(m)
 }
 
-func (r *WithRequest) OnNeighbor(client libol.SocketClient, data []byte) {
+func (r *Request) OnNeighbor(client libol.SocketClient, data []byte) {
 	resp := make([]schema.Neighbor, 0, 32)
 	for obj := range storage.Neighbor.List() {
 		if obj == nil {
@@ -66,7 +66,7 @@ func (r *WithRequest) OnNeighbor(client libol.SocketClient, data []byte) {
 	}
 }
 
-func (r *WithRequest) GetLease(ifAddr string, p *models.Point, n *models.Network) *schema.Lease {
+func (r *Request) GetLease(ifAddr string, p *models.Point, n *models.Network) *schema.Lease {
 	if n == nil {
 		return nil
 	}
@@ -99,13 +99,13 @@ func (r *WithRequest) GetLease(ifAddr string, p *models.Point, n *models.Network
 	}
 	return lease
 }
-func (r *WithRequest) OnIpAddr(client libol.SocketClient, data []byte) {
+func (r *Request) OnIpAddr(client libol.SocketClient, data []byte) {
 	var resp *models.Network
 	out := client.Out()
-	out.Info("WithRequest.OnIpAddr: %s", data)
+	out.Info("Request.OnIpAddr: %s", data)
 	recv := models.NewNetwork("", "")
 	if err := json.Unmarshal(data, recv); err != nil {
-		out.Error("WithRequest.OnIpAddr: invalid json data.")
+		out.Error("Request.OnIpAddr: invalid json data.")
 		return
 	}
 	if recv.Name == "" {
@@ -116,13 +116,13 @@ func (r *WithRequest) OnIpAddr(client libol.SocketClient, data []byte) {
 	}
 	n := storage.Network.Get(recv.Name)
 	if n == nil {
-		out.Error("WithRequest.OnIpAddr: invalid network %s.", recv.Name)
+		out.Error("Request.OnIpAddr: invalid network %s.", recv.Name)
 		return
 	}
-	out.Cmd("WithRequest.OnIpAddr: find %s", n)
+	out.Cmd("Request.OnIpAddr: find %s", n)
 	p := storage.Point.Get(client.String())
 	if p == nil {
-		out.Error("WithRequest.OnIpAddr: point notFound")
+		out.Error("Request.OnIpAddr: point notFound")
 		return
 	}
 	lease := r.GetLease(recv.IfAddr, p, n)
@@ -141,21 +141,21 @@ func (r *WithRequest) OnIpAddr(client libol.SocketClient, data []byte) {
 		resp = recv
 	}
 	if resp != nil {
-		out.Cmd("WithRequest.OnIpAddr: resp %s", resp)
+		out.Cmd("Request.OnIpAddr: resp %s", resp)
 		if respStr, err := json.Marshal(resp); err == nil {
 			m := libol.NewControlFrame(libol.IpAddrResp, respStr)
 			_ = client.WriteMsg(m)
 		}
-		out.Info("WithRequest.OnIpAddr: %s", resp.IfAddr)
+		out.Info("Request.OnIpAddr: %s", resp.IfAddr)
 	} else {
-		out.Error("WithRequest.OnIpAddr: %s no free address", recv.Name)
+		out.Error("Request.OnIpAddr: %s no free address", recv.Name)
 		m := libol.NewControlFrame(libol.IpAddrResp, []byte("no free address"))
 		_ = client.WriteMsg(m)
 	}
 }
 
-func (r *WithRequest) OnLeave(client libol.SocketClient, data []byte) {
+func (r *Request) OnLeave(client libol.SocketClient, data []byte) {
 	out := client.Out()
-	out.Info("WithRequest.OnLeave")
+	out.Info("Request.OnLeave")
 	r.master.OffClient(client)
 }

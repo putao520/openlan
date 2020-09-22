@@ -74,7 +74,7 @@ func GetSocketServer(s config.Switch) libol.SocketServer {
 
 type Apps struct {
 	Auth     *app.Access
-	Request  *app.WithRequest
+	Request  *app.Request
 	Neighbor *app.Neighbors
 	OnLines  *app.Online
 }
@@ -193,7 +193,7 @@ func (v *Switch) initHook() {
 	v.apps.Auth = app.NewAccess(v, v.cfg)
 	v.hooks = append(v.hooks, v.apps.Auth.OnFrame)
 	// Append request process
-	v.apps.Request = app.NewWithRequest(v, v.cfg)
+	v.apps.Request = app.NewRequest(v, v.cfg)
 	v.hooks = append(v.hooks, v.apps.Request.OnFrame)
 
 	inspect := ""

@@ -83,6 +83,7 @@ const (
 	rtLive      = "liveAt"   // record received pong frame time.
 	rtIpAddr    = "addrAt"   // record last receive ipAddr message after success.
 	rtConnects  = "conns"    // record times of reconnecting
+	rtLatency   = "latency"  // latency by ping.
 )
 
 type SocketWorker struct {
@@ -386,6 +387,16 @@ func (t *SocketWorker) onSignIn(resp []byte) error {
 	return nil
 }
 
+func (t *SocketWorker) onPong(resp []byte) error {
+	m := &PingMsg{}
+	if err := json.Unmarshal(resp, m); err != nil {
+		return libol.NewErr("SocketWorker.onPong: invalid json data.")
+	}
+	latency := time.Now().UnixNano() - m.DateTime // ns
+	t.record.Set(rtLatency, latency/1e6)          // ms
+	return nil
+}
+
 // handle instruct from virtual switch
 func (t *SocketWorker) onInstruct(frame *libol.FrameMessage) error {
 	if !frame.IsControl() {
@@ -403,6 +414,7 @@ func (t *SocketWorker) onInstruct(frame *libol.FrameMessage) error {
 		return t.onIpAddr(resp)
 	case libol.PongResp:
 		t.record.Set(rtLive, time.Now().Unix())
+		return t.onPong(resp)
 	case libol.SignReq:
 		return t.onSignIn(resp)
 	case libol.LeftReq:
@@ -413,18 +425,20 @@ func (t *SocketWorker) onInstruct(frame *libol.FrameMessage) error {
 	return nil
 }
 
+type PingMsg struct {
+	DateTime   int64  `json:"datetime"`
+	UUID       string `json:"uuid"`
+	Alias      string `json:"alias"`
+	Connection string `json:"connection"`
+	Address    string `json:"address"`
+}
+
 func (t *SocketWorker) sendPing(client libol.SocketClient) error {
 	if client == nil {
 		return libol.NewErr("client is nil")
 	}
-	data := struct {
-		DateTime   int64  `json:"datetime"`
-		UUID       string `json:"uuid"`
-		Alias      string `json:"alias"`
-		Connection string `json:"connection"`
-		Address    string `json:"address"`
-	}{
-		DateTime:   time.Now().Unix(),
+	data := &PingMsg{
+		DateTime:   time.Now().UnixNano(),
 		UUID:       t.user.UUID,
 		Alias:      t.user.Alias,
 		Address:    t.client.LocalAddr(),
@@ -511,6 +525,7 @@ func (t *SocketWorker) dispatch(ev *WorkerEvent) {
 		}
 	case EvSocSuccess:
 		_ = t.toNetwork(t.client)
+		_ = t.sendPing(t.client)
 	case EvSocRecon:
 		t.out.Info("SocketWorker.dispatch: %v", ev)
 		t.reconnect()
