@@ -54,7 +54,7 @@ func (h Link) Add(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	c := &config.Point{}
-	if err := json.Unmarshal([]byte(body), c); err != nil {
+	if err := json.Unmarshal(body, c); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

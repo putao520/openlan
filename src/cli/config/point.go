@@ -107,6 +107,11 @@ func (c *Point) Right() {
 	if runtime.GOOS == "darwin" {
 		c.Interface.Provider = "tun"
 	}
+	if c.Protocol == "tls" || c.Protocol == "wss" {
+		if c.Cert == nil {
+			c.Cert = pd.Cert
+		}
+	}
 	if c.Cert != nil {
 		if c.Cert.Dir == "" {
 			c.Cert.Dir = "."

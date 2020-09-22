@@ -41,6 +41,7 @@ cp -R %_source_dir/packaging/script %{buildroot}/var/openlan
 cp -R %_source_dir/src/olsw/public %{buildroot}/var/openlan
 mkdir -p %{buildroot}/var/openlan/cert
 cp -R %_source_dir/packaging/resource/cert/cert %{buildroot}/var/openlan
+cp -R %_source_dir/packaging/resource/cert/ca/ca.crt %{buildroot}/var/openlan/cert
 
 %pre
 /usr/bin/firewall-cmd --permanent --zone=public --permanent \

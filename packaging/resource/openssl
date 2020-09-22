@@ -28,7 +28,7 @@ fi
 
 if [ "$action" == "sign" ]; then
   #### Sign cert using myself ca
-  [ -e "cert/crt" ] || openssl x509 -req -days 730 -in cert/crt.csr -CA ./ca/ca.crt -CAkey ./ca/ca.key -CAcreateserial -out cert/crt ###
+  [ -e "cert/crt" ] || openssl x509 -req -days 730 -in cert/crt.csr -CA ./ca/ca.crt -CAkey ./ca/ca.key -CAcreateserial -out cert/crt -sha256 -extfile cert.ext
 fi
 
 if [ "$action" == "show" ]; then

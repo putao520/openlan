@@ -126,7 +126,7 @@ func (r *Request) onIpAddr(client libol.SocketClient, data []byte) {
 		return
 	}
 	lease := r.getLease(recv.IfAddr, p, n)
-	if recv.IfAddr == "" { // If not configure interface address, and try to alloc it.
+	if recv.IfAddr == "" { // not interface address, and try to alloc it.
 		if lease != nil {
 			resp = &models.Network{
 				Name:    n.Name,
@@ -137,6 +137,7 @@ func (r *Request) onIpAddr(client libol.SocketClient, data []byte) {
 				Routes:  n.Routes,
 			}
 		}
+		// get release failed.
 	} else {
 		resp = recv
 	}
