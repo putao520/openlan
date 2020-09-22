@@ -1,5 +1,5 @@
 Name: openlan-switch
-Version: 5.4.9
+Version: 5.4.10
 Release: 1%{?dist}
 Summary: OpenLan's Project Software
 Group: Applications/Communications
@@ -37,9 +37,11 @@ mkdir -p %{buildroot}/usr/lib/systemd/system
 cp %_source_dir/packaging/resource/openlan-switch.service %{buildroot}/usr/lib/systemd/system
 
 mkdir -p %{buildroot}/var/openlan
-cp -R %_source_dir/packaging/resource/ca %{buildroot}/var/openlan
 cp -R %_source_dir/packaging/script %{buildroot}/var/openlan
 cp -R %_source_dir/src/olsw/public %{buildroot}/var/openlan
+mkdir -p %{buildroot}/var/openlan/cert
+cp -R %_source_dir/packaging/resource/cert/cert %{buildroot}/var/openlan/
+cp -R %_source_dir/packaging/resource/cert/ca-trusted.crt %{buildroot}/var/openlan/cert
 
 %pre
 /usr/bin/firewall-cmd --permanent --zone=public --permanent \

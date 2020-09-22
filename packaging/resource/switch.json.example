@@ -1,6 +1,6 @@
 {
   "cert": {
-    "dir": "/var/openlan/ca"
+    "dir": "/var/openlan/cert"
   },
   "http": {
     "public": "/var/openlan/public"

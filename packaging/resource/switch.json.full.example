@@ -1,7 +1,7 @@
 {
   "protocol": "tls",
   "cert": {
-    "dir": "/var/openlan/ca"
+    "dir": "/var/openlan/cert"
   },
   "http": {
     "public": "/var/openlan/public"
@@ -30,7 +30,7 @@
           "password": "12345^"
         },
         "cert": {
-          "dir": "/var/openlan/ca"
+          "dir": "/var/openlan/cert"
         }
       }
     ],

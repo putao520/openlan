@@ -9,5 +9,5 @@ mkdir -p ~/rpmbuild/SOURCES
 sed -i  -e "s/Version:.*/Version:\ ${version}/" ./packaging/openlan-*.spec
 
 # link source
-rm -rf ~/rpmbuild/SOURCES/openlan-go-${version}
-ln -s $(pwd) ~/rpmbuild/SOURCES/openlan-go-${version}
+rm -rf ~/rpmbuild/SOURCES/openlan-go-"${version}"
+ln -s $(pwd) ~/rpmbuild/SOURCES/openlan-go-"${version}"

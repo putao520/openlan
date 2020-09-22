@@ -1,5 +1,5 @@
 Name: openlan-ctrl
-Version: 5.4.9
+Version: 5.4.10
 Release: 1%{?dist}
 Summary: OpenLan's Controller Software
 Group: Applications/Communications
@@ -22,8 +22,9 @@ cp %_source_dir/build/openlan-ctrl %{buildroot}/usr/bin
 
 mkdir -p %{buildroot}/etc/sysconfig/openlan
 cp %_source_dir/packaging/resource/ctrl.cfg %{buildroot}/etc/sysconfig/openlan
-mkdir -p %{buildroot}/var/openlan/ctrl
-cp -R %_source_dir/packaging/resource/ca %{buildroot}/var/openlan/ctrl
+mkdir -p %{buildroot}/var/openlan/ctrl/cert
+cp -R %_source_dir/packaging/resource/cert/cert %{buildroot}/var/openlan/ctrl
+cp -R %_source_dir/packaging/resource/cert/ca-trusted.crt %{buildroot}/var/openlan/ctrl/cert
 
 mkdir -p %{buildroot}/etc/openlan/ctrl
 cp %_source_dir/packaging/resource/auth.json.example %{buildroot}/etc/openlan/ctrl

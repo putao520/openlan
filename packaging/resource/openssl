@@ -7,35 +7,35 @@ if [ "$action" == "" ]; then
   exit 0
 fi
 
+[ -e "ca" ] || mkdir ca
+[ -e "cert" ] || mkdir cert
+
 if [ "$action" == "cert" ]; then
   source cert.vars
-  [ -e "cert" ] || mkdir cert
-  ### Private
   [ -e "cert/key" ] || openssl genrsa -out cert/key 2048
   # openssl rsa -in key -noout -text
   [ -e "cert/key.pub" ] || openssl rsa -in cert/key -pubout -out cert/key.pub
   # openssl rsa -pubin -in key.pub -noout -text
   # using private to sign pem and generate a csr request.
-  [ -e "cert/csr.pem" ] || openssl req -new -key cert/key -out cert/csr.pem -subj "/C=$C/ST=$ST/L=$NJ/O=$O/OU=$OU/CN=$CN/emailAddress=$emailAddress"
+  [ -e "cert/crt.csr" ] || openssl req -new -key cert/key -out cert/crt.csr -subj "/C=$C/ST=$ST/L=$NJ/O=$O/OU=$OU/CN=$CN/emailAddress=$emailAddress"
 fi
 
 if [ "$action" == "ca" ]; then #### CA &x509
   source ca.vars
-  [ -e "ca" ] || mkdir ca
   [ -e "ca/ca.key" ] || openssl genrsa -out ca/ca.key 2048
-  openssl req -new -x509 -days 365 -key ca/ca.key -out ca/ca.crt -subj "/C=$C/ST=$ST/L=$L/O=$O/OU=$OU/CN=$CN/emailAddress=$emailAddress"
+  [ -e "ca/ca.crt" ] || openssl req -new -x509 -days 3650 -key ca/ca.key -out ca/ca.crt -subj "/C=$C/ST=$ST/L=$L/O=$O/OU=$OU/CN=$CN/emailAddress=$emailAddress"
 fi
 
 if [ "$action" == "sign" ]; then
   #### Sign cert using myself ca
-  [ -e "crt.pem" ] || openssl x509 -req -days 3650 -in cert/csr.pem -CA ./ca/ca.crt -CAkey ./ca/ca.key -CAcreateserial -out cert/crt.pem ###
+  [ -e "cert/crt" ] || openssl x509 -req -days 730 -in cert/crt.csr -CA ./ca/ca.crt -CAkey ./ca/ca.key -CAcreateserial -out cert/crt ###
 fi
 
 if [ "$action" == "show" ]; then
-  echo "ca.crt"
-  openssl x509 -in ca/ca.crt -noout -text
-  echo "crt.pem"
-  openssl req -noout -text -in cert/csr.pem
-  echo "crt.pem"
-  openssl x509 -in cert/crt.pem -noout -text
+  echo "### ca.crt"
+  openssl x509 -in cert/ca.crt -noout -text
+  echo "### crt.csr"
+  openssl req -noout -text -in cert/crt.csr
+  echo "### crt"
+  openssl x509 -in cert/crt -noout -text
 fi

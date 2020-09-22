@@ -103,10 +103,13 @@ func (c *Cert) Right() {
 		return
 	}
 	if c.CrtFile == "" {
-		c.CrtFile = fmt.Sprintf("%s/crt.pem", c.Dir)
+		c.CrtFile = fmt.Sprintf("%s/crt", c.Dir)
 	}
 	if c.KeyFile == "" {
-		c.KeyFile = fmt.Sprintf("%s/private.key", c.Dir)
+		c.KeyFile = fmt.Sprintf("%s/key", c.Dir)
+	}
+	if c.CaFile == "" {
+		c.CaFile = fmt.Sprintf("%s/ca-trusted.crt", c.Dir)
 	}
 }
 
@@ -114,9 +117,10 @@ func (c *Cert) GetTlsCfg() *tls.Config {
 	if c.KeyFile == "" || c.CrtFile == "" {
 		return nil
 	}
+	libol.Debug("Cert.GetTlsCfg: %v", c)
 	cer, err := tls.LoadX509KeyPair(c.CrtFile, c.KeyFile)
 	if err != nil {
-		libol.Error("GetTlsCfg: %s", err)
+		libol.Error("Cert.GetTlsCfg: %s", err)
 		return nil
 	}
 	return &tls.Config{Certificates: []tls.Certificate{cer}}
@@ -128,12 +132,12 @@ func (c *Cert) GetCertPool() *x509.CertPool {
 	}
 	caCert, err := ioutil.ReadFile(c.CaFile)
 	if err != nil {
-		libol.Error("GetTlsCertPool: %s", err)
+		libol.Warn("Cert.GetTlsCertPool: %s", err)
 		return nil
 	}
 	pool := x509.NewCertPool()
 	if !pool.AppendCertsFromPEM(caCert) {
-		libol.Warn("GetTlsCertPool: invalid cert")
+		libol.Warn("Cert.GetTlsCertPool: invalid cert")
 	}
 	return pool
 }

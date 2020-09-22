@@ -53,13 +53,15 @@ var pd = &Point{
 	Network:     "default",
 	RequestAddr: true,
 	Crypt:       &Crypt{},
+	Cert:        &Cert{},
 	Terminal:    "on",
 }
 
 func NewPoint() (c *Point) {
 	c = &Point{
 		RequestAddr: true,
-		Crypt:       &Crypt{},
+		Crypt:       pd.Crypt,
+		Cert:        pd.Cert,
 	}
 	flag.StringVar(&c.Alias, "alias", pd.Alias, "alias for this point")
 	flag.StringVar(&c.Terminal, "terminal", pd.Terminal, "run interactive terminal")
@@ -77,6 +79,7 @@ func NewPoint() (c *Point) {
 	flag.StringVar(&c.Crypt.Secret, "crypt:secret", pd.Crypt.Secret, "Crypt secret")
 	flag.StringVar(&c.Crypt.Algo, "crypt:algo", pd.Crypt.Algo, "Crypt algorithm")
 	flag.StringVar(&c.PProf, "pprof", pd.PProf, "Configure file for CPU prof")
+	flag.StringVar(&c.Cert.CaFile, "cacert", pd.Cert.CaFile, "CA certificate file")
 	flag.IntVar(&c.Timeout, "timeout", pd.Timeout, "Time in secs socket dead")
 	flag.IntVar(&c.Log.Verbose, "log:level", pd.Log.Verbose, "Log level")
 	flag.Parse()
@@ -103,6 +106,12 @@ func (c *Point) Right() {
 	RightAddr(&c.Connection, 10002)
 	if runtime.GOOS == "darwin" {
 		c.Interface.Provider = "tun"
+	}
+	if c.Cert != nil {
+		if c.Cert.Dir == "" {
+			c.Cert.Dir = "."
+		}
+		c.Cert.Right()
 	}
 }
 
