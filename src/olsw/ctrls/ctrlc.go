@@ -3,7 +3,6 @@ package ctrls
 import (
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/olctl/libctrl"
-	"github.com/danieldin95/openlan-go/src/olsw/storage"
 	"time"
 )
 
@@ -13,12 +12,6 @@ type CtrlC struct {
 	Password string            `json:"password"`
 	Conn     *libctrl.CtrlConn `json:"connection"`
 	Switcher Switcher          `json:"-"`
-}
-
-func (cc *CtrlC) Register() {
-	// Listen change and update.
-	_ = storage.Point.Listen.Add("ctlc", &Point{cc: cc})
-	_ = storage.Neighbor.Listen.Add("ctlc", &Neighbor{cc: cc})
 }
 
 func (cc *CtrlC) Handle() {
@@ -61,7 +54,6 @@ func (cc *CtrlC) Start() {
 		libol.Warn("CtrlC.Star Url is nil")
 		return
 	}
-	cc.Register()
 	for {
 		_ = cc.Open()
 		if cc.Conn == nil {

@@ -7,15 +7,11 @@ import (
 )
 
 type link struct {
-	Links  *libol.SafeStrMap
-	Listen Listen
+	Links *libol.SafeStrMap
 }
 
 var Link = link{
 	Links: libol.NewSafeStrMap(1024),
-	Listen: Listen{
-		listener: libol.NewSafeStrMap(32),
-	},
 }
 
 func (p *link) Init(size int) {
@@ -36,7 +32,6 @@ func (p *link) Add(m *pp.Point) {
 		UUID:    m.UUID(),
 	}
 	_ = p.Links.Set(m.UUID(), link)
-	_ = p.Listen.AddV(m.UUID(), link)
 }
 
 func (p *link) Get(key string) *models.Point {
@@ -51,7 +46,6 @@ func (p *link) Get(key string) *models.Point {
 
 func (p *link) Del(key string) {
 	p.Links.Del(key)
-	p.Listen.DelV(key)
 }
 
 func (p *link) List() <-chan *models.Point {

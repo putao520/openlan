@@ -9,16 +9,12 @@ type point struct {
 	Clients  *libol.SafeStrMap
 	UUIDAddr *libol.SafeStrStr
 	AddrUUID *libol.SafeStrStr
-	Listen   Listen
 }
 
 var Point = point{
 	Clients:  libol.NewSafeStrMap(1024),
 	UUIDAddr: libol.NewSafeStrStr(1024),
 	AddrUUID: libol.NewSafeStrStr(1024),
-	Listen: Listen{
-		listener: libol.NewSafeStrMap(32),
-	},
 }
 
 func (p *point) Init(size int) {
@@ -29,7 +25,6 @@ func (p *point) Add(m *models.Point) {
 	_ = p.UUIDAddr.Reset(m.UUID, m.Client.String())
 	_ = p.AddrUUID.Set(m.Client.String(), m.UUID)
 	_ = p.Clients.Set(m.Client.String(), m)
-	_ = p.Listen.AddV(m.Client.String(), m)
 }
 
 func (p *point) Get(addr string) *models.Point {
@@ -68,7 +63,6 @@ func (p *point) Del(addr string) {
 		p.AddrUUID.Del(m.Client.String())
 		p.Clients.Del(addr)
 	}
-	p.Listen.DelV(addr)
 }
 
 func (p *point) List() <-chan *models.Point {
