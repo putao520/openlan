@@ -1,31 +1,41 @@
 #!/bin/bash
 
-### Private
+action=$1
 
-openssl genrsa -out private.key 2048 ###
+if [ "$action" == "" ]; then
+  echo "$0 <cert|ca|sign|show>"
+  exit 0
+fi
 
-# openssl rsa -in private.key -noout -text
+if [ "$action" == "cert" ]; then
+  source cert.vars
+  [ -e "cert" ] || mkdir cert
+  ### Private
+  [ -e "cert/key" ] || openssl genrsa -out cert/key 2048
+  # openssl rsa -in key -noout -text
+  [ -e "cert/key.pub" ] || openssl rsa -in cert/key -pubout -out cert/key.pub
+  # openssl rsa -pubin -in key.pub -noout -text
+  # using private to sign pem and generate a csr request.
+  [ -e "cert/csr.pem" ] || openssl req -new -key cert/key -out cert/csr.pem -subj "/C=$C/ST=$ST/L=$NJ/O=$O/OU=$OU/CN=$CN/emailAddress=$emailAddress"
+fi
 
-openssl rsa -in private.key -pubout -out public.key
+if [ "$action" == "ca" ]; then #### CA &x509
+  source ca.vars
+  [ -e "ca" ] || mkdir ca
+  [ -e "ca/ca.key" ] || openssl genrsa -out ca/ca.key 2048
+  openssl req -new -x509 -days 365 -key ca/ca.key -out ca/ca.crt -subj "/C=$C/ST=$ST/L=$L/O=$O/OU=$OU/CN=$CN/emailAddress=$emailAddress"
+fi
 
-# openssl rsa -pubin -in public.key -noout -text
+if [ "$action" == "sign" ]; then
+  #### Sign cert using myself ca
+  [ -e "crt.pem" ] || openssl x509 -req -days 3650 -in cert/csr.pem -CA ./ca/ca.crt -CAkey ./ca/ca.key -CAcreateserial -out cert/crt.pem ###
+fi
 
-# using private to sign pem and generate a csr request.
-
-openssl req -new -key private.key -out csr.pem -subj "/C=CN/ST=JS/L=NJ/O=openlan/OU=dev/CN=openlan.net/emailAddress=danieldin95@163.com"
-
-# openssl req -noout -text -in csr.pem
-
-#### CA &x509
-
-openssl genrsa -out ca.key 2048
-
-openssl req -new -x509 -days 365 -key ca.key -out ca.crt -subj "/C=CN/ST=JS/L=NJ/O=openlan/OU=op/CN=openlan.net/emailAddress=danieldin95@163.com"
-
-# openssl x509 -in ca.crt -noout -text
-
-#### Sign cert using myself ca
-
-openssl x509 -req -days 3650 -in csr.pem -CA ca.crt -CAkey ca.key -CAcreateserial -out crt.pem ###
-
-#  openssl x509 -in crt.pem -noout -text
+if [ "$action" == "show" ]; then
+  echo "ca.crt"
+  openssl x509 -in ca/ca.crt -noout -text
+  echo "crt.pem"
+  openssl req -noout -text -in cert/csr.pem
+  echo "crt.pem"
+  openssl x509 -in cert/crt.pem -noout -text
+fi
