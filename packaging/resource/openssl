@@ -33,7 +33,7 @@ fi
 
 if [ "$action" == "show" ]; then
   echo "### ca.crt"
-  openssl x509 -in cert/ca.crt -noout -text
+  openssl x509 -in ca/ca.crt -noout -text
   echo "### crt.csr"
   openssl req -noout -text -in cert/crt.csr
   echo "### crt"

@@ -26,7 +26,6 @@ mkdir -p %{buildroot}/etc/sysconfig/openlan
 cp %_source_dir/packaging/resource/point.cfg %{buildroot}/etc/sysconfig/openlan
 mkdir -p %{buildroot}/etc/openlan
 cp %_source_dir/packaging/resource/point.json.example %{buildroot}/etc/openlan
-cp %_source_dir/packaging/resource/cert/ca-trusted.crt %{buildroot}/etc/openlan
 
 mkdir -p %{buildroot}/usr/lib/systemd/system
 cp %_source_dir/packaging/resource/openlan-point.service %{buildroot}/usr/lib/systemd/system

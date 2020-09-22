@@ -80,7 +80,6 @@ windows-zip: env windows ## build windows packages
 	@rm -rf $(WD) && mkdir -p $(WD)
 	@rm -rf $(WD).zip
 
-	@cp -rvf $(SD)/packaging/resource/cert/ca-trusted.crt $(WD)
 	@cp -rvf $(SD)/packaging/resource/point.json.example $(WD)/point.json
 	@cp -rvf $(BD)/openlan-point.exe $(WD)
 
@@ -102,7 +101,6 @@ darwin-zip: env darwin ## build darwin packages
 	@rm -rf $(XD) && mkdir -p $(XD)
 	@rm -rf $(XD).zip
 
-	@cp -rvf $(SD)/packaging/resource/cert/ca-trusted.crt $(XD)
 	@cp -rvf $(SD)/packaging/resource/point.json.example $(XD)/point.json
 	@cp -rvf $(BD)/openlan-point.darwin $(XD)
 
