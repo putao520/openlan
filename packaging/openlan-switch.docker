@@ -6,8 +6,8 @@ RUN yum install -y iptables bridge-utils
 
 ADD build/openlan-switch /usr/bin
 RUN mkdir -p /var/openlan/cert
-ADD packaging/resource/cert/cert /var/openlan/
-ADD packaging/resource/cert/ca-trusted.crt /var/openlan/cert
+ADD packaging/resource/cert/openlan/cert /var/openlan/
+ADD packaging/resource/cert/openlan/ca-trusted.crt /var/openlan/cert
 ADD src/olsw/public /var/openlan/public
 
 RUN mkdir -p /etc/openlan/switch

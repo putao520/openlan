@@ -23,7 +23,7 @@ cp %_source_dir/build/openlan-ctrl %{buildroot}/usr/bin
 mkdir -p %{buildroot}/etc/sysconfig/openlan
 cp %_source_dir/packaging/resource/ctrl.cfg %{buildroot}/etc/sysconfig/openlan
 mkdir -p %{buildroot}/var/openlan/ctrl/cert
-cp -R %_source_dir/packaging/resource/cert/cert %{buildroot}/var/openlan/ctrl
+cp -R %_source_dir/packaging/resource/cert/openlan/cert %{buildroot}/var/openlan/ctrl
 
 mkdir -p %{buildroot}/etc/openlan/ctrl
 cp %_source_dir/packaging/resource/auth.json.example %{buildroot}/etc/openlan/ctrl
