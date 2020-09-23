@@ -12,5 +12,6 @@ go:
   - 1.12.9
 
 script:
-  - make
+  - make bin
+  - make test
 
