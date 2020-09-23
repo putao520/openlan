@@ -1,6 +1,9 @@
+git:
+  submodules: false
+
 language: go
 os: linux
-sudo: require
+sudo: enabled
 
 env:
   - GO111MODULE=on
