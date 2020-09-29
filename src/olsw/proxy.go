@@ -96,14 +96,14 @@ func (t *HttpProxy) route(w http.ResponseWriter, p *http.Response) {
 	_, _ = io.Copy(w, p.Body)
 }
 
-func (t *HttpProxy) tunnel(w http.ResponseWriter, conn net.Conn) {
+func (t *HttpProxy) tunnel(w http.ResponseWriter, conn net.Conn, r *http.Request) {
 	src, bio, err := w.(http.Hijacker).Hijack()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer src.Close()
-	t.out.Info("HttpProxy.tunnel %s -> %s", src.RemoteAddr(), conn.RemoteAddr())
+	t.out.Info("HttpProxy.tunnel %s -> %s", src.RemoteAddr(), r.URL.Host)
 	wait := libol.NewWaitOne(2)
 	libol.Go(func() {
 		defer wait.Done()
@@ -144,7 +144,7 @@ func (t *HttpProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		_, _ = w.Write(connectOkay)
-		t.tunnel(w, conn)
+		t.tunnel(w, conn, r)
 	} else { //RFC 7230 - HTTP/1.1: Message Syntax and Routing
 		transport := &http.Transport{}
 		p, err := transport.RoundTrip(r)
