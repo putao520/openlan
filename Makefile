@@ -2,6 +2,10 @@
 # github.com/danieldin95/openlan-go
 #
 
+#
+# git clone https://github.com/danieldin95/freecert packaging/resource/cert
+#
+ 
 SHELL := /bin/bash
 
 .ONESHELL:
@@ -21,8 +25,8 @@ LDFLAGS += -X $(MOD).Version=$(VER)
 SD = $(shell pwd)
 BD = $(SD)/build
 LD = openlan-$(LSB)-$(VER)
-WD = openlan-Windows-$(VER)
-XD = openlan-Darwin-$(VER)
+WD = openlan-windows-$(VER)
+XD = openlan-darwin-$(VER)
 
 help: ## show make targets
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {sub("\\\\n",sprintf("\n%22c"," "), $$2);\
