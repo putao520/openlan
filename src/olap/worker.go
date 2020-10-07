@@ -716,7 +716,11 @@ func (a *TapWorker) IsTun() bool {
 func (a *TapWorker) setEther(ipAddr string, hwAddr []byte) {
 	a.neighbor.Clear()
 	// format ip address.
-	ipAddr = libol.IpAddrFormat(ipAddr)
+	ipAddr, err := libol.IPNetmask(ipAddr)
+	if err != nil {
+		a.out.Warn("TapWorker.setEther: %s: %s", ipAddr, err)
+		return
+	}
 	ifAddr := strings.SplitN(ipAddr, "/", 2)[0]
 	a.ether.IpAddr = net.ParseIP(ifAddr).To4()
 	if a.ether.IpAddr == nil {

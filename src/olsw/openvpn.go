@@ -43,13 +43,17 @@ func NewOpenVpnDataFromConf(cfg *config.OpenVPN) *OpenVPNData {
 		Dev:     cfg.Device,
 		Proto:   cfg.Protocol,
 		Script:  cfg.Script,
-		Server:  strings.ReplaceAll(cfg.Subnet, "/", " "),
+	}
+	if addr, err := libol.IPNetwork(cfg.Subnet); err == nil {
+		data.Server = strings.ReplaceAll(addr, "/", " ")
 	}
 	if strings.Contains(cfg.Listen, ":") {
 		data.Port = strings.SplitN(cfg.Listen, ":", 2)[1]
 	}
 	for _, rt := range cfg.Routes {
-		data.Routes = append(data.Routes, strings.ReplaceAll(rt, "/", " "))
+		if addr, err := libol.IPNetwork(rt); err == nil {
+			data.Routes = append(data.Routes, strings.ReplaceAll(addr, "/", " "))
+		}
 	}
 	return data
 }

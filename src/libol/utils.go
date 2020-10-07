@@ -145,23 +145,20 @@ func Netmask2Len(s string) int {
 	return prefixSize
 }
 
-func IpAddrFormat(ipAddr string) string {
-	if ipAddr == "" {
-		return ""
+func IPNetmask(ipAddr string) (string, error) {
+	if i, n, err := net.ParseCIDR(ipAddr); err == nil {
+		return i.String() + "/" + net.IP(n.Mask).String(), nil
+	} else {
+		return "", err
 	}
-	address := ipAddr
-	netmask := "255.255.255.255"
-	s := strings.SplitN(ipAddr, "/", 2)
-	if len(s) == 2 {
-		address = s[0]
-		_, n, err := net.ParseCIDR(ipAddr)
-		if err == nil {
-			netmask = net.IP(n.Mask).String()
-		} else {
-			netmask = s[1]
-		}
+}
+
+func IPNetwork(ipAddr string) (string, error) {
+	if _, n, err := net.ParseCIDR(ipAddr); err == nil {
+		return n.IP.String() + "/" + net.IP(n.Mask).String(), nil
+	} else {
+		return "", err
 	}
-	return address + "/" + netmask
 }
 
 func PrettyTime(t int64) string {
