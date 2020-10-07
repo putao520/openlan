@@ -46,6 +46,7 @@ cp -R %_source_dir/packaging/resource/cert/openlan/ca/ca.crt %{buildroot}/var/op
 
 mkdir -p %{buildroot}/var/openlan/openvpn
 cp -R %_source_dir/packaging/resource/openvpn.md %{buildroot}/var/openlan/openvpn
+cp -R %_source_dir/packaging/resource/example.ovpn %{buildroot}/var/openlan/openvpn
 
 %pre
 /usr/bin/firewall-cmd --permanent --zone=public --permanent \
