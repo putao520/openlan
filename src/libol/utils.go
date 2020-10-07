@@ -60,12 +60,12 @@ func Marshal(v interface{}, pretty bool) ([]byte, error) {
 }
 
 func MarshalSave(v interface{}, file string, pretty bool) error {
-	f, err := os.OpenFile(file, os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0600)
-	defer f.Close()
+	f, err := CreateFile(file)
 	if err != nil {
 		Error("MarshalSave: %s", err)
 		return err
 	}
+	defer f.Close()
 	str, err := Marshal(v, true)
 	if err != nil {
 		Error("MarshalSave error: %s", err)
@@ -111,7 +111,7 @@ func ScanAnn(r io.Reader) ([]byte, error) {
 }
 
 func LoadWithoutAnn(file string) ([]byte, error) {
-	fp, err := os.OpenFile(file, os.O_RDONLY, os.ModePerm)
+	fp, err := OpenRead(file)
 	if err != nil {
 		return nil, err
 	}
@@ -210,4 +210,16 @@ func Wait() {
 	Info("Wait: ...")
 	n := <-x
 	Warn("Wait: ... Signal %d received ...", n)
+}
+
+func OpenWrite(file string) (*os.File, error) {
+	return os.OpenFile(file, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+}
+
+func OpenRead(file string) (*os.File, error) {
+	return os.OpenFile(file, os.O_RDONLY, os.ModePerm)
+}
+
+func CreateFile(name string) (*os.File, error) {
+	return os.OpenFile(name, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 }

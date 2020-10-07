@@ -5,7 +5,7 @@
 #
 # git clone https://github.com/danieldin95/freecert packaging/resource/cert
 #
- 
+
 SHELL := /bin/bash
 
 .ONESHELL:
@@ -65,6 +65,9 @@ linux-point: env
 linux-switch: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch ./src/cli/switch
 	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch.i386 ./src/cli/switch
+
+	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-checkpass ./src/cli/checkpass
+	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-checkpass.i386 ./src/cli/checkpass
 
 linux-rpm: env ## build rpm packages
 	@./packaging/spec.sh

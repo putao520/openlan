@@ -184,6 +184,9 @@ func (v *Switch) initNetwork() {
 				continue
 			}
 			v.acceptRoute(source, rt.Prefix)
+			if nCfg.OpenVPN != nil {
+				v.acceptRoute(nCfg.OpenVPN.Subnet, rt.Prefix)
+			}
 		}
 	}
 }

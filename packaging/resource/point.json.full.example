@@ -1,0 +1,15 @@
+{
+  "network": "default",
+  "interface": {
+    "name": "tap0",
+    "bridge": "br-default",
+    "address": "172.32.100.10/24"
+  }
+  "connection": "who.openlan.net",
+  "username": "hi",
+  "password": "12345",
+  "protocol": "tls",
+  "cert": {
+    "insecure": true
+  }
+}

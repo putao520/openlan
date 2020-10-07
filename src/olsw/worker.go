@@ -26,6 +26,7 @@ type NetworkWorker struct {
 	crypt     *config.Crypt
 	bridge    network.Bridger
 	out       *libol.SubLogger
+	openVPN   *OpenVPN
 }
 
 func NewNetworkWorker(c config.Network, crypt *config.Crypt) *NetworkWorker {
@@ -60,6 +61,7 @@ func (w *NetworkWorker) Initialize() {
 		IpStart: w.cfg.Subnet.Start,
 		IpEnd:   w.cfg.Subnet.End,
 		Netmask: w.cfg.Subnet.Netmask,
+		IfAddr:  w.cfg.Bridge.Address,
 		Routes:  make([]*models.Route, 0, 2),
 	}
 	for _, rt := range w.cfg.Routes {
@@ -81,6 +83,29 @@ func (w *NetworkWorker) Initialize() {
 		}
 	}
 	w.bridge = network.NewBridger(brCfg.Provider, brCfg.Name, brCfg.IfMtu)
+	if w.cfg.OpenVPN != nil {
+		routes := w.cfg.OpenVPN.Routes
+		addr := ""
+		if n.IfAddr != "" {
+			addr = n.IfAddr
+		} else if n.IpStart != "" && n.Netmask != "" {
+			addr = n.IpStart + "/" + n.Netmask
+		}
+		if addr != "" {
+			if _, inet, err := net.ParseCIDR(addr); err == nil {
+				routes = append(routes, inet.String())
+			}
+		}
+		for _, rt := range n.Routes {
+			addr := rt.Prefix
+			if _, inet, err := net.ParseCIDR(addr); err == nil {
+				routes = append(routes, inet.String())
+			}
+		}
+		w.cfg.OpenVPN.Routes = routes
+		w.openVPN = NewOpenVPN(w.cfg.OpenVPN)
+		w.openVPN.Initialize()
+	}
 }
 
 func (w *NetworkWorker) ID() string {
@@ -219,6 +244,9 @@ func (w *NetworkWorker) Start(v api.Switcher) {
 	w.startTime = time.Now().Unix()
 	w.LoadLinks()
 	w.LoadRoutes()
+	if w.openVPN != nil {
+		w.openVPN.Start()
+	}
 }
 
 func (w *NetworkWorker) DownPeer(cfg config.Bridge) {
@@ -240,6 +268,9 @@ func (w *NetworkWorker) DownPeer(cfg config.Bridge) {
 
 func (w *NetworkWorker) Stop() {
 	w.out.Info("NetworkWorker.Close")
+	if w.openVPN != nil {
+		w.openVPN.Stop()
+	}
 	w.UnLoadRoutes()
 	w.UnLoadLinks()
 	w.startTime = 0

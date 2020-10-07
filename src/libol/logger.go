@@ -4,7 +4,6 @@ import (
 	"container/list"
 	"fmt"
 	"log"
-	"os"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -113,9 +112,9 @@ func SetLogger(file string, level int) {
 		return
 	}
 	Logger.FileName = file
-	logFile, err := os.Create(Logger.FileName)
+	fp, err := OpenWrite(file)
 	if err == nil {
-		Logger.FileLog = log.New(logFile, "", log.LstdFlags)
+		Logger.FileLog = log.New(fp, "", log.LstdFlags)
 	} else {
 		Warn("Logger.Init: %s", err)
 	}

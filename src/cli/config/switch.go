@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/danieldin95/openlan-go/src/libol"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -41,11 +42,77 @@ type Password struct {
 	Password string `json:"password"`
 }
 
+type OpenVPN struct {
+	Name      string   `json:"-"`
+	WorkDir   string   `json:"-"`
+	Listen    string   `json:"listen"`
+	Protocol  string   `json:"protocol"`
+	Subnet    string   `json:"subnet"`
+	Device    string   `json:"device"`
+	Auth      string   `json:"auth"` // xauth or cert.
+	DhPem     string   `json:"dh"`
+	RootCa    string   `json:"ca"`
+	ServerCrt string   `json:"cert"`
+	ServerKey string   `json:"key"`
+	TlsAuth   string   `json:"tlsauth"`
+	Cipher    string   `json:"cipher"`
+	Routes    []string `json:"routes"`
+	Script    string   `json:"-"`
+}
+
+var defaultOvpn = OpenVPN{
+	Protocol:  "tcp",
+	Auth:      "xauth",
+	Device:    "tun",
+	RootCa:    "/var/openlan/cert/ca.crt",
+	ServerCrt: "/var/openlan/cert/crt",
+	ServerKey: "/var/openlan/cert/key",
+	DhPem:     "/var/openlan/openvpn/dh.pem",
+	TlsAuth:   "/var/openlan/openvpn/ta.key",
+	Cipher:    "AES-256-CBC",
+	Script:    "/usr/bin/openlan-checkpass " + strings.Join(os.Args[1:], " "),
+}
+
+func (o *OpenVPN) Right() {
+	if o.WorkDir == "" {
+		o.WorkDir = "/var/openlan/openvpn/" + o.Name
+	}
+	if o.Auth == "" {
+		o.Auth = defaultOvpn.Auth
+	}
+	if o.Device == "" {
+		o.Device = defaultOvpn.Device
+	}
+	if o.Protocol == "" {
+		o.Protocol = defaultOvpn.Protocol
+	}
+	if o.DhPem == "" {
+		o.DhPem = defaultOvpn.DhPem
+	}
+	if o.RootCa == "" {
+		o.RootCa = defaultOvpn.RootCa
+	}
+	if o.ServerCrt == "" {
+		o.ServerCrt = defaultOvpn.ServerCrt
+	}
+	if o.ServerKey == "" {
+		o.ServerKey = defaultOvpn.ServerKey
+	}
+	if o.TlsAuth == "" {
+		o.TlsAuth = defaultOvpn.TlsAuth
+	}
+	if o.Cipher == "" {
+		o.Cipher = defaultOvpn.Cipher
+	}
+	o.Script = defaultOvpn.Script
+}
+
 type Network struct {
 	Alias    string        `json:"-"`
-	Name     string        `json:"name"`
-	Bridge   Bridge        `json:"bridge"`
-	Subnet   IpSubnet      `json:"subnet"`
+	Name     string        `json:"name,omitempty"`
+	Bridge   Bridge        `json:"bridge,omitempty"`
+	Subnet   IpSubnet      `json:"subnet,omitempty"`
+	OpenVPN  *OpenVPN      `json:"openvpn,omitempty"`
 	Links    []*Point      `json:"links,omitempty"`
 	Hosts    []HostLease   `json:"hosts,omitempty"`
 	Routes   []PrefixRoute `json:"routes,omitempty"`
@@ -76,6 +143,10 @@ func (n *Network) Right() {
 		if n.Routes[i].NextHop == "" {
 			n.Routes[i].NextHop = ifAddr
 		}
+	}
+	if n.OpenVPN != nil {
+		n.OpenVPN.Name = n.Name
+		n.OpenVPN.Right()
 	}
 }
 
@@ -205,7 +276,6 @@ func (c *Switch) Initialize() {
 	if err := c.Load(); err != nil {
 		libol.Error("NewSwitch.load %s", err)
 	}
-	libol.SetLogger(c.Log.File, c.Log.Verbose)
 	c.Default()
 	libol.Debug("NewSwitch %v", c)
 }

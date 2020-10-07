@@ -96,14 +96,13 @@ func (t *HttpProxy) route(w http.ResponseWriter, p *http.Response) {
 	_, _ = io.Copy(w, p.Body)
 }
 
-func (t *HttpProxy) tunnel(w http.ResponseWriter, conn net.Conn, r *http.Request) {
+func (t *HttpProxy) tunnel(w http.ResponseWriter, conn net.Conn) {
 	src, bio, err := w.(http.Hijacker).Hijack()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer src.Close()
-	t.out.Info("HttpProxy.tunnel %s -> %s", src.RemoteAddr(), r.URL.Host)
 	wait := libol.NewWaitOne(2)
 	libol.Go(func() {
 		defer wait.Done()
@@ -137,6 +136,7 @@ func (t *HttpProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		t.out.Info("HttpProxy.ServeHTTP Required %v Authentication", r.URL.Host)
 		return
 	}
+	t.out.Info("HttpProxy.ServeHTTP %s %s -> %s", r.Method, r.RemoteAddr, r.URL.Host)
 	if r.Method == "CONNECT" { //RFC-7231 Tunneling TCP based protocols through Web Proxy servers
 		conn, err := net.Dial("tcp", r.URL.Host)
 		if err != nil {
@@ -144,7 +144,7 @@ func (t *HttpProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		_, _ = w.Write(connectOkay)
-		t.tunnel(w, conn, r)
+		t.tunnel(w, conn)
 	} else { //RFC 7230 - HTTP/1.1: Message Syntax and Routing
 		transport := &http.Transport{}
 		p, err := transport.RoundTrip(r)

@@ -45,6 +45,7 @@
     {
       "name": "default",
       "bridge": {
+        "name": "br-default",
         "address": "192.168.100.40/24"
       },
       "subnet": {
