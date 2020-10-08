@@ -1,6 +1,7 @@
 package olsw
 
 import (
+	"bytes"
 	"github.com/danieldin95/openlan-go/src/cli/config"
 	"github.com/danieldin95/openlan-go/src/libol"
 	"io/ioutil"
@@ -16,54 +17,27 @@ const (
 )
 
 type OpenVPNData struct {
-	Local   string
-	Port    string
-	Ca      string
-	Cert    string
-	Key     string
-	DhPem   string
-	TlsAuth string
-	Cipher  string
-	Server  string
-	Dev     string
-	Proto   string
-	Script  string
-	Routes  []string
-}
-
-func NewOpenVpnDataFromConf(cfg *config.OpenVPN) *OpenVPNData {
-	data := &OpenVPNData{
-		Local:   strings.SplitN(cfg.Listen, ":", 2)[0],
-		Ca:      cfg.RootCa,
-		Cert:    cfg.ServerCrt,
-		Key:     cfg.ServerKey,
-		DhPem:   cfg.DhPem,
-		TlsAuth: cfg.TlsAuth,
-		Cipher:  cfg.Cipher,
-		Dev:     cfg.Device,
-		Proto:   cfg.Protocol,
-		Script:  cfg.Script,
-	}
-	if addr, err := libol.IPNetwork(cfg.Subnet); err == nil {
-		data.Server = strings.ReplaceAll(addr, "/", " ")
-	}
-	if strings.Contains(cfg.Listen, ":") {
-		data.Port = strings.SplitN(cfg.Listen, ":", 2)[1]
-	}
-	for _, rt := range cfg.Routes {
-		if addr, err := libol.IPNetwork(rt); err == nil {
-			data.Routes = append(data.Routes, strings.ReplaceAll(addr, "/", " "))
-		}
-	}
-	return data
+	Local    string
+	Port     string
+	Ca       string
+	Cert     string
+	Key      string
+	DhPem    string
+	TlsAuth  string
+	Cipher   string
+	Server   string
+	Device   string
+	Protocol string
+	Script   string
+	Routes   []string
 }
 
 const (
 	xAuthConfTmpl = `# OpenVPN configuration
 local {{ .Local }}
 port {{ .Port }}
-proto {{ .Proto }}
-dev {{ .Dev }}
+proto {{ .Protocol }}
+dev {{ .Device }}
 ca {{ .Ca }}
 cert {{ .Cert }}
 key {{ .Key }}
@@ -88,8 +62,8 @@ verb 3
 	certConfTmpl = `# OpenVPN configuration
 local {{ .Local }}
 port {{ .Port }}
-proto {{ .Proto }}
-dev {{ .Dev }}
+proto {{ .Protocol }}
+dev {{ .Device }}
 ca {{ .Ca }}
 cert {{ .Cert }}
 key {{ .Key }}
@@ -108,6 +82,32 @@ status status.log
 verb 3
 `
 )
+
+func NewOpenVpnDataFromConf(cfg *config.OpenVPN) *OpenVPNData {
+	data := &OpenVPNData{
+		Local:    strings.SplitN(cfg.Listen, ":", 2)[0],
+		Ca:       cfg.RootCa,
+		Cert:     cfg.ServerCrt,
+		Key:      cfg.ServerKey,
+		DhPem:    cfg.DhPem,
+		TlsAuth:  cfg.TlsAuth,
+		Cipher:   cfg.Cipher,
+		Device:   cfg.Device,
+		Protocol: cfg.Protocol,
+		Script:   cfg.Script,
+	}
+	addr, _ := libol.IPNetwork(cfg.Subnet)
+	data.Server = strings.ReplaceAll(addr, "/", " ")
+	if strings.Contains(cfg.Listen, ":") {
+		data.Port = strings.SplitN(cfg.Listen, ":", 2)[1]
+	}
+	for _, rt := range cfg.Routes {
+		if addr, err := libol.IPNetwork(rt); err == nil {
+			data.Routes = append(data.Routes, strings.ReplaceAll(addr, "/", " "))
+		}
+	}
+	return data
+}
 
 type OpenVPN struct {
 	Cfg *config.OpenVPN
@@ -139,6 +139,13 @@ func (o *OpenVPN) ConfFile() string {
 	return o.Cfg.WorkDir + "/server.conf"
 }
 
+func (o *OpenVPN) ProfileFile() string {
+	if o.Cfg == nil {
+		return ""
+	}
+	return o.Cfg.WorkDir + "/client.ovpn"
+}
+
 func (o *OpenVPN) LogFile() string {
 	if o.Cfg == nil {
 		return ""
@@ -162,7 +169,7 @@ func (o *OpenVPN) WriteConf(path string) error {
 	data := NewOpenVpnDataFromConf(o.Cfg)
 	o.out.Debug("OpenVPN.WriteConf %v", data)
 	tmplStr := xAuthConfTmpl
-	if o.Cfg.Auth != "xauth" {
+	if o.Cfg.Auth == "cert" {
 		tmplStr = certConfTmpl
 	}
 	if tmpl, err := template.New("main").Parse(tmplStr); err != nil {
@@ -185,6 +192,14 @@ func (o *OpenVPN) Initialize() {
 	if err := o.WriteConf(o.ConfFile()); err != nil {
 		o.out.Warn("OpenVPN.Initialize %s", err)
 		return
+	}
+	if ctx, err := o.Profile(); err == nil {
+		file := o.ProfileFile()
+		if err := ioutil.WriteFile(file, ctx, 0600); err != nil {
+			o.out.Warn("OpenVPN.Initialize %s", err)
+		}
+	} else {
+		o.out.Warn("OpenVPN.Initialize %s", err)
 	}
 }
 
@@ -233,5 +248,100 @@ func (o *OpenVPN) Stop() {
 		if err := cmd.Run(); err != nil {
 			o.out.Warn("OpenVPN.Stop %s: %s", pid, err)
 		}
+	}
+}
+
+type OpenVPNProfile struct {
+	Remote   string
+	Ca       string
+	Cert     string
+	Key      string
+	TlsAuth  string
+	Cipher   string
+	Device   string
+	Protocol string
+}
+
+const (
+	xAuthClientProfile = `
+client
+dev {{ .Device }}
+proto {{ .Protocol }}
+remote {{ .Remote }}
+resolv-retry infinite
+nobind
+persist-key
+persist-tun
+<ca>
+{{ .Ca }}
+</ca>
+remote-cert-tls server
+<tls-auth>
+{{ .TlsAuth }}
+</tls-auth>
+key-direction 1
+cipher {{ .Cipher }}
+auth-nocache
+verb 4
+auth-user-pass
+`
+	certClientProfile = `
+client
+dev {{ .Device }}
+proto {{ .Protocol }}
+remote {{ .Remote }}
+resolv-retry infinite
+nobind
+persist-key
+persist-tun
+<ca>
+{{ .Ca }}
+</ca>
+<cert>
+</cert>
+<key>
+</key>
+remote-cert-tls server
+<tls-auth>
+{{ .TlsAuth }}
+</tls-auth>
+key-direction 1
+cipher {{ .Cipher }}
+auth-nocache
+verb 4
+`
+)
+
+func NewOpenVpnProfileFromConf(cfg *config.OpenVPN) *OpenVPNProfile {
+	data := &OpenVPNProfile{
+		Remote:   strings.ReplaceAll(cfg.Listen, ":", " "),
+		Cipher:   cfg.Cipher,
+		Device:   cfg.Device,
+		Protocol: cfg.Protocol,
+	}
+	if ctx, err := ioutil.ReadFile(cfg.RootCa); err == nil {
+		data.Ca = string(ctx)
+	}
+	if ctx, err := ioutil.ReadFile(cfg.TlsAuth); err == nil {
+		data.TlsAuth = string(ctx)
+	}
+	return data
+}
+
+func (o *OpenVPN) Profile() ([]byte, error) {
+	data := NewOpenVpnProfileFromConf(o.Cfg)
+	tmplStr := xAuthClientProfile
+	if o.Cfg.Auth == "cert" {
+		tmplStr = certClientProfile
+	}
+	tmpl, err := template.New("main").Parse(tmplStr)
+	if err != nil {
+		return nil, err
+	}
+	var out bytes.Buffer
+	if err := tmpl.Execute(&out, data); err == nil {
+		return out.Bytes(), nil
+	} else {
+		return nil, err
 	}
 }

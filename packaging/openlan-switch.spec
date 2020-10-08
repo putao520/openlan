@@ -4,15 +4,15 @@ Release: 1%{?dist}
 Summary: OpenLan's Project Software
 Group: Applications/Communications
 License: Apache 2.0
-URL: https://github.com/danieldin95/openlan-go
+URL: https://github.com/danieldin95/openlan
 BuildRequires: go
-Requires: net-tools, iptables, iputils
+Requires: net-tools, iptables, iputils, openvpn, openssl
 
 %define _venv /opt/openlan-utils/env
-%define _source_dir ${RPM_SOURCE_DIR}/openlan-go-%{version}
+%define _source_dir ${RPM_SOURCE_DIR}/openlan-%{version}
 
 %description
-OpenLan's Project Software
+OpenLAN's Project Software
 
 %build
 cd %_source_dir && make linux-switch
@@ -61,8 +61,15 @@ firewall-cmd --reload || :
 
 %post
 if [ ! -e "/etc/openlan/switch/switch.json" ]; then
-    cp -rvf /etc/openlan/switch/switch.json.example /etc/openlan/switch/switch.json
+    /usr/bin/cp -rvf /etc/openlan/switch/switch.json.example /etc/openlan/switch/switch.json
 fi
+if [ ! -e "/var/openlan/openvpn/dh.pem" ]; then
+    /usr/bin/openssl dhparam -out /var/openlan/openvpn/dh.pem 1024
+fi
+if [ ! -e "/var/openlan/openvpn/ta.key" ]; then
+    /usr/sbin/openvpn --genkey --secret /var/openlan/openvpn/ta.key
+fi
+
 
 %files
 %defattr(-,root,root)

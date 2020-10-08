@@ -157,7 +157,7 @@ func IPNetwork(ipAddr string) (string, error) {
 	if _, n, err := net.ParseCIDR(ipAddr); err == nil {
 		return n.IP.String() + "/" + net.IP(n.Mask).String(), nil
 	} else {
-		return "", err
+		return ipAddr, err
 	}
 }
 
