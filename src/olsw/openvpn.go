@@ -95,7 +95,6 @@ cert {{ .Cert }}
 key {{ .Key }}
 dh {{ .DhPem }}
 server {{ .Server }}
-# Push routes to the client
 {{ range .Routes }}
 push "route {{ . }}"
 {{ end }}
