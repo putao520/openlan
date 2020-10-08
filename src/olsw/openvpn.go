@@ -58,7 +58,8 @@ func NewOpenVpnDataFromConf(cfg *config.OpenVPN) *OpenVPNData {
 	return data
 }
 
-var serverConfXAuthTmpl, _ = template.New("").Parse(`## THIS FILE GENERATE BY OPENLAN
+const (
+	xAuthConfTmpl = `# OpenVPN configuration
 local {{ .Local }}
 port {{ .Port }}
 proto {{ .Proto }}
@@ -78,13 +79,13 @@ cipher {{ .Cipher }}
 persist-key
 persist-tun
 status status.log
-client-cert-not-required
+verify-client-cert none
+script-security 3
 auth-user-pass-verify "{{ .Script }}" via-env
 username-as-common-name
-script-security 3
-verb 3`)
-
-var serverConfCertTmpl, _ = template.New("").Parse(`## THIS FILE GENERATE BY OPENLAN
+verb 3
+`
+	certConfTmpl = `# OpenVPN configuration
 local {{ .Local }}
 port {{ .Port }}
 proto {{ .Proto }}
@@ -94,6 +95,7 @@ cert {{ .Cert }}
 key {{ .Key }}
 dh {{ .DhPem }}
 server {{ .Server }}
+# Push routes to the client
 {{ range .Routes }}
 push "route {{ . }}"
 {{ end }}
@@ -104,7 +106,9 @@ cipher {{ .Cipher }}
 persist-key
 persist-tun
 status status.log
-verb 3`)
+verb 3
+`
+)
 
 type OpenVPN struct {
 	Cfg *config.OpenVPN
@@ -158,12 +162,14 @@ func (o *OpenVPN) WriteConf(path string) error {
 	defer fp.Close()
 	data := NewOpenVpnDataFromConf(o.Cfg)
 	o.out.Debug("OpenVPN.WriteConf %v", data)
-	if o.Cfg.Auth == "xauth" {
-		if err := serverConfXAuthTmpl.Execute(fp, data); err != nil {
-			return err
-		}
+	tmplStr := xAuthConfTmpl
+	if o.Cfg.Auth != "xauth" {
+		tmplStr = certConfTmpl
+	}
+	if tmpl, err := template.New("main").Parse(tmplStr); err != nil {
+		return err
 	} else {
-		if err := serverConfCertTmpl.Execute(fp, data); err != nil {
+		if err := tmpl.Execute(fp, data); err != nil {
 			return err
 		}
 	}
@@ -219,13 +225,14 @@ func (o *OpenVPN) Stop() {
 	if !o.ValidCfg() {
 		return
 	}
-	if pid, err := ioutil.ReadFile(o.PidFile()); err != nil {
+	if data, err := ioutil.ReadFile(o.PidFile()); err != nil {
 		o.out.Debug("OpenVPN.Stop %s", err)
 		return
 	} else {
-		cmd := exec.Command("/usr/bin/kill", string(pid))
+		pid := strings.TrimSpace(string(data))
+		cmd := exec.Command("/usr/bin/kill", pid)
 		if err := cmd.Run(); err != nil {
-			o.out.Warn("OpenVPN.Stop %s", err)
+			o.out.Warn("OpenVPN.Stop %s: %s", pid, err)
 		}
 	}
 }
