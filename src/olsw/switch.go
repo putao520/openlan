@@ -462,7 +462,7 @@ func (v *Switch) FreeTap(dev network.Taper) error {
 
 func (v *Switch) UUID() string {
 	if v.uuid == "" {
-		v.uuid = libol.GenToken(32)
+		v.uuid = libol.GenRandom(13)
 	}
 	return v.uuid
 }

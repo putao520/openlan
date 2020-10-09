@@ -59,7 +59,7 @@ func (h *Http) Initialize() {
 		_ = h.LoadToken()
 	}
 	if h.adminToken == "" {
-		h.adminToken = libol.GenToken(64)
+		h.adminToken = libol.GenRandom(64)
 	}
 
 	_ = h.SaveToken()

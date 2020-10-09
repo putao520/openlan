@@ -18,7 +18,7 @@ import (
 	"time"
 )
 
-func GenToken(n int) string {
+func GenRandom(n int) string {
 	letters := []byte("0123456789abcdefghijklmnopqrstuvwxyz")
 	buffer := make([]byte, n)
 

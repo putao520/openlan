@@ -1271,7 +1271,7 @@ func (w *Worker) OnSuccess(s *SocketWorker) error {
 
 func (w *Worker) UUID() string {
 	if w.uuid == "" {
-		w.uuid = libol.GenToken(32)
+		w.uuid = libol.GenRandom(13)
 	}
 	return w.uuid
 }

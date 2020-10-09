@@ -87,7 +87,7 @@ func GetAlias() string {
 	if hostname, err := os.Hostname(); err == nil {
 		return strings.ToLower(hostname)
 	}
-	return libol.GenToken(13)
+	return libol.GenRandom(13)
 }
 
 type Cert struct {
