@@ -1,7 +1,7 @@
 Name: openlan-switch
-Version: 5.5.10
+Version: 5.5.11
 Release: 1%{?dist}
-Summary: OpenLan's Project Software
+Summary: OpenLAN's Project Software
 Group: Applications/Communications
 License: Apache 2.0
 URL: https://github.com/danieldin95/openlan
@@ -41,8 +41,8 @@ mkdir -p %{buildroot}/var/openlan
 cp -R %_source_dir/packaging/script %{buildroot}/var/openlan
 cp -R %_source_dir/src/olsw/public %{buildroot}/var/openlan
 mkdir -p %{buildroot}/var/openlan/cert
-cp -R %_source_dir/packaging/resource/cert/openlan/cert %{buildroot}/var/openlan
-cp -R %_source_dir/packaging/resource/cert/openlan/ca/ca.crt %{buildroot}/var/openlan/cert
+cp -R %_source_dir/build/cert/openlan/cert %{buildroot}/var/openlan
+cp -R %_source_dir/build/cert/openlan/ca/ca.crt %{buildroot}/var/openlan/cert
 
 mkdir -p %{buildroot}/var/openlan/openvpn
 cp -R %_source_dir/packaging/resource/openvpn.md %{buildroot}/var/openlan/openvpn

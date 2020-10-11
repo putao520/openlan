@@ -1,14 +1,14 @@
 Name: openlan-ctrl
-Version: 5.5.10
+Version: 5.5.11
 Release: 1%{?dist}
-Summary: OpenLan's Controller Software
+Summary: OpenLAN's Controller Software
 Group: Applications/Communications
 License: Apache 2.0
 URL: https://github.com/danieldin95/openlan-go
 
 BuildRequires: go
 
-%define _source_dir ${RPM_SOURCE_DIR}/openlan-go-%{version}
+%define _source_dir ${RPM_SOURCE_DIR}/openlan-%{version}
 
 %description
 OpenLan's Project Software
@@ -23,7 +23,7 @@ cp %_source_dir/build/openlan-ctrl %{buildroot}/usr/bin
 mkdir -p %{buildroot}/etc/sysconfig/openlan
 cp %_source_dir/packaging/resource/ctrl.cfg %{buildroot}/etc/sysconfig/openlan
 mkdir -p %{buildroot}/var/openlan/ctrl/cert
-cp -R %_source_dir/packaging/resource/cert/openlan/cert %{buildroot}/var/openlan/ctrl
+cp -R %_source_dir/build/cert/openlan/cert %{buildroot}/var/openlan/ctrl
 
 mkdir -p %{buildroot}/etc/openlan/ctrl
 cp %_source_dir/packaging/resource/auth.json.example %{buildroot}/etc/openlan/ctrl

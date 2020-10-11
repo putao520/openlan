@@ -71,11 +71,10 @@ linux-switch: env
 
 linux-rpm: env ## build rpm packages
 	@./packaging/spec.sh
-	@ln -s $(SD)/../freecert ./packaging/resource/cert
+	@ln -s $(SD)/../freecert $(BD)/cert
 	rpmbuild -ba packaging/openlan-ctrl.spec
 	rpmbuild -ba packaging/openlan-point.spec
 	rpmbuild -ba packaging/openlan-switch.spec
-	@rm -rf ./packaging/resource/cert
 	@cp -rf ~/rpmbuild/RPMS/x86_64/openlan-*.rpm $(BD)
 
 ## cross build for windows

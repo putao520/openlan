@@ -1,7 +1,7 @@
 Name: openlan-point
-Version: 5.5.10
+Version: 5.5.11
 Release: 1%{?dist}
-Summary: OpenLan's Project Software
+Summary: OpenLAN's Project Software
 Group: Applications/Communications
 License: Apache 2.0
 URL: https://github.com/danieldin95/openlan-go
@@ -9,7 +9,7 @@ URL: https://github.com/danieldin95/openlan-go
 BuildRequires: go
 Requires: iproute
 
-%define _source_dir ${RPM_SOURCE_DIR}/openlan-go-%{version}
+%define _source_dir ${RPM_SOURCE_DIR}/openlan-%{version}
 
 %description
 OpenLan's Project Point Software
