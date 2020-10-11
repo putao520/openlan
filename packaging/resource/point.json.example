@@ -1,7 +1,6 @@
 {
-  "network": "default",
   "connection": "who.openlan.net",
-  "username": "hi",
+  "username": "hi@default",
   "password": "12345",
   "protocol": "tls",
   "cert": {

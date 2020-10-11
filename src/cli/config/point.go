@@ -4,6 +4,7 @@ import (
 	"flag"
 	"github.com/danieldin95/openlan-go/src/libol"
 	"runtime"
+	"strings"
 )
 
 type Interface struct {
@@ -17,10 +18,10 @@ type Interface struct {
 
 type Point struct {
 	Alias       string    `json:"alias,omitempty"`
-	Network     string    `json:"network,omitempty"`
 	Connection  string    `json:"connection"`
 	Timeout     int       `json:"timeout"`
 	Username    string    `json:"username,omitempty"`
+	Network     string    `json:"network"`
 	Password    string    `json:"password,omitempty"`
 	Protocol    string    `json:"protocol,omitempty"`
 	Interface   Interface `json:"interface"`
@@ -28,8 +29,8 @@ type Point struct {
 	Http        *Http     `json:"http,omitempty"`
 	Crypt       *Crypt    `json:"crypt,omitempty"`
 	PProf       string    `json:"pprof,omitempty"`
-	RequestAddr bool      `json:"-" yaml:"-"`
-	SaveFile    string    `json:"-" yaml:"-"`
+	RequestAddr bool      `json:"-"`
+	SaveFile    string    `json:"-"`
 	Queue       *Queue    `json:"queue"`
 	Terminal    string    `json:"-"`
 	Cert        *Cert     `json:"cert"`
@@ -38,6 +39,7 @@ type Point struct {
 var pd = &Point{
 	Alias:      "",
 	Connection: "openlan.net",
+	Network:    "default",
 	Protocol:   "tls", // udp, kcp, tcp, tls, ws and wss etc.
 	Timeout:    60,
 	Log: Log{
@@ -50,7 +52,6 @@ var pd = &Point{
 		Name:     "",
 	},
 	SaveFile:    "./point.json",
-	Network:     "default",
 	RequestAddr: true,
 	Crypt:       &Crypt{},
 	Cert:        &Cert{},
@@ -63,24 +64,23 @@ func NewPoint() (c *Point) {
 		Crypt:       pd.Crypt,
 		Cert:        pd.Cert,
 	}
-	flag.StringVar(&c.Alias, "alias", pd.Alias, "alias for this point")
-	flag.StringVar(&c.Terminal, "terminal", pd.Terminal, "run interactive terminal")
-	flag.StringVar(&c.Network, "net", pd.Network, "Network name")
-	flag.StringVar(&c.Connection, "conn", pd.Connection, "Virtual switch connect to")
-	flag.StringVar(&c.Username, "user", pd.Username, "Accessed username")
-	flag.StringVar(&c.Password, "pass", pd.Password, "Accessed password")
-	flag.StringVar(&c.Protocol, "proto", pd.Protocol, "Connection protocol")
+	flag.StringVar(&c.Alias, "alias", pd.Alias, "Alias for this point")
+	flag.StringVar(&c.Terminal, "terminal", pd.Terminal, "Run interactive terminal")
+	flag.StringVar(&c.Connection, "conn", pd.Connection, "Connection access to")
+	flag.StringVar(&c.Username, "user", pd.Username, "User access to by <username>@<network>")
+	flag.StringVar(&c.Password, "pass", pd.Password, "Password for authentication")
+	flag.StringVar(&c.Protocol, "proto", pd.Protocol, "IP Protocol for connection")
 	flag.StringVar(&c.Log.File, "log:file", pd.Log.File, "Log saved to file")
 	flag.StringVar(&c.Interface.Name, "if:name", pd.Interface.Name, "Configure interface name")
 	flag.StringVar(&c.Interface.Address, "if:addr", pd.Interface.Address, "Configure interface address")
 	flag.StringVar(&c.Interface.Bridge, "if:br", pd.Interface.Bridge, "Configure bridge name")
 	flag.StringVar(&c.Interface.Provider, "if:provider", pd.Interface.Provider, "Interface provider")
-	flag.StringVar(&c.SaveFile, "conf", pd.SaveFile, "the configuration file")
+	flag.StringVar(&c.SaveFile, "conf", pd.SaveFile, "The configuration file")
 	flag.StringVar(&c.Crypt.Secret, "crypt:secret", pd.Crypt.Secret, "Crypt secret")
 	flag.StringVar(&c.Crypt.Algo, "crypt:algo", pd.Crypt.Algo, "Crypt algorithm")
 	flag.StringVar(&c.PProf, "pprof", pd.PProf, "Configure file for CPU prof")
 	flag.StringVar(&c.Cert.CaFile, "cacert", pd.Cert.CaFile, "CA certificate file")
-	flag.IntVar(&c.Timeout, "timeout", pd.Timeout, "Time in secs socket dead")
+	flag.IntVar(&c.Timeout, "timeout", pd.Timeout, "Timeout(s) for socket write/read")
 	flag.IntVar(&c.Log.Verbose, "log:level", pd.Log.Verbose, "Log level")
 	flag.Parse()
 	c.Initialize()
@@ -102,6 +102,13 @@ func (c *Point) Initialize() {
 func (c *Point) Right() {
 	if c.Alias == "" {
 		c.Alias = GetAlias()
+	}
+	if c.Network == "" {
+		if strings.Contains(c.Username, "@") {
+			c.Network = strings.SplitN(c.Username, "@", 2)[1]
+		} else {
+			c.Network = pd.Network
+		}
 	}
 	RightAddr(&c.Connection, 10002)
 	if runtime.GOOS == "darwin" {

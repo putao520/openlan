@@ -243,9 +243,9 @@ type Switch struct {
 	FireWall  []FlowRule `json:"firewall,omitempty"`
 	Inspect   []string   `json:"inspect"`
 	Queue     *Queue     `json:"queue"`
-	ConfDir   string     `json:"-" yaml:"-"`
-	TokenFile string     `json:"-" yaml:"-"`
-	SaveFile  string     `json:"-" yaml:"-"`
+	ConfDir   string     `json:"-"`
+	TokenFile string     `json:"-"`
+	SaveFile  string     `json:"-"`
 }
 
 var sd = &Switch{

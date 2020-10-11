@@ -44,6 +44,10 @@ func (p *Point) Update() *Point {
 func (p *Point) SetUser(user *User) {
 	p.User = user.Name
 	p.UUID = user.UUID
+	if len(p.UUID) > 13 {
+		// too long and using short uuid.
+		p.UUID = p.UUID[:13]
+	}
 	p.Network = user.Network
 	p.System = user.System
 	p.Alias = user.Alias

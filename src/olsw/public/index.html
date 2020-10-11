@@ -141,7 +141,7 @@
                 <tr>
                     <th>UUID</th>
                     <th>Alive</th>
-                    <th>Network</th>
+                    <th>Device</th>
                     <th>User</th>
                     <th>Connection</th>
                     <th>r/t|Traffic</th>
@@ -153,8 +153,8 @@
                     <tr>
                         <td>{{ .UUID }}</td>
                         <td>{{ prettyTime .AliveTime }}</td>
-                        <td>{{ .Device }}.{{ .Network }}</td>
-                        <td>{{ .User }}</td>
+                        <td>{{ .Device }}</td>
+                        <td>{{ .User }}@{{ .Network }}</td>
                         <td><a href="https://{{ getIpAddr .Address }}:10000">{{ .Address }}</a></td>
                         <td>{{ prettyBytes .RxBytes }}/{{ prettyBytes .TxBytes }}</td>
                         <td><span class="{{ .State }}">{{ .State }}</span></td>
@@ -176,7 +176,7 @@
                 <tr>
                     <th>UUID</th>
                     <th>Alive</th>
-                    <th>Network</th>
+                    <th>Device</th>
                     <th>Alias</th>
                     <th>Connection</th>
                     <th>User</th>
@@ -189,10 +189,10 @@
                     <tr>
                         <td>{{ .UUID }}</td>
                         <td>{{ prettyTime .AliveTime }}</td>
-                        <td>{{ .Device }}.{{ .Network }}</td>
+                        <td>{{ .Device }}</td>
                         <td>{{ .Alias }}</td>
                         <td>{{ .Address }}</td>
-                        <td>{{ .User }}</td>
+                        <td>{{ .User }}@{{ .Network }}</td>
                         <td>{{ prettyBytes .RxBytes }}/{{ prettyBytes .TxBytes }}</td>
                         <td><span class="{{ .State }}">{{ .State }}</span></td>
                     </tr>
