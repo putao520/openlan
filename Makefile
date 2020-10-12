@@ -49,7 +49,7 @@ clean: ## clean cache
 ## prepare environment
 env:
 	@mkdir -p $(BD)
-	gofmt -w -s ./src
+	@gofmt -w -s ./src
 
 ## linux platform
 linux: linux-point linux-switch linux-ctrl ## build linux binary
@@ -71,7 +71,7 @@ linux-switch: env
 
 linux-rpm: env ## build rpm packages
 	@./packaging/spec.sh
-	@ln -s $(SD)/../freecert $(BD)/cert
+	@[ -e "$(BD)"/cert ] || ln -s $(SD)/../freecert $(BD)/cert
 	rpmbuild -ba packaging/openlan-ctrl.spec
 	rpmbuild -ba packaging/openlan-point.spec
 	rpmbuild -ba packaging/openlan-switch.spec

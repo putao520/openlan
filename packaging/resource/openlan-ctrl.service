@@ -8,6 +8,7 @@ RemainAfterExit=yes
 EnvironmentFile=/etc/sysconfig/openlan/ctrl.cfg
 ExecStart=/usr/bin/openlan-ctrl $OPTIONS
 ExecStop=/usr/bin/kill `/usr/sbin/pidof openlan-ctrl`
+LimitNOFILE=102400
 
 [Install]
 WantedBy=multi-user.target
