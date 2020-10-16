@@ -72,11 +72,7 @@ func (k *UdpServer) Accept() {
 	defer k.Close()
 	for {
 		conn, err := k.listener.Accept()
-		if err != nil {
-			Error("TcpServer.Accept: %s", err)
-			continue
-		}
-		if !k.preAccept(conn) {
+		if k.preAccept(conn, err) != nil {
 			continue
 		}
 		k.onClients <- NewUdpClientFromConn(conn, k.udpCfg)

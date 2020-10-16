@@ -77,11 +77,7 @@ func (k *KcpServer) Accept() {
 	defer k.Close()
 	for {
 		conn, err := k.listener.AcceptKCP()
-		if err != nil {
-			Error("KcpServer.Accept: %s", err)
-			continue
-		}
-		if !k.preAccept(conn) {
+		if k.preAccept(conn, err) != nil {
 			continue
 		}
 		conn.SetStreamMode(true)

@@ -322,6 +322,7 @@ type SocketServerImpl struct {
 	close      func()
 	timeout    int64 // sec for read and write timeout
 	WrQus      int   // per frames.
+	error      error
 }
 
 func NewSocketServer(listen string) *SocketServerImpl {
@@ -461,9 +462,17 @@ func (t *SocketServerImpl) SetTimeout(v int64) {
 	t.timeout = v
 }
 
-// Previous process when accept connection,
-// and allowed accept new connection, will return true.
-func (t *SocketServerImpl) preAccept(conn net.Conn) bool {
+// pre-process when accept connection,
+// and allowed accept new connection, will return nil.
+func (t *SocketServerImpl) preAccept(conn net.Conn, err error) error {
+	if err != nil {
+		if t.error == nil || t.error.Error() != err.Error() {
+			Warn("SocketServerImpl.preAccept: %s", err)
+		}
+		t.error = err
+		return err
+	}
+	t.error = nil
 	addr := conn.RemoteAddr()
 	Debug("SocketServerImpl.preAccept: %s", addr)
 	t.statistics.Add(SsAccept, 1)
@@ -472,10 +481,10 @@ func (t *SocketServerImpl) preAccept(conn net.Conn) bool {
 		Debug("SocketServerImpl.preAccept: close %s", addr)
 		t.statistics.Add(SsDeny, 1)
 		t.statistics.Add(SsClose, 1)
-		conn.Close()
-		return false
+		_ = conn.Close()
+		return NewErr("too many open clients")
 	}
 	Debug("SocketServerImpl.preAccept: allow %s", addr)
 	t.statistics.Add(SsAlive, 1)
-	return true
+	return nil
 }

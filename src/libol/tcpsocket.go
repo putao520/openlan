@@ -77,11 +77,7 @@ func (t *TcpServer) Accept() {
 	defer t.Close()
 	for {
 		conn, err := t.listener.Accept()
-		if err != nil {
-			Error("TcpServer.Accept: %s", err)
-			continue
-		}
-		if !t.preAccept(conn) {
+		if t.preAccept(conn, err) != nil {
 			continue
 		}
 		t.onClients <- NewTcpClientFromConn(conn, t.tcpCfg)

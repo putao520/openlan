@@ -86,7 +86,7 @@ func (t *WebServer) Accept() {
 	_ = t.Listen()
 	defer t.Close()
 	t.listener.Handler = websocket.Handler(func(ws *websocket.Conn) {
-		if !t.preAccept(ws) {
+		if t.preAccept(ws, nil) != nil {
 			return
 		}
 		defer ws.Close()
