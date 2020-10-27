@@ -1,9 +1,9 @@
 {
-  "connection": "who.openlan.net",
-  "username": "hi@default",
-  "password": "12345",
-  "protocol": "tls",
-  "cert": {
-    "insecure": true
-  }
+    "connection": "who.openlan.net",
+    "username": "hi@default",
+    "password": "12345",
+    "protocol": "tls",
+    "cert": {
+        "insecure": true
+    }
 }

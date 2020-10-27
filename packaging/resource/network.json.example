@@ -1,45 +1,45 @@
 {
-  "name": "example",
-  "bridge": {
-    "address": "172.32.100.40/24"
-  },
-  "subnet": {
-    "start": "172.32.100.250",
-    "end": "172.32.100.254",
-    "netmask": "255.255.255.0"
-  },
-  "hosts": [
-    {
-      "hostname": "pc-99",
-      "address": "172.32.100.99"
+    "name": "example",
+    "bridge": {
+        "address": "172.32.100.40/24"
     },
-    {
-      "hostname": "pc-100",
-      "address": "172.32.100.100"
+    "subnet": {
+        "start": "172.32.100.250",
+        "end": "172.32.100.254",
+        "netmask": "255.255.255.0"
+    },
+    "hosts": [
+        {
+            "hostname": "pc-99",
+            "address": "172.32.100.99"
+        },
+        {
+            "hostname": "pc-100",
+            "address": "172.32.100.100"
+        }
+    ],
+    "routes": [
+        {
+            "prefix": "172.32.10.0/24"
+        }
+    ],
+    "password": [
+        {
+            "username": "hi",
+            "password": "12345^"
+        }
+    ],
+    "links": [
+        {
+            "protocol": "tls",
+            "connection": "hi.openlan.net",
+            "username": "hi",
+            "password": "12345^"
+        }
+    ],
+    "openvpn": {
+        "protocol": "udp",
+        "listen": "0.0.0.0:11194",
+        "subnet": "10.11.194.0/24"
     }
-  ],
-  "routes": [
-    {
-      "prefix": "172.32.10.0/24"
-    }
-  ],
-  "password": [
-    {
-      "username": "hi",
-      "password": "12345^"
-    }
-  ],
-  "links": [
-    {
-      "protocol": "tls",
-      "connection": "hi.openlan.net",
-      "username": "hi",
-      "password": "12345^"
-    }
-  ],
-  "openvpn": {
-    "protocol": "udp",
-    "listen": "0.0.0.0:11194",
-    "subnet": "10.11.194.0/24"
-  }
 }

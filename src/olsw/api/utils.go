@@ -8,7 +8,7 @@ import (
 )
 
 func ResponseJson(w http.ResponseWriter, v interface{}) {
-	str, err := json.MarshalIndent(v, "", "  ")
+	str, err := json.MarshalIndent(v, "", "    ")
 	if err == nil {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write(str)
@@ -44,7 +44,7 @@ func GetData(r *http.Request, v interface{}) error {
 	if err != nil {
 		return err
 	}
-	if err := json.Unmarshal([]byte(body), v); err != nil {
+	if err := json.Unmarshal(body, v); err != nil {
 		return err
 	}
 	return nil

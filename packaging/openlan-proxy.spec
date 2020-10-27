@@ -1,5 +1,5 @@
 Name: openlan-proxy
-Version: 5.5.11
+Version: 5.5.12
 Release: 1%{?dist}
 Summary: OpenLAN's Project Software
 Group: Applications/Communications

@@ -1,51 +1,51 @@
 {
-  "protocol": "tls",
-  "cert": {
-    "dir": "/var/openlan/cert"
-  },
-  "http": {
-    "public": "/var/openlan/public"
-  },
-  "crypt": {
-    "secret": "12345^"
-  },
-  "network": [
-    {
-      "name": "default",
-      "bridge": {
-        "name": "br-default",
-        "address": "192.168.100.40/24"
-      },
-      "subnet": {
-        "start": "192.168.100.250",
-        "end": "192.168.100.254",
-        "netmask": "255.255.255.0"
-      },
-      "hosts": [
-      ],
-      "links": [
+    "protocol": "tls",
+    "cert": {
+        "dir": "/var/openlan/cert"
+    },
+    "http": {
+        "public": "/var/openlan/public"
+    },
+    "crypt": {
+        "secret": "12345^"
+    },
+    "network": [
         {
-          "protocol": "tls",
-          "connection": "you.openlan.net",
-          "username": "hi",
-          "password": "12345"
+            "name": "default",
+            "bridge": {
+                "name": "br-default",
+                "address": "192.168.100.40/24"
+            },
+            "subnet": {
+                "start": "192.168.100.250",
+                "end": "192.168.100.254",
+                "netmask": "255.255.255.0"
+            },
+            "hosts": [
+            ],
+            "links": [
+                {
+                    "protocol": "tls",
+                    "connection": "you.openlan.net",
+                    "username": "hi",
+                    "password": "12345"
+                }
+            ],
+            "routes": [
+                {
+                    "prefix": "192.168.10.0/24"
+                }
+            ],
+            "password": [
+                {
+                    "username": "hi",
+                    "password": "12345^"
+                }
+            ]
         }
-      ],
-      "routes": [
-        {
-          "prefix": "192.168.10.0/24"
-        }
-      ],
-      "password": [
-        {
-          "username": "hi",
-          "password": "12345^"
-        }
-      ]
-    }
-  ],
-  "inspect": [
-    "neighbor",
-    "online"
-  ]
+    ],
+    "inspect": [
+        "neighbor",
+        "online"
+    ]
 }
