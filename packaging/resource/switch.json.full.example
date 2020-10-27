@@ -9,38 +9,6 @@
   "crypt": {
     "secret": "12345^"
   },
-  "proxy": {
-    "socks": [
-      {
-        "listen": "0.0.0.0:11080"
-      }
-    ],
-    "http": [
-      {
-        "listen": "0.0.0.0:11082",
-        "auth": {
-          "username": "hi",
-          "password": "12345^"
-        }
-      },
-      {
-        "listen": "0.0.0.0:11083",
-        "auth": {
-          "username": "hi",
-          "password": "12345^"
-        },
-        "cert": {
-          "dir": "/var/openlan/cert"
-        }
-      }
-    ],
-    "tcp": [
-      {
-        "listen": "0.0.0.0:80",
-        "target": ["192.168.100.80:80", "192.168.100.81:80"]
-      }
-    ]
-  },
   "network": [
     {
       "name": "default",

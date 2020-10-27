@@ -52,7 +52,7 @@ env:
 	@gofmt -w -s ./src
 
 ## linux platform
-linux: linux-point linux-switch linux-ctrl ## build linux binary
+linux: linux-proxy linux-point linux-switch linux-ctrl ## build linux binary
 
 linux-ctrl: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-ctrl ./src/cli/ctrl
@@ -69,9 +69,14 @@ linux-switch: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-checkpass ./src/cli/checkpass
 	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-checkpass.i386 ./src/cli/checkpass
 
+linux-proxy: env
+	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-proxy ./src/cli/proxy
+	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-proxy.i386 ./src/cli/proxy
+
 linux-rpm: env ## build rpm packages
 	@./packaging/spec.sh
 	@[ -e "$(BD)"/cert ] || ln -s $(SD)/../freecert $(BD)/cert
+	rpmbuild -ba packaging/openlan-proxy.spec
 	rpmbuild -ba packaging/openlan-ctrl.spec
 	rpmbuild -ba packaging/openlan-point.spec
 	rpmbuild -ba packaging/openlan-switch.spec

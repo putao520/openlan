@@ -50,5 +50,6 @@ func (e *Neighbor) Update(client libol.SocketClient) {
 	if point, ok := private.(*Point); ok {
 		e.Network = point.Network
 		e.Device = point.IfName
+		e.Client = client.String()
 	}
 }

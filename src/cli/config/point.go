@@ -78,7 +78,7 @@ func NewPoint() (c *Point) {
 	flag.StringVar(&c.SaveFile, "conf", pd.SaveFile, "The configuration file")
 	flag.StringVar(&c.Crypt.Secret, "crypt:secret", pd.Crypt.Secret, "Crypt secret")
 	flag.StringVar(&c.Crypt.Algo, "crypt:algo", pd.Crypt.Algo, "Crypt algorithm")
-	flag.StringVar(&c.PProf, "pprof", pd.PProf, "Configure file for CPU prof")
+	flag.StringVar(&c.PProf, "pprof", pd.PProf, "Http listen for CPU prof")
 	flag.StringVar(&c.Cert.CaFile, "cacert", pd.Cert.CaFile, "CA certificate file")
 	flag.IntVar(&c.Timeout, "timeout", pd.Timeout, "Timeout(s) for socket write/read")
 	flag.IntVar(&c.Log.Verbose, "log:level", pd.Log.Verbose, "Log level")

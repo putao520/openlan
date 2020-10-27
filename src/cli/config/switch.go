@@ -163,36 +163,6 @@ type FlowRule struct {
 	Jump     string `json:"jump"` // SNAT/RETURN/MASQUERADE
 }
 
-type SocksProxy struct {
-	Listen string   `json:"listen,omitempty"`
-	Auth   Password `json:"auth,omitempty"`
-}
-
-type HttpProxy struct {
-	Listen string   `json:"listen,omitempty"`
-	Auth   Password `json:"auth,omitempty"`
-	Cert   *Cert    `json:"cert,omitempty"`
-}
-
-type TcpProxy struct {
-	Listen string   `json:"listen,omitempty"`
-	Target []string `json:"target,omitempty"`
-}
-
-type Proxy struct {
-	Socks []*SocksProxy `json:"socks,omitempty"`
-	Http  []*HttpProxy  `json:"http,omitempty"`
-	Tcp   []*TcpProxy   `json:"tcp,omitempty"`
-}
-
-func (p *Proxy) Right() {
-	for _, h := range p.Http {
-		if h.Cert != nil {
-			h.Cert.Right()
-		}
-	}
-}
-
 var pfd = Perf{
 	Point:    1024,
 	Neighbor: 1024,
@@ -237,7 +207,6 @@ type Switch struct {
 	Log       Log        `json:"log"`
 	Cert      *Cert      `json:"cert,omitempty"`
 	Crypt     *Crypt     `json:"crypt,omitempty"`
-	Proxy     *Proxy     `json:"proxy,omitempty"`
 	PProf     string     `json:"pprof"`
 	Network   []*Network `json:"network,omitempty"`
 	FireWall  []FlowRule `json:"firewall,omitempty"`
@@ -264,7 +233,7 @@ var sd = &Switch{
 func NewSwitch() (c Switch) {
 	flag.StringVar(&c.Log.File, "log:file", sd.Log.File, "Configure log file")
 	flag.StringVar(&c.ConfDir, "conf:dir", sd.ConfDir, "Configure virtual switch directory")
-	flag.StringVar(&c.PProf, "prof", sd.PProf, "Configure file for CPU prof")
+	flag.StringVar(&c.PProf, "prof", sd.PProf, "Http listen for CPU prof")
 	flag.IntVar(&c.Log.Verbose, "log:level", sd.Log.Verbose, "Configure log level")
 	flag.Parse()
 	c.Initialize()
@@ -274,10 +243,10 @@ func NewSwitch() (c Switch) {
 func (c *Switch) Initialize() {
 	c.SaveFile = fmt.Sprintf("%s/switch.json", c.ConfDir)
 	if err := c.Load(); err != nil {
-		libol.Error("NewSwitch.load %s", err)
+		libol.Error("Switch.Initialize %s", err)
 	}
 	c.Default()
-	libol.Debug("NewSwitch %v", c)
+	libol.Debug("Switch.Initialize %v", c)
 }
 
 func (c *Switch) Right() {
@@ -297,10 +266,6 @@ func (c *Switch) Right() {
 		if c.Protocol == "" {
 			c.Protocol = "tls"
 		}
-	}
-	libol.Debug("Switch.Right Proxy %v", c.Proxy)
-	if c.Proxy != nil {
-		c.Proxy.Right()
 	}
 	if c.Perf != nil {
 		c.Perf.Right()

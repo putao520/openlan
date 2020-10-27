@@ -90,7 +90,6 @@ type Switch struct {
 	hooks    []Hook
 	http     *Http
 	server   libol.SocketServer
-	proxy    *Proxy
 	worker   map[string]*NetworkWorker
 	uuid     string
 	newTime  int64
@@ -105,7 +104,6 @@ func NewSwitch(c config.Switch) *Switch {
 		worker:   make(map[string]*NetworkWorker, 32),
 		server:   server,
 		newTime:  time.Now().Unix(),
-		proxy:    NewProxy(c.Proxy),
 		hooks:    make([]Hook, 0, 64),
 		out:      libol.NewSubLogger(c.Alias),
 	}
@@ -241,7 +239,6 @@ func (v *Switch) Initialize() {
 	for _, w := range v.worker {
 		w.Initialize()
 	}
-	v.proxy.Initialize()
 }
 
 func (v *Switch) onFrame(client libol.SocketClient, frame *libol.FrameMessage) error {
@@ -362,9 +359,6 @@ func (v *Switch) Start() {
 	}
 	libol.Go(ctrls.Ctrl.Start)
 	libol.Go(v.firewall.Start)
-	if v.proxy != nil {
-		v.proxy.Start()
-	}
 }
 
 func (v *Switch) Stop() {
@@ -372,9 +366,6 @@ func (v *Switch) Stop() {
 	defer v.lock.Unlock()
 
 	v.out.Debug("Switch.Stop")
-	if v.proxy != nil {
-		v.proxy.Stop()
-	}
 	ctrls.Ctrl.Stop()
 	// firstly, notify leave to point.
 	for p := range storage.Point.List() {
