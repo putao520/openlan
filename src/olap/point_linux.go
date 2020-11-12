@@ -143,19 +143,24 @@ func (p *Point) AddRoutes(routes []*models.Route) error {
 	if routes == nil || p.link == nil {
 		return nil
 	}
-	for _, route := range routes {
-		_, dst, err := net.ParseCIDR(route.Prefix)
+	for _, rt := range routes {
+		_, dst, err := net.ParseCIDR(rt.Prefix)
 		if err != nil {
 			continue
 		}
-		nxt := net.ParseIP(route.NextHop)
-		rte := netlink.Route{LinkIndex: p.link.Attrs().Index, Dst: dst, Gw: nxt, Priority: 250}
+		nxt := net.ParseIP(rt.NextHop)
+		rte := netlink.Route{
+			LinkIndex: p.link.Attrs().Index,
+			Dst:       dst,
+			Gw:        nxt,
+			Priority:  rt.Metric,
+		}
 		p.out.Debug("Point.AddRoute: %s", rte)
 		if err := netlink.RouteAdd(&rte); err != nil {
-			p.out.Warn("Point.AddRoute: %s %s", route.Prefix, err)
+			p.out.Warn("Point.AddRoute: %s %s", rt.Prefix, err)
 			continue
 		}
-		p.out.Info("Point.AddRoutes: route %s via %s", route.Prefix, route.NextHop)
+		p.out.Info("Point.AddRoutes: route %s via %s", rt.Prefix, rt.NextHop)
 	}
 	p.routes = routes
 	return nil
@@ -165,18 +170,23 @@ func (p *Point) DelRoutes(routes []*models.Route) error {
 	if routes == nil || p.link == nil {
 		return nil
 	}
-	for _, route := range routes {
-		_, dst, err := net.ParseCIDR(route.Prefix)
+	for _, rt := range routes {
+		_, dst, err := net.ParseCIDR(rt.Prefix)
 		if err != nil {
 			continue
 		}
-		nxt := net.ParseIP(route.NextHop)
-		rte := netlink.Route{LinkIndex: p.link.Attrs().Index, Dst: dst, Gw: nxt}
+		nxt := net.ParseIP(rt.NextHop)
+		rte := netlink.Route{
+			LinkIndex: p.link.Attrs().Index,
+			Dst:       dst,
+			Gw:        nxt,
+			Priority:  rt.Metric,
+		}
 		if err := netlink.RouteDel(&rte); err != nil {
-			p.out.Warn("Point.DelRoute: %s %s", route.Prefix, err)
+			p.out.Warn("Point.DelRoute: %s %s", rt.Prefix, err)
 			continue
 		}
-		p.out.Info("Point.DelRoutes: route %s via %s", route.Prefix, route.NextHop)
+		p.out.Info("Point.DelRoutes: route %s via %s", rt.Prefix, rt.NextHop)
 	}
 	p.routes = nil
 	return nil

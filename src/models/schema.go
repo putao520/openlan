@@ -99,6 +99,7 @@ func NewNetworkSchema(n *Network) schema.Network {
 			schema.PrefixRoute{
 				NextHop: route.NextHop,
 				Prefix:  route.Prefix,
+				Metric:  route.Metric,
 			})
 	}
 	return sn

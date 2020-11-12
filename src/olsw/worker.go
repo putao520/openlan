@@ -69,10 +69,11 @@ func (w *NetworkWorker) Initialize() {
 			w.out.Warn("NetworkWorker.Initialize: %s noNextHop", rt.Prefix)
 			continue
 		}
-		n.Routes = append(n.Routes, &models.Route{
-			Prefix:  rt.Prefix,
-			NextHop: rt.NextHop,
-		})
+		rte := models.NewRoute(rt.Prefix, rt.NextHop)
+		if rt.Metric > 0 {
+			rte.Metric = rt.Metric
+		}
+		n.Routes = append(n.Routes, rte)
 	}
 	storage.Network.Add(&n)
 	for _, ht := range w.cfg.Hosts {
@@ -146,8 +147,9 @@ func (w *NetworkWorker) LoadRoutes() {
 		next := net.ParseIP(rt.NextHop)
 		rte := netlink.Route{
 			LinkIndex: link.Attrs().Index,
-			Dst:       dst, Gw: next,
-			Priority: rt.Metric,
+			Dst:       dst,
+			Gw:        next,
+			Priority:  rt.Metric,
 		}
 		w.out.Debug("NetworkWorker.LoadRoute: %s", rte)
 		if err := netlink.RouteAdd(&rte); err != nil {

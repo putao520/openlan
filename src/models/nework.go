@@ -10,18 +10,24 @@ import (
 type Route struct {
 	Prefix  string `json:"prefix"`
 	NextHop string `json:"nexthop"`
+	Metric  int    `json:"metric"`
 }
 
 func NewRoute(prefix string, nexthop string) (this *Route) {
 	this = &Route{
 		Prefix:  prefix,
 		NextHop: nexthop,
+		Metric:  250,
 	}
 	return
 }
 
 func (u *Route) String() string {
 	return fmt.Sprintf("%s, %s", u.Prefix, u.NextHop)
+}
+
+func (u *Route) SetMetric(value int) {
+	u.Metric = value
 }
 
 type Network struct {
