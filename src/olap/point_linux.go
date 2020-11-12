@@ -149,7 +149,7 @@ func (p *Point) AddRoutes(routes []*models.Route) error {
 			continue
 		}
 		nxt := net.ParseIP(route.NextHop)
-		rte := netlink.Route{LinkIndex: p.link.Attrs().Index, Dst: dst, Gw: nxt}
+		rte := netlink.Route{LinkIndex: p.link.Attrs().Index, Dst: dst, Gw: nxt, Priority: 250}
 		p.out.Debug("Point.AddRoute: %s", rte)
 		if err := netlink.RouteAdd(&rte); err != nil {
 			p.out.Warn("Point.AddRoute: %s %s", route.Prefix, err)
