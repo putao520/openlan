@@ -24,7 +24,7 @@ LDFLAGS += -X $(MOD).Version=$(VER)
 ## declare directory
 SD = $(shell pwd)
 BD = $(SD)/build
-LD = openlan-$(LSB)-$(VER)
+LD = openlan-linux-$(VER)
 WD = openlan-windows-$(VER)
 XD = openlan-darwin-$(VER)
 
@@ -82,6 +82,33 @@ linux-rpm: env ## build rpm packages
 	rpmbuild -ba packaging/openlan-switch.spec
 	@cp -rf ~/rpmbuild/RPMS/x86_64/openlan-*.rpm $(BD)
 
+linux-zip: env linux-point linux-switch linux-proxy ## build linux packages
+	@pushd $(BD)
+	@rm -rf $(LD) && mkdir -p $(LD)
+	@rm -rf $(LD).zip
+
+	@mkdir -p $(LD)/etc/openlan
+	@cp -rvf $(SD)/packaging/resource/point.json.example $(LD)/etc/openlan
+	@cp -rvf $(SD)/packaging/resource/proxy.json.example $(LD)/etc/openlan
+	@mkdir -p $(LD)/etc/openlan/switch
+	@cp -rvf $(SD)/packaging/resource/switch.json.example $(LD)/etc/openlan/switch
+	@mkdir -p $(LD)/etc/openlan/switch/network
+	@cp -rvf $(SD)/packaging/resource/network.json.example $(LD)/etc/openlan/switch/network
+	@mkdir -p $(LD)/usr/bin
+	@cp -rvf $(BD)/openlan-proxy $(LD)/usr/bin
+	@cp -rvf $(BD)/openlan-point $(LD)/usr/bin
+	@cp -rvf $(BD)/openlan-switch $(LD)/usr/bin
+	@mkdir -p $(LD)/var/openlan
+	@cp -rvf $(BD)/cert/openlan/cert $(LD)/var/openlan
+	@cp -rvf $(BD)/cert/openlan/ca/ca.crt $(LD)/var/openlan/cert
+	@mkdir -p $(LD)//usr/lib/systemd/system
+	@cp -rvf $(SD)/packaging/resource/openlan-point.service $(LD)/usr/lib/systemd/system
+	@cp -rvf $(SD)/packaging/resource/openlan-proxy.service $(LD)/usr/lib/systemd/system
+	@cp -rvf $(SD)/packaging/resource/openlan-switch.service $(LD)/usr/lib/systemd/system
+
+	zip -r $(LD).zip $(LD) > /dev/null
+	@rm -rf $(LD)
+
 ## cross build for windows
 windows: windows-point ## build windows binary
 
@@ -98,7 +125,6 @@ windows-zip: env windows ## build windows packages
 
 	zip -r $(WD).zip $(WD) > /dev/null
 	@rm -rf $(WD)
-	@popd
 
 windows-syso: ## build windows syso
 	rsrc -manifest ./src/cli/point_windows/main.manifest -ico ./src/cli/point_windows/main.ico  -o ./src/cli/point_windows/main.syso
@@ -119,7 +145,6 @@ darwin-zip: env darwin ## build darwin packages
 
 	zip -r $(XD).zip $(XD) > /dev/null
 	@rm -rf $(XD)
-	popd
 
 ## unit test
 test: ## execute unit test

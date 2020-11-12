@@ -22,4 +22,4 @@ if [ -z "${url}" ]; then
   url="https://localhost:10000/api"
 fi
 
-/usr/bin/curl -u"${token}": -k -XGET "${url}/${api}"
+/usr/bin/curl -s -u"${token}": -k -XGET "${url}/${api}"
