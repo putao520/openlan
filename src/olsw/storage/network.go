@@ -131,21 +131,21 @@ func (w *network) AddLease(uuid, ipStr string) *schema.Lease {
 func (w *network) DelLease(uuid string) {
 	libol.Debug("network.DelLease %s", uuid)
 	// TODO record free address for alias and wait timeout to release.
+	addr := ""
 	if obj, ok := w.UUID.GetEx(uuid); ok {
-		ul := obj.(*schema.Lease)
-		addr := ul.Address
+		lease := obj.(*schema.Lease)
+		addr = lease.Address
 		libol.Info("network.DelLease (%s, %s) by UUID", uuid, addr)
-		if ul.Type != "static" {
+		if lease.Type != "static" {
 			w.UUID.Del(uuid)
 		}
-		// avoid address conflict by different points.
-		if obj, ok := w.Addr.GetEx(addr); ok {
-			al := obj.(*schema.Lease)
-			if al.UUID == uuid {
-				libol.Info("network.DelLease (%s, %s) by Addr", uuid, addr)
-				if al.Type != "static" {
-					w.Addr.Del(addr)
-				}
+	}
+	if obj, ok := w.Addr.GetEx(addr); ok {
+		lease := obj.(*schema.Lease)
+		if lease.UUID == uuid { // avoid address conflict by different points.
+			libol.Info("network.DelLease (%s, %s) by Addr", uuid, addr)
+			if lease.Type != "static" {
+				w.Addr.Del(addr)
 			}
 		}
 	}
