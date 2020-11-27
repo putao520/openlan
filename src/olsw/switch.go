@@ -110,9 +110,9 @@ func NewSwitch(c config.Switch) *Switch {
 	return &v
 }
 
-func (v *Switch) acceptBridge(bridge string) {
+func (v *Switch) allowInput(bridge string) {
 	rules := v.firewall.rules
-	v.out.Info("Switch.acceptBridge %s", bridge)
+	v.out.Info("Switch.allowInput %s", bridge)
 	rules = append(rules, libol.IptRule{
 		Table: FilterT,
 		Chain: OlForwardC,
@@ -121,8 +121,8 @@ func (v *Switch) acceptBridge(bridge string) {
 	v.firewall.rules = rules
 }
 
-func (v *Switch) acceptRoute(source, prefix string) {
-	v.out.Info("Switch.acceptRoute %s, %s", source, prefix)
+func (v *Switch) allowForward(source, prefix string) {
+	v.out.Info("Switch.allowForward %s, %s", source, prefix)
 	// allowed forward between source and prefix.
 	v.firewall.AddRule(libol.IptRule{
 		Table:  FilterT,
@@ -143,6 +143,9 @@ func (v *Switch) acceptRoute(source, prefix string) {
 		Source: source,
 		Dest:   prefix,
 	})
+}
+
+func (v *Switch) enableMasq(source, prefix string) {
 	// enable masquerade between source and prefix.
 	v.firewall.AddRule(libol.IptRule{
 		Table:  NatT,
@@ -160,7 +163,7 @@ func (v *Switch) acceptRoute(source, prefix string) {
 	})
 }
 
-func (v *Switch) initNetwork() {
+func (v *Switch) preNetwork() {
 	crypt := v.cfg.Crypt
 	for _, nCfg := range v.cfg.Network {
 		name := nCfg.Name
@@ -169,7 +172,7 @@ func (v *Switch) initNetwork() {
 		brCfg := nCfg.Bridge
 		// Forward traffic in bridge.
 		if brCfg.Provider != network.ProviderVir {
-			v.acceptBridge(brCfg.Name)
+			v.allowInput(brCfg.Name)
 		}
 		source := brCfg.Address
 		ifAddr := strings.SplitN(source, "/", 2)[0]
@@ -178,18 +181,20 @@ func (v *Switch) initNetwork() {
 		}
 		// Enable MASQUERADE, and allowed forward.
 		for _, rt := range nCfg.Routes {
+			if nCfg.OpenVPN != nil {
+				v.allowForward(nCfg.OpenVPN.Subnet, rt.Prefix)
+				v.enableMasq(nCfg.OpenVPN.Subnet, rt.Prefix)
+			}
 			if rt.NextHop != ifAddr {
 				continue
 			}
-			v.acceptRoute(source, rt.Prefix)
-			if nCfg.OpenVPN != nil {
-				v.acceptRoute(nCfg.OpenVPN.Subnet, rt.Prefix)
-			}
+			v.allowForward(source, rt.Prefix)
+			v.enableMasq(source, rt.Prefix)
 		}
 	}
 }
 
-func (v *Switch) initHook() {
+func (v *Switch) preApplication() {
 	// Append accessed auth for point
 	v.apps.Auth = app.NewAccess(v, v.cfg)
 	v.hooks = append(v.hooks, v.apps.Auth.OnFrame)
@@ -212,11 +217,11 @@ func (v *Switch) initHook() {
 		v.hooks = append(v.hooks, v.apps.OnLines.OnFrame)
 	}
 	for i, h := range v.hooks {
-		v.out.Debug("Switch.initHook: id %d, func %s", i, libol.FunName(h))
+		v.out.Debug("Switch.preApplication: id %d, func %s", i, libol.FunName(h))
 	}
 }
 
-func (v *Switch) initCtrl() {
+func (v *Switch) preController() {
 	ctrls.Load(v.cfg.ConfDir + "/ctrl.json")
 	if ctrls.Ctrl.Name == "" {
 		ctrls.Ctrl.Name = v.cfg.Alias
@@ -227,13 +232,13 @@ func (v *Switch) initCtrl() {
 func (v *Switch) Initialize() {
 	v.lock.Lock()
 	defer v.lock.Unlock()
-	v.initHook()
+	v.preApplication()
 	if v.cfg.Http != nil {
 		v.http = NewHttp(v, v.cfg)
 	}
-	v.initNetwork()
+	v.preNetwork()
 	// Controller
-	v.initCtrl()
+	v.preController()
 	// FireWall
 	v.firewall.Initialize()
 	for _, w := range v.worker {
