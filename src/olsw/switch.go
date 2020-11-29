@@ -168,22 +168,30 @@ func (v *Switch) preNetwork() {
 	for _, nCfg := range v.cfg.Network {
 		name := nCfg.Name
 		v.worker[name] = NewNetworkWorker(*nCfg, crypt)
-
 		brCfg := nCfg.Bridge
+		vpnCfg := nCfg.OpenVPN
+
 		// Forward traffic in bridge.
 		if brCfg.Provider != network.ProviderVir {
 			v.allowInput(brCfg.Name)
 		}
 		source := brCfg.Address
 		ifAddr := strings.SplitN(source, "/", 2)[0]
+		// Enable MASQUERADE for OpenVPN
+		if vpnCfg != nil {
+			for _, rt := range vpnCfg.Routes {
+				v.allowForward(vpnCfg.Subnet, rt)
+				v.enableMasq(vpnCfg.Subnet, rt)
+			}
+		}
 		if ifAddr == "" {
 			continue
 		}
 		// Enable MASQUERADE, and allowed forward.
 		for _, rt := range nCfg.Routes {
-			if nCfg.OpenVPN != nil {
-				v.allowForward(nCfg.OpenVPN.Subnet, rt.Prefix)
-				v.enableMasq(nCfg.OpenVPN.Subnet, rt.Prefix)
+			if vpnCfg != nil {
+				v.allowForward(vpnCfg.Subnet, rt.Prefix)
+				v.enableMasq(vpnCfg.Subnet, rt.Prefix)
 			}
 			if rt.NextHop != ifAddr {
 				continue
