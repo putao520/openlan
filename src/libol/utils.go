@@ -162,16 +162,21 @@ func IPNetwork(ipAddr string) (string, error) {
 }
 
 func PrettyTime(t int64) string {
+	s := ""
+	if t < 0 {
+		s = "-"
+		t = -t
+	}
 	min := t / 60
 	if min < 60 {
-		return fmt.Sprintf("%dm%ds", min, t%60)
+		return fmt.Sprintf("%s%dm%ds", s, min, t%60)
 	}
 	hours := min / 60
 	if hours < 24 {
-		return fmt.Sprintf("%dh%dm", hours, min%60)
+		return fmt.Sprintf("%s%dh%dm", s, hours, min%60)
 	}
 	days := hours / 24
-	return fmt.Sprintf("%dd%dh", days, hours%24)
+	return fmt.Sprintf("%s%dd%dh", s, days, hours%24)
 }
 
 func PrettyBytes(b int64) string {

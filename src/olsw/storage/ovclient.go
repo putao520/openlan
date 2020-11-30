@@ -70,12 +70,8 @@ func (o *ovClient) readStatus(network string) map[string]*schema.OvClient {
 				}
 				if uptime, err := time.Parse(time.ANSIC, columns[4]); err == nil {
 					client.UpTime = uptime.Unix()
-					now := time.Now().Unix()
-					if now >= client.UpTime {
-						client.AliveTime = now - client.UpTime
-					} else {
-						client.AliveTime = client.UpTime - now
-					}
+					client.AliveTime = time.Now().Unix() - client.UpTime
+
 				}
 				clients[name] = client
 			}
