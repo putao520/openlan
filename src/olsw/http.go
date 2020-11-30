@@ -137,6 +137,7 @@ func (h *Http) LoadRouter() {
 	api.Lease{}.Router(router)
 	api.Server{Switcher: h.switcher}.Router(router)
 	api.Device{}.Router(router)
+	api.OvClient{}.Router(router)
 }
 
 func (h *Http) LoadToken() error {
@@ -263,6 +264,21 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 	sort.SliceStable(body.OnLines, func(i, j int) bool {
 		return body.OnLines[i].HitTime < body.OnLines[j].HitTime
 	})
+	// display OpenVPN Clients.
+	for n := range storage.Network.List() {
+		if n == nil {
+			break
+		}
+		for c := range storage.OvClient.List(n.Name) {
+			if c == nil {
+				break
+			}
+			body.OvClients = append(body.OvClients, *c)
+		}
+		sort.SliceStable(body.OvClients, func(i, j int) bool {
+			return body.OvClients[i].Name < body.OvClients[j].Name
+		})
+	}
 	return body
 }
 
@@ -290,6 +306,7 @@ func (h *Http) IndexHtml(w http.ResponseWriter, r *http.Request) {
 		Links:     make([]schema.Link, 0, 128),
 		Neighbors: make([]schema.Neighbor, 0, 128),
 		OnLines:   make([]schema.OnLine, 0, 128),
+		OvClients: make([]schema.OvClient, 0, 128),
 	}
 	h.getIndex(&body)
 	file := h.getFile("/index.html")
@@ -305,6 +322,7 @@ func (h *Http) GetIndex(w http.ResponseWriter, r *http.Request) {
 		Neighbors: make([]schema.Neighbor, 0, 128),
 		OnLines:   make([]schema.OnLine, 0, 128),
 		Network:   make([]schema.Network, 0, 128),
+		OvClients: make([]schema.OvClient, 0, 128),
 	}
 	h.getIndex(&body)
 	api.ResponseJson(w, body)

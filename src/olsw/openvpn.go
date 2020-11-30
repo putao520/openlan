@@ -52,7 +52,7 @@ tls-auth {{ .TlsAuth }} 0
 cipher {{ .Cipher }}
 persist-key
 persist-tun
-status status.log
+status server.status 5
 verify-client-cert none
 script-security 3
 auth-user-pass-verify "{{ .Script }}" via-env
@@ -78,7 +78,7 @@ tls-auth {{ .TlsAuth }} 0
 cipher {{ .Cipher }}
 persist-key
 persist-tun
-status status.log
+status server.status 5
 verb 3
 `
 )

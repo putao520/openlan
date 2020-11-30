@@ -8,6 +8,7 @@ type Index struct {
 	Neighbors []Neighbor `json:"neighbors"`
 	OnLines   []OnLine   `json:"online"`
 	Network   []Network  `json:"network"`
+	OvClients []OvClient `json:"ovclients"`
 }
 
 type User struct {

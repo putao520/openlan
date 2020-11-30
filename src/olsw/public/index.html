@@ -78,7 +78,7 @@
         .table-list td:first-child {
             font-size: small;
         }
-        .authenticated {
+        .authenticated, .success {
             color: darkgreen;
         }
         .unauthenticated, .terminal, .closed {
@@ -193,6 +193,18 @@
                         <td>{{ .Alias }}</td>
                         <td>{{ .Address }}</td>
                         <td>{{ .User }}@{{ .Network }}</td>
+                        <td>{{ prettyBytes .RxBytes }}/{{ prettyBytes .TxBytes }}</td>
+                        <td><span class="{{ .State }}">{{ .State }}</span></td>
+                    </tr>
+                {{ end }}
+                {{ range .OvClients }}
+                    <tr>
+                        <td>{{ .Name }}</td>
+                        <td>{{ prettyTime .AliveTime }}</td>
+                        <td>tunx</td>
+                        <td>openvpn</td>
+                        <td>{{ .Address }}</td>
+                        <td>{{ .Name }}</td>
                         <td>{{ prettyBytes .RxBytes }}/{{ prettyBytes .TxBytes }}</td>
                         <td><span class="{{ .State }}">{{ .State }}</span></td>
                     </tr>
