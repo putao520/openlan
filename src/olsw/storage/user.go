@@ -16,8 +16,13 @@ func (w *_user) Init(size int) {
 func (w *_user) Add(user *models.User) {
 	libol.Debug("_user.Add %v", user)
 	key := user.Id()
-	w.Users.Del(key)
-	_ = w.Users.Set(key, user)
+	older := w.Get(key)
+	if older == nil {
+		_ = w.Users.Set(key, user)
+	} else { // Update pass and role.
+		older.Role = user.Role
+		older.Password = user.Password
+	}
 }
 
 func (w *_user) Del(key string) {

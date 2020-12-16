@@ -1,7 +1,6 @@
 package app
 
 import (
-	"github.com/danieldin95/openlan-go/src/cli/config"
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
 	"github.com/danieldin95/openlan-go/src/olsw/storage"
@@ -13,7 +12,7 @@ type Neighbors struct {
 	master Master
 }
 
-func NewNeighbors(m Master, c config.Switch) *Neighbors {
+func NewNeighbors(m Master) *Neighbors {
 	return &Neighbors{
 		master: m,
 	}

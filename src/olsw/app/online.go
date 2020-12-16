@@ -18,7 +18,8 @@ type Online struct {
 	master   Master
 }
 
-func NewOnline(m Master, c config.Switch) *Online {
+func NewOnline(m Master) *Online {
+	c := config.Manager.Switch
 	ms := c.Perf.OnLine
 	return &Online{
 		maxSize:  ms,

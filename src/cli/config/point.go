@@ -7,15 +7,6 @@ import (
 	"strings"
 )
 
-type Interface struct {
-	Name     string `json:"name,omitempty"`
-	IfMtu    int    `json:"mtu"`
-	Address  string `json:"address,omitempty"`
-	Bridge   string `json:"bridge,omitempty"`
-	Provider string `json:"provider,omitempty"`
-	Cost     int    `json:"cost,omitempty"`
-}
-
 type Point struct {
 	Alias       string    `json:"alias,omitempty"`
 	Connection  string    `json:"connection"`
@@ -36,7 +27,7 @@ type Point struct {
 	Cert        *Cert     `json:"cert"`
 }
 
-var pd = &Point{
+var defaultPoint = &Point{
 	Alias:      "",
 	Connection: "openlan.net",
 	Network:    "default",
@@ -58,106 +49,115 @@ var pd = &Point{
 	Terminal:    "on",
 }
 
-func NewPoint() (c *Point) {
-	c = &Point{
+func NewPoint() *Point {
+	pin := &Point{
 		RequestAddr: true,
-		Crypt:       pd.Crypt,
-		Cert:        pd.Cert,
+		Crypt:       defaultPoint.Crypt,
+		Cert:        defaultPoint.Cert,
 	}
-	flag.StringVar(&c.Alias, "alias", pd.Alias, "Alias for this point")
-	flag.StringVar(&c.Terminal, "terminal", pd.Terminal, "Run interactive terminal")
-	flag.StringVar(&c.Connection, "conn", pd.Connection, "Connection access to")
-	flag.StringVar(&c.Username, "user", pd.Username, "User access to by <username>@<network>")
-	flag.StringVar(&c.Password, "pass", pd.Password, "Password for authentication")
-	flag.StringVar(&c.Protocol, "proto", pd.Protocol, "IP Protocol for connection")
-	flag.StringVar(&c.Log.File, "log:file", pd.Log.File, "Log saved to file")
-	flag.StringVar(&c.Interface.Name, "if:name", pd.Interface.Name, "Configure interface name")
-	flag.StringVar(&c.Interface.Address, "if:addr", pd.Interface.Address, "Configure interface address")
-	flag.StringVar(&c.Interface.Bridge, "if:br", pd.Interface.Bridge, "Configure bridge name")
-	flag.StringVar(&c.Interface.Provider, "if:provider", pd.Interface.Provider, "Interface provider")
-	flag.StringVar(&c.SaveFile, "conf", pd.SaveFile, "The configuration file")
-	flag.StringVar(&c.Crypt.Secret, "crypt:secret", pd.Crypt.Secret, "Crypt secret")
-	flag.StringVar(&c.Crypt.Algo, "crypt:algo", pd.Crypt.Algo, "Crypt algorithm")
-	flag.StringVar(&c.PProf, "pprof", pd.PProf, "Http listen for CPU prof")
-	flag.StringVar(&c.Cert.CaFile, "cacert", pd.Cert.CaFile, "CA certificate file")
-	flag.IntVar(&c.Timeout, "timeout", pd.Timeout, "Timeout(s) for socket write/read")
-	flag.IntVar(&c.Log.Verbose, "log:level", pd.Log.Verbose, "Log level")
+	pin.Flags()
+	pin.Initialize()
+	if Manager.Point == nil {
+		Manager.Point = pin
+	}
+	return pin
+}
+
+func (pin *Point) Flags() {
+	flag.StringVar(&pin.Alias, "alias", defaultPoint.Alias, "Alias for this point")
+	flag.StringVar(&pin.Terminal, "terminal", defaultPoint.Terminal, "Run interactive terminal")
+	flag.StringVar(&pin.Connection, "conn", defaultPoint.Connection, "Connection access to")
+	flag.StringVar(&pin.Username, "user", defaultPoint.Username, "User access to by <username>@<network>")
+	flag.StringVar(&pin.Password, "pass", defaultPoint.Password, "Password for authentication")
+	flag.StringVar(&pin.Protocol, "proto", defaultPoint.Protocol, "IP Protocol for connection")
+	flag.StringVar(&pin.Log.File, "log:file", defaultPoint.Log.File, "Log saved to file")
+	flag.StringVar(&pin.Interface.Name, "if:name", defaultPoint.Interface.Name, "Configure interface name")
+	flag.StringVar(&pin.Interface.Address, "if:addr", defaultPoint.Interface.Address, "Configure interface address")
+	flag.StringVar(&pin.Interface.Bridge, "if:br", defaultPoint.Interface.Bridge, "Configure bridge name")
+	flag.StringVar(&pin.Interface.Provider, "if:provider", defaultPoint.Interface.Provider, "Interface provider")
+	flag.StringVar(&pin.SaveFile, "conf", defaultPoint.SaveFile, "The configuration file")
+	flag.StringVar(&pin.Crypt.Secret, "crypt:secret", defaultPoint.Crypt.Secret, "Crypt secret")
+	flag.StringVar(&pin.Crypt.Algo, "crypt:algo", defaultPoint.Crypt.Algo, "Crypt algorithm")
+	flag.StringVar(&pin.PProf, "pprof", defaultPoint.PProf, "Http listen for CPU prof")
+	flag.StringVar(&pin.Cert.CaFile, "cacert", defaultPoint.Cert.CaFile, "CA certificate file")
+	flag.IntVar(&pin.Timeout, "timeout", defaultPoint.Timeout, "Timeout(s) for socket write/read")
+	flag.IntVar(&pin.Log.Verbose, "log:level", defaultPoint.Log.Verbose, "Log level")
 	flag.Parse()
-	c.Initialize()
-	return c
 }
 
-func (c *Point) Id() string {
-	return c.Connection + ":" + c.Network
+func (pin *Point) Id() string {
+	return pin.Connection + ":" + pin.Network
 }
 
-func (c *Point) Initialize() {
-	if err := c.Load(); err != nil {
+func (pin *Point) Initialize() {
+	if err := pin.Load(); err != nil {
 		libol.Warn("NewPoint.load %s", err)
 	}
-	c.Default()
-	libol.SetLogger(c.Log.File, c.Log.Verbose)
+	pin.Default()
+	libol.SetLogger(pin.Log.File, pin.Log.Verbose)
 }
 
-func (c *Point) Right() {
-	if c.Alias == "" {
-		c.Alias = GetAlias()
+func (pin *Point) Right() {
+	if pin.Alias == "" {
+		pin.Alias = GetAlias()
 	}
-	if c.Network == "" {
-		if strings.Contains(c.Username, "@") {
-			c.Network = strings.SplitN(c.Username, "@", 2)[1]
+	if pin.Network == "" {
+		if strings.Contains(pin.Username, "@") {
+			pin.Network = strings.SplitN(pin.Username, "@", 2)[1]
 		} else {
-			c.Network = pd.Network
+			pin.Network = defaultPoint.Network
 		}
 	}
-	RightAddr(&c.Connection, 10002)
+	RightAddr(&pin.Connection, 10002)
 	if runtime.GOOS == "darwin" {
-		c.Interface.Provider = "tun"
+		pin.Interface.Provider = "tun"
 	}
-	if c.Protocol == "tls" || c.Protocol == "wss" {
-		if c.Cert == nil {
-			c.Cert = pd.Cert
+	if pin.Protocol == "tls" || pin.Protocol == "wss" {
+		if pin.Cert == nil {
+			pin.Cert = defaultPoint.Cert
 		}
 	}
-	if c.Cert != nil {
-		if c.Cert.Dir == "" {
-			c.Cert.Dir = "."
+	if pin.Cert != nil {
+		if pin.Cert.Dir == "" {
+			pin.Cert.Dir = "."
 		}
-		c.Cert.Right()
+		pin.Cert.Right()
 	}
 }
 
-func (c *Point) Default() {
-	c.Right()
-	if c.Queue == nil {
-		c.Queue = &Queue{}
+func (pin *Point) Default() {
+	pin.Right()
+	if pin.Queue == nil {
+		pin.Queue = &Queue{}
 	}
-	c.Queue.Default()
+	pin.Queue.Default()
 	//reset zero value to default
-	if c.Connection == "" {
-		c.Connection = pd.Connection
+	if pin.Connection == "" {
+		pin.Connection = defaultPoint.Connection
 	}
-	if c.Interface.IfMtu == 0 {
-		c.Interface.IfMtu = pd.Interface.IfMtu
+	if pin.Interface.IfMtu == 0 {
+		pin.Interface.IfMtu = defaultPoint.Interface.IfMtu
 	}
-	if c.Timeout == 0 {
-		c.Timeout = pd.Timeout
+	if pin.Timeout == 0 {
+		pin.Timeout = defaultPoint.Timeout
 	}
-	if c.Crypt != nil {
-		c.Crypt.Default()
+	if pin.Crypt != nil {
+		pin.Crypt.Default()
 	}
 }
 
-func (c *Point) Load() error {
-	if err := libol.FileExist(c.SaveFile); err == nil {
-		return libol.UnmarshalLoad(c, c.SaveFile)
+func (pin *Point) Load() error {
+	if err := libol.FileExist(pin.SaveFile); err == nil {
+		return libol.UnmarshalLoad(pin, pin.SaveFile)
 	}
 	return nil
 }
 
 func init() {
-	pd.Right()
+	defaultPoint.Right()
 	if runtime.GOOS == "linux" {
-		pd.Log.File = "/var/log/openlan-point.log"
+		defaultPoint.Log.File = "/var/log/openlan-point.log"
+	} else {
+		defaultPoint.Log.File = "./openlan-point.log"
 	}
 }

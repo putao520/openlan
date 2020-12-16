@@ -10,7 +10,7 @@ func main() {
 	c := config.NewProxy()
 	libol.SetLogger(c.Log.File, c.Log.Verbose)
 
-	p := olsw.NewProxy(&c)
+	p := olsw.NewProxy(c)
 	libol.PreNotify()
 	p.Initialize()
 	libol.Go(p.Start)

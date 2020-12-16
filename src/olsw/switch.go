@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-func GetSocketServer(s config.Switch) libol.SocketServer {
+func GetSocketServer(s *config.Switch) libol.SocketServer {
 	switch s.Protocol {
 	case "kcp":
 		c := &libol.KcpConfig{
@@ -86,7 +86,7 @@ type Hook func(client libol.SocketClient, frame *libol.FrameMessage) error
 type Switch struct {
 	// private
 	lock     sync.Mutex
-	cfg      config.Switch
+	cfg      *config.Switch
 	apps     Apps
 	firewall *FireWall
 	hooks    []Hook
@@ -98,7 +98,7 @@ type Switch struct {
 	out      *libol.SubLogger
 }
 
-func NewSwitch(c config.Switch) *Switch {
+func NewSwitch(c *config.Switch) *Switch {
 	server := GetSocketServer(c)
 	v := Switch{
 		cfg:      c,
@@ -206,10 +206,10 @@ func (v *Switch) preNetwork() {
 
 func (v *Switch) preApplication() {
 	// Append accessed auth for point
-	v.apps.Auth = app.NewAccess(v, v.cfg)
+	v.apps.Auth = app.NewAccess(v)
 	v.hooks = append(v.hooks, v.apps.Auth.OnFrame)
 	// Append request process
-	v.apps.Request = app.NewRequest(v, v.cfg)
+	v.apps.Request = app.NewRequest(v)
 	v.hooks = append(v.hooks, v.apps.Request.OnFrame)
 
 	inspect := ""
@@ -218,12 +218,12 @@ func (v *Switch) preApplication() {
 	}
 	// Check whether inspect neighbor
 	if strings.Contains(inspect, "neighbor") {
-		v.apps.Neighbor = app.NewNeighbors(v, v.cfg)
+		v.apps.Neighbor = app.NewNeighbors(v)
 		v.hooks = append(v.hooks, v.apps.Neighbor.OnFrame)
 	}
 	// Check whether inspect online flow by five-tuple.
 	if strings.Contains(inspect, "online") {
-		v.apps.OnLines = app.NewOnline(v, v.cfg)
+		v.apps.OnLines = app.NewOnline(v)
 		v.hooks = append(v.hooks, v.apps.OnLines.OnFrame)
 	}
 	for i, h := range v.hooks {
@@ -275,7 +275,7 @@ func (v *Switch) Initialize() {
 	defer v.lock.Unlock()
 	v.preApplication()
 	if v.cfg.Http != nil {
-		v.http = NewHttp(v, v.cfg)
+		v.http = NewHttp(v)
 	}
 	v.preNetwork()
 	// Controller
@@ -559,7 +559,7 @@ func (v *Switch) OffClient(client libol.SocketClient) {
 }
 
 func (v *Switch) Config() *config.Switch {
-	return &v.cfg
+	return config.Manager.Switch
 }
 
 func (v *Switch) leftClient(client libol.SocketClient) {

@@ -2,7 +2,6 @@ package app
 
 import (
 	"encoding/json"
-	"github.com/danieldin95/openlan-go/src/cli/config"
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
 	"github.com/danieldin95/openlan-go/src/olsw/storage"
@@ -14,7 +13,7 @@ type Access struct {
 	master  Master
 }
 
-func NewAccess(m Master, c config.Switch) *Access {
+func NewAccess(m Master) *Access {
 	return &Access{
 		master: m,
 	}

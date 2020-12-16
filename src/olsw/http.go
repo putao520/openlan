@@ -32,7 +32,8 @@ type Http struct {
 	router     *mux.Router
 }
 
-func NewHttp(switcher api.Switcher, c config.Switch) (h *Http) {
+func NewHttp(switcher api.Switcher) (h *Http) {
+	c := config.Manager.Switch
 	h = &Http{
 		switcher:  switcher,
 		listen:    c.Http.Listen,

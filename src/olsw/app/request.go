@@ -2,7 +2,6 @@ package app
 
 import (
 	"encoding/json"
-	"github.com/danieldin95/openlan-go/src/cli/config"
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
 	"github.com/danieldin95/openlan-go/src/olsw/schema"
@@ -14,7 +13,7 @@ type Request struct {
 	master Master
 }
 
-func NewRequest(m Master, c config.Switch) *Request {
+func NewRequest(m Master) *Request {
 	return &Request{
 		master: m,
 	}
