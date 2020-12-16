@@ -6,19 +6,15 @@ import (
 	"github.com/danieldin95/openlan-go/src/olap"
 )
 
-type link struct {
+type _link struct {
 	Links *libol.SafeStrMap
 }
 
-var Link = link{
-	Links: libol.NewSafeStrMap(1024),
-}
-
-func (p *link) Init(size int) {
+func (p *_link) Init(size int) {
 	p.Links = libol.NewSafeStrMap(size)
 }
 
-func (p *link) Add(m *olap.Point) {
+func (p *_link) Add(m *olap.Point) {
 	link := &models.Point{
 		Alias:   "",
 		User:    m.User(),
@@ -34,7 +30,7 @@ func (p *link) Add(m *olap.Point) {
 	_ = p.Links.Set(m.UUID(), link)
 }
 
-func (p *link) Get(key string) *models.Point {
+func (p *_link) Get(key string) *models.Point {
 	ret := p.Links.Get(key)
 	if ret != nil {
 		v := ret.(*models.Point)
@@ -44,11 +40,11 @@ func (p *link) Get(key string) *models.Point {
 	return nil
 }
 
-func (p *link) Del(key string) {
+func (p *_link) Del(key string) {
 	p.Links.Del(key)
 }
 
-func (p *link) List() <-chan *models.Point {
+func (p *_link) List() <-chan *models.Point {
 	c := make(chan *models.Point, 128)
 	go func() {
 		p.Links.Iter(func(k string, v interface{}) {
@@ -59,4 +55,8 @@ func (p *link) List() <-chan *models.Point {
 		c <- nil //Finish channel by nil.
 	}()
 	return c
+}
+
+var Link = _link{
+	Links: libol.NewSafeStrMap(1024),
 }

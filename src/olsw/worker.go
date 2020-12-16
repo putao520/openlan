@@ -52,6 +52,7 @@ func (w *NetworkWorker) Initialize() {
 			Name:     pass.Username,
 			Password: pass.Password,
 			Network:  w.cfg.Name,
+			Role:     "admin",
 		}
 		user.Update()
 		storage.User.Add(user)

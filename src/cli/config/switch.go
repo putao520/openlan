@@ -212,6 +212,7 @@ type Switch struct {
 	FireWall  []FlowRule `json:"firewall,omitempty"`
 	Inspect   []string   `json:"inspect"`
 	Queue     *Queue     `json:"queue"`
+	Password  string     `json:"password"`
 	ConfDir   string     `json:"-"`
 	TokenFile string     `json:"-"`
 	SaveFile  string     `json:"-"`
@@ -271,6 +272,9 @@ func (c *Switch) Right() {
 		c.Perf.Right()
 	} else {
 		c.Perf = &pfd
+	}
+	if c.Password == "" {
+		c.Password = fmt.Sprintf("%s/password", c.ConfDir)
 	}
 }
 

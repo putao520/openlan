@@ -1,6 +1,7 @@
 package olsw
 
 import (
+	"bufio"
 	"encoding/json"
 	"github.com/danieldin95/openlan-go/src/cli/config"
 	"github.com/danieldin95/openlan-go/src/libol"
@@ -9,6 +10,7 @@ import (
 	"github.com/danieldin95/openlan-go/src/olsw/app"
 	"github.com/danieldin95/openlan-go/src/olsw/ctrls"
 	"github.com/danieldin95/openlan-go/src/olsw/storage"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -237,6 +239,37 @@ func (v *Switch) preController() {
 	ctrls.Ctrl.Switcher = v
 }
 
+func (v *Switch) LoadPass(file string) {
+	reader, err := os.Open(file)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			libol.Warn("Switch.LoadPass %v", err)
+		}
+		return
+	}
+	defer reader.Close()
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		line := scanner.Text()
+		columns := strings.SplitN(line, ":", 4)
+		if len(columns) < 2 {
+			continue
+		}
+		user := columns[0]
+		pass := columns[1]
+		userObj := &models.User{
+			Name:     user,
+			Password: pass,
+			Role:     "guest",
+		}
+		userObj.Update()
+		storage.User.Add(userObj)
+	}
+	if err := scanner.Err(); err != nil {
+		v.out.Warn("Switch.LoadPass %v", err)
+	}
+}
+
 func (v *Switch) Initialize() {
 	v.lock.Lock()
 	defer v.lock.Unlock()
@@ -251,6 +284,10 @@ func (v *Switch) Initialize() {
 	v.firewall.Initialize()
 	for _, w := range v.worker {
 		w.Initialize()
+	}
+	// Load password for guest access
+	if v.cfg.Password != "" {
+		v.LoadPass(v.cfg.Password)
 	}
 }
 

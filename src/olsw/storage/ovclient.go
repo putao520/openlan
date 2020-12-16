@@ -4,35 +4,25 @@ import (
 	"bufio"
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/olsw/schema"
+	"io"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 )
 
-type ovClient struct {
+type _ovClient struct {
 	WorkDir string
-}
-
-var OvClient = ovClient{
-	WorkDir: "/var/openlan/openvpn/",
 }
 
 func ParseInt64(value string) (int64, error) {
 	return strconv.ParseInt(value, 10, 64)
 }
 
-func (o *ovClient) readStatus(network string) map[string]*schema.OvClient {
-	file, err := os.Open(o.WorkDir + network + "/server.status")
-	if err != nil {
-		libol.Debug("ovClient.readStatus %v", err)
-		return nil
-	}
-	defer file.Close()
-
+func (o *_ovClient) scanStatus(reader io.Reader) (map[string]*schema.OvClient, error) {
 	readAt := "header"
 	offset := 0
-	scanner := bufio.NewScanner(file)
+	scanner := bufio.NewScanner(reader)
 	clients := make(map[string]*schema.OvClient, 32)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -81,13 +71,27 @@ func (o *ovClient) readStatus(network string) map[string]*schema.OvClient {
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		libol.Warn("ovClient.readStatus %v", err)
-		return nil
+		return nil, err
 	}
-	return clients
+	return clients, nil
 }
 
-func (o *ovClient) List(name string) <-chan *schema.OvClient {
+func (o *_ovClient) readStatus(network string) map[string]*schema.OvClient {
+	reader, err := os.Open(o.WorkDir + network + "/server.status")
+	if err != nil {
+		libol.Debug("_ovClient.readStatus %v", err)
+		return nil
+	}
+	defer reader.Close()
+	if clients, err := o.scanStatus(reader); err != nil {
+		libol.Warn("_ovClient.readStatus %v", err)
+		return nil
+	} else {
+		return clients
+	}
+}
+
+func (o *_ovClient) List(name string) <-chan *schema.OvClient {
 	c := make(chan *schema.OvClient, 128)
 
 	clients := o.readStatus(name)
@@ -99,4 +103,8 @@ func (o *ovClient) List(name string) <-chan *schema.OvClient {
 	}()
 
 	return c
+}
+
+var OvClient = _ovClient{
+	WorkDir: "/var/openlan/openvpn/",
 }

@@ -69,7 +69,12 @@ func (p *Access) handleLogin(client libol.SocketClient, data []byte) error {
 	nowUser := storage.User.Get(user.Id())
 	if nowUser != nil {
 		if nowUser.Password == user.Password {
+			if nowUser.Role == "guest" && nowUser.Last != nil {
+				// To offline lastly client if guest.
+				p.master.OffClient(nowUser.Last)
+			}
 			p.success++
+			nowUser.Last = client
 			client.SetStatus(libol.ClAuth)
 			out.Info("Access.handleLogin: success")
 			_ = p.onAuth(client, user)

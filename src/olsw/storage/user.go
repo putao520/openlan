@@ -5,38 +5,34 @@ import (
 	"github.com/danieldin95/openlan-go/src/models"
 )
 
-type user struct {
+type _user struct {
 	Users *libol.SafeStrMap
 }
 
-var User = user{
-	Users: libol.NewSafeStrMap(1024),
-}
-
-func (w *user) Init(size int) {
+func (w *_user) Init(size int) {
 	w.Users = libol.NewSafeStrMap(size)
 }
 
-func (w *user) Add(user *models.User) {
-	libol.Debug("user.Add %v", user)
+func (w *_user) Add(user *models.User) {
+	libol.Debug("_user.Add %v", user)
 	key := user.Id()
 	w.Users.Del(key)
 	_ = w.Users.Set(key, user)
 }
 
-func (w *user) Del(key string) {
-	libol.Debug("user.Add %s", key)
+func (w *_user) Del(key string) {
+	libol.Debug("_user.Add %s", key)
 	w.Users.Del(key)
 }
 
-func (w *user) Get(key string) *models.User {
+func (w *_user) Get(key string) *models.User {
 	if v := w.Users.Get(key); v != nil {
 		return v.(*models.User)
 	}
 	return nil
 }
 
-func (w *user) List() <-chan *models.User {
+func (w *_user) List() <-chan *models.User {
 	c := make(chan *models.User, 128)
 
 	go func() {
@@ -47,4 +43,8 @@ func (w *user) List() <-chan *models.User {
 	}()
 
 	return c
+}
+
+var User = _user{
+	Users: libol.NewSafeStrMap(1024),
 }

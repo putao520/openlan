@@ -2,18 +2,21 @@ package models
 
 import (
 	"fmt"
+	"github.com/danieldin95/openlan-go/src/libol"
 	"runtime"
 	"strings"
 )
 
 type User struct {
-	Alias    string `json:"alias"`
-	Name     string `json:"name"`
-	Network  string `json:"network"`
-	Token    string `json:"token"`
-	Password string `json:"password"`
-	UUID     string `json:"uuid"`
-	System   string `json:"system"`
+	Alias    string             `json:"alias"`
+	Name     string             `json:"name"`
+	Network  string             `json:"network"`
+	Token    string             `json:"token"`
+	Password string             `json:"password"`
+	UUID     string             `json:"uuid"`
+	System   string             `json:"system"`
+	Role     string             `json:"type"` // admin or guest
+	Last     libol.SocketClient `json:"last"` // lastly accessed by this.
 }
 
 func NewUser(name, network, password string) *User {
@@ -22,11 +25,12 @@ func NewUser(name, network, password string) *User {
 		Password: password,
 		Network:  network,
 		System:   runtime.GOOS,
+		Role:     "guest",
 	}
 }
 
 func (u *User) String() string {
-	return fmt.Sprintf("%s, %s, %s, %s", u.UUID, u.Name, u.Password, u.Token)
+	return fmt.Sprintf("%s, %s, %s", u.Name, u.Password, u.Role)
 }
 
 func (u *User) Update() {
