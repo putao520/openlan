@@ -188,6 +188,7 @@ type PrefixRoute struct {
 	Prefix  string `json:"prefix"`
 	NextHop string `json:"nexthop"`
 	Metric  int    `json:"metric"`
+	Mode    string `json:"mode"` // route or snat
 }
 
 type HostLease struct {
@@ -300,6 +301,9 @@ func (n *Network) Right() {
 		}
 		if n.Routes[i].NextHop == "" {
 			n.Routes[i].NextHop = ifAddr
+		}
+		if n.Routes[i].Mode == "" {
+			n.Routes[i].Mode = "snat"
 		}
 	}
 	if n.OpenVPN != nil {

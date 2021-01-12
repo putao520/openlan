@@ -17,7 +17,7 @@ import (
 
 type NetworkWorker struct {
 	alias     string
-	cfg       config.Network
+	cfg       *config.Network
 	newTime   int64
 	startTime int64
 	linksLock sync.RWMutex
@@ -29,7 +29,7 @@ type NetworkWorker struct {
 	openVPN   *OpenVPN
 }
 
-func NewNetworkWorker(c config.Network, crypt *config.Crypt) *NetworkWorker {
+func NewNetworkWorker(c *config.Network, crypt *config.Crypt) *NetworkWorker {
 	return &NetworkWorker{
 		alias:     c.Alias,
 		cfg:       c,
@@ -86,25 +86,6 @@ func (w *NetworkWorker) Initialize() {
 	}
 	w.bridge = network.NewBridger(brCfg.Provider, brCfg.Name, brCfg.IfMtu)
 	if w.cfg.OpenVPN != nil {
-		routes := w.cfg.OpenVPN.Routes
-		addr := ""
-		if n.IfAddr != "" {
-			addr = n.IfAddr
-		} else if n.IpStart != "" && n.Netmask != "" {
-			addr = n.IpStart + "/" + n.Netmask
-		}
-		if addr != "" {
-			if _, inet, err := net.ParseCIDR(addr); err == nil {
-				routes = append(routes, inet.String())
-			}
-		}
-		for _, rt := range n.Routes {
-			addr := rt.Prefix
-			if _, inet, err := net.ParseCIDR(addr); err == nil {
-				routes = append(routes, inet.String())
-			}
-		}
-		w.cfg.OpenVPN.Routes = routes
 		w.openVPN = NewOpenVPN(w.cfg.OpenVPN)
 		w.openVPN.Initialize()
 	}
@@ -315,4 +296,19 @@ func (w *NetworkWorker) DelLink(addr string) {
 		storage.Link.Del(p.UUID())
 		delete(w.links, addr)
 	}
+}
+
+func (w *NetworkWorker) GetSubnet() string {
+	addr := ""
+	if w.cfg.Bridge.Address != "" {
+		addr = w.cfg.Bridge.Address
+	} else if w.cfg.Subnet.Start != "" && w.cfg.Subnet.Netmask != "" {
+		addr = w.cfg.Subnet.Start + "/" + w.cfg.Subnet.Netmask
+	}
+	if addr != "" {
+		if _, inet, err := net.ParseCIDR(addr); err == nil {
+			return inet.String()
+		}
+	}
+	return ""
 }

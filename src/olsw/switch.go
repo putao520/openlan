@@ -10,6 +10,7 @@ import (
 	"github.com/danieldin95/openlan-go/src/olsw/app"
 	"github.com/danieldin95/openlan-go/src/olsw/ctrls"
 	"github.com/danieldin95/openlan-go/src/olsw/storage"
+	"net"
 	"os"
 	"strings"
 	"sync"
@@ -165,14 +166,32 @@ func (v *Switch) enableMasq(source, prefix string) {
 	})
 }
 
+func (v *Switch) preWorker(w *NetworkWorker) {
+	if w.cfg.OpenVPN != nil {
+		routes := w.cfg.OpenVPN.Routes
+		if addr := w.GetSubnet(); addr != "" {
+			routes = append(routes, addr)
+		}
+		for _, rt := range w.cfg.Routes {
+			addr := rt.Prefix
+			if _, inet, err := net.ParseCIDR(addr); err == nil {
+				routes = append(routes, inet.String())
+			}
+		}
+		w.cfg.OpenVPN.Routes = routes
+	}
+}
+
 func (v *Switch) preNetwork() {
 	crypt := v.cfg.Crypt
 	for _, nCfg := range v.cfg.Network {
 		name := nCfg.Name
-		v.worker[name] = NewNetworkWorker(*nCfg, crypt)
+		w := NewNetworkWorker(nCfg, crypt)
+		v.worker[name] = w
 		brCfg := nCfg.Bridge
 		vpnCfg := nCfg.OpenVPN
 
+		v.preWorker(w)
 		// Forward traffic in bridge.
 		if brCfg.Provider != network.ProviderVir {
 			v.allowInput(brCfg.Name)
@@ -199,7 +218,9 @@ func (v *Switch) preNetwork() {
 				continue
 			}
 			v.allowForward(source, rt.Prefix)
-			v.enableMasq(source, rt.Prefix)
+			if rt.Mode == "snat" {
+				v.enableMasq(source, rt.Prefix)
+			}
 		}
 	}
 }
