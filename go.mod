@@ -16,6 +16,7 @@ require (
 	github.com/songgao/water v0.0.0-20190725173103-fd331bda3f4b
 	github.com/stretchr/testify v1.5.1
 	github.com/urfave/cli v1.22.4 // indirect
+	github.com/urfave/cli/v2 v2.3.0
 	github.com/vishvananda/netlink v1.0.0
 	github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df // indirect
 	github.com/xtaci/kcp-go/v5 v5.5.12
@@ -23,7 +24,7 @@ require (
 	golang.org/x/crypto v0.0.0 // indirect
 	golang.org/x/net v0.0.0
 	golang.org/x/sys v0.0.0 // indirect
-	gopkg.in/yaml.v2 v2.2.2
+	gopkg.in/yaml.v2 v2.2.3
 )
 
 replace (

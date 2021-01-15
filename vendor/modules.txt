@@ -6,6 +6,8 @@ github.com/armon/go-socks5
 github.com/chzyer/readline
 # github.com/coreos/go-systemd/v22 v22.0.0
 github.com/coreos/go-systemd/v22/daemon
+# github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d
+github.com/cpuguy83/go-md2man/v2/md2man
 # github.com/davecgh/go-spew v1.1.0
 github.com/davecgh/go-spew/spew
 # github.com/godbus/dbus v4.1.0+incompatible
@@ -22,6 +24,10 @@ github.com/moby/libnetwork/iptables
 github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
+# github.com/russross/blackfriday/v2 v2.0.1
+github.com/russross/blackfriday/v2
+# github.com/shurcooL/sanitized_anchor_name v1.0.0
+github.com/shurcooL/sanitized_anchor_name
 # github.com/songgao/water v0.0.0-20190725173103-fd331bda3f4b
 github.com/songgao/water
 # github.com/stretchr/testify v1.5.1
@@ -32,6 +38,8 @@ github.com/templexxx/cpu
 github.com/templexxx/xorsimd
 # github.com/tjfoc/gmsm v1.3.0
 github.com/tjfoc/gmsm/sm4
+# github.com/urfave/cli/v2 v2.3.0
+github.com/urfave/cli/v2
 # github.com/vishvananda/netlink v1.0.0
 github.com/vishvananda/netlink
 github.com/vishvananda/netlink/nl
@@ -61,5 +69,5 @@ golang.org/x/net/internal/socket
 golang.org/x/sys/unix
 golang.org/x/sys/windows/registry
 golang.org/x/sys/windows
-# gopkg.in/yaml.v2 v2.2.2
+# gopkg.in/yaml.v2 v2.2.3
 gopkg.in/yaml.v2
