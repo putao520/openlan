@@ -1,5 +1,5 @@
 Name: openlan-switch
-Version: 5.5.14
+Version: 5.5.16
 Release: 1%{?dist}
 Summary: OpenLAN's Project Software
 Group: Applications/Communications

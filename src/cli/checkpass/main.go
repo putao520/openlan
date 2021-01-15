@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"github.com/danieldin95/openlan-go/src/cli/config"
 	"github.com/danieldin95/openlan-go/src/libol"
 	"os"
@@ -8,32 +9,52 @@ import (
 	"strings"
 )
 
-func main() {
-	proc := os.Args[0]
-	user := os.Getenv("username")
-	pass := os.Getenv("password")
-
-	name := user
+func findPass(c *config.Switch, username string) string {
 	network := "default"
-	if strings.Contains(user, "@") {
-		name = strings.SplitN(user, "@", 2)[0]
-		network = strings.SplitN(user, "@", 2)[1]
+	shortname := username
+	if strings.Contains(username, "@") {
+		shortname = strings.SplitN(username, "@", 2)[0]
+		network = strings.SplitN(username, "@", 2)[1]
 	}
-	passTrue := ""
-	c := config.NewSwitch()
+	// Password from network.
 	for _, net := range c.Network {
 		if net.Name != network {
 			continue
 		}
 		for _, auth := range net.Password {
-			if auth.Username != name {
+			if auth.Username != shortname {
 				continue
 			}
-			passTrue = auth.Password
-			break
+			return auth.Password
 		}
-		break
 	}
+	// Password from file
+	if reader, err := os.Open(c.Password); err == nil {
+		defer reader.Close()
+		scanner := bufio.NewScanner(reader)
+		for scanner.Scan() {
+			line := scanner.Text()
+			columns := strings.SplitN(line, ":", 4)
+			if len(columns) < 2 {
+				continue
+			}
+			if username != columns[0] {
+				continue
+			}
+			return columns[1]
+		}
+	}
+	return ""
+}
+
+func main() {
+	proc := os.Args[0]
+	user := os.Getenv("username")
+	pass := os.Getenv("password")
+
+	c := config.NewSwitch()
+	passTrue := findPass(c, user)
+
 	logDir := path.Dir(c.Log.File)
 	logFile := logDir + "/" + path.Base(proc) + ".log"
 	libol.SetLogger(logFile, c.Log.Verbose)

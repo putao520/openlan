@@ -125,6 +125,9 @@ func (v *Switch) allowInput(bridge string) {
 }
 
 func (v *Switch) allowForward(source, prefix string) {
+	if source == prefix {
+		return
+	}
 	v.out.Info("Switch.allowForward %s, %s", source, prefix)
 	// allowed forward between source and prefix.
 	v.firewall.AddRule(libol.IptRule{
@@ -149,6 +152,9 @@ func (v *Switch) allowForward(source, prefix string) {
 }
 
 func (v *Switch) enableMasq(source, prefix string) {
+	if source == prefix {
+		return
+	}
 	// enable masquerade between source and prefix.
 	v.firewall.AddRule(libol.IptRule{
 		Table:  NatT,
@@ -167,8 +173,10 @@ func (v *Switch) enableMasq(source, prefix string) {
 }
 
 func (v *Switch) preWorker(w *NetworkWorker) {
-	if w.cfg.OpenVPN != nil {
-		routes := w.cfg.OpenVPN.Routes
+	vnpCfg := w.cfg.OpenVPN
+	if vnpCfg != nil {
+		routes := vnpCfg.Routes
+		routes = append(routes, vnpCfg.Subnet)
 		if addr := w.GetSubnet(); addr != "" {
 			routes = append(routes, addr)
 		}
@@ -178,7 +186,7 @@ func (v *Switch) preWorker(w *NetworkWorker) {
 				routes = append(routes, inet.String())
 			}
 		}
-		w.cfg.OpenVPN.Routes = routes
+		vnpCfg.Routes = routes
 	}
 }
 
