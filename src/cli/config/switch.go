@@ -45,6 +45,7 @@ var defaultSwitch = &Switch{
 func NewSwitch() *Switch {
 	sw := &Switch{}
 	sw.Flags()
+	sw.Parse()
 	sw.Initialize()
 	if Manager.Switch == nil {
 		Manager.Switch = sw
@@ -57,6 +58,9 @@ func (sw *Switch) Flags() {
 	flag.StringVar(&sw.ConfDir, "conf:dir", defaultSwitch.ConfDir, "Configure switch's directory")
 	flag.StringVar(&sw.PProf, "prof", defaultSwitch.PProf, "Http listen for CPU prof")
 	flag.IntVar(&sw.Log.Verbose, "log:level", defaultSwitch.Log.Verbose, "Configure log level")
+}
+
+func (sw *Switch) Parse() {
 	flag.Parse()
 }
 

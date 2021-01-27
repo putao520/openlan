@@ -56,6 +56,7 @@ func NewPoint() *Point {
 		Cert:        defaultPoint.Cert,
 	}
 	pin.Flags()
+	pin.Parse()
 	pin.Initialize()
 	if Manager.Point == nil {
 		Manager.Point = pin
@@ -82,6 +83,9 @@ func (pin *Point) Flags() {
 	flag.StringVar(&pin.Cert.CaFile, "cacert", defaultPoint.Cert.CaFile, "CA certificate file")
 	flag.IntVar(&pin.Timeout, "timeout", defaultPoint.Timeout, "Timeout(s) for socket write/read")
 	flag.IntVar(&pin.Log.Verbose, "log:level", defaultPoint.Log.Verbose, "Log level")
+}
+
+func (pin *Point) Parse() {
 	flag.Parse()
 }
 

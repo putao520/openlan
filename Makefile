@@ -66,8 +66,8 @@ linux-switch: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch ./src/cli/switch
 	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch.i386 ./src/cli/switch
 
-	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-checkpass ./src/cli/checkpass
-	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-checkpass.i386 ./src/cli/checkpass
+	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-pass ./src/cli/pass
+	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-pass.i386 ./src/cli/pass
 
 linux-proxy: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-proxy ./src/cli/proxy

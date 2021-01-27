@@ -25,6 +25,7 @@ var defaultProxy = &Proxy{
 func NewProxy() *Proxy {
 	px := &Proxy{}
 	px.Flags()
+	px.Parse()
 	px.Initialize()
 	if Manager.Proxy == nil {
 		Manager.Proxy = px
@@ -37,8 +38,12 @@ func (px *Proxy) Flags() {
 	flag.StringVar(&px.Conf, "conf", defaultProxy.Conf, "The configure file")
 	flag.StringVar(&px.PProf, "prof", defaultProxy.PProf, "Http listen for CPU prof")
 	flag.IntVar(&px.Log.Verbose, "log:level", defaultProxy.Log.Verbose, "Configure log level")
+}
+
+func (px *Proxy) Parse() {
 	flag.Parse()
 }
+
 func (px *Proxy) Initialize() {
 	if err := px.Load(); err != nil {
 		libol.Error("Switch.Initialize %s", err)

@@ -229,7 +229,7 @@ var defaultOvpn = OpenVPN{
 	DhPem:     "/var/openlan/openvpn/dh.pem",
 	TlsAuth:   "/var/openlan/openvpn/ta.key",
 	Cipher:    "AES-256-CBC",
-	Script:    "/usr/bin/openlan-checkpass " + strings.Join(os.Args[1:], " "),
+	Script:    "/usr/bin/openlan-pass",
 }
 
 func (o *OpenVPN) Right() {
@@ -263,7 +263,10 @@ func (o *OpenVPN) Right() {
 	if o.Cipher == "" {
 		o.Cipher = defaultOvpn.Cipher
 	}
-	o.Script = defaultOvpn.Script
+	bin := defaultOvpn.Script
+	bin += " " + strings.Join(os.Args[1:], " ")
+	bin += " -zone " + o.Name
+	o.Script = bin
 }
 
 type Network struct {

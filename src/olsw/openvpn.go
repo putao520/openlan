@@ -38,20 +38,20 @@ local {{ .Local }}
 port {{ .Port }}
 proto {{ .Protocol }}
 dev {{ .Device }}
+keepalive 10 120
+persist-key
+persist-tun
 ca {{ .Ca }}
 cert {{ .Cert }}
 key {{ .Key }}
 dh {{ .DhPem }}
 server {{ .Server }}
-{{ range .Routes }}
+{{- range .Routes }}
 push "route {{ . }}"
-{{ end }}
+{{- end }}
 ifconfig-pool-persist ipp.txt
-keepalive 10 120
 tls-auth {{ .TlsAuth }} 0
 cipher {{ .Cipher }}
-persist-key
-persist-tun
 status server.status 5
 verify-client-cert none
 script-security 3
@@ -64,20 +64,20 @@ local {{ .Local }}
 port {{ .Port }}
 proto {{ .Protocol }}
 dev {{ .Device }}
+keepalive 10 120
+persist-key
+persist-tun
 ca {{ .Ca }}
 cert {{ .Cert }}
 key {{ .Key }}
 dh {{ .DhPem }}
 server {{ .Server }}
-{{ range .Routes }}
+{{- range .Routes }}
 push "route {{ . }}"
-{{ end }}
+{{- end }}
 ifconfig-pool-persist ipp.txt
-keepalive 10 120
 tls-auth {{ .TlsAuth }} 0
 cipher {{ .Cipher }}
-persist-key
-persist-tun
 status server.status 5
 verb 3
 `
@@ -103,7 +103,8 @@ func NewOpenVpnDataFromConf(cfg *config.OpenVPN) *OpenVPNData {
 	}
 	for _, rt := range cfg.Routes {
 		if addr, err := libol.IPNetwork(rt); err == nil {
-			data.Routes = append(data.Routes, strings.ReplaceAll(addr, "/", " "))
+			r := strings.ReplaceAll(addr, "/", " ")
+			data.Routes = append(data.Routes, r)
 		}
 	}
 	return data
