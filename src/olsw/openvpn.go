@@ -267,6 +267,7 @@ const (
 	xAuthClientProfile = `
 client
 dev {{ .Device }}
+route-metric 300
 proto {{ .Protocol }}
 remote {{ .Remote }}
 resolv-retry infinite
@@ -289,6 +290,7 @@ auth-user-pass
 	certClientProfile = `
 client
 dev {{ .Device }}
+route-metric 300
 proto {{ .Protocol }}
 remote {{ .Remote }}
 resolv-retry infinite
