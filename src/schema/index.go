@@ -11,15 +11,6 @@ type Index struct {
 	OvClients []OvClient `json:"ovclients"`
 }
 
-type User struct {
-	Role     string `json:"role"` // admin, guest or other
-	Name     string `json:"name"`
-	Password string `json:"password"`
-	Token    string `json:"token"`
-	Alias    string `json:"alias"`
-	Network  string `json:"network"`
-}
-
 type Ctrl struct {
 	Url   string `json:"url"`
 	Token string `json:"token"`

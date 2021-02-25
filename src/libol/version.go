@@ -7,7 +7,7 @@ var (
 )
 
 func init() {
-	Info("libol: version is %s", Version)
-	Info("libol: built on %s", Date)
-	Info("libol: commit at %s", Commit)
+	Debug("libol: version is %s", Version)
+	Debug("libol: built on %s", Date)
+	Debug("libol: commit at %s", Commit)
 }

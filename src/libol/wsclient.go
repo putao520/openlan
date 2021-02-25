@@ -15,9 +15,9 @@ type Auth struct {
 }
 
 func BasicAuth(username, password string) string {
-	auth := username
+	auth := username + ":"
 	if password != "" {
-		auth += ":" + password
+		auth += password
 	}
 	return "Basic " + base64.StdEncoding.EncodeToString([]byte(auth))
 }

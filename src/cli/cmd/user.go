@@ -2,10 +2,16 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/danieldin95/openlan-go/src/libol"
+	"github.com/danieldin95/openlan-go/src/schema"
 	"github.com/urfave/cli/v2"
 )
 
 type User struct {
+}
+
+func (u User) Url(prefix string) string {
+	return prefix + "/api/user"
 }
 
 func (u User) Add(c *cli.Context) error {
@@ -21,8 +27,20 @@ func (u User) Remove(c *cli.Context) error {
 }
 
 func (u User) List(c *cli.Context) error {
-	fmt.Println("list: ", c.Args().First())
-	fmt.Println(c.String("url"), c.String("token"))
+	url := u.Url(c.String("url"))
+	client := Client{
+		Auth: libol.Auth{
+			Username: c.String("token"),
+		},
+	}
+	request := client.NewRequest(url)
+	var users []schema.User
+	if err := client.GetJSON(request, &users); err != nil {
+		return err
+	}
+	if out, err := libol.Marshal(users, true); err == nil {
+		fmt.Println(string(out))
+	}
 	return nil
 }
 
