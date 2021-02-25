@@ -2,7 +2,7 @@ package api
 
 import (
 	"github.com/danieldin95/openlan-go/src/network"
-	"github.com/danieldin95/openlan-go/src/olsw/schema"
+	"github.com/danieldin95/openlan-go/src/schema"
 	"github.com/gorilla/mux"
 	"net"
 	"net/http"

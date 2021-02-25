@@ -2,8 +2,8 @@ package api
 
 import (
 	"github.com/danieldin95/openlan-go/src/models"
-	"github.com/danieldin95/openlan-go/src/olsw/schema"
 	"github.com/danieldin95/openlan-go/src/olsw/storage"
+	"github.com/danieldin95/openlan-go/src/schema"
 	"github.com/gorilla/mux"
 	"net/http"
 )

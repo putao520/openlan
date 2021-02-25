@@ -2,8 +2,7 @@ package api
 
 import (
 	"github.com/danieldin95/openlan-go/src/olctl/ctrlc"
-	"github.com/danieldin95/openlan-go/src/olctl/schema"
-	olsws "github.com/danieldin95/openlan-go/src/olsw/schema"
+	"github.com/danieldin95/openlan-go/src/schema"
 	"github.com/gorilla/mux"
 	"net/http"
 )
@@ -19,24 +18,24 @@ func (g Graph) Router(router *mux.Router) {
 func (g Graph) GET(w http.ResponseWriter, r *http.Request) {
 	//id, _ := GetArg(r, "id")
 	graphs := struct {
-		Categories []schema.Category `json:"categories"`
-		Nodes      []*schema.Node    `json:"nodes"`
-		Links      []*schema.Link    `json:"links"`
+		Categories []schema.Category   `json:"categories"`
+		Nodes      []*schema.GraphNode `json:"nodes"`
+		Links      []*schema.GraphLink      `json:"links"`
 	}{
 		Categories: []schema.Category{
 			{Name: "virtual switch"},
 			{Name: "accessed point"},
 		},
-		Nodes: make([]*schema.Node, 0, 32),
-		Links: make([]*schema.Link, 0, 32),
+		Nodes: make([]*schema.GraphNode, 0, 32),
+		Links: make([]*schema.GraphLink, 0, 32),
 	}
 
 	i := 0
-	nn := make(map[string]*schema.Node, 32)
+	nn := make(map[string]*schema.GraphNode, 32)
 	ctrlc.Storager.Switch.Iter(func(k string, v interface{}) {
-		s, ok := v.(*olsws.Switch)
+		s, ok := v.(*schema.Switch)
 		if ok {
-			node := &schema.Node{
+			node := &schema.GraphNode{
 				Name:       s.Alias,
 				SymbolSize: 15,
 				Category:   0,
@@ -48,7 +47,7 @@ func (g Graph) GET(w http.ResponseWriter, r *http.Request) {
 		}
 	})
 	ctrlc.Storager.Point.Iter(func(k string, v interface{}) {
-		p, ok := v.(*olsws.Point)
+		p, ok := v.(*schema.Point)
 		if !ok {
 			return
 		}
@@ -58,7 +57,7 @@ func (g Graph) GET(w http.ResponseWriter, r *http.Request) {
 		}
 		pn, ok := nn[p.Alias]
 		if !ok {
-			pn = &schema.Node{
+			pn = &schema.GraphNode{
 				Name:       p.Alias,
 				SymbolSize: 10,
 				Category:   1,
@@ -68,7 +67,7 @@ func (g Graph) GET(w http.ResponseWriter, r *http.Request) {
 			graphs.Nodes = append(graphs.Nodes, pn)
 			i += 1
 		}
-		graphs.Links = append(graphs.Links, &schema.Link{
+		graphs.Links = append(graphs.Links, &schema.GraphLink{
 			Source: pn.Id,
 			Target: sn.Id,
 		})

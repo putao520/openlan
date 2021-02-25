@@ -7,8 +7,8 @@ import (
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
 	"github.com/danieldin95/openlan-go/src/olsw/api"
-	"github.com/danieldin95/openlan-go/src/olsw/schema"
 	"github.com/danieldin95/openlan-go/src/olsw/storage"
+	"github.com/danieldin95/openlan-go/src/schema"
 	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"
@@ -16,6 +16,7 @@ import (
 	"os"
 	"path"
 	"sort"
+	"strings"
 	"text/template"
 	"time"
 )
@@ -60,7 +61,7 @@ func (h *Http) Initialize() {
 		_ = h.LoadToken()
 	}
 	if h.adminToken == "" {
-		h.adminToken = libol.GenRandom(64)
+		h.adminToken = libol.GenRandom(32)
 	}
 
 	_ = h.SaveToken()
@@ -152,7 +153,7 @@ func (h *Http) LoadToken() error {
 		return err
 
 	}
-	h.adminToken = string(contents)
+	h.adminToken = strings.TrimSpace(string(contents))
 	return nil
 }
 

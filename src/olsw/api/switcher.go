@@ -3,7 +3,7 @@ package api
 import (
 	"github.com/danieldin95/openlan-go/src/config"
 	"github.com/danieldin95/openlan-go/src/libol"
-	"github.com/danieldin95/openlan-go/src/olsw/schema"
+	"github.com/danieldin95/openlan-go/src/schema"
 )
 
 type Switcher interface {

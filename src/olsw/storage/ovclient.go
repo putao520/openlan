@@ -3,7 +3,7 @@ package storage
 import (
 	"bufio"
 	"github.com/danieldin95/openlan-go/src/libol"
-	"github.com/danieldin95/openlan-go/src/olsw/schema"
+	"github.com/danieldin95/openlan-go/src/schema"
 	"io"
 	"os"
 	"strconv"
