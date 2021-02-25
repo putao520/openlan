@@ -26,18 +26,17 @@ func (u ACL) Remove(c *cli.Context) error {
 
 func (u ACL) Commands(app *cli.App) cli.Commands {
 	return append(app.Commands, &cli.Command{
-		Name:    "acl",
-		Aliases: []string{"a"},
-		Usage:   "Access control list",
+		Name:  "acl",
+		Usage: "Access control list",
 		Subcommands: []*cli.Command{
 			{
 				Name:   "add",
-				Usage:  "Add a new template",
+				Usage:  "Add a new acl",
 				Action: u.Add,
 			},
 			{
 				Name:   "remove",
-				Usage:  "Remove an existing template",
+				Usage:  "Remove an existing acl",
 				Action: u.Remove,
 			},
 		},

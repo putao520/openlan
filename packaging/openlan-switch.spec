@@ -19,7 +19,6 @@ cd %_source_dir && make linux-switch
 
 %install
 mkdir -p %{buildroot}/usr/bin
-cp %_source_dir/packaging/script/check %{buildroot}/usr/bin/openlan-check
 cp %_source_dir/build/openlan %{buildroot}/usr/bin
 cp %_source_dir/build/openlan-switch %{buildroot}/usr/bin
 

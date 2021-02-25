@@ -121,14 +121,14 @@ func LoadWithoutAnn(file string) ([]byte, error) {
 
 func UnmarshalLoad(v interface{}, file string) error {
 	if err := FileExist(file); err != nil {
-		return NewErr("UnmarshalLoad: %s %s", file, err)
+		return NewErr("%s %s", file, err)
 	}
 	contents, err := LoadWithoutAnn(file)
 	if err != nil {
-		return NewErr("UnmarshalLoad: %s %s", file, err)
+		return NewErr("%s %s", file, err)
 	}
 	if err := json.Unmarshal(contents, v); err != nil {
-		return NewErr("UnmarshalLoad: %s", err)
+		return NewErr("%s", err)
 	}
 	return nil
 }

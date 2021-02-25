@@ -51,7 +51,7 @@ func (h User) Add(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := &schema.User{}
-	if err := json.Unmarshal([]byte(body), user); err != nil {
+	if err := json.Unmarshal(body, user); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
