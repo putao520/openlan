@@ -69,6 +69,9 @@ linux-switch: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-pass ./src/cli/pass
 	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-pass.i386 ./src/cli/pass
 
+	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan ./src/cli/main.go
+	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan.i386 ./src/cli/main.go
+
 linux-proxy: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-proxy ./src/cli/proxy
 	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-proxy.i386 ./src/cli/proxy
@@ -101,6 +104,10 @@ linux-zip: env linux-point linux-switch linux-proxy ## build linux packages
 	@mkdir -p $(LD)/var/openlan
 	@cp -rvf $(BD)/cert/openlan/cert $(LD)/var/openlan
 	@cp -rvf $(BD)/cert/openlan/ca/ca.crt $(LD)/var/openlan/cert
+	@mkdir -p $(LD)/etc/sysconfig/openlan
+	@cp -rvf $(SD)/packaging/resource/point.cfg $(LD)/etc/sysconfig/openlan
+	@cp -rvf $(SD)/packaging/resource/proxy.cfg $(LD)/etc/sysconfig/openlan
+	@cp -rvf $(SD)/packaging/resource/switch.cfg $(LD)/etc/sysconfig/openlan
 	@mkdir -p $(LD)//usr/lib/systemd/system
 	@cp -rvf $(SD)/packaging/resource/openlan-point.service $(LD)/usr/lib/systemd/system
 	@cp -rvf $(SD)/packaging/resource/openlan-proxy.service $(LD)/usr/lib/systemd/system

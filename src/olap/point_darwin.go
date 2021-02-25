@@ -1,7 +1,7 @@
 package olap
 
 import (
-	"github.com/danieldin95/openlan-go/src/cli/config"
+	"github.com/danieldin95/openlan-go/src/config"
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
 	"strings"

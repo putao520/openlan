@@ -3,7 +3,7 @@ package olsw
 import (
 	"encoding/base64"
 	"github.com/armon/go-socks5"
-	"github.com/danieldin95/openlan-go/src/cli/config"
+	"github.com/danieldin95/openlan-go/src/config"
 	"github.com/danieldin95/openlan-go/src/libol"
 	"io"
 	"net"
