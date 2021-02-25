@@ -24,7 +24,7 @@ func main() {
 			token = strings.TrimSpace(string(data))
 		}
 	}
-	
+
 	app := &cli.App{
 		Usage: "OpenLAN switch utility",
 		Flags: []cli.Flag{

@@ -20,7 +20,7 @@ func (g Graph) GET(w http.ResponseWriter, r *http.Request) {
 	graphs := struct {
 		Categories []schema.Category   `json:"categories"`
 		Nodes      []*schema.GraphNode `json:"nodes"`
-		Links      []*schema.GraphLink      `json:"links"`
+		Links      []*schema.GraphLink `json:"links"`
 	}{
 		Categories: []schema.Category{
 			{Name: "virtual switch"},
