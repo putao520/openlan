@@ -71,16 +71,15 @@ func NewUserSchema(u *User) schema.User {
 	return schema.User{
 		Name:     u.Name,
 		Password: u.Password,
-		Token:    u.Token,
 		Alias:    u.Alias,
 		Network:  u.Network,
+		Role:     u.Role,
 	}
 }
 
 func SchemaToUserModel(user *schema.User) *User {
 	return &User{
 		Alias:    user.Alias,
-		Token:    user.Token,
 		Password: user.Password,
 		Name:     user.Name,
 	}

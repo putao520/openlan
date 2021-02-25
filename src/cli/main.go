@@ -28,8 +28,24 @@ func main() {
 	app := &cli.App{
 		Usage: "OpenLAN switch utility",
 		Flags: []cli.Flag{
-			&cli.StringFlag{Name: "token", Usage: "admin token", Value: token},
-			&cli.StringFlag{Name: "url", Usage: "server url", Value: url},
+			&cli.StringFlag{
+				Name:    "token",
+				Aliases: []string{"t"},
+				Usage:   "admin token",
+				Value:   token,
+			},
+			&cli.StringFlag{
+				Name:    "url",
+				Aliases: []string{"l"},
+				Usage:   "server url",
+				Value:   url,
+			},
+			&cli.StringFlag{
+				Name:    "format",
+				Aliases: []string{"f"},
+				Usage:   "output format: json, yaml",
+				Value:   "table",
+			},
 		},
 		Commands: []*cli.Command{},
 	}

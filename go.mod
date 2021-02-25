@@ -8,7 +8,6 @@ require (
 	github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e
 	github.com/coreos/go-systemd/v22 v22.0.0
-	github.com/danieldin95/lightstar v0.0.0-20200401145448-034e11afcf81 // indirect
 	github.com/docker/libnetwork v0.5.6 // indirect
 	github.com/godbus/dbus v4.1.0+incompatible // indirect
 	github.com/gorilla/mux v1.7.4

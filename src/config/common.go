@@ -229,7 +229,7 @@ var defaultOvpn = OpenVPN{
 	DhPem:     "/var/openlan/openvpn/dh.pem",
 	TlsAuth:   "/var/openlan/openvpn/ta.key",
 	Cipher:    "AES-256-CBC",
-	Script:    "/usr/bin/openlan-pass",
+	Script:    "/usr/bin/openlan",
 }
 
 func (o *OpenVPN) Right() {
@@ -263,9 +263,7 @@ func (o *OpenVPN) Right() {
 	if o.Cipher == "" {
 		o.Cipher = defaultOvpn.Cipher
 	}
-	bin := defaultOvpn.Script
-	bin += " " + strings.Join(os.Args[1:], " ")
-	bin += " -zone " + o.Name
+	bin := defaultOvpn.Script + " user check --network " + o.Name
 	o.Script = bin
 }
 

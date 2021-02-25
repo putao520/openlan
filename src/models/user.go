@@ -11,7 +11,6 @@ type User struct {
 	Alias    string             `json:"alias"`
 	Name     string             `json:"name"`
 	Network  string             `json:"network"`
-	Token    string             `json:"token"`
 	Password string             `json:"password"`
 	UUID     string             `json:"uuid"`
 	System   string             `json:"system"`
@@ -53,8 +52,5 @@ func (u *User) Update() {
 }
 
 func (u *User) Id() string {
-	if u.Name == "" {
-		return u.Token
-	}
 	return u.Name + "@" + u.Network
 }

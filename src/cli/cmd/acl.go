@@ -6,6 +6,7 @@ import (
 )
 
 type ACL struct {
+	Cmd
 }
 
 func (u ACL) Add(c *cli.Context) error {

@@ -286,10 +286,14 @@ func (v *Switch) LoadPass(file string) {
 		}
 		user := columns[0]
 		pass := columns[1]
+		role := "guest"
+		if len(columns) > 2 {
+			role = columns[2]
+		}
 		userObj := &models.User{
 			Name:     user,
 			Password: pass,
-			Role:     "guest",
+			Role:     role,
 		}
 		userObj.Update()
 		storage.User.Add(userObj)
