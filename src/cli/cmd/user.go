@@ -33,12 +33,15 @@ func (u User) Remove(c *cli.Context) error {
 	return nil
 }
 
-var tmpl = `# total {{ len . }}
-{{ps -13 "username"}} {{ps -13 "network"}} {{ps -16 "password"}} {{ps -6 "role"}}
-{{- range . }}
-{{ps -13 .Name}} {{ps -13 .Network}} {{ps -16 .Password}} {{ps -6 .Role}}
-{{- end }}
-`
+func (u User) Tmpl() string {
+	return strings.Join([]string{
+		`# total {{ len . }}`,
+		`{{ps -13 "username"}} {{ps -13 "network"}} {{ps -16 "password"}} {{ps -6 "role"}}`,
+		`{{- range . }}`,
+		`{{ps -13 .Name}} {{ps -13 .Network}} {{ps -16 .Password}} {{ps -6 .Role}}`,
+		`{{- end }}`,
+		``}, "\n")
+}
 
 func (u User) List(c *cli.Context) error {
 	url := u.Url(c.String("url"), "")
@@ -48,11 +51,11 @@ func (u User) List(c *cli.Context) error {
 		},
 	}
 	request := client.NewRequest(url)
-	var users []schema.User
-	if err := client.GetJSON(request, &users); err != nil {
+	var items []schema.User
+	if err := client.GetJSON(request, &items); err != nil {
 		return err
 	}
-	return u.Output(users, c.String("format"), tmpl)
+	return u.Out(items, c.String("format"), u.Tmpl())
 }
 
 func (u User) Get(c *cli.Context) error {
@@ -67,11 +70,11 @@ func (u User) Get(c *cli.Context) error {
 		},
 	}
 	request := client.NewRequest(url)
-	users := []schema.User{{}}
-	if err := client.GetJSON(request, &users[0]); err != nil {
+	items := []schema.User{{}}
+	if err := client.GetJSON(request, &items[0]); err != nil {
 		return err
 	}
-	return u.Output(users, c.String("format"), tmpl)
+	return u.Out(items, c.String("format"), u.Tmpl())
 }
 
 func (u User) Check(c *cli.Context) error {
@@ -114,7 +117,7 @@ func (u User) Check(c *cli.Context) error {
 func (u User) Commands(app *cli.App) cli.Commands {
 	return append(app.Commands, &cli.Command{
 		Name:    "user",
-		Aliases: []string{"u"},
+		Aliases: []string{"us"},
 		Usage:   "User authentication",
 		Subcommands: []*cli.Command{
 			{
@@ -140,7 +143,7 @@ func (u User) Commands(app *cli.App) cli.Commands {
 			},
 			{
 				Name:    "list",
-				Usage:   "Display all user",
+				Usage:   "Display all users",
 				Aliases: []string{"ls"},
 				Flags: []cli.Flag{
 					&cli.StringFlag{Name: "network"},

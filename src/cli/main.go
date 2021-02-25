@@ -51,6 +51,9 @@ func main() {
 	}
 	app.Commands = cmd.User{}.Commands(app)
 	app.Commands = cmd.ACL{}.Commands(app)
+	app.Commands = cmd.Device{}.Commands(app)
+	app.Commands = cmd.Lease{}.Commands(app)
+	app.Commands = cmd.Config{}.Commands(app)
 
 	err := app.Run(os.Args)
 	if err != nil {

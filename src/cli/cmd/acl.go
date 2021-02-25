@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/urfave/cli/v2"
 )
 
@@ -9,14 +8,19 @@ type ACL struct {
 	Cmd
 }
 
+func (u ACL) Url(prefix, name string) string {
+	if name == "" {
+		return prefix + "/api/acl"
+	} else {
+		return prefix + "/api/acl/" + name
+	}
+}
+
 func (u ACL) Add(c *cli.Context) error {
-	fmt.Println("flags:", c.String("network"), c.String("name"),
-		c.String("password"), c.String("role"))
 	return nil
 }
 
 func (u ACL) Remove(c *cli.Context) error {
-	fmt.Println("removed task template: ", c.Args().First())
 	return nil
 }
 
