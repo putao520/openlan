@@ -19,9 +19,9 @@ func (u OvClient) Url(prefix, name string) string {
 
 func (u OvClient) Tmpl() string {
 	return `# total {{ len . }}
-{{ps -8 "uptime"}} {{ps -8 "name"}} {{ps -22 "remote"}} {{ ps -6 "state"}}
+{{ps -8 "alive"}} {{ps -15 "name"}} {{ps -22 "remote"}} {{ ps -6 "state"}}
 {{- range . }}
-{{pi -8 .Uptime}} {{ps -8 .Name}} {{ps -22 .Remote}} {{ ps -6 .State}}
+{{pt .AliveTime | ps -8}} {{ps -15 .Name}} {{ps -22 .Remote}} {{ ps -6 .State}}
 {{- end }}
 `
 }
@@ -38,9 +38,9 @@ func (u OvClient) List(c *cli.Context) error {
 
 func (u OvClient) Commands(app *cli.App) cli.Commands {
 	return append(app.Commands, &cli.Command{
-		Name:    "openvpn-client",
-		Aliases: []string{"ovc"},
-		Usage:   "Connected OpenVPN Client",
+		Name:    "openvpn",
+		Aliases: []string{"ov"},
+		Usage:   "Connected client by OpenVPN",
 		Subcommands: []*cli.Command{
 			{
 				Name:    "list",

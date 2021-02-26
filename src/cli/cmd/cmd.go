@@ -155,6 +155,9 @@ func (c Cmd) OutTable(data interface{}, tmpl string) error {
 			}
 			return fmt.Sprintf(format, args...)
 		},
+		"pt": func(value int64) string {
+			return libol.PrettyTime(value)
+		},
 	}
 	if tmpl, err := template.New("main").Funcs(funcMap).Parse(tmpl); err != nil {
 		return err

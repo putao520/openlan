@@ -254,7 +254,7 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 	sort.SliceStable(body.Links, func(i, j int) bool {
 		ii := body.Links[i]
 		jj := body.Links[j]
-		return ii.Network+ii.Address > jj.Network+jj.Address
+		return ii.Network+ii.Server > jj.Network+jj.Server
 	})
 	// display online flow.
 	for l := range storage.Online.List() {

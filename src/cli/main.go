@@ -91,6 +91,9 @@ func main() {
 	app.Commands = cmd.Config{}.Commands(app)
 	app.Commands = cmd.Point{}.Commands(app)
 	app.Commands = cmd.OvClient{}.Commands(app)
+	app.Commands = cmd.Link{}.Commands(app)
+	app.Commands = cmd.Server{}.Commands(app)
+	app.Commands = cmd.Network{}.Commands(app)
 
 	err := app.Run(os.Args)
 	if err != nil {

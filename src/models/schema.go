@@ -33,7 +33,7 @@ func NewLinkSchema(p *Point) schema.Link {
 		User:      p.User,
 		Uptime:    client.UpTime(),
 		Device:    dev.Name(),
-		Address:   client.String(),
+		Server:    client.String(),
 		State:     client.Status().String(),
 		RxBytes:   sts[libol.CsRecvOkay],
 		TxBytes:   sts[libol.CsSendOkay],
