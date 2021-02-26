@@ -169,6 +169,7 @@ func GetBlock(cfg *Crypt) kcp.BlockCrypt {
 }
 
 type Bridge struct {
+	Network  string `json:"network"`
 	Peer     string `json:"peer"`
 	Name     string `json:"name"`
 	IfMtu    int    `json:"mtu"`
@@ -179,12 +180,14 @@ type Bridge struct {
 }
 
 type IpSubnet struct {
+	Network string `json:"network"`
 	Start   string `json:"start"`
 	End     string `json:"end"`
 	Netmask string `json:"netmask"`
 }
 
 type PrefixRoute struct {
+	Network string `json:"network"`
 	Prefix  string `json:"prefix"`
 	NextHop string `json:"nexthop"`
 	Metric  int    `json:"metric"`
@@ -192,18 +195,20 @@ type PrefixRoute struct {
 }
 
 type HostLease struct {
+	Network  string `json:"network"`
 	Hostname string `json:"hostname"`
 	Address  string `json:"address"`
 }
 
 type Password struct {
+	Network  string `json:"network"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
 type OpenVPN struct {
-	Name      string   `json:"-"`
-	WorkDir   string   `json:"-"`
+	Network   string   `json:"network"`
+	Directory string   `json:"directory"`
 	Listen    string   `json:"listen"`
 	Protocol  string   `json:"protocol"`
 	Subnet    string   `json:"subnet"`
@@ -213,7 +218,7 @@ type OpenVPN struct {
 	RootCa    string   `json:"ca"`
 	ServerCrt string   `json:"cert"`
 	ServerKey string   `json:"key"`
-	TlsAuth   string   `json:"tlsauth"`
+	TlsAuth   string   `json:"tlsAuth"`
 	Cipher    string   `json:"cipher"`
 	Routes    []string `json:"routes"`
 	Script    string   `json:"-"`
@@ -233,8 +238,8 @@ var defaultOvpn = OpenVPN{
 }
 
 func (o *OpenVPN) Right() {
-	if o.WorkDir == "" {
-		o.WorkDir = "/var/openlan/openvpn/" + o.Name
+	if o.Directory == "" {
+		o.Directory = "/var/openlan/openvpn/" + o.Network
 	}
 	if o.Auth == "" {
 		o.Auth = defaultOvpn.Auth
@@ -263,7 +268,7 @@ func (o *OpenVPN) Right() {
 	if o.Cipher == "" {
 		o.Cipher = defaultOvpn.Cipher
 	}
-	bin := defaultOvpn.Script + " user check --network " + o.Name
+	bin := defaultOvpn.Script + " user check --network " + o.Network
 	o.Script = bin
 }
 
@@ -308,7 +313,7 @@ func (n *Network) Right() {
 		}
 	}
 	if n.OpenVPN != nil {
-		n.OpenVPN.Name = n.Name
+		n.OpenVPN.Network = n.Name
 		n.OpenVPN.Right()
 	}
 }

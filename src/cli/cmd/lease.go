@@ -29,9 +29,8 @@ func (u Lease) Tmpl() string {
 func (u Lease) List(c *cli.Context) error {
 	url := u.Url(c.String("url"), "")
 	clt := u.NewHttp(c.String("token"))
-	request := clt.NewRequest(url)
 	var items []schema.Lease
-	if err := clt.GetJSON(request, &items); err != nil {
+	if err := clt.GetJSON(url, &items); err != nil {
 		return err
 	}
 	return u.Out(items, c.String("format"), u.Tmpl())

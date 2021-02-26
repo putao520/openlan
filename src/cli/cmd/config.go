@@ -20,8 +20,7 @@ func (u Config) List(c *cli.Context) error {
 	url := u.Url(c.String("url"), "")
 	url += "?format=" + c.String("format")
 	clt := u.NewHttp(c.String("token"))
-	request := clt.NewRequest(url)
-	if data, err := clt.GetBody(request); err == nil {
+	if data, err := clt.GetBody(url); err == nil {
 		fmt.Println(string(data))
 		return nil
 	} else {

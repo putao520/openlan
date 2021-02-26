@@ -33,7 +33,7 @@ type OpenVPNData struct {
 }
 
 const (
-	xAuthConfTmpl = `# OpenVPN configuration
+	xAuthConfTmpl = `# Generate by OpenLAN
 local {{ .Local }}
 port {{ .Port }}
 proto {{ .Protocol }}
@@ -59,7 +59,7 @@ auth-user-pass-verify "{{ .Script }}" via-env
 username-as-common-name
 verb 3
 `
-	certConfTmpl = `# OpenVPN configuration
+	certConfTmpl = `# Generate by OpenLAN
 local {{ .Local }}
 port {{ .Port }}
 proto {{ .Protocol }}
@@ -118,7 +118,7 @@ type OpenVPN struct {
 func NewOpenVPN(cfg *config.OpenVPN) *OpenVPN {
 	return &OpenVPN{
 		Cfg: cfg,
-		out: libol.NewSubLogger(cfg.Name),
+		out: libol.NewSubLogger(cfg.Network),
 	}
 }
 
@@ -130,35 +130,35 @@ func (o *OpenVPN) WorkDir() string {
 	if o.Cfg == nil {
 		return DefaultCurDir
 	}
-	return o.Cfg.WorkDir
+	return o.Cfg.Directory
 }
 
 func (o *OpenVPN) ConfFile() string {
 	if o.Cfg == nil {
 		return ""
 	}
-	return o.Cfg.WorkDir + "/server.conf"
+	return o.Cfg.Directory + "/server.conf"
 }
 
 func (o *OpenVPN) ProfileFile() string {
 	if o.Cfg == nil {
 		return ""
 	}
-	return o.Cfg.WorkDir + "/client.ovpn"
+	return o.Cfg.Directory + "/client.ovpn"
 }
 
 func (o *OpenVPN) LogFile() string {
 	if o.Cfg == nil {
 		return ""
 	}
-	return o.Cfg.WorkDir + "/server.log"
+	return o.Cfg.Directory + "/server.log"
 }
 
 func (o *OpenVPN) PidFile() string {
 	if o.Cfg == nil {
 		return ""
 	}
-	return o.Cfg.WorkDir + "/server.pid"
+	return o.Cfg.Directory + "/server.pid"
 }
 
 func (o *OpenVPN) WriteConf(path string) error {
@@ -264,7 +264,7 @@ type OpenVPNProfile struct {
 }
 
 const (
-	xAuthClientProfile = `
+	xAuthClientProfile = `# Generate by OpenLAN
 client
 dev {{ .Device }}
 route-metric 300
@@ -287,7 +287,7 @@ auth-nocache
 verb 4
 auth-user-pass
 `
-	certClientProfile = `
+	certClientProfile = `# Generate by OpenLAN
 client
 dev {{ .Device }}
 route-metric 300

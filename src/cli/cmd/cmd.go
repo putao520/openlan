@@ -30,7 +30,8 @@ func (cl Client) NewRequest(url string) *libol.HttpClient {
 	return client
 }
 
-func (cl Client) GetBody(client *libol.HttpClient) ([]byte, error) {
+func (cl Client) GetBody(url string) ([]byte, error) {
+	client := cl.NewRequest(url)
 	r, err := client.Do()
 	if err != nil {
 		return nil, err
@@ -46,7 +47,8 @@ func (cl Client) GetBody(client *libol.HttpClient) ([]byte, error) {
 	return body, nil
 }
 
-func (cl Client) GetJSON(client *libol.HttpClient, v interface{}) error {
+func (cl Client) GetJSON(url string, v interface{}) error {
+	client := cl.NewRequest(url)
 	r, err := client.Do()
 	if err != nil {
 		return err
@@ -81,17 +83,20 @@ func (cl Client) SetJSON(client *libol.HttpClient, v interface{}) error {
 	return nil
 }
 
-func (cl Client) PostJSON(client *libol.HttpClient, v interface{}) error {
+func (cl Client) PostJSON(url string, v interface{}) error {
+	client := cl.NewRequest(url)
 	client.Method = "POST"
 	return cl.SetJSON(client, v)
 }
 
-func (cl Client) PutJSON(client *libol.HttpClient, v interface{}) error {
+func (cl Client) PutJSON(url string, v interface{}) error {
+	client := cl.NewRequest(url)
 	client.Method = "PUT"
 	return cl.SetJSON(client, v)
 }
 
-func (cl Client) DeleteJSON(client *libol.HttpClient, v interface{}) error {
+func (cl Client) DeleteJSON(url string, v interface{}) error {
+	client := cl.NewRequest(url)
 	client.Method = "DELETE"
 	return cl.SetJSON(client, v)
 }

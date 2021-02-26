@@ -38,8 +38,7 @@ func (u User) Add(c *cli.Context) error {
 	}
 	url := u.Url(c.String("url"), user.Name)
 	clt := u.NewHttp(c.String("token"))
-	request := clt.NewRequest(url)
-	if err := clt.PostJSON(request, user); err != nil {
+	if err := clt.PostJSON(url, user); err != nil {
 		return err
 	}
 	return nil
@@ -52,8 +51,7 @@ func (u User) Remove(c *cli.Context) error {
 	}
 	url := u.Url(c.String("url"), fullName)
 	clt := u.NewHttp(c.String("token"))
-	request := clt.NewRequest(url)
-	if err := clt.DeleteJSON(request, nil); err != nil {
+	if err := clt.DeleteJSON(url, nil); err != nil {
 		return err
 	}
 	return nil
@@ -71,9 +69,8 @@ func (u User) Tmpl() string {
 func (u User) List(c *cli.Context) error {
 	url := u.Url(c.String("url"), "")
 	clt := u.NewHttp(c.String("token"))
-	request := clt.NewRequest(url)
 	var items []schema.User
-	if err := clt.GetJSON(request, &items); err != nil {
+	if err := clt.GetJSON(url, &items); err != nil {
 		return err
 	}
 	return u.Out(items, c.String("format"), u.Tmpl())
@@ -86,9 +83,8 @@ func (u User) Get(c *cli.Context) error {
 	}
 	url := u.Url(c.String("url"), fullName)
 	client := u.NewHttp(c.String("token"))
-	request := client.NewRequest(url)
 	items := []schema.User{{}}
-	if err := client.GetJSON(request, &items[0]); err != nil {
+	if err := client.GetJSON(url, &items[0]); err != nil {
 		return err
 	}
 	return u.Out(items, c.String("format"), u.Tmpl())
@@ -115,9 +111,8 @@ func (u User) Check(c *cli.Context) error {
 	}
 	url := u.Url(c.String("url"), fullName)
 	client := u.NewHttp(c.String("token"))
-	request := client.NewRequest(url)
 	var user schema.User
-	if err := client.GetJSON(request, &user); err != nil {
+	if err := client.GetJSON(url, &user); err != nil {
 		return err
 	}
 	if user.Password == passFromE {
