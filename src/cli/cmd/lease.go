@@ -21,7 +21,7 @@ func (u Lease) Tmpl() string {
 	return `# total {{ len . }}
 {{ps -16 "uuid"}} {{ps -16 "alias"}} {{ ps -16 "address" }} {{ps -22 "client"}} {{ps -8 "network"}} {{ ps -6 "type"}}
 {{- range . }}
-{{ps -16 .UUID}} {{ps -16 .Alias}} {{ ps -16 .Remote}} {{ps -22 .Client}} {{ps -8 .Network}} {{ ps -6 .Type}}
+{{ps -16 .UUID}} {{ps -16 .Alias}} {{ ps -16 .Address}} {{ps -22 .Client}} {{ps -8 .Network}} {{ ps -6 .Type}}
 {{- end }}
 `
 }
