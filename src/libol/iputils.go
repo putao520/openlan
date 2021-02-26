@@ -105,7 +105,7 @@ func IpAddrShow(name string) []string {
 				if len(addrArr) != 3 {
 					continue
 				}
-				if addrArr[0] == "Address" && strings.Contains(addrArr[2], "Parameters") {
+				if addrArr[0] == "Remote" && strings.Contains(addrArr[2], "Parameters") {
 					addrs = append(addrs, addrArr[1])
 				}
 			}

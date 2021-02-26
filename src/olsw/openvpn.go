@@ -33,7 +33,7 @@ type OpenVPNData struct {
 }
 
 const (
-	xAuthConfTmpl = `# OpenVPN configuration
+	xAuthConfTmpl = `# Generate by OpenLAN
 local {{ .Local }}
 port {{ .Port }}
 proto {{ .Protocol }}
@@ -59,7 +59,7 @@ auth-user-pass-verify "{{ .Script }}" via-env
 username-as-common-name
 verb 3
 `
-	certConfTmpl = `# OpenVPN configuration
+	certConfTmpl = `# Generate by OpenLAN
 local {{ .Local }}
 port {{ .Port }}
 proto {{ .Protocol }}
@@ -118,7 +118,7 @@ type OpenVPN struct {
 func NewOpenVPN(cfg *config.OpenVPN) *OpenVPN {
 	return &OpenVPN{
 		Cfg: cfg,
-		out: libol.NewSubLogger(cfg.Name),
+		out: libol.NewSubLogger(cfg.Network),
 	}
 }
 
@@ -126,39 +126,53 @@ func (o *OpenVPN) Path() string {
 	return OpenVPNBin
 }
 
-func (o *OpenVPN) WorkDir() string {
+func (o *OpenVPN) Directory() string {
 	if o.Cfg == nil {
 		return DefaultCurDir
 	}
-	return o.Cfg.WorkDir
+	return o.Cfg.Directory
 }
 
-func (o *OpenVPN) ConfFile() string {
+func (o *OpenVPN) ServerConf() string {
 	if o.Cfg == nil {
 		return ""
 	}
-	return o.Cfg.WorkDir + "/server.conf"
+	return o.Cfg.Directory + "/server.conf"
 }
 
-func (o *OpenVPN) ProfileFile() string {
+func (o *OpenVPN) ClientConf() string {
 	if o.Cfg == nil {
 		return ""
 	}
-	return o.Cfg.WorkDir + "/client.ovpn"
+	return o.Cfg.Directory + "/client.ovpn"
 }
 
-func (o *OpenVPN) LogFile() string {
+func (o *OpenVPN) ServerLog() string {
 	if o.Cfg == nil {
 		return ""
 	}
-	return o.Cfg.WorkDir + "/server.log"
+	return o.Cfg.Directory + "/server.log"
 }
 
-func (o *OpenVPN) PidFile() string {
+func (o *OpenVPN) ServerPid() string {
 	if o.Cfg == nil {
 		return ""
 	}
-	return o.Cfg.WorkDir + "/server.pid"
+	return o.Cfg.Directory + "/server.pid"
+}
+
+func (o *OpenVPN) ServerStats() string {
+	if o.Cfg == nil {
+		return ""
+	}
+	return o.Cfg.Directory + "/server.stats"
+}
+
+func (o *OpenVPN) IppTxt() string {
+	if o.Cfg == nil {
+		return ""
+	}
+	return o.Cfg.Directory + "/ipp.txt"
 }
 
 func (o *OpenVPN) WriteConf(path string) error {
@@ -183,19 +197,35 @@ func (o *OpenVPN) WriteConf(path string) error {
 	return nil
 }
 
+func (o *OpenVPN) Clean() {
+	status := o.ServerStats()
+	if err := libol.FileExist(status); err == nil {
+		if err := os.Remove(status); err != nil {
+			o.out.Warn("OpenVPN.Clean %s", err)
+		}
+	}
+	ipp := o.IppTxt()
+	if err := libol.FileExist(ipp); err == nil {
+		if err := os.Remove(ipp); err != nil {
+			o.out.Warn("OpenVPN.Clean %s", err)
+		}
+	}
+}
+
 func (o *OpenVPN) Initialize() {
 	if !o.ValidCfg() {
 		return
 	}
-	if err := os.Mkdir(o.WorkDir(), 0600); err != nil {
+	o.Clean()
+	if err := os.Mkdir(o.Directory(), 0600); err != nil {
 		o.out.Warn("OpenVPN.Initialize %s", err)
 	}
-	if err := o.WriteConf(o.ConfFile()); err != nil {
+	if err := o.WriteConf(o.ServerConf()); err != nil {
 		o.out.Warn("OpenVPN.Initialize %s", err)
 		return
 	}
 	if ctx, err := o.Profile(); err == nil {
-		file := o.ProfileFile()
+		file := o.ClientConf()
 		if err := ioutil.WriteFile(file, ctx, 0600); err != nil {
 			o.out.Warn("OpenVPN.Initialize %s", err)
 		}
@@ -218,7 +248,7 @@ func (o *OpenVPN) Start() {
 	if !o.ValidCfg() {
 		return
 	}
-	log, err := libol.CreateFile(o.LogFile())
+	log, err := libol.CreateFile(o.ServerLog())
 	if err != nil {
 		o.out.Warn("OpenVPN.Start %s", err)
 		return
@@ -226,12 +256,12 @@ func (o *OpenVPN) Start() {
 	libol.Go(func() {
 		defer log.Close()
 		args := []string{
-			"--cd", o.WorkDir(), "--config", o.ConfFile(), "--writepid", o.PidFile(),
+			"--cd", o.Directory(), "--config", o.ServerConf(), "--writepid", o.ServerPid(),
 		}
 		cmd := exec.Command(o.Path(), args...)
 		cmd.Stdout = log
 		if err := cmd.Run(); err != nil {
-			o.out.Error("OpenVPN.Start %s, and see log %s", err, o.LogFile())
+			o.out.Error("OpenVPN.Start %s, and see log %s", err, o.ServerLog())
 		}
 	})
 }
@@ -240,7 +270,7 @@ func (o *OpenVPN) Stop() {
 	if !o.ValidCfg() {
 		return
 	}
-	if data, err := ioutil.ReadFile(o.PidFile()); err != nil {
+	if data, err := ioutil.ReadFile(o.ServerPid()); err != nil {
 		o.out.Debug("OpenVPN.Stop %s", err)
 		return
 	} else {
@@ -264,7 +294,7 @@ type OpenVPNProfile struct {
 }
 
 const (
-	xAuthClientProfile = `
+	xAuthClientProfile = `# Generate by OpenLAN
 client
 dev {{ .Device }}
 route-metric 300
@@ -287,7 +317,7 @@ auth-nocache
 verb 4
 auth-user-pass
 `
-	certClientProfile = `
+	certClientProfile = `# Generate by OpenLAN
 client
 dev {{ .Device }}
 route-metric 300

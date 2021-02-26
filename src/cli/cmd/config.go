@@ -18,13 +18,9 @@ func (u Config) Url(prefix, name string) string {
 
 func (u Config) List(c *cli.Context) error {
 	url := u.Url(c.String("url"), "")
-	client := Client{
-		Auth: libol.Auth{
-			Username: c.String("token"),
-		},
-	}
-	request := client.NewRequest(url)
-	if data, err := client.GetBody(request); err == nil {
+	url += "?format=" + c.String("format")
+	clt := u.NewHttp(c.String("token"))
+	if data, err := clt.GetBody(url); err == nil {
 		fmt.Println(string(data))
 		return nil
 	} else {
@@ -34,21 +30,32 @@ func (u Config) List(c *cli.Context) error {
 
 func (u Config) Check(c *cli.Context) error {
 	dir := c.String("dir")
-	proxyFile := filepath.Join(dir, "proxy.json")
-	if err := libol.FileExist(proxyFile); err == nil {
+	// Check proxy configurations.
+	pxFile := filepath.Join(dir, "proxy.json")
+	if err := libol.FileExist(pxFile); err == nil {
 		obj := &config.Proxy{}
-		if err := libol.UnmarshalLoad(obj, proxyFile); err != nil {
+		if err := libol.UnmarshalLoad(obj, pxFile); err != nil {
 			libol.Warn("proxy.json: %s", err)
 		}
 	}
-	pointFile := filepath.Join(dir, "point.json")
-	if err := libol.FileExist(pointFile); err == nil {
+	// Check OLAP configurations.
+	ptFile := filepath.Join(dir, "point.json")
+	if err := libol.FileExist(ptFile); err == nil {
 		obj := &config.Point{}
-		if err := libol.UnmarshalLoad(obj, pointFile); err != nil {
+		if err := libol.UnmarshalLoad(obj, ptFile); err != nil {
 			libol.Warn("point.json: %s", err)
 		}
 	}
-	pattern := dir + "/switch/network/*.json"
+	// Check OLSW configurations.
+	swFile := filepath.Join(dir, "switch", "switch.json")
+	if err := libol.FileExist(swFile); err == nil {
+		obj := &config.Switch{}
+		if err := libol.UnmarshalLoad(obj, swFile); err != nil {
+			libol.Warn("switch.json: %s", err)
+		}
+	}
+	// Check network configurations.
+	pattern := filepath.Join(dir, "switch", "network", "*.json")
 	if files, err := filepath.Glob(pattern); err == nil {
 		for _, file := range files {
 			obj := &config.Network{}

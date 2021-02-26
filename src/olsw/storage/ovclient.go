@@ -48,9 +48,9 @@ func (o *_ovClient) scanStatus(reader io.Reader) (map[string]*schema.OvClient, e
 			if len(columns) == 5 {
 				name := columns[0]
 				client := &schema.OvClient{
-					Name:    columns[0],
-					Address: columns[1],
-					State:   "success",
+					Name:   columns[0],
+					Remote: columns[1],
+					State:  "success",
 				}
 				if rxc, err := ParseInt64(columns[2]); err == nil {
 					client.RxBytes = rxc
@@ -59,8 +59,8 @@ func (o *_ovClient) scanStatus(reader io.Reader) (map[string]*schema.OvClient, e
 					client.TxBytes = txc
 				}
 				if uptime, err := time.Parse(time.ANSIC, columns[4]); err == nil {
-					client.UpTime = uptime.Unix()
-					client.AliveTime = time.Now().Unix() - client.UpTime
+					client.Uptime = uptime.Unix()
+					client.AliveTime = time.Now().Unix() - client.Uptime
 
 				}
 				clients[name] = client

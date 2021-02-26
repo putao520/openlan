@@ -13,7 +13,7 @@ func NewPointSchema(p *Point) schema.Point {
 		UUID:      p.UUID,
 		Alias:     p.Alias,
 		User:      p.User,
-		Address:   client.String(),
+		Remote:    client.String(),
 		Device:    dev.Name(),
 		RxBytes:   sts[libol.CsRecvOkay],
 		TxBytes:   sts[libol.CsSendOkay],
@@ -82,6 +82,8 @@ func SchemaToUserModel(user *schema.User) *User {
 		Alias:    user.Alias,
 		Password: user.Password,
 		Name:     user.Name,
+		Network:  user.Network,
+		Role:     user.Role,
 	}
 }
 

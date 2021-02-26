@@ -232,7 +232,7 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 	sort.SliceStable(body.Points, func(i, j int) bool {
 		ii := body.Points[i]
 		jj := body.Points[j]
-		return ii.Network+ii.Address > jj.Network+jj.Address
+		return ii.Network+ii.Remote > jj.Network+jj.Remote
 	})
 	// display neighbor.
 	for n := range storage.Neighbor.List() {

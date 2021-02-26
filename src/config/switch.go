@@ -2,7 +2,6 @@ package config
 
 import (
 	"flag"
-	"fmt"
 	"github.com/danieldin95/openlan-go/src/libol"
 	"path/filepath"
 	"runtime"
@@ -65,7 +64,7 @@ func (sw *Switch) Parse() {
 }
 
 func (sw *Switch) Initialize() {
-	sw.SaveFile = fmt.Sprintf("%s/switch.json", sw.ConfDir)
+	sw.SaveFile = sw.ConfDir + "/switch.json"
 	if err := sw.Load(); err != nil {
 		libol.Error("Switch.Initialize %s", err)
 	}
@@ -82,8 +81,8 @@ func (sw *Switch) Right() {
 		RightAddr(&sw.Http.Listen, 10000)
 	}
 	libol.Debug("Proxy.Right Http %v", sw.Http)
-	sw.TokenFile = fmt.Sprintf("%s/token", sw.ConfDir)
-	sw.SaveFile = fmt.Sprintf("%s/switch.json", sw.ConfDir)
+	sw.TokenFile = sw.ConfDir + "/token"
+	sw.SaveFile = sw.ConfDir + "/switch.json"
 	if sw.Cert != nil {
 		sw.Cert.Right()
 		// default is tls if cert configured
@@ -97,7 +96,7 @@ func (sw *Switch) Right() {
 		sw.Perf = &defaultPerf
 	}
 	if sw.Password == "" {
-		sw.Password = fmt.Sprintf("%s/password", sw.ConfDir)
+		sw.Password = sw.ConfDir + "/password"
 	}
 }
 

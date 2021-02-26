@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"
+	"sort"
 )
 
 type User struct {
@@ -16,6 +17,7 @@ type User struct {
 
 func (h User) Router(router *mux.Router) {
 	router.HandleFunc("/api/user", h.List).Methods("GET")
+	router.HandleFunc("/api/user", h.Add).Methods("POST")
 	router.HandleFunc("/api/user/{id}", h.Get).Methods("GET")
 	router.HandleFunc("/api/user/{id}", h.Add).Methods("POST")
 	router.HandleFunc("/api/user/{id}", h.Del).Methods("DELETE")
@@ -29,6 +31,9 @@ func (h User) List(w http.ResponseWriter, r *http.Request) {
 		}
 		users = append(users, models.NewUserSchema(u))
 	}
+	sort.SliceStable(users, func(i, j int) bool {
+		return users[i].Network+users[i].Name > users[j].Network+users[j].Name
+	})
 	ResponseJson(w, users)
 }
 
@@ -57,6 +62,9 @@ func (h User) Add(w http.ResponseWriter, r *http.Request) {
 	}
 
 	storage.User.Add(models.SchemaToUserModel(user))
+	if err := storage.User.Save(); err != nil {
+		libol.Warn("AddUser %s", err)
+	}
 	ResponseMsg(w, 0, "")
 }
 
@@ -65,5 +73,8 @@ func (h User) Del(w http.ResponseWriter, r *http.Request) {
 	libol.Info("DelUser %s", vars["id"])
 
 	storage.User.Del(vars["id"])
+	if err := storage.User.Save(); err != nil {
+		libol.Warn("DelUser %s", err)
+	}
 	ResponseMsg(w, 0, "")
 }

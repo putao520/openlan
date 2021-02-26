@@ -1,12 +1,12 @@
 package schema
 
 type OvClient struct {
-	UpTime    int64  `json:"uptime"`
+	Uptime    int64  `json:"uptime"`
 	Name      string `json:"name"`
 	UUID      string `json:"uuid"`
 	Network   string `json:"network"`
 	User      string `json:"user"`
-	Address   string `json:"server"`
+	Remote    string `json:"remote"`
 	Device    string `json:"device"`
 	RxBytes   int64  `json:"rxBytes"`
 	TxBytes   int64  `json:"txBytes"`

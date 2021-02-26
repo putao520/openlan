@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/danieldin95/openlan-go/src/libol"
@@ -29,7 +30,8 @@ func (cl Client) NewRequest(url string) *libol.HttpClient {
 	return client
 }
 
-func (cl Client) GetBody(client *libol.HttpClient) ([]byte, error) {
+func (cl Client) GetBody(url string) ([]byte, error) {
+	client := cl.NewRequest(url)
 	r, err := client.Do()
 	if err != nil {
 		return nil, err
@@ -45,7 +47,8 @@ func (cl Client) GetBody(client *libol.HttpClient) ([]byte, error) {
 	return body, nil
 }
 
-func (cl Client) GetJSON(client *libol.HttpClient, v interface{}) error {
+func (cl Client) GetJSON(url string, v interface{}) error {
+	client := cl.NewRequest(url)
 	r, err := client.Do()
 	if err != nil {
 		return err
@@ -65,7 +68,49 @@ func (cl Client) GetJSON(client *libol.HttpClient, v interface{}) error {
 	return nil
 }
 
+func (cl Client) SetJSON(client *libol.HttpClient, v interface{}) error {
+	data, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	libol.Debug("Client.SetJSON %s %s %s", client.Url, client.Method, string(data))
+	client.Payload = bytes.NewReader(data)
+	if r, err := client.Do(); err != nil {
+		return err
+	} else if r.StatusCode != http.StatusOK {
+		return libol.NewErr(r.Status)
+	}
+	return nil
+}
+
+func (cl Client) PostJSON(url string, v interface{}) error {
+	client := cl.NewRequest(url)
+	client.Method = "POST"
+	return cl.SetJSON(client, v)
+}
+
+func (cl Client) PutJSON(url string, v interface{}) error {
+	client := cl.NewRequest(url)
+	client.Method = "PUT"
+	return cl.SetJSON(client, v)
+}
+
+func (cl Client) DeleteJSON(url string, v interface{}) error {
+	client := cl.NewRequest(url)
+	client.Method = "DELETE"
+	return cl.SetJSON(client, v)
+}
+
 type Cmd struct {
+}
+
+func (c Cmd) NewHttp(token string) Client {
+	client := Client{
+		Auth: libol.Auth{
+			Username: token,
+		},
+	}
+	return client
 }
 
 func (c Cmd) Url(prefix, name string) string {

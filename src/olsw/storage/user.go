@@ -6,7 +6,30 @@ import (
 )
 
 type _user struct {
+	File  string
 	Users *libol.SafeStrMap
+}
+
+func (w *_user) Save() error {
+	if w.File == "" {
+		return nil
+	}
+	fp, err := libol.OpenTrunk(w.File)
+	if err != nil {
+		return err
+	}
+	for obj := range w.List() {
+		if obj == nil {
+			break
+		}
+		line := obj.Id() + ":" + obj.Password + ":" + obj.Role
+		_, _ = fp.WriteString(line + "\n")
+	}
+	return nil
+}
+
+func (w *_user) SetFile(value string) {
+	w.File = value
 }
 
 func (w *_user) Init(size int) {
