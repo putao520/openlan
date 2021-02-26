@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/danieldin95/openlan-go/src/libol"
@@ -65,7 +66,46 @@ func (cl Client) GetJSON(client *libol.HttpClient, v interface{}) error {
 	return nil
 }
 
+func (cl Client) SetJSON(client *libol.HttpClient, v interface{}) error {
+	data, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	libol.Debug("Client.SetJSON %s %s %s", client.Url, client.Method, string(data))
+	client.Payload = bytes.NewReader(data)
+	if r, err := client.Do(); err != nil {
+		return err
+	} else if r.StatusCode != http.StatusOK {
+		return libol.NewErr(r.Status)
+	}
+	return nil
+}
+
+func (cl Client) PostJSON(client *libol.HttpClient, v interface{}) error {
+	client.Method = "POST"
+	return cl.SetJSON(client, v)
+}
+
+func (cl Client) PutJSON(client *libol.HttpClient, v interface{}) error {
+	client.Method = "PUT"
+	return cl.SetJSON(client, v)
+}
+
+func (cl Client) DeleteJSON(client *libol.HttpClient, v interface{}) error {
+	client.Method = "DELETE"
+	return cl.SetJSON(client, v)
+}
+
 type Cmd struct {
+}
+
+func (c Cmd) NewHttp(token string) Client {
+	client := Client{
+		Auth: libol.Auth{
+			Username: token,
+		},
+	}
+	return client
 }
 
 func (c Cmd) Url(prefix, name string) string {

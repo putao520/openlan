@@ -1,10 +1,8 @@
 package cmd
 
 import (
-	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/schema"
 	"github.com/urfave/cli/v2"
-	"strings"
 )
 
 type Device struct {
@@ -20,25 +18,20 @@ func (u Device) Url(prefix, name string) string {
 }
 
 func (u Device) Tmpl() string {
-	return strings.Join([]string{
-		`# total {{ len . }}`,
-		`{{ps -13 "name"}} {{ps -13 "mtu"}} {{ps -16 "mac"}} {{ps -6 "provider"}}`,
-		`{{- range . }}`,
-		`{{ps -13 .Name}} {{pi -13 .Mtu}} {{ps -16 .Mac}} {{ps -6 .Provider}}`,
-		`{{- end }}`,
-		``}, "\n")
+	return `# total {{ len . }}
+{{ps -13 "name"}} {{ps -13 "mtu"}} {{ps -16 "mac"}} {{ps -6 "provider"}}
+{{- range . }}
+{{ps -13 .Name}} {{pi -13 .Mtu}} {{ps -16 .Mac}} {{ps -6 .Provider}}
+{{- end }}
+`
 }
 
 func (u Device) List(c *cli.Context) error {
 	url := u.Url(c.String("url"), "")
-	client := Client{
-		Auth: libol.Auth{
-			Username: c.String("token"),
-		},
-	}
-	request := client.NewRequest(url)
+	clt := u.NewHttp(c.String("token"))
+	request := clt.NewRequest(url)
 	var items []schema.Device
-	if err := client.GetJSON(request, &items); err != nil {
+	if err := clt.GetJSON(request, &items); err != nil {
 		return err
 	}
 	return u.Out(items, c.String("format"), u.Tmpl())

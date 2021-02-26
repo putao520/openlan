@@ -82,6 +82,8 @@ func SchemaToUserModel(user *schema.User) *User {
 		Alias:    user.Alias,
 		Password: user.Password,
 		Name:     user.Name,
+		Network:  user.Network,
+		Role:     user.Role,
 	}
 }
 

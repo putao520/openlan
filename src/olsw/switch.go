@@ -306,6 +306,8 @@ func (v *Switch) LoadPass(file string) {
 func (v *Switch) Initialize() {
 	v.lock.Lock()
 	defer v.lock.Unlock()
+
+	storage.User.SetFile(v.cfg.Password)
 	v.preApplication()
 	if v.cfg.Http != nil {
 		v.http = NewHttp(v)

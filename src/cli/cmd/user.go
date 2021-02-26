@@ -22,37 +22,58 @@ func (u User) Url(prefix, name string) string {
 }
 
 func (u User) Add(c *cli.Context) error {
-	fmt.Println("flags:", c.String("network"),
-		c.String("name"), c.String("password"),
-		c.String("role"))
+	user := &schema.User{
+		Name:     c.String("name"),
+		Network:  c.String("network"),
+		Password: c.String("password"),
+		Role:     c.String("role"),
+	}
+	if user.Name == "" || user.Password == "" {
+		return libol.NewErr("name or password is empty")
+	}
+	if strings.Contains(user.Name, "@") {
+		values := strings.SplitN(user.Name, "@", 2)
+		user.Name = values[0]
+		user.Network = values[1]
+	}
+	url := u.Url(c.String("url"), user.Name)
+	clt := u.NewHttp(c.String("token"))
+	request := clt.NewRequest(url)
+	if err := clt.PostJSON(request, user); err != nil {
+		return err
+	}
 	return nil
 }
 
 func (u User) Remove(c *cli.Context) error {
-	fmt.Println("removed: ", c.Args().First())
+	fullName := c.String("name")
+	if n := c.String("network"); n != "" {
+		fullName += "@" + n
+	}
+	url := u.Url(c.String("url"), fullName)
+	clt := u.NewHttp(c.String("token"))
+	request := clt.NewRequest(url)
+	if err := clt.DeleteJSON(request, nil); err != nil {
+		return err
+	}
 	return nil
 }
 
 func (u User) Tmpl() string {
-	return strings.Join([]string{
-		`# total {{ len . }}`,
-		`{{ps -13 "username"}} {{ps -13 "network"}} {{ps -16 "password"}} {{ps -6 "role"}}`,
-		`{{- range . }}`,
-		`{{ps -13 .Name}} {{ps -13 .Network}} {{ps -16 .Password}} {{ps -6 .Role}}`,
-		`{{- end }}`,
-		``}, "\n")
+	return `# total {{ len . }}
+{{ps -13 "username"}} {{ps -13 "network"}} {{ps -16 "password"}} {{ps -6 "role"}}
+{{- range . }}
+{{ps -13 .Name}} {{ps -13 .Network}} {{ps -16 .Password}} {{ps -6 .Role}}
+{{- end }}
+`
 }
 
 func (u User) List(c *cli.Context) error {
 	url := u.Url(c.String("url"), "")
-	client := Client{
-		Auth: libol.Auth{
-			Username: c.String("token"),
-		},
-	}
-	request := client.NewRequest(url)
+	clt := u.NewHttp(c.String("token"))
+	request := clt.NewRequest(url)
 	var items []schema.User
-	if err := client.GetJSON(request, &items); err != nil {
+	if err := clt.GetJSON(request, &items); err != nil {
 		return err
 	}
 	return u.Out(items, c.String("format"), u.Tmpl())
@@ -64,11 +85,7 @@ func (u User) Get(c *cli.Context) error {
 		fullName += "@" + n
 	}
 	url := u.Url(c.String("url"), fullName)
-	client := Client{
-		Auth: libol.Auth{
-			Username: c.String("token"),
-		},
-	}
+	client := u.NewHttp(c.String("token"))
 	request := client.NewRequest(url)
 	items := []schema.User{{}}
 	if err := client.GetJSON(request, &items[0]); err != nil {
@@ -97,11 +114,7 @@ func (u User) Check(c *cli.Context) error {
 		return libol.NewErr("wrong: zo=%s, us=%s", netFromO, nameFromE)
 	}
 	url := u.Url(c.String("url"), fullName)
-	client := Client{
-		Auth: libol.Auth{
-			Username: c.String("token"),
-		},
-	}
+	client := u.NewHttp(c.String("token"))
 	request := client.NewRequest(url)
 	var user schema.User
 	if err := client.GetJSON(request, &user); err != nil {
@@ -124,7 +137,7 @@ func (u User) Commands(app *cli.App) cli.Commands {
 				Name:  "add",
 				Usage: "Add a new user",
 				Flags: []cli.Flag{
-					&cli.StringFlag{Name: "network"},
+					&cli.StringFlag{Name: "network", Value: "default"},
 					&cli.StringFlag{Name: "name"},
 					&cli.StringFlag{Name: "password"},
 					&cli.StringFlag{Name: "role", Value: "guest"},

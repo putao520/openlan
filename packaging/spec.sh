@@ -8,6 +8,7 @@ version=$(cat VERSION)
 mkdir -p ~/rpmbuild/SOURCES
 
 # update version
+
 sed -i  -e "s/Version:.*/Version:\ ${version}/" ./packaging/openlan-*.spec
 
 # link source

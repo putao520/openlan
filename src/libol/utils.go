@@ -214,14 +214,18 @@ func Wait() {
 	Warn("Wait: ... Signal %d received ...", n)
 }
 
-func OpenWrite(file string) (*os.File, error) {
-	return os.OpenFile(file, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+func OpenTrunk(path string) (*os.File, error) {
+	return os.OpenFile(path, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0600)
 }
 
-func OpenRead(file string) (*os.File, error) {
-	return os.OpenFile(file, os.O_RDONLY, os.ModePerm)
+func OpenWrite(path string) (*os.File, error) {
+	return os.OpenFile(path, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 }
 
-func CreateFile(name string) (*os.File, error) {
-	return os.OpenFile(name, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+func OpenRead(path string) (*os.File, error) {
+	return os.OpenFile(path, os.O_RDONLY, os.ModePerm)
+}
+
+func CreateFile(path string) (*os.File, error) {
+	return os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 }
