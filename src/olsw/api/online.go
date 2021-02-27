@@ -2,7 +2,7 @@ package api
 
 import (
 	"github.com/danieldin95/openlan-go/src/models"
-	"github.com/danieldin95/openlan-go/src/olsw/storage"
+	"github.com/danieldin95/openlan-go/src/olsw/store"
 	"github.com/danieldin95/openlan-go/src/schema"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -17,7 +17,7 @@ func (h OnLine) Router(router *mux.Router) {
 
 func (h OnLine) List(w http.ResponseWriter, r *http.Request) {
 	nets := make([]schema.OnLine, 0, 1024)
-	for u := range storage.Online.List() {
+	for u := range store.Online.List() {
 		if u == nil {
 			break
 		}

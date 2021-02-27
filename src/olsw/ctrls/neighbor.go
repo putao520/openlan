@@ -5,7 +5,7 @@ import (
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
 	"github.com/danieldin95/openlan-go/src/olctl/libctrl"
-	"github.com/danieldin95/openlan-go/src/olsw/storage"
+	"github.com/danieldin95/openlan-go/src/olsw/store"
 )
 
 type Neighbor struct {
@@ -39,7 +39,7 @@ func (p *Neighbor) Del(key string) {
 }
 
 func (p *Neighbor) GetCtl(id string, m libctrl.Message) error {
-	for u := range storage.Neighbor.List() {
+	for u := range store.Neighbor.List() {
 		if u == nil {
 			break
 		}

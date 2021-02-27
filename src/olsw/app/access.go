@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
-	"github.com/danieldin95/openlan-go/src/olsw/storage"
+	"github.com/danieldin95/openlan-go/src/olsw/store"
 )
 
 type Access struct {
@@ -65,7 +65,7 @@ func (p *Access) handleLogin(client libol.SocketClient, data []byte) error {
 	}
 	user.Update()
 	out.Info("Access.handleLogin: %s on %s", user.Id(), user.Alias)
-	nowUser := storage.User.Get(user.Id())
+	nowUser := store.User.Get(user.Id())
 	if nowUser != nil {
 		if nowUser.Password == user.Password {
 			if nowUser.Role == "guest" && nowUser.Last != nil {
@@ -99,12 +99,12 @@ func (p *Access) onAuth(client libol.SocketClient, user *models.User) error {
 	m := models.NewPoint(client, dev)
 	m.SetUser(user)
 	// free point has same uuid.
-	if om := storage.Point.GetByUUID(m.UUID); om != nil {
+	if om := store.Point.GetByUUID(m.UUID); om != nil {
 		out.Info("Access.onAuth: OffClient %s", om.Client)
 		p.master.OffClient(om.Client)
 	}
 	client.SetPrivate(m)
-	storage.Point.Add(m)
+	store.Point.Add(m)
 	libol.Go(func() {
 		p.master.ReadTap(dev, func(f *libol.FrameMessage) error {
 			if err := client.WriteMsg(f); err != nil {

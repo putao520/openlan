@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/danieldin95/openlan-go/src/olsw/storage"
+	"github.com/danieldin95/openlan-go/src/olsw/store"
 	"github.com/danieldin95/openlan-go/src/schema"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -21,11 +21,11 @@ func (h OvClient) List(w http.ResponseWriter, r *http.Request) {
 
 	clients := make([]schema.OvClient, 0, 1024)
 	if name == "" {
-		for n := range storage.Network.List() {
+		for n := range store.Network.List() {
 			if n == nil {
 				break
 			}
-			for client := range storage.OvClient.List(n.Name) {
+			for client := range store.OvClient.List(n.Name) {
 				if client == nil {
 					break
 				}
@@ -33,7 +33,7 @@ func (h OvClient) List(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	} else {
-		for client := range storage.OvClient.List(name) {
+		for client := range store.OvClient.List(name) {
 			if client == nil {
 				break
 			}

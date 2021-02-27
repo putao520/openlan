@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/danieldin95/openlan-go/src/olsw/storage"
+	"github.com/danieldin95/openlan-go/src/olsw/store"
 	"github.com/danieldin95/openlan-go/src/schema"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -17,7 +17,7 @@ func (l Lease) Router(router *mux.Router) {
 
 func (l Lease) List(w http.ResponseWriter, r *http.Request) {
 	nets := make([]schema.Lease, 0, 1024)
-	for u := range storage.Network.ListLease() {
+	for u := range store.Network.ListLease() {
 		if u == nil {
 			break
 		}

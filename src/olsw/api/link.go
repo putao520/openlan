@@ -5,7 +5,7 @@ import (
 	"github.com/danieldin95/openlan-go/src/config"
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
-	"github.com/danieldin95/openlan-go/src/olsw/storage"
+	"github.com/danieldin95/openlan-go/src/olsw/store"
 	"github.com/danieldin95/openlan-go/src/schema"
 	"github.com/gorilla/mux"
 	"io/ioutil"
@@ -25,7 +25,7 @@ func (h Link) Router(router *mux.Router) {
 
 func (h Link) List(w http.ResponseWriter, r *http.Request) {
 	links := make([]schema.Link, 0, 1024)
-	for l := range storage.Link.List() {
+	for l := range store.Link.List() {
 		if l == nil {
 			break
 		}
@@ -38,7 +38,7 @@ func (h Link) Get(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	libol.Info("GetPoint %s", vars["id"])
 
-	link := storage.Link.Get(vars["id"])
+	link := store.Link.Get(vars["id"])
 	if link != nil {
 		ResponseJson(w, models.NewLinkSchema(link))
 	} else {

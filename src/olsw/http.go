@@ -7,7 +7,7 @@ import (
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
 	"github.com/danieldin95/openlan-go/src/olsw/api"
-	"github.com/danieldin95/openlan-go/src/olsw/storage"
+	"github.com/danieldin95/openlan-go/src/olsw/store"
 	"github.com/danieldin95/openlan-go/src/schema"
 	"github.com/gorilla/mux"
 	"io/ioutil"
@@ -223,7 +223,7 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 	body.Worker = api.NewWorkerSchema(h.switcher)
 
 	// display accessed point.
-	for p := range storage.Point.List() {
+	for p := range store.Point.List() {
 		if p == nil {
 			break
 		}
@@ -235,7 +235,7 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 		return ii.Network+ii.Remote > jj.Network+jj.Remote
 	})
 	// display neighbor.
-	for n := range storage.Neighbor.List() {
+	for n := range store.Neighbor.List() {
 		if n == nil {
 			break
 		}
@@ -245,7 +245,7 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 		return body.Neighbors[i].IpAddr > body.Neighbors[j].IpAddr
 	})
 	// display links.
-	for p := range storage.Link.List() {
+	for p := range store.Link.List() {
 		if p == nil {
 			break
 		}
@@ -257,7 +257,7 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 		return ii.Network+ii.Server > jj.Network+jj.Server
 	})
 	// display online flow.
-	for l := range storage.Online.List() {
+	for l := range store.Online.List() {
 		if l == nil {
 			break
 		}
@@ -267,11 +267,11 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 		return body.OnLines[i].HitTime < body.OnLines[j].HitTime
 	})
 	// display OpenVPN Clients.
-	for n := range storage.Network.List() {
+	for n := range store.Network.List() {
 		if n == nil {
 			break
 		}
-		for c := range storage.OvClient.List(n.Name) {
+		for c := range store.OvClient.List(n.Name) {
 			if c == nil {
 				break
 			}

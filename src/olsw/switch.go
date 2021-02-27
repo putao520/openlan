@@ -9,7 +9,7 @@ import (
 	"github.com/danieldin95/openlan-go/src/network"
 	"github.com/danieldin95/openlan-go/src/olsw/app"
 	"github.com/danieldin95/openlan-go/src/olsw/ctrls"
-	"github.com/danieldin95/openlan-go/src/olsw/storage"
+	"github.com/danieldin95/openlan-go/src/olsw/store"
 	"net"
 	"os"
 	"strings"
@@ -285,7 +285,7 @@ func (v *Switch) LoadPass(file string) {
 			Role:     role,
 		}
 		userObj.Update()
-		storage.User.Add(userObj)
+		store.User.Add(userObj)
 	}
 	if err := scanner.Err(); err != nil {
 		v.out.Warn("Switch.LoadPass %v", err)
@@ -296,7 +296,7 @@ func (v *Switch) Initialize() {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
-	storage.User.SetFile(v.cfg.Password)
+	store.User.SetFile(v.cfg.Password)
 	v.preApplication()
 	if v.cfg.Http != nil {
 		v.http = NewHttp(v)
@@ -399,11 +399,11 @@ func (v *Switch) OnClose(client libol.SocketClient) error {
 	addr := client.RemoteAddr()
 	v.out.Info("Switch.OnClose: %s", addr)
 	// already not need support free list for device.
-	uuid := storage.Point.GetUUID(addr)
-	if storage.Point.GetAddr(uuid) == addr { // not has newer
-		storage.Network.DelLease(uuid)
+	uuid := store.Point.GetUUID(addr)
+	if store.Point.GetAddr(uuid) == addr { // not has newer
+		store.Network.DelLease(uuid)
 	}
-	storage.Point.Del(addr)
+	store.Point.Del(addr)
 	return nil
 }
 
@@ -442,7 +442,7 @@ func (v *Switch) Stop() {
 	v.out.Debug("Switch.Stop")
 	ctrls.Ctrl.Stop()
 	// firstly, notify leave to point.
-	for p := range storage.Point.List() {
+	for p := range store.Point.List() {
 		if p == nil {
 			break
 		}

@@ -7,7 +7,7 @@ import (
 	"github.com/danieldin95/openlan-go/src/network"
 	"github.com/danieldin95/openlan-go/src/olap"
 	"github.com/danieldin95/openlan-go/src/olsw/api"
-	"github.com/danieldin95/openlan-go/src/olsw/storage"
+	"github.com/danieldin95/openlan-go/src/olsw/store"
 	"github.com/vishvananda/netlink"
 	"net"
 	"strings"
@@ -55,7 +55,7 @@ func (w *NetworkWorker) Initialize() {
 			Role:     "admin",
 		}
 		user.Update()
-		storage.User.Add(user)
+		store.User.Add(user)
 	}
 	n := models.Network{
 		Name:    w.cfg.Name,
@@ -76,9 +76,9 @@ func (w *NetworkWorker) Initialize() {
 		}
 		n.Routes = append(n.Routes, rte)
 	}
-	storage.Network.Add(&n)
+	store.Network.Add(&n)
 	for _, ht := range w.cfg.Hosts {
-		lease := storage.Network.AddLease(ht.Hostname, ht.Address)
+		lease := store.Network.AddLease(ht.Hostname, ht.Address)
 		if lease != nil {
 			lease.Type = "static"
 			lease.Network = w.cfg.Name
@@ -283,7 +283,7 @@ func (w *NetworkWorker) AddLink(c *config.Point) {
 		w.linksLock.Lock()
 		w.links[c.Connection] = p
 		w.linksLock.Unlock()
-		storage.Link.Add(p)
+		store.Link.Add(p)
 		p.Start()
 	})
 }
@@ -293,7 +293,7 @@ func (w *NetworkWorker) DelLink(addr string) {
 	defer w.linksLock.Unlock()
 	if p, ok := w.links[addr]; ok {
 		p.Stop()
-		storage.Link.Del(p.UUID())
+		store.Link.Del(p.UUID())
 		delete(w.links, addr)
 	}
 }

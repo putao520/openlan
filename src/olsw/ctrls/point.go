@@ -5,7 +5,7 @@ import (
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
 	"github.com/danieldin95/openlan-go/src/olctl/libctrl"
-	"github.com/danieldin95/openlan-go/src/olsw/storage"
+	"github.com/danieldin95/openlan-go/src/olsw/store"
 )
 
 type Point struct {
@@ -40,7 +40,7 @@ func (p *Point) Del(key string) {
 
 func (p *Point) GetCtl(id string, m libctrl.Message) error {
 	if m.Data == "" {
-		for u := range storage.Point.List() {
+		for u := range store.Point.List() {
 			if u == nil {
 				break
 			}

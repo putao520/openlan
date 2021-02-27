@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
-	"github.com/danieldin95/openlan-go/src/olsw/storage"
+	"github.com/danieldin95/openlan-go/src/olsw/store"
 	"github.com/danieldin95/openlan-go/src/schema"
 	"github.com/gorilla/mux"
 	"io/ioutil"
@@ -25,7 +25,7 @@ func (h User) Router(router *mux.Router) {
 
 func (h User) List(w http.ResponseWriter, r *http.Request) {
 	users := make([]schema.User, 0, 1024)
-	for u := range storage.User.List() {
+	for u := range store.User.List() {
 		if u == nil {
 			break
 		}
@@ -39,7 +39,7 @@ func (h User) List(w http.ResponseWriter, r *http.Request) {
 
 func (h User) Get(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	user := storage.User.Get(vars["id"])
+	user := store.User.Get(vars["id"])
 	if user != nil {
 		ResponseJson(w, models.NewUserSchema(user))
 	} else {
@@ -61,8 +61,8 @@ func (h User) Add(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	storage.User.Add(models.SchemaToUserModel(user))
-	if err := storage.User.Save(); err != nil {
+	store.User.Add(models.SchemaToUserModel(user))
+	if err := store.User.Save(); err != nil {
 		libol.Warn("AddUser %s", err)
 	}
 	ResponseMsg(w, 0, "")
@@ -72,8 +72,8 @@ func (h User) Del(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	libol.Info("DelUser %s", vars["id"])
 
-	storage.User.Del(vars["id"])
-	if err := storage.User.Save(); err != nil {
+	store.User.Del(vars["id"])
+	if err := store.User.Save(); err != nil {
 		libol.Warn("DelUser %s", err)
 	}
 	ResponseMsg(w, 0, "")

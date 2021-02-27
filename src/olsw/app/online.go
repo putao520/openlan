@@ -5,7 +5,7 @@ import (
 	"github.com/danieldin95/openlan-go/src/config"
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
-	"github.com/danieldin95/openlan-go/src/olsw/storage"
+	"github.com/danieldin95/openlan-go/src/olsw/store"
 	"sync"
 	"time"
 )
@@ -71,7 +71,7 @@ func (o *Online) popLine() {
 	}
 	if lastLine, ok := e.Value.(*models.Line); ok {
 		o.lineList.Remove(e)
-		storage.Online.Del(lastLine.String())
+		store.Online.Del(lastLine.String())
 		delete(o.lineMap, lastLine.String())
 	}
 }
@@ -87,9 +87,9 @@ func (o *Online) AddLine(line *models.Line) {
 		o.popLine()
 		o.lineList.PushBack(line)
 		o.lineMap[key] = line
-		storage.Online.Add(line)
+		store.Online.Add(line)
 	} else if find != nil {
 		find.HitTime = time.Now().Unix()
-		storage.Online.Update(find)
+		store.Online.Update(find)
 	}
 }

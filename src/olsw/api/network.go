@@ -2,7 +2,7 @@ package api
 
 import (
 	"github.com/danieldin95/openlan-go/src/models"
-	"github.com/danieldin95/openlan-go/src/olsw/storage"
+	"github.com/danieldin95/openlan-go/src/olsw/store"
 	"github.com/danieldin95/openlan-go/src/schema"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -18,7 +18,7 @@ func (h Network) Router(router *mux.Router) {
 
 func (h Network) List(w http.ResponseWriter, r *http.Request) {
 	nets := make([]schema.Network, 0, 1024)
-	for u := range storage.Network.List() {
+	for u := range store.Network.List() {
 		if u == nil {
 			break
 		}
@@ -29,7 +29,7 @@ func (h Network) List(w http.ResponseWriter, r *http.Request) {
 
 func (h Network) Get(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	net := storage.Network.Get(vars["id"])
+	net := store.Network.Get(vars["id"])
 	if net != nil {
 		ResponseJson(w, models.NewNetworkSchema(net))
 	} else {

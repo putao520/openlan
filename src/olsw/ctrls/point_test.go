@@ -3,7 +3,7 @@ package ctrls
 import (
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
-	"github.com/danieldin95/openlan-go/src/olsw/storage"
+	"github.com/danieldin95/openlan-go/src/olsw/store"
 	"testing"
 	"time"
 )
@@ -26,9 +26,9 @@ func TestCtl_Point(t *testing.T) {
 		Alias:  "alias-test",
 		Client: libol.NewTcpClient("xx", nil),
 	}
-	storage.Point.Add(&point)
+	store.Point.Add(&point)
 	time.Sleep(5 * time.Second)
-	storage.Point.Del(point.Client.Address())
+	store.Point.Del(point.Client.Address())
 	time.Sleep(5 * time.Second)
 	cc.Stop()
 	time.Sleep(5 * time.Second)
