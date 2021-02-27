@@ -17,6 +17,9 @@ type KernelTap struct {
 }
 
 func NewKernelTap(tenant string, c TapConfig) (*KernelTap, error) {
+	if c.Name == "" {
+		c.Name = Taps.GenName()
+	}
 	device, err := WaterNew(c)
 	if err != nil {
 		return nil, err

@@ -78,7 +78,7 @@ func (t *VirtualTap) Write(p []byte) (int, error) {
 	if !t.hasFlags(UsUp) {
 		return 0, libol.NewErr("notUp")
 	}
-	if t.virtC >= t.cfg.VirtBuf {
+	if t.virtC >= t.cfg.VirBuf {
 		libol.Warn("VirtualTap.Write: buffer fully")
 		t.sts.Drop++
 		return 0, nil
@@ -174,7 +174,7 @@ func (t *VirtualTap) Up() {
 		t.kernC = 0
 		t.kernQ = make(chan []byte, t.cfg.KernBuf)
 		t.virtC = 0
-		t.virtQ = make(chan []byte, t.cfg.VirtBuf)
+		t.virtQ = make(chan []byte, t.cfg.VirBuf)
 		t.setFlags(UsUp)
 	}
 }
