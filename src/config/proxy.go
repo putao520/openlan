@@ -6,6 +6,22 @@ import (
 	"runtime"
 )
 
+type SocksProxy struct {
+	Listen string   `json:"listen,omitempty"`
+	Auth   Password `json:"auth,omitempty"`
+}
+
+type HttpProxy struct {
+	Listen string   `json:"listen,omitempty"`
+	Auth   Password `json:"auth,omitempty"`
+	Cert   *Cert    `json:"cert,omitempty"`
+}
+
+type TcpProxy struct {
+	Listen string   `json:"listen,omitempty"`
+	Target []string `json:"target,omitempty"`
+}
+
 type Proxy struct {
 	Conf  string        `json:"-"`
 	Log   Log           `json:"log"`
@@ -15,11 +31,20 @@ type Proxy struct {
 	PProf string        `json:"pprof"`
 }
 
-var defaultProxy = &Proxy{
-	Log: Log{
-		File:    "./openlan-proxy.log",
-		Verbose: libol.INFO,
-	},
+func DefaultProxy() *Proxy {
+	obj := &Proxy{
+		Log: Log{
+			File:    "./openlan-proxy.log",
+			Verbose: libol.INFO,
+		},
+	}
+	obj.Right(nil)
+	if runtime.GOOS == "linux" {
+		obj.Log.File = "/var/log/openlan-proxy.log"
+	} else {
+		obj.Log.File = "./openlan-proxy.log"
+	}
+	return obj
 }
 
 func NewProxy() *Proxy {
@@ -33,46 +58,38 @@ func NewProxy() *Proxy {
 	return px
 }
 
-func (px *Proxy) Flags() {
-	flag.StringVar(&px.Log.File, "log:file", defaultProxy.Log.File, "Configure log file")
-	flag.StringVar(&px.Conf, "conf", defaultProxy.Conf, "The configure file")
-	flag.StringVar(&px.PProf, "prof", defaultProxy.PProf, "Http listen for CPU prof")
-	flag.IntVar(&px.Log.Verbose, "log:level", defaultProxy.Log.Verbose, "Configure log level")
+func (p *Proxy) Flags() {
+	obj := DefaultProxy()
+	flag.StringVar(&p.Log.File, "log:file", obj.Log.File, "Configure log file")
+	flag.StringVar(&p.Conf, "conf", obj.Conf, "The configure file")
+	flag.StringVar(&p.PProf, "prof", obj.PProf, "Http listen for CPU prof")
+	flag.IntVar(&p.Log.Verbose, "log:level", obj.Log.Verbose, "Configure log level")
 }
 
-func (px *Proxy) Parse() {
+func (p *Proxy) Parse() {
 	flag.Parse()
 }
 
-func (px *Proxy) Initialize() {
-	if err := px.Load(); err != nil {
+func (p *Proxy) Initialize() {
+	if err := p.Load(); err != nil {
 		libol.Error("Switch.Initialize %s", err)
 	}
-	px.Default()
-	libol.Debug("Proxy.Initialize %v", px)
+	p.Default()
+	libol.Debug("Proxy.Initialize %v", p)
 }
 
-func (px *Proxy) Right() {
-	for _, h := range px.Http {
+func (p *Proxy) Right(obj *Proxy) {
+	for _, h := range p.Http {
 		if h.Cert != nil {
 			h.Cert.Right()
 		}
 	}
 }
 
-func (px *Proxy) Default() {
-	px.Right()
+func (p *Proxy) Default() {
+	p.Right(nil)
 }
 
-func (px *Proxy) Load() error {
-	return libol.UnmarshalLoad(px, px.Conf)
-}
-
-func init() {
-	defaultProxy.Right()
-	if runtime.GOOS == "linux" {
-		defaultProxy.Log.File = "/var/log/openlan-proxy.log"
-	} else {
-		defaultProxy.Log.File = "./openlan-proxy.log"
-	}
+func (p *Proxy) Load() error {
+	return libol.UnmarshalLoad(p, p.Conf)
 }

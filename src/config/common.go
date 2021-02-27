@@ -76,20 +76,6 @@ func (c *Crypt) Default() {
 	}
 }
 
-func RightAddr(listen *string, port int) {
-	values := strings.Split(*listen, ":")
-	if len(values) == 1 {
-		*listen = fmt.Sprintf("%s:%d", values[0], port)
-	}
-}
-
-func GetAlias() string {
-	if hostname, err := os.Hostname(); err == nil {
-		return strings.ToLower(hostname)
-	}
-	return libol.GenRandom(13)
-}
-
 type Cert struct {
 	Dir      string `json:"dir"`
 	CrtFile  string `json:"crt"`
@@ -146,28 +132,6 @@ func (c *Cert) GetCertPool() *x509.CertPool {
 	return pool
 }
 
-func GetBlock(cfg *Crypt) kcp.BlockCrypt {
-	if cfg == nil || cfg.IsZero() {
-		return nil
-	}
-	var block kcp.BlockCrypt
-	pass := make([]byte, 64)
-	if len(cfg.Secret) <= 64 {
-		copy(pass, cfg.Secret)
-	} else {
-		copy(pass, []byte(cfg.Secret)[:64])
-	}
-	switch cfg.Algo {
-	case "aes-128":
-		block, _ = kcp.NewAESBlockCrypt(pass[:16])
-	case "aes-192":
-		block, _ = kcp.NewAESBlockCrypt(pass[:24])
-	default:
-		block, _ = kcp.NewSimpleXORBlockCrypt(pass)
-	}
-	return block
-}
-
 type Bridge struct {
 	Network  string `json:"network"`
 	Peer     string `json:"peer"`
@@ -206,118 +170,6 @@ type Password struct {
 	Password string `json:"password"`
 }
 
-type OpenVPN struct {
-	Network   string   `json:"network"`
-	Directory string   `json:"directory"`
-	Listen    string   `json:"listen"`
-	Protocol  string   `json:"protocol"`
-	Subnet    string   `json:"subnet"`
-	Device    string   `json:"device"`
-	Auth      string   `json:"auth"` // xauth or cert.
-	DhPem     string   `json:"dh"`
-	RootCa    string   `json:"ca"`
-	ServerCrt string   `json:"cert"`
-	ServerKey string   `json:"key"`
-	TlsAuth   string   `json:"tlsAuth"`
-	Cipher    string   `json:"cipher"`
-	Routes    []string `json:"routes"`
-	Script    string   `json:"-"`
-}
-
-var defaultOvpn = OpenVPN{
-	Protocol:  "tcp",
-	Auth:      "xauth",
-	Device:    "tun",
-	RootCa:    "/var/openlan/cert/ca.crt",
-	ServerCrt: "/var/openlan/cert/crt",
-	ServerKey: "/var/openlan/cert/key",
-	DhPem:     "/var/openlan/openvpn/dh.pem",
-	TlsAuth:   "/var/openlan/openvpn/ta.key",
-	Cipher:    "AES-256-CBC",
-	Script:    "/usr/bin/openlan",
-}
-
-func (o *OpenVPN) Right() {
-	if o.Directory == "" {
-		o.Directory = "/var/openlan/openvpn/" + o.Network
-	}
-	if o.Auth == "" {
-		o.Auth = defaultOvpn.Auth
-	}
-	if o.Device == "" {
-		o.Device = defaultOvpn.Device
-	}
-	if o.Protocol == "" {
-		o.Protocol = defaultOvpn.Protocol
-	}
-	if o.DhPem == "" {
-		o.DhPem = defaultOvpn.DhPem
-	}
-	if o.RootCa == "" {
-		o.RootCa = defaultOvpn.RootCa
-	}
-	if o.ServerCrt == "" {
-		o.ServerCrt = defaultOvpn.ServerCrt
-	}
-	if o.ServerKey == "" {
-		o.ServerKey = defaultOvpn.ServerKey
-	}
-	if o.TlsAuth == "" {
-		o.TlsAuth = defaultOvpn.TlsAuth
-	}
-	if o.Cipher == "" {
-		o.Cipher = defaultOvpn.Cipher
-	}
-	bin := defaultOvpn.Script + " user check --network " + o.Network
-	o.Script = bin
-}
-
-type Network struct {
-	Alias    string        `json:"-"`
-	Name     string        `json:"name,omitempty"`
-	Bridge   Bridge        `json:"bridge,omitempty"`
-	Subnet   IpSubnet      `json:"subnet,omitempty"`
-	OpenVPN  *OpenVPN      `json:"openvpn,omitempty"`
-	Links    []*Point      `json:"links,omitempty"`
-	Hosts    []HostLease   `json:"hosts,omitempty"`
-	Routes   []PrefixRoute `json:"routes,omitempty"`
-	Password []Password    `json:"password,omitempty"`
-}
-
-func (n *Network) Right() {
-	if n.Bridge.Name == "" {
-		n.Bridge.Name = "br-" + n.Name
-	}
-	if n.Bridge.Provider == "" {
-		n.Bridge.Provider = "linux"
-	}
-	if n.Bridge.IfMtu == 0 {
-		n.Bridge.IfMtu = 1518
-	}
-	if n.Bridge.Delay == 0 {
-		n.Bridge.Delay = 2
-	}
-	if n.Bridge.Stp == "" {
-		n.Bridge.Stp = "on"
-	}
-	ifAddr := strings.SplitN(n.Bridge.Address, "/", 2)[0]
-	for i := range n.Routes {
-		if n.Routes[i].Metric == 0 {
-			n.Routes[i].Metric = 592
-		}
-		if n.Routes[i].NextHop == "" {
-			n.Routes[i].NextHop = ifAddr
-		}
-		if n.Routes[i].Mode == "" {
-			n.Routes[i].Mode = "snat"
-		}
-	}
-	if n.OpenVPN != nil {
-		n.OpenVPN.Network = n.Name
-		n.OpenVPN.Right()
-	}
-}
-
 type FlowRule struct {
 	Table    string `json:"table"`
 	Chain    string `json:"chain"`
@@ -331,40 +183,6 @@ type FlowRule struct {
 	Jump     string `json:"jump"` // SNAT/RETURN/MASQUERADE
 }
 
-var defaultPerf = Perf{
-	Point:    1024,
-	Neighbor: 1024,
-	OnLine:   64,
-	Link:     1024,
-	User:     1024,
-}
-
-type Perf struct {
-	Point    int `json:"point"`
-	Neighbor int `json:"neighbor"`
-	OnLine   int `json:"online"`
-	Link     int `json:"link"`
-	User     int `json:"user"`
-}
-
-func (p *Perf) Right() {
-	if p.Point == 0 {
-		p.Point = defaultPerf.Point
-	}
-	if p.Neighbor == 0 {
-		p.Neighbor = defaultPerf.Neighbor
-	}
-	if p.OnLine == 0 {
-		p.OnLine = defaultPerf.OnLine
-	}
-	if p.Link == 0 {
-		p.Link = defaultPerf.Link
-	}
-	if p.User == 0 {
-		p.User = defaultPerf.User
-	}
-}
-
 type Interface struct {
 	Name     string `json:"name,omitempty"`
 	IfMtu    int    `json:"mtu"`
@@ -374,18 +192,38 @@ type Interface struct {
 	Cost     int    `json:"cost,omitempty"`
 }
 
-type SocksProxy struct {
-	Listen string   `json:"listen,omitempty"`
-	Auth   Password `json:"auth,omitempty"`
+func RightAddr(listen *string, port int) {
+	values := strings.Split(*listen, ":")
+	if len(values) == 1 {
+		*listen = fmt.Sprintf("%s:%d", values[0], port)
+	}
 }
 
-type HttpProxy struct {
-	Listen string   `json:"listen,omitempty"`
-	Auth   Password `json:"auth,omitempty"`
-	Cert   *Cert    `json:"cert,omitempty"`
+func GetAlias() string {
+	if hostname, err := os.Hostname(); err == nil {
+		return strings.ToLower(hostname)
+	}
+	return libol.GenRandom(13)
 }
 
-type TcpProxy struct {
-	Listen string   `json:"listen,omitempty"`
-	Target []string `json:"target,omitempty"`
+func GetBlock(cfg *Crypt) kcp.BlockCrypt {
+	if cfg == nil || cfg.IsZero() {
+		return nil
+	}
+	var block kcp.BlockCrypt
+	pass := make([]byte, 64)
+	if len(cfg.Secret) <= 64 {
+		copy(pass, cfg.Secret)
+	} else {
+		copy(pass, []byte(cfg.Secret)[:64])
+	}
+	switch cfg.Algo {
+	case "aes-128":
+		block, _ = kcp.NewAESBlockCrypt(pass[:16])
+	case "aes-192":
+		block, _ = kcp.NewAESBlockCrypt(pass[:24])
+	default:
+		block, _ = kcp.NewSimpleXORBlockCrypt(pass)
+	}
+	return block
 }

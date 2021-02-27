@@ -7,6 +7,42 @@ import (
 	"runtime"
 )
 
+func DefaultPerf() *Perf {
+	return &Perf{
+		Point:    1024,
+		Neighbor: 1024,
+		OnLine:   64,
+		Link:     1024,
+		User:     1024,
+	}
+}
+
+type Perf struct {
+	Point    int `json:"point"`
+	Neighbor int `json:"neighbor"`
+	OnLine   int `json:"online"`
+	Link     int `json:"link"`
+	User     int `json:"user"`
+}
+
+func (p *Perf) Right(obj *Perf) {
+	if p.Point == 0 && obj != nil {
+		p.Point = obj.Point
+	}
+	if p.Neighbor == 0 && obj != nil {
+		p.Neighbor = obj.Neighbor
+	}
+	if p.OnLine == 0 && obj != nil {
+		p.OnLine = obj.OnLine
+	}
+	if p.Link == 0 && obj != nil {
+		p.Link = obj.Link
+	}
+	if p.User == 0 && obj != nil {
+		p.User = obj.User
+	}
+}
+
 type Switch struct {
 	Alias     string     `json:"alias"`
 	Perf      *Perf      `json:"perf,omitempty"`
@@ -28,17 +64,26 @@ type Switch struct {
 	SaveFile  string     `json:"-"`
 }
 
-var defaultSwitch = &Switch{
-	Timeout: 120,
-	Log: Log{
-		File:    "./openlan-switch.log",
-		Verbose: libol.INFO,
-	},
-	Http: &Http{
-		Listen: "0.0.0.0:10000",
-	},
-	Listen: "0.0.0.0:10002",
-	Perf:   &defaultPerf,
+func DefaultSwitch() *Switch {
+	obj := &Switch{
+		Timeout: 120,
+		Log: Log{
+			File:    "./openlan-switch.log",
+			Verbose: libol.INFO,
+		},
+		Http: &Http{
+			Listen: "0.0.0.0:10000",
+		},
+		Listen: "0.0.0.0:10002",
+		Perf:   DefaultPerf(),
+	}
+	obj.Right(nil)
+	if runtime.GOOS == "linux" {
+		obj.Log.File = "/var/log/openlan-switch.log"
+	} else {
+		obj.Log.File = "./openlan-switch.log"
+	}
+	return obj
 }
 
 func NewSwitch() *Switch {
@@ -53,10 +98,11 @@ func NewSwitch() *Switch {
 }
 
 func (sw *Switch) Flags() {
-	flag.StringVar(&sw.Log.File, "log:file", defaultSwitch.Log.File, "Configure log file")
-	flag.StringVar(&sw.ConfDir, "conf:dir", defaultSwitch.ConfDir, "Configure switch's directory")
-	flag.StringVar(&sw.PProf, "prof", defaultSwitch.PProf, "Http listen for CPU prof")
-	flag.IntVar(&sw.Log.Verbose, "log:level", defaultSwitch.Log.Verbose, "Configure log level")
+	obj := DefaultSwitch()
+	flag.StringVar(&sw.Log.File, "log:file", obj.Log.File, "Configure log file")
+	flag.StringVar(&sw.ConfDir, "conf:dir", obj.ConfDir, "Configure switch's directory")
+	flag.StringVar(&sw.PProf, "prof", obj.PProf, "Http listen for CPU prof")
+	flag.IntVar(&sw.Log.Verbose, "log:level", obj.Log.Verbose, "Configure log level")
 }
 
 func (sw *Switch) Parse() {
@@ -72,7 +118,7 @@ func (sw *Switch) Initialize() {
 	libol.Debug("Switch.Initialize %v", sw)
 }
 
-func (sw *Switch) Right() {
+func (sw *Switch) Right(obj *Switch) {
 	if sw.Alias == "" {
 		sw.Alias = GetAlias()
 	}
@@ -91,9 +137,10 @@ func (sw *Switch) Right() {
 		}
 	}
 	if sw.Perf != nil {
-		sw.Perf.Right()
+		obj := DefaultPerf()
+		sw.Perf.Right(obj)
 	} else {
-		sw.Perf = &defaultPerf
+		sw.Perf = DefaultPerf()
 	}
 	if sw.Password == "" {
 		sw.Password = sw.ConfDir + "/password"
@@ -101,12 +148,13 @@ func (sw *Switch) Right() {
 }
 
 func (sw *Switch) Default() {
-	sw.Right()
+	obj := DefaultSwitch()
+	sw.Right(obj)
 	if sw.Network == nil {
 		sw.Network = make([]*Network, 0, 32)
 	}
 	if sw.Timeout == 0 {
-		sw.Timeout = defaultSwitch.Timeout
+		sw.Timeout = obj.Timeout
 	}
 	if sw.Crypt != nil {
 		sw.Crypt.Default()
@@ -140,13 +188,4 @@ func (sw *Switch) Default() {
 
 func (sw *Switch) Load() error {
 	return libol.UnmarshalLoad(sw, sw.SaveFile)
-}
-
-func init() {
-	defaultSwitch.Right()
-	if runtime.GOOS == "linux" {
-		defaultSwitch.Log.File = "/var/log/openlan-switch.log"
-	} else {
-		defaultSwitch.Log.File = "./openlan-switch.log"
-	}
 }

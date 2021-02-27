@@ -95,6 +95,7 @@ func NewOpenVpnDataFromConf(cfg *config.OpenVPN) *OpenVPNData {
 		Device:   cfg.Device,
 		Protocol: cfg.Protocol,
 		Script:   cfg.Script,
+		Port:     "1194",
 	}
 	addr, _ := libol.IPNetwork(cfg.Subnet)
 	data.Server = strings.ReplaceAll(addr, "/", " ")

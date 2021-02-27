@@ -16,11 +16,11 @@ const (
 	PostRoutingC = "POSTROUTING"
 	PreRoutingC  = "PREROUTING"
 	MasqueradeC  = "MASQUERADE"
-	OlInputC     = "openlan-IN"
-	OlForwardC   = "openlan-FWD"
-	OlOutputC    = "openlan-OUT"
-	OlPreC       = "openlan-PRE"
-	OlPostC      = "openlan-POST"
+	OlInputC     = "openlan_IN"
+	OlForwardC   = "openlan_FWD"
+	OlOutputC    = "openlan_OUT"
+	OlPreC       = "openlan_PRE"
+	OlPostC      = "openlan_POST"
 )
 
 type FireWall struct {

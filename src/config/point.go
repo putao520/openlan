@@ -27,33 +27,43 @@ type Point struct {
 	Cert        *Cert     `json:"cert"`
 }
 
-var defaultPoint = &Point{
-	Alias:      "",
-	Connection: "openlan.net",
-	Network:    "default",
-	Protocol:   "tls", // udp, kcp, tcp, tls, ws and wss etc.
-	Timeout:    60,
-	Log: Log{
-		File:    "./openlan-point.log",
-		Verbose: libol.INFO,
-	},
-	Interface: Interface{
-		IfMtu:    1518,
-		Provider: "kernel",
-		Name:     "",
-	},
-	SaveFile:    "./point.json",
-	RequestAddr: true,
-	Crypt:       &Crypt{},
-	Cert:        &Cert{},
-	Terminal:    "on",
+func DefaultPoint() *Point {
+	obj := &Point{
+		Alias:      "",
+		Connection: "openlan.net",
+		Network:    "default",
+		Protocol:   "tls", // udp, kcp, tcp, tls, ws and wss etc.
+		Timeout:    60,
+		Log: Log{
+			File:    "./openlan-point.log",
+			Verbose: libol.INFO,
+		},
+		Interface: Interface{
+			IfMtu:    1518,
+			Provider: "kernel",
+			Name:     "",
+		},
+		SaveFile:    "./point.json",
+		RequestAddr: true,
+		Crypt:       &Crypt{},
+		Cert:        &Cert{},
+		Terminal:    "on",
+	}
+	obj.Right(nil)
+	if runtime.GOOS == "linux" {
+		obj.Log.File = "/var/log/openlan-point.log"
+	} else {
+		obj.Log.File = "./openlan-point.log"
+	}
+	return obj
 }
 
 func NewPoint() *Point {
+	obj := DefaultPoint()
 	pin := &Point{
 		RequestAddr: true,
-		Crypt:       defaultPoint.Crypt,
-		Cert:        defaultPoint.Cert,
+		Crypt:       obj.Crypt,
+		Cert:        obj.Cert,
 	}
 	pin.Flags()
 	pin.Parse()
@@ -64,104 +74,97 @@ func NewPoint() *Point {
 	return pin
 }
 
-func (pin *Point) Flags() {
-	flag.StringVar(&pin.Alias, "alias", defaultPoint.Alias, "Alias for this point")
-	flag.StringVar(&pin.Terminal, "terminal", defaultPoint.Terminal, "Run interactive terminal")
-	flag.StringVar(&pin.Connection, "conn", defaultPoint.Connection, "Connection access to")
-	flag.StringVar(&pin.Username, "user", defaultPoint.Username, "User access to by <username>@<network>")
-	flag.StringVar(&pin.Password, "pass", defaultPoint.Password, "Password for authentication")
-	flag.StringVar(&pin.Protocol, "proto", defaultPoint.Protocol, "IP Protocol for connection")
-	flag.StringVar(&pin.Log.File, "log:file", defaultPoint.Log.File, "Log saved to file")
-	flag.StringVar(&pin.Interface.Name, "if:name", defaultPoint.Interface.Name, "Configure interface name")
-	flag.StringVar(&pin.Interface.Address, "if:addr", defaultPoint.Interface.Address, "Configure interface address")
-	flag.StringVar(&pin.Interface.Bridge, "if:br", defaultPoint.Interface.Bridge, "Configure bridge name")
-	flag.StringVar(&pin.Interface.Provider, "if:provider", defaultPoint.Interface.Provider, "Interface provider")
-	flag.StringVar(&pin.SaveFile, "conf", defaultPoint.SaveFile, "The configuration file")
-	flag.StringVar(&pin.Crypt.Secret, "crypt:secret", defaultPoint.Crypt.Secret, "Crypt secret")
-	flag.StringVar(&pin.Crypt.Algo, "crypt:algo", defaultPoint.Crypt.Algo, "Crypt algorithm")
-	flag.StringVar(&pin.PProf, "pprof", defaultPoint.PProf, "Http listen for CPU prof")
-	flag.StringVar(&pin.Cert.CaFile, "cacert", defaultPoint.Cert.CaFile, "CA certificate file")
-	flag.IntVar(&pin.Timeout, "timeout", defaultPoint.Timeout, "Timeout(s) for socket write/read")
-	flag.IntVar(&pin.Log.Verbose, "log:level", defaultPoint.Log.Verbose, "Log level")
+func (ap *Point) Flags() {
+	obj := DefaultPoint()
+	flag.StringVar(&ap.Alias, "alias", obj.Alias, "Alias for this point")
+	flag.StringVar(&ap.Terminal, "terminal", obj.Terminal, "Run interactive terminal")
+	flag.StringVar(&ap.Connection, "conn", obj.Connection, "Connection access to")
+	flag.StringVar(&ap.Username, "user", obj.Username, "User access to by <username>@<network>")
+	flag.StringVar(&ap.Password, "pass", obj.Password, "Password for authentication")
+	flag.StringVar(&ap.Protocol, "proto", obj.Protocol, "IP Protocol for connection")
+	flag.StringVar(&ap.Log.File, "log:file", obj.Log.File, "Log saved to file")
+	flag.StringVar(&ap.Interface.Name, "if:name", obj.Interface.Name, "Configure interface name")
+	flag.StringVar(&ap.Interface.Address, "if:addr", obj.Interface.Address, "Configure interface address")
+	flag.StringVar(&ap.Interface.Bridge, "if:br", obj.Interface.Bridge, "Configure bridge name")
+	flag.StringVar(&ap.Interface.Provider, "if:provider", obj.Interface.Provider, "Interface provider")
+	flag.StringVar(&ap.SaveFile, "conf", obj.SaveFile, "The configuration file")
+	flag.StringVar(&ap.Crypt.Secret, "crypt:secret", obj.Crypt.Secret, "Crypt secret")
+	flag.StringVar(&ap.Crypt.Algo, "crypt:algo", obj.Crypt.Algo, "Crypt algorithm")
+	flag.StringVar(&ap.PProf, "pprof", obj.PProf, "Http listen for CPU prof")
+	flag.StringVar(&ap.Cert.CaFile, "cacert", obj.Cert.CaFile, "CA certificate file")
+	flag.IntVar(&ap.Timeout, "timeout", obj.Timeout, "Timeout(s) for socket write/read")
+	flag.IntVar(&ap.Log.Verbose, "log:level", obj.Log.Verbose, "Log level")
 }
 
-func (pin *Point) Parse() {
+func (ap *Point) Parse() {
 	flag.Parse()
 }
 
-func (pin *Point) Id() string {
-	return pin.Connection + ":" + pin.Network
+func (ap *Point) Id() string {
+	return ap.Connection + ":" + ap.Network
 }
 
-func (pin *Point) Initialize() {
-	if err := pin.Load(); err != nil {
+func (ap *Point) Initialize() {
+	if err := ap.Load(); err != nil {
 		libol.Warn("NewPoint.load %s", err)
 	}
-	pin.Default()
-	libol.SetLogger(pin.Log.File, pin.Log.Verbose)
+	ap.Default()
+	libol.SetLogger(ap.Log.File, ap.Log.Verbose)
 }
 
-func (pin *Point) Right() {
-	if pin.Alias == "" {
-		pin.Alias = GetAlias()
+func (ap *Point) Right(obj *Point) {
+	if ap.Alias == "" {
+		ap.Alias = GetAlias()
 	}
-	if pin.Network == "" {
-		if strings.Contains(pin.Username, "@") {
-			pin.Network = strings.SplitN(pin.Username, "@", 2)[1]
-		} else {
-			pin.Network = defaultPoint.Network
+	if ap.Network == "" {
+		if strings.Contains(ap.Username, "@") {
+			ap.Network = strings.SplitN(ap.Username, "@", 2)[1]
+		} else if obj != nil {
+			ap.Network = obj.Network
 		}
 	}
-	RightAddr(&pin.Connection, 10002)
+	RightAddr(&ap.Connection, 10002)
 	if runtime.GOOS == "darwin" {
-		pin.Interface.Provider = "tun"
+		ap.Interface.Provider = "tun"
 	}
-	if pin.Protocol == "tls" || pin.Protocol == "wss" {
-		if pin.Cert == nil {
-			pin.Cert = defaultPoint.Cert
+	if ap.Protocol == "tls" || ap.Protocol == "wss" {
+		if ap.Cert == nil && obj != nil {
+			ap.Cert = obj.Cert
 		}
 	}
-	if pin.Cert != nil {
-		if pin.Cert.Dir == "" {
-			pin.Cert.Dir = "."
+	if ap.Cert != nil {
+		if ap.Cert.Dir == "" {
+			ap.Cert.Dir = "."
 		}
-		pin.Cert.Right()
+		ap.Cert.Right()
 	}
 }
 
-func (pin *Point) Default() {
-	pin.Right()
-	if pin.Queue == nil {
-		pin.Queue = &Queue{}
+func (ap *Point) Default() {
+	obj := DefaultPoint()
+	ap.Right(obj)
+	if ap.Queue == nil {
+		ap.Queue = &Queue{}
 	}
-	pin.Queue.Default()
+	ap.Queue.Default()
 	//reset zero value to default
-	if pin.Connection == "" {
-		pin.Connection = defaultPoint.Connection
+	if ap.Connection == "" {
+		ap.Connection = obj.Connection
 	}
-	if pin.Interface.IfMtu == 0 {
-		pin.Interface.IfMtu = defaultPoint.Interface.IfMtu
+	if ap.Interface.IfMtu == 0 {
+		ap.Interface.IfMtu = obj.Interface.IfMtu
 	}
-	if pin.Timeout == 0 {
-		pin.Timeout = defaultPoint.Timeout
+	if ap.Timeout == 0 {
+		ap.Timeout = obj.Timeout
 	}
-	if pin.Crypt != nil {
-		pin.Crypt.Default()
+	if ap.Crypt != nil {
+		ap.Crypt.Default()
 	}
 }
 
-func (pin *Point) Load() error {
-	if err := libol.FileExist(pin.SaveFile); err == nil {
-		return libol.UnmarshalLoad(pin, pin.SaveFile)
+func (ap *Point) Load() error {
+	if err := libol.FileExist(ap.SaveFile); err == nil {
+		return libol.UnmarshalLoad(ap, ap.SaveFile)
 	}
 	return nil
-}
-
-func init() {
-	defaultPoint.Right()
-	if runtime.GOOS == "linux" {
-		defaultPoint.Log.File = "/var/log/openlan-point.log"
-	} else {
-		defaultPoint.Log.File = "./openlan-point.log"
-	}
 }
