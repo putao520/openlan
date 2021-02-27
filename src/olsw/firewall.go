@@ -3,6 +3,7 @@ package olsw
 import (
 	"github.com/danieldin95/openlan-go/src/config"
 	"github.com/danieldin95/openlan-go/src/libol"
+	"github.com/danieldin95/openlan-go/src/network"
 	"github.com/moby/libnetwork/iptables"
 	"sync"
 )
@@ -25,18 +26,18 @@ const (
 
 type FireWall struct {
 	lock   sync.Mutex
-	chains []libol.IptChain
-	rules  []libol.IptRule
+	chains network.IpChains
+	rules  network.IpRules
 }
 
 func NewFireWall(flows []config.FlowRule) *FireWall {
 	f := &FireWall{
-		chains: make([]libol.IptChain, 0, 8),
-		rules:  make([]libol.IptRule, 0, 32),
+		chains: make(network.IpChains, 0, 8),
+		rules:  make(network.IpRules, 0, 32),
 	}
 	// Load custom rules.
 	for _, rule := range flows {
-		f.rules = append(f.rules, libol.IptRule{
+		f.rules = f.rules.Add(network.IpRule{
 			Table:    rule.Table,
 			Chain:    rule.Chain,
 			Source:   rule.Source,
@@ -54,39 +55,39 @@ func NewFireWall(flows []config.FlowRule) *FireWall {
 
 func (f *FireWall) Initialize() {
 	// Init chains
-	f.AddChain(libol.IptChain{
+	f.AddChain(network.IpChain{
 		Table: FilterT,
 		Name:  OlInputC,
 	})
-	f.AddChain(libol.IptChain{
+	f.AddChain(network.IpChain{
 		Table: FilterT,
 		Name:  OlForwardC,
 	})
-	f.AddChain(libol.IptChain{
+	f.AddChain(network.IpChain{
 		Table: FilterT,
 		Name:  OlOutputC,
 	})
-	f.AddChain(libol.IptChain{
+	f.AddChain(network.IpChain{
 		Table: NatT,
 		Name:  OlPostC,
 	})
 	// Enable chains
-	f.AddRule(libol.IptRule{
+	f.AddRule(network.IpRule{
 		Table: FilterT,
 		Chain: InputC,
 		Jump:  OlInputC,
 	})
-	f.AddRule(libol.IptRule{
+	f.AddRule(network.IpRule{
 		Table: FilterT,
 		Chain: ForwardC,
 		Jump:  OlForwardC,
 	})
-	f.AddRule(libol.IptRule{
+	f.AddRule(network.IpRule{
 		Table: FilterT,
 		Chain: OutputC,
 		Jump:  OlOutputC,
 	})
-	f.AddRule(libol.IptRule{
+	f.AddRule(network.IpRule{
 		Table: NatT,
 		Chain: PostRoutingC,
 		Jump:  OlPostC,
@@ -94,22 +95,32 @@ func (f *FireWall) Initialize() {
 	libol.Info("FireWall.Initialize total %d rules", len(f.rules))
 }
 
-func (f *FireWall) AddChain(chain libol.IptChain) {
-	f.chains = append(f.chains, chain)
+func (f *FireWall) AddChain(chain network.IpChain) {
+	f.chains = f.chains.Add(chain)
 }
 
-func (f *FireWall) AddRule(rule libol.IptRule) {
-	f.rules = append(f.rules, rule)
+func (f *FireWall) AddRule(rule network.IpRule) {
+	f.rules = f.rules.Add(rule)
+}
+
+func (f *FireWall) ApplyRule(rule network.IpRule) error {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+	if _, err := rule.Opr("-I"); err != nil {
+		return err
+	}
+	f.rules = f.rules.Add(rule)
+	return nil
 }
 
 func (f *FireWall) install() {
 	for _, c := range f.chains {
-		if _, err := libol.IptChainOpr(c, "-N"); err != nil {
+		if _, err := c.Opr("-N"); err != nil {
 			libol.Warn("FireWall.install %s", err)
 		}
 	}
 	for _, r := range f.rules {
-		if ret, err := libol.IptRuleOpr(r, "-I"); err != nil {
+		if ret, err := r.Opr("-I"); err != nil {
 			libol.Warn("FireWall.install %s", ret)
 		}
 	}
@@ -130,15 +141,25 @@ func (f *FireWall) Start() {
 
 func (f *FireWall) uninstall() {
 	for _, rule := range f.rules {
-		if ret, err := libol.IptRuleOpr(rule, "-D"); err != nil {
+		if ret, err := rule.Opr("-D"); err != nil {
 			libol.Warn("FireWall.uninstall %s", ret)
 		}
 	}
 	for _, c := range f.chains {
-		if _, err := libol.IptChainOpr(c, "-X"); err != nil {
+		if _, err := c.Opr("-X"); err != nil {
 			libol.Warn("FireWall.uninstall %s", err)
 		}
 	}
+}
+
+func (f *FireWall) RevokeRule(rule network.IpRule) error {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+	if _, err := rule.Opr("-D"); err != nil {
+		return err
+	}
+	f.rules = f.rules.Pop(rule)
+	return nil
 }
 
 func (f *FireWall) Stop() {
@@ -148,6 +169,11 @@ func (f *FireWall) Stop() {
 	f.uninstall()
 }
 
+func (f *FireWall) Refresh() {
+	f.uninstall()
+	f.install()
+}
+
 func init() {
-	libol.IptInit()
+	network.IpInit()
 }

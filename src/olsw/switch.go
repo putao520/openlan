@@ -119,14 +119,14 @@ func (v *Switch) allowForward(bridge, source, prefix string) {
 	}
 	v.out.Info("Switch.allowForward %s, %s", source, prefix)
 	// allowed forward between source and prefix.
-	v.firewall.AddRule(libol.IptRule{
+	v.firewall.AddRule(network.IpRule{
 		Table:  FilterT,
 		Chain:  OlForwardC,
 		Input:  bridge,
 		Source: source,
 		Dest:   prefix,
 	})
-	v.firewall.AddRule(libol.IptRule{
+	v.firewall.AddRule(network.IpRule{
 		Table:  FilterT,
 		Chain:  OlForwardC,
 		Output: bridge,
@@ -134,7 +134,7 @@ func (v *Switch) allowForward(bridge, source, prefix string) {
 		Dest:   source,
 	})
 	// allowed input from source to prefix.
-	v.firewall.AddRule(libol.IptRule{
+	v.firewall.AddRule(network.IpRule{
 		Table:  FilterT,
 		Chain:  OlInputC,
 		Input:  bridge,
@@ -148,14 +148,14 @@ func (v *Switch) enableMasq(bridge, source, prefix string) {
 		return
 	}
 	// enable masquerade between source and prefix.
-	v.firewall.AddRule(libol.IptRule{
+	v.firewall.AddRule(network.IpRule{
 		Table:  NatT,
 		Chain:  OlPostC,
 		Source: source,
 		Dest:   prefix,
 		Jump:   MasqueradeC,
 	})
-	v.firewall.AddRule(libol.IptRule{
+	v.firewall.AddRule(network.IpRule{
 		Table:  NatT,
 		Chain:  OlPostC,
 		Output: bridge,
