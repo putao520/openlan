@@ -120,23 +120,23 @@ func (v *Switch) allowForward(bridge, source, prefix string) {
 	v.out.Info("Switch.allowForward %s, %s", source, prefix)
 	// allowed forward between source and prefix.
 	v.firewall.AddRule(network.IpRule{
-		Table:  FilterT,
-		Chain:  OlForwardC,
+		Table:  network.TFilter,
+		Chain:  OLCForward,
 		Input:  bridge,
 		Source: source,
 		Dest:   prefix,
 	})
 	v.firewall.AddRule(network.IpRule{
-		Table:  FilterT,
-		Chain:  OlForwardC,
+		Table:  network.TFilter,
+		Chain:  OLCForward,
 		Output: bridge,
 		Source: prefix,
 		Dest:   source,
 	})
 	// allowed input from source to prefix.
 	v.firewall.AddRule(network.IpRule{
-		Table:  FilterT,
-		Chain:  OlInputC,
+		Table:  network.TFilter,
+		Chain:  OLCInput,
 		Input:  bridge,
 		Source: source,
 		Dest:   prefix,
@@ -149,19 +149,19 @@ func (v *Switch) enableMasq(bridge, source, prefix string) {
 	}
 	// enable masquerade between source and prefix.
 	v.firewall.AddRule(network.IpRule{
-		Table:  NatT,
-		Chain:  OlPostC,
+		Table:  network.TNat,
+		Chain:  OLCPost,
 		Source: source,
 		Dest:   prefix,
-		Jump:   MasqueradeC,
+		Jump:   network.CMasq,
 	})
 	v.firewall.AddRule(network.IpRule{
-		Table:  NatT,
-		Chain:  OlPostC,
+		Table:  network.TNat,
+		Chain:  OLCPost,
 		Output: bridge,
 		Source: prefix,
 		Dest:   source,
-		Jump:   MasqueradeC,
+		Jump:   network.CMasq,
 	})
 }
 
@@ -257,6 +257,30 @@ func (v *Switch) preController() {
 	ctrls.Ctrl.Switcher = v
 }
 
+func (v *Switch) preAcl() {
+	for _, acl := range v.cfg.Acl {
+		if acl.Name == "" {
+			continue
+		}
+		v.firewall.AddChain(network.IpChain{
+			Table: network.TRaw,
+			Name:  acl.Name,
+		})
+		for _, rule := range acl.Rules {
+			v.firewall.AddRule(network.IpRule{
+				Table:   network.TRaw,
+				Chain:   acl.Name,
+				Source:  rule.SrcIp,
+				Dest:    rule.DstIp,
+				Proto:   rule.Proto,
+				SrcPort: rule.SrcPort,
+				DstPort: rule.DstPort,
+				Jump:    rule.Action,
+			})
+		}
+	}
+}
+
 func (v *Switch) LoadPass(file string) {
 	reader, err := os.Open(file)
 	if err != nil {
@@ -297,6 +321,7 @@ func (v *Switch) Initialize() {
 	defer v.lock.Unlock()
 
 	store.User.SetFile(v.cfg.Password)
+	v.preAcl()
 	v.preApplication()
 	if v.cfg.Http != nil {
 		v.http = NewHttp(v)
@@ -503,8 +528,8 @@ func (v *Switch) NewTap(tenant string) (network.Taper, error) {
 		return nil, err
 	}
 	dev.Up()
-	// add new tap to bridge.
-	_ = br.AddSlave(dev.Name())
+	// add new tap to puppet bridge.
+	_ = br.Puppet().AddSlave(dev.Name())
 	v.out.Info("Switch.NewTap: %s on %s", dev.Name(), tenant)
 	return dev, nil
 }

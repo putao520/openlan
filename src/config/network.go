@@ -1,6 +1,8 @@
 package config
 
-import "strings"
+import (
+	"strings"
+)
 
 type Network struct {
 	Alias    string        `json:"-"`
@@ -12,24 +14,11 @@ type Network struct {
 	Hosts    []HostLease   `json:"hosts,omitempty"`
 	Routes   []PrefixRoute `json:"routes,omitempty"`
 	Password []Password    `json:"password,omitempty"`
+	Acl      string        `json:"acl"`
 }
 
 func (n *Network) Right() {
-	if n.Bridge.Name == "" {
-		n.Bridge.Name = "br-" + n.Name
-	}
-	if n.Bridge.Provider == "" {
-		n.Bridge.Provider = "linux"
-	}
-	if n.Bridge.IfMtu == 0 {
-		n.Bridge.IfMtu = 1518
-	}
-	if n.Bridge.Delay == 0 {
-		n.Bridge.Delay = 2
-	}
-	if n.Bridge.Stp == "" {
-		n.Bridge.Stp = "on"
-	}
+	RightBridge(&n.Bridge, n.Name)
 	ifAddr := strings.SplitN(n.Bridge.Address, "/", 2)[0]
 	for i := range n.Routes {
 		if n.Routes[i].Metric == 0 {

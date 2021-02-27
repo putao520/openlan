@@ -15,6 +15,10 @@ import (
 	"time"
 )
 
+func PeerName(name, prefix string) (string, string) {
+	return name + prefix + "i", name + prefix + "o"
+}
+
 type NetworkWorker struct {
 	alias     string
 	cfg       *config.Network
@@ -85,6 +89,10 @@ func (w *NetworkWorker) Initialize() {
 		}
 	}
 	w.bridge = network.NewBridger(brCfg.Provider, brCfg.Name, brCfg.IfMtu)
+	if brCfg.Puppet != "" {
+		puppet := network.NewBridger(brCfg.Provider, brCfg.Puppet, brCfg.IfMtu)
+		w.bridge.SetPuppet(puppet)
+	}
 	if w.cfg.OpenVPN != nil {
 		w.openVPN = NewOpenVPN(w.cfg.OpenVPN)
 		w.openVPN.Initialize()
@@ -168,25 +176,66 @@ func (w *NetworkWorker) UnLoadRoutes() {
 }
 
 func (w *NetworkWorker) UpBridge(cfg config.Bridge) {
-	w.bridge.Open(cfg.Address)
+	master := w.bridge
+	puppet := w.bridge.Puppet()
+	if puppet != master {
+		master = puppet
+		puppet.Open("")
+		w.ConnectPuppet(cfg)
+	}
 	if cfg.Stp == "on" {
-		if err := w.bridge.Stp(true); err != nil {
-			w.out.Warn("NetworkWorker.Start: Stp %s", err)
+		if err := master.Stp(true); err != nil {
+			w.out.Warn("NetworkWorker.UpBridge: Stp %s", err)
 		}
 	} else {
-		_ = w.bridge.Stp(false)
+		_ = master.Stp(false)
 	}
-	if err := w.bridge.Delay(cfg.Delay); err != nil {
-		w.out.Warn("NetworkWorker.Start: Delay %s", err)
+	if err := master.Delay(cfg.Delay); err != nil {
+		w.out.Warn("NetworkWorker.UpBridge: Delay %s", err)
 	}
+	// TODO enable nf-call-netfilter
+	w.ConnectPeer(cfg)
+	// ensure address configure not on puppet.
+	w.bridge.Open(cfg.Address)
 }
 
-func (w *NetworkWorker) UpPeer(cfg config.Bridge) {
+func (w *NetworkWorker) ConnectPuppet(cfg config.Bridge) {
+	if cfg.Puppet == "" {
+		return
+	}
+	in, ex := PeerName(cfg.Network, "-p")
+	link := &netlink.Veth{
+		LinkAttrs: netlink.LinkAttrs{Name: in},
+		PeerName:  ex,
+	}
+	promise := &libol.Promise{
+		First:  time.Second * 2,
+		MaxInt: time.Minute,
+		MinInt: time.Second * 10,
+	}
+	promise.Go(func() error {
+		err := netlink.LinkAdd(link)
+		if err != nil {
+			w.out.Error("NetworkWorker.ConnectPuppet: %s", err)
+			return nil
+		}
+		br0 := libol.NewBrCtl(cfg.Name)
+		if err := br0.AddPort(in); err != nil {
+			w.out.Error("NetworkWorker.ConnectPuppet: %s", err)
+		}
+		br1 := libol.NewBrCtl(cfg.Puppet)
+		if err := br1.AddPort(ex); err != nil {
+			w.out.Error("NetworkWorker.ConnectPuppet: %s", err)
+		}
+		return nil
+	})
+}
+
+func (w *NetworkWorker) ConnectPeer(cfg config.Bridge) {
 	if cfg.Peer == "" {
 		return
 	}
-	in := cfg.Name + "-in"
-	ex := cfg.Name + "-ex"
+	in, ex := PeerName(cfg.Network, "-e")
 	link := &netlink.Veth{
 		LinkAttrs: netlink.LinkAttrs{Name: in},
 		PeerName:  ex,
@@ -204,16 +253,16 @@ func (w *NetworkWorker) UpPeer(cfg config.Bridge) {
 		}
 		err := netlink.LinkAdd(link)
 		if err != nil {
-			w.out.Error("NetworkWorker.UpPeer: %s", err)
+			w.out.Error("NetworkWorker.ConnectPeer: %s", err)
 			return nil
 		}
-		bridge := libol.NewBrCtl(cfg.Name)
-		if err := bridge.AddPort(in); err != nil {
-			w.out.Error("NetworkWorker.UpPeer: %s", err)
+		br0 := libol.NewBrCtl(cfg.Name)
+		if err := br0.AddPort(in); err != nil {
+			w.out.Error("NetworkWorker.ConnectPeer: %s", err)
 		}
-		peer := libol.NewBrCtl(cfg.Peer)
-		if err := peer.AddPort(ex); err != nil {
-			w.out.Error("NetworkWorker.UpPeer: %s", err)
+		br1 := libol.NewBrCtl(cfg.Peer)
+		if err := br1.AddPort(ex); err != nil {
+			w.out.Error("NetworkWorker.ConnectPeer: %s", err)
 		}
 		return nil
 	})
@@ -223,7 +272,6 @@ func (w *NetworkWorker) Start(v api.Switcher) {
 	w.out.Info("NetworkWorker.Start")
 	brCfg := w.cfg.Bridge
 	w.UpBridge(brCfg)
-	w.UpPeer(brCfg)
 	w.uuid = v.UUID()
 	w.startTime = time.Now().Unix()
 	w.LoadLinks()
@@ -233,19 +281,40 @@ func (w *NetworkWorker) Start(v api.Switcher) {
 	}
 }
 
-func (w *NetworkWorker) DownPeer(cfg config.Bridge) {
+func (w *NetworkWorker) DownBridge(cfg config.Bridge) {
+	w.ClosePeer(cfg)
+	w.ClosePuppet(cfg)
+	_ = w.bridge.Close()
+}
+
+func (w *NetworkWorker) ClosePeer(cfg config.Bridge) {
 	if cfg.Peer == "" {
 		return
 	}
-	in := cfg.Name + "-in"
-	ex := cfg.Name + "-ex"
+	in, ex := PeerName(cfg.Network, "-e")
 	link := &netlink.Veth{
 		LinkAttrs: netlink.LinkAttrs{Name: in},
 		PeerName:  ex,
 	}
 	err := netlink.LinkDel(link)
 	if err != nil {
-		w.out.Error("NetworkWorker.DownPeer: %s", err)
+		w.out.Error("NetworkWorker.ClosePeer: %s", err)
+		return
+	}
+}
+
+func (w *NetworkWorker) ClosePuppet(cfg config.Bridge) {
+	if cfg.Puppet == "" {
+		return
+	}
+	in, ex := PeerName(cfg.Network, "-p")
+	link := &netlink.Veth{
+		LinkAttrs: netlink.LinkAttrs{Name: in},
+		PeerName:  ex,
+	}
+	err := netlink.LinkDel(link)
+	if err != nil {
+		w.out.Error("NetworkWorker.ClosePuppet: %s", err)
 		return
 	}
 }
@@ -258,9 +327,7 @@ func (w *NetworkWorker) Stop() {
 	w.UnLoadRoutes()
 	w.UnLoadLinks()
 	w.startTime = 0
-	_ = w.bridge.Close()
-	brCfg := w.cfg.Bridge
-	w.DownPeer(brCfg)
+	w.DownBridge(w.cfg.Bridge)
 }
 
 func (w *NetworkWorker) UpTime() int64 {

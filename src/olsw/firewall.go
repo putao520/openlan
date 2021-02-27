@@ -9,19 +9,11 @@ import (
 )
 
 const (
-	NatT         = "nat"
-	FilterT      = "filter"
-	InputC       = "INPUT"
-	ForwardC     = "FORWARD"
-	OutputC      = "OUTPUT"
-	PostRoutingC = "POSTROUTING"
-	PreRoutingC  = "PREROUTING"
-	MasqueradeC  = "MASQUERADE"
-	OlInputC     = "openlan_IN"
-	OlForwardC   = "openlan_FWD"
-	OlOutputC    = "openlan_OUT"
-	OlPreC       = "openlan_PRE"
-	OlPostC      = "openlan_POST"
+	OLCInput   = "openlan_IN"
+	OLCForward = "openlan_FWD"
+	OLCOutput  = "openlan_OUT"
+	OLCPre     = "openlan_PRE"
+	OLCPost    = "openlan_POST"
 )
 
 type FireWall struct {
@@ -56,41 +48,42 @@ func NewFireWall(flows []config.FlowRule) *FireWall {
 func (f *FireWall) Initialize() {
 	// Init chains
 	f.AddChain(network.IpChain{
-		Table: FilterT,
-		Name:  OlInputC,
+		Table: network.TFilter,
+		Name:  OLCInput,
 	})
 	f.AddChain(network.IpChain{
-		Table: FilterT,
-		Name:  OlForwardC,
+		Table: network.TFilter,
+		Name:  OLCForward,
 	})
 	f.AddChain(network.IpChain{
-		Table: FilterT,
-		Name:  OlOutputC,
+		Table: network.TFilter,
+		Name:  OLCOutput,
 	})
 	f.AddChain(network.IpChain{
-		Table: NatT,
-		Name:  OlPostC,
+		Table: network.TNat,
+		Name:  OLCPost,
 	})
+	libol.Info("FireWall.Initialize total %d chains", len(f.chains))
 	// Enable chains
 	f.AddRule(network.IpRule{
-		Table: FilterT,
-		Chain: InputC,
-		Jump:  OlInputC,
+		Table: network.TFilter,
+		Chain: network.CInput,
+		Jump:  OLCInput,
 	})
 	f.AddRule(network.IpRule{
-		Table: FilterT,
-		Chain: ForwardC,
-		Jump:  OlForwardC,
+		Table: network.TFilter,
+		Chain: network.CForward,
+		Jump:  OLCForward,
 	})
 	f.AddRule(network.IpRule{
-		Table: FilterT,
-		Chain: OutputC,
-		Jump:  OlOutputC,
+		Table: network.TFilter,
+		Chain: network.COutput,
+		Jump:  OLCOutput,
 	})
 	f.AddRule(network.IpRule{
-		Table: NatT,
-		Chain: PostRoutingC,
-		Jump:  OlPostC,
+		Table: network.TNat,
+		Chain: network.CPostRoute,
+		Jump:  OLCPost,
 	})
 	libol.Info("FireWall.Initialize total %d rules", len(f.rules))
 }
@@ -116,12 +109,12 @@ func (f *FireWall) ApplyRule(rule network.IpRule) error {
 func (f *FireWall) install() {
 	for _, c := range f.chains {
 		if _, err := c.Opr("-N"); err != nil {
-			libol.Warn("FireWall.install %s", err)
+			libol.Error("FireWall.install %s", err)
 		}
 	}
 	for _, r := range f.rules {
-		if ret, err := r.Opr("-I"); err != nil {
-			libol.Warn("FireWall.install %s", ret)
+		if _, err := r.Opr("-I"); err != nil {
+			libol.Error("FireWall.install %s", err)
 		}
 	}
 }

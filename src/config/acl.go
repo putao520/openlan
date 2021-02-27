@@ -1,8 +1,8 @@
-package schema
+package config
 
 type ACL struct {
-	Name  string    `json:"name"`
-	Rules []ACLRule `json:"rules"`
+	Name  string     `json:"name"`
+	Rules []*ACLRule `json:"rules"`
 }
 
 type ACLRule struct {
@@ -10,7 +10,10 @@ type ACLRule struct {
 	SrcIp   string `json:"source"`
 	DstIp   string `json:"dest"`
 	Proto   string `json:"proto"`
-	SrcPort int    `json:"sourcePort"`
-	DstPort int    `json:"destPort"`
+	SrcPort int    `json:"srcPort"`
+	DstPort int    `json:"dstPort"`
 	Action  string `json:"action"`
+}
+
+func (ru *ACLRule) Right() {
 }

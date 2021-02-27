@@ -21,6 +21,7 @@ type VirtualBridge struct {
 	kernel  Taper
 	out     *libol.SubLogger
 	sts     DeviceStats
+	puppet  Bridger
 }
 
 func NewVirtualBridge(name string, mtu int) *VirtualBridge {
@@ -36,6 +37,17 @@ func NewVirtualBridge(name string, mtu int) *VirtualBridge {
 	}
 	Bridges.Add(b)
 	return b
+}
+
+func (b *VirtualBridge) Puppet() Bridger {
+	if b.puppet == nil {
+		return b
+	}
+	return b.puppet
+}
+
+func (b *VirtualBridge) SetPuppet(br Bridger) {
+	b.puppet = br
 }
 
 func (b *VirtualBridge) Open(addr string) {

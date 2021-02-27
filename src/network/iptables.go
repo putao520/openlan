@@ -5,20 +5,35 @@ import (
 	"github.com/moby/libnetwork/iptables"
 	"runtime"
 	"strconv"
+	"strings"
+)
+
+const (
+	TNat       = "nat"
+	TRaw       = "raw"
+	TMangle    = "mangle"
+	TFilter    = "filter"
+	CInput     = "INPUT"
+	CForward   = "FORWARD"
+	COutput    = "OUTPUT"
+	CPostRoute = "POSTROUTING"
+	CPreRoute  = "PREROUTING"
+	CMasq      = "MASQUERADE"
 )
 
 type IpRule struct {
 	Table    string
 	Chain    string
-	Input    string
 	Source   string
 	ToSource string
 	Dest     string
 	ToDest   string
-	Output   string
-	Comment  string
+	Proto    string
 	DstPort  int
 	SrcPort  int
+	Input    string
+	Output   string
+	Comment  string
 	Jump     string
 }
 
@@ -26,14 +41,15 @@ type IpRules []IpRule
 
 func (ru IpRule) Args() []string {
 	var args []string
+
 	if ru.Source != "" {
 		args = append(args, "-s", ru.Source)
 	}
-	if ru.Input != "" {
-		args = append(args, "-i", ru.Input)
-	}
 	if ru.Dest != "" {
 		args = append(args, "-d", ru.Dest)
+	}
+	if ru.Proto != "" {
+		args = append(args, "-p", ru.Proto)
 	}
 	if ru.SrcPort > 0 {
 		args = append(args, "--sport", strconv.Itoa(ru.SrcPort))
@@ -41,11 +57,19 @@ func (ru IpRule) Args() []string {
 	if ru.DstPort > 0 {
 		args = append(args, "--dport", strconv.Itoa(ru.DstPort))
 	}
+	if ru.Input != "" {
+		args = append(args, "-i", ru.Input)
+	}
 	if ru.Output != "" {
 		args = append(args, "-o", ru.Output)
 	}
 	if ru.Jump != "" {
-		args = append(args, "-j", ru.Jump)
+		jump := strings.ToUpper(ru.Jump)
+		if jump == "DROP" || jump == "ACCEPT" {
+			args = append(args, "-j", jump)
+		} else {
+			args = append(args, "-j", ru.Jump)
+		}
 	} else {
 		args = append(args, "-j", "ACCEPT")
 	}
@@ -78,6 +102,9 @@ func (ru IpRule) Eq(obj IpRule) bool {
 		return false
 	}
 	if ru.ToDest != obj.ToDest {
+		return false
+	}
+	if ru.Proto != obj.Proto {
 		return false
 	}
 	if ru.SrcPort != obj.SrcPort {

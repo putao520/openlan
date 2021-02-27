@@ -6,6 +6,7 @@ After=network.target
 Type=notify
 RemainAfterExit=yes
 EnvironmentFile=/etc/sysconfig/openlan/switch.cfg
+ExecStartPre=-/usr/sbin/modprobe bridge br_netfilter
 ExecStart=/usr/bin/openlan-switch $OPTIONS
 LimitNOFILE=102400
 

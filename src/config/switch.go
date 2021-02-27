@@ -55,6 +55,7 @@ type Switch struct {
 	Crypt     *Crypt     `json:"crypt,omitempty"`
 	PProf     string     `json:"pprof"`
 	Network   []*Network `json:"network,omitempty"`
+	Acl       []*ACL     `json:"acl"`
 	FireWall  []FlowRule `json:"firewall,omitempty"`
 	Inspect   []string   `json:"inspect"`
 	Queue     *Queue     `json:"queue"`
@@ -147,6 +148,50 @@ func (sw *Switch) Right(obj *Switch) {
 	}
 }
 
+func (sw *Switch) LoadNetwork() {
+	files, err := filepath.Glob(sw.ConfDir + "/network/*.json")
+	if err != nil {
+		libol.Error("Switch.LoadNetwork %s", err)
+	}
+	for _, k := range files {
+		obj := &Network{
+			Alias: sw.Alias,
+		}
+		if err := libol.UnmarshalLoad(obj, k); err != nil {
+			libol.Error("Switch.LoadNetwork %s", err)
+			continue
+		}
+		sw.Network = append(sw.Network, obj)
+	}
+	for _, obj := range sw.Network {
+		for _, link := range obj.Links {
+			link.Default()
+		}
+		obj.Right()
+		obj.Alias = sw.Alias
+	}
+}
+
+func (sw *Switch) LoadAcl() {
+	files, err := filepath.Glob(sw.ConfDir + "/acl/*.json")
+	if err != nil {
+		libol.Error("Switch.LoadAcl %s", err)
+	}
+	for _, k := range files {
+		obj := &ACL{}
+		if err := libol.UnmarshalLoad(obj, k); err != nil {
+			libol.Error("Switch.LoadAcl %s", err)
+			continue
+		}
+		sw.Acl = append(sw.Acl, obj)
+	}
+	for _, obj := range sw.Acl {
+		for _, rule := range obj.Rules {
+			rule.Right()
+		}
+	}
+}
+
 func (sw *Switch) Default() {
 	obj := DefaultSwitch()
 	sw.Right(obj)
@@ -163,27 +208,8 @@ func (sw *Switch) Default() {
 		sw.Queue = &Queue{}
 	}
 	sw.Queue.Default()
-	files, err := filepath.Glob(sw.ConfDir + "/network/*.json")
-	if err != nil {
-		libol.Error("Switch.Default %s", err)
-	}
-	for _, k := range files {
-		n := &Network{
-			Alias: sw.Alias,
-		}
-		if err := libol.UnmarshalLoad(n, k); err != nil {
-			libol.Error("Switch.Default %s", err)
-			continue
-		}
-		sw.Network = append(sw.Network, n)
-	}
-	for _, n := range sw.Network {
-		for _, link := range n.Links {
-			link.Default()
-		}
-		n.Right()
-		n.Alias = sw.Alias
-	}
+	sw.LoadAcl()
+	sw.LoadNetwork()
 }
 
 func (sw *Switch) Load() error {

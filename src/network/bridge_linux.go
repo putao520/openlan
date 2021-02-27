@@ -13,6 +13,7 @@ type LinuxBridge struct {
 	device  netlink.Link
 	ctl     *libol.BrCtl
 	out     *libol.SubLogger
+	puppet  Bridger
 }
 
 func NewLinuxBridge(name string, mtu int) *LinuxBridge {
@@ -24,6 +25,17 @@ func NewLinuxBridge(name string, mtu int) *LinuxBridge {
 	}
 	Bridges.Add(b)
 	return b
+}
+
+func (b *LinuxBridge) Puppet() Bridger {
+	if b.puppet == nil {
+		return b
+	}
+	return b.puppet
+}
+
+func (b *LinuxBridge) SetPuppet(br Bridger) {
+	b.puppet = br
 }
 
 func (b *LinuxBridge) Kernel() string {
