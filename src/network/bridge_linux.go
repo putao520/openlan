@@ -11,31 +11,19 @@ type LinuxBridge struct {
 	ifMtu   int
 	name    string
 	device  netlink.Link
-	ctl     *libol.BrCtl
+	ctl     *BrCtl
 	out     *libol.SubLogger
-	puppet  Bridger
 }
 
 func NewLinuxBridge(name string, mtu int) *LinuxBridge {
 	b := &LinuxBridge{
 		name:  name,
 		ifMtu: mtu,
-		ctl:   libol.NewBrCtl(name),
+		ctl:   NewBrCtl(name),
 		out:   libol.NewSubLogger(name),
 	}
 	Bridges.Add(b)
 	return b
-}
-
-func (b *LinuxBridge) Puppet() Bridger {
-	if b.puppet == nil {
-		return b
-	}
-	return b.puppet
-}
-
-func (b *LinuxBridge) SetPuppet(br Bridger) {
-	b.puppet = br
 }
 
 func (b *LinuxBridge) Kernel() string {
@@ -134,17 +122,11 @@ func (b *LinuxBridge) Mtu() int {
 }
 
 func (b *LinuxBridge) Stp(enable bool) error {
-	if err := b.ctl.Stp(enable); err != nil {
-		return err
-	}
-	return nil
+	return b.ctl.Stp(enable)
 }
 
 func (b *LinuxBridge) Delay(value int) error {
-	if err := b.ctl.Delay(value); err != nil {
-		return err
-	}
-	return nil
+	return b.ctl.Delay(value)
 }
 
 func (b *LinuxBridge) ListMac() <-chan *MacFdb {
@@ -158,4 +140,8 @@ func (b *LinuxBridge) ListMac() <-chan *MacFdb {
 
 func (b *LinuxBridge) Stats() DeviceStats {
 	return b.sts
+}
+
+func (b *LinuxBridge) CallIptables(value int) error {
+	return b.ctl.CallIptables(value)
 }

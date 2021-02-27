@@ -1,0 +1,15 @@
+{
+  "name": "acl-1",
+  "rules": [
+    {
+      "dest": "192.168.77.121",
+      "proto": "tcp",
+      "dstPort": 443,
+      "action": "drop"
+    },
+    {
+      "dest": "192.168.10.0/24",
+      "action": "drop"
+    }
+  ]
+}

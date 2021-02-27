@@ -1,4 +1,4 @@
-package libol
+package network
 
 import (
 	"fmt"
@@ -86,6 +86,19 @@ func (b *BrCtl) DelPort(port string) error {
 		return err
 	}
 	if err := netlink.LinkSetNoMaster(link); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (b *BrCtl) CallIptables(value int) error {
+	file := b.SysPath("nf_call_iptables")
+	fp, err := os.OpenFile(file, os.O_RDWR, 0600)
+	if err != nil {
+		return err
+	}
+	defer fp.Close()
+	if _, err := fp.Write([]byte(strconv.Itoa(value))); err != nil {
 		return err
 	}
 	return nil

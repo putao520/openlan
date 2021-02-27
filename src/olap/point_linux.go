@@ -130,7 +130,7 @@ func (p *Point) OnTap(w *TapWorker) error {
 		}
 	}
 	if p.config.Interface.Cost > 0 {
-		port := libol.NewBrPort(name)
+		port := network.NewBrPort(name)
 		if err := port.Cost(p.config.Interface.Cost); err != nil {
 			p.out.Error("Point.OnTap: Cost %s: %s", err)
 		}

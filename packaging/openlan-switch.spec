@@ -25,6 +25,8 @@ cp %_source_dir/build/openlan-switch %{buildroot}/usr/bin
 mkdir -p %{buildroot}/etc/openlan/switch
 cp %_source_dir/packaging/resource/ctrl.json.example %{buildroot}/etc/openlan/switch
 cp %_source_dir/packaging/resource/switch.json*.example %{buildroot}/etc/openlan/switch
+mkdir -p %{buildroot}/etc/openlan/switch/acl
+cp %_source_dir/packaging/resource/acl-1.json.example %{buildroot}/etc/openlan/switch/acl
 mkdir -p %{buildroot}/etc/openlan/switch/network
 cp %_source_dir/packaging/resource/network.json.example %{buildroot}/etc/openlan/switch/network
 mkdir -p %{buildroot}/etc/sysconfig/openlan

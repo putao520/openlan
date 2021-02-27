@@ -32,8 +32,7 @@ type Bridger interface {
 	ListMac() <-chan *MacFdb
 	String() string
 	Stats() DeviceStats
-	Puppet() Bridger
-	SetPuppet(br Bridger)
+	CallIptables(value int) error
 }
 
 type bridger struct {

@@ -135,7 +135,6 @@ func (c *Cert) GetCertPool() *x509.CertPool {
 type Bridge struct {
 	Network  string `json:"network"`
 	Peer     string `json:"peer"`
-	Puppet   string `json:"puppet"`
 	Name     string `json:"name"`
 	IfMtu    int    `json:"mtu"`
 	Address  string `json:"address,omitempty"`
@@ -148,9 +147,6 @@ func RightBridge(br *Bridge, name string) {
 	br.Network = name
 	if br.Name == "" {
 		br.Name = "br-" + name
-	}
-	if br.Puppet == "" {
-		br.Puppet = "ol-" + name
 	}
 	if br.Provider == "" {
 		br.Provider = "linux"

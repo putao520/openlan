@@ -21,7 +21,6 @@ type VirtualBridge struct {
 	kernel  Taper
 	out     *libol.SubLogger
 	sts     DeviceStats
-	puppet  Bridger
 }
 
 func NewVirtualBridge(name string, mtu int) *VirtualBridge {
@@ -37,17 +36,6 @@ func NewVirtualBridge(name string, mtu int) *VirtualBridge {
 	}
 	Bridges.Add(b)
 	return b
-}
-
-func (b *VirtualBridge) Puppet() Bridger {
-	if b.puppet == nil {
-		return b
-	}
-	return b.puppet
-}
-
-func (b *VirtualBridge) SetPuppet(br Bridger) {
-	b.puppet = br
 }
 
 func (b *VirtualBridge) Open(addr string) {
@@ -88,7 +76,7 @@ func (b *VirtualBridge) Close() error {
 				b.out.Error("VirtualBridge.Close: IpAddr %s:%s", err, out)
 			}
 		}
-		b.kernel.Close()
+		_ = b.kernel.Close()
 	}
 	b.ticker.Stop()
 	b.done <- true
@@ -337,4 +325,8 @@ func (b *VirtualBridge) Delay(value int) error {
 
 func (b *VirtualBridge) Stats() DeviceStats {
 	return b.sts
+}
+
+func (b *VirtualBridge) CallIptables(value int) error {
+	return libol.NewErr("operation notSupport")
 }

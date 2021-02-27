@@ -89,10 +89,6 @@ func (w *NetworkWorker) Initialize() {
 		}
 	}
 	w.bridge = network.NewBridger(brCfg.Provider, brCfg.Name, brCfg.IfMtu)
-	if brCfg.Puppet != "" {
-		puppet := network.NewBridger(brCfg.Provider, brCfg.Puppet, brCfg.IfMtu)
-		w.bridge.SetPuppet(puppet)
-	}
 	if w.cfg.OpenVPN != nil {
 		w.openVPN = NewOpenVPN(w.cfg.OpenVPN)
 		w.openVPN.Initialize()
@@ -177,12 +173,6 @@ func (w *NetworkWorker) UnLoadRoutes() {
 
 func (w *NetworkWorker) UpBridge(cfg config.Bridge) {
 	master := w.bridge
-	puppet := w.bridge.Puppet()
-	if puppet != master {
-		master = puppet
-		puppet.Open("")
-		w.ConnectPuppet(cfg)
-	}
 	if cfg.Stp == "on" {
 		if err := master.Stp(true); err != nil {
 			w.out.Warn("NetworkWorker.UpBridge: Stp %s", err)
@@ -193,42 +183,9 @@ func (w *NetworkWorker) UpBridge(cfg config.Bridge) {
 	if err := master.Delay(cfg.Delay); err != nil {
 		w.out.Warn("NetworkWorker.UpBridge: Delay %s", err)
 	}
-	// TODO enable nf-call-netfilter
 	w.ConnectPeer(cfg)
 	// ensure address configure not on puppet.
 	w.bridge.Open(cfg.Address)
-}
-
-func (w *NetworkWorker) ConnectPuppet(cfg config.Bridge) {
-	if cfg.Puppet == "" {
-		return
-	}
-	in, ex := PeerName(cfg.Network, "-p")
-	link := &netlink.Veth{
-		LinkAttrs: netlink.LinkAttrs{Name: in},
-		PeerName:  ex,
-	}
-	promise := &libol.Promise{
-		First:  time.Second * 2,
-		MaxInt: time.Minute,
-		MinInt: time.Second * 10,
-	}
-	promise.Go(func() error {
-		err := netlink.LinkAdd(link)
-		if err != nil {
-			w.out.Error("NetworkWorker.ConnectPuppet: %s", err)
-			return nil
-		}
-		br0 := libol.NewBrCtl(cfg.Name)
-		if err := br0.AddPort(in); err != nil {
-			w.out.Error("NetworkWorker.ConnectPuppet: %s", err)
-		}
-		br1 := libol.NewBrCtl(cfg.Puppet)
-		if err := br1.AddPort(ex); err != nil {
-			w.out.Error("NetworkWorker.ConnectPuppet: %s", err)
-		}
-		return nil
-	})
 }
 
 func (w *NetworkWorker) ConnectPeer(cfg config.Bridge) {
@@ -240,7 +197,7 @@ func (w *NetworkWorker) ConnectPeer(cfg config.Bridge) {
 		LinkAttrs: netlink.LinkAttrs{Name: in},
 		PeerName:  ex,
 	}
-	br := libol.NewBrCtl(cfg.Peer)
+	br := network.NewBrCtl(cfg.Peer)
 	promise := &libol.Promise{
 		First:  time.Second * 2,
 		MaxInt: time.Minute,
@@ -256,11 +213,11 @@ func (w *NetworkWorker) ConnectPeer(cfg config.Bridge) {
 			w.out.Error("NetworkWorker.ConnectPeer: %s", err)
 			return nil
 		}
-		br0 := libol.NewBrCtl(cfg.Name)
+		br0 := network.NewBrCtl(cfg.Name)
 		if err := br0.AddPort(in); err != nil {
 			w.out.Error("NetworkWorker.ConnectPeer: %s", err)
 		}
-		br1 := libol.NewBrCtl(cfg.Peer)
+		br1 := network.NewBrCtl(cfg.Peer)
 		if err := br1.AddPort(ex); err != nil {
 			w.out.Error("NetworkWorker.ConnectPeer: %s", err)
 		}
@@ -272,6 +229,11 @@ func (w *NetworkWorker) Start(v api.Switcher) {
 	w.out.Info("NetworkWorker.Start")
 	brCfg := w.cfg.Bridge
 	w.UpBridge(brCfg)
+	if w.cfg.Acl != "" {
+		if err := w.bridge.CallIptables(1); err != nil {
+			w.out.Warn("NetworkWorker.Start: CallIptables %s", err)
+		}
+	}
 	w.uuid = v.UUID()
 	w.startTime = time.Now().Unix()
 	w.LoadLinks()
@@ -283,7 +245,6 @@ func (w *NetworkWorker) Start(v api.Switcher) {
 
 func (w *NetworkWorker) DownBridge(cfg config.Bridge) {
 	w.ClosePeer(cfg)
-	w.ClosePuppet(cfg)
 	_ = w.bridge.Close()
 }
 
@@ -299,22 +260,6 @@ func (w *NetworkWorker) ClosePeer(cfg config.Bridge) {
 	err := netlink.LinkDel(link)
 	if err != nil {
 		w.out.Error("NetworkWorker.ClosePeer: %s", err)
-		return
-	}
-}
-
-func (w *NetworkWorker) ClosePuppet(cfg config.Bridge) {
-	if cfg.Puppet == "" {
-		return
-	}
-	in, ex := PeerName(cfg.Network, "-p")
-	link := &netlink.Veth{
-		LinkAttrs: netlink.LinkAttrs{Name: in},
-		PeerName:  ex,
-	}
-	err := netlink.LinkDel(link)
-	if err != nil {
-		w.out.Error("NetworkWorker.ClosePuppet: %s", err)
 		return
 	}
 }
@@ -338,10 +283,11 @@ func (w *NetworkWorker) UpTime() int64 {
 }
 
 func (w *NetworkWorker) AddLink(c *config.Point) {
+	brName := w.cfg.Bridge.Name
 	c.Alias = w.alias
 	c.RequestAddr = false
 	c.Network = w.cfg.Name
-	c.Interface.Bridge = w.cfg.Bridge.Name // reset bridge name.
+	c.Interface.Bridge = brName // reset bridge name.
 	c.Interface.Address = w.cfg.Bridge.Address
 	c.Interface.Provider = w.cfg.Bridge.Provider
 	libol.Go(func() {

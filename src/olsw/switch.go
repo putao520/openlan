@@ -113,7 +113,7 @@ func NewSwitch(c *config.Switch) *Switch {
 	return &v
 }
 
-func (v *Switch) allowForward(bridge, source, prefix string) {
+func (v *Switch) allowForward(input, output, source, prefix string) {
 	if source == prefix {
 		return
 	}
@@ -122,14 +122,14 @@ func (v *Switch) allowForward(bridge, source, prefix string) {
 	v.firewall.AddRule(network.IpRule{
 		Table:  network.TFilter,
 		Chain:  OLCForward,
-		Input:  bridge,
+		Input:  input,
 		Source: source,
 		Dest:   prefix,
 	})
 	v.firewall.AddRule(network.IpRule{
 		Table:  network.TFilter,
 		Chain:  OLCForward,
-		Output: bridge,
+		Output: output,
 		Source: prefix,
 		Dest:   source,
 	})
@@ -137,13 +137,13 @@ func (v *Switch) allowForward(bridge, source, prefix string) {
 	v.firewall.AddRule(network.IpRule{
 		Table:  network.TFilter,
 		Chain:  OLCInput,
-		Input:  bridge,
+		Input:  input,
 		Source: source,
 		Dest:   prefix,
 	})
 }
 
-func (v *Switch) enableMasq(bridge, source, prefix string) {
+func (v *Switch) enableMasq(input, output, source, prefix string) {
 	if source == prefix {
 		return
 	}
@@ -158,7 +158,7 @@ func (v *Switch) enableMasq(bridge, source, prefix string) {
 	v.firewall.AddRule(network.IpRule{
 		Table:  network.TNat,
 		Chain:  OLCPost,
-		Output: bridge,
+		Output: output,
 		Source: prefix,
 		Dest:   source,
 		Jump:   network.CMasq,
@@ -183,6 +183,18 @@ func (v *Switch) preWorker(w *NetworkWorker) {
 	}
 }
 
+func (v *Switch) enableAcl(acl, input string) {
+	if acl == "" || input == "" {
+		return
+	}
+	v.firewall.AddRule(network.IpRule{
+		Table: network.TRaw,
+		Chain: network.CPreRoute,
+		Input: input,
+		Jump:  acl,
+	})
+}
+
 func (v *Switch) preNetwork() {
 	crypt := v.cfg.Crypt
 	for _, nCfg := range v.cfg.Network {
@@ -192,14 +204,18 @@ func (v *Switch) preNetwork() {
 		brCfg := nCfg.Bridge
 		vpnCfg := nCfg.OpenVPN
 
+		brName := brCfg.Name
+		v.enableAcl(nCfg.Acl, brName)
 		v.preWorker(w)
 		source := brCfg.Address
 		ifAddr := strings.SplitN(source, "/", 2)[0]
 		// Enable MASQUERADE for OpenVPN
 		if vpnCfg != nil {
+			devName := vpnCfg.Device
+			v.enableAcl(nCfg.Acl, devName)
 			for _, rt := range vpnCfg.Routes {
-				v.allowForward(vpnCfg.Device, vpnCfg.Subnet, rt)
-				v.enableMasq(vpnCfg.Device, vpnCfg.Subnet, rt)
+				v.allowForward(devName, devName, vpnCfg.Subnet, rt)
+				v.enableMasq(devName, devName, vpnCfg.Subnet, rt)
 			}
 		}
 		if ifAddr == "" {
@@ -208,15 +224,15 @@ func (v *Switch) preNetwork() {
 		// Enable MASQUERADE, and allowed forward.
 		for _, rt := range nCfg.Routes {
 			if vpnCfg != nil {
-				v.allowForward(brCfg.Name, vpnCfg.Subnet, rt.Prefix)
-				v.enableMasq(brCfg.Name, vpnCfg.Subnet, rt.Prefix)
+				v.allowForward(brName, brName, vpnCfg.Subnet, rt.Prefix)
+				v.enableMasq(brName, brName, vpnCfg.Subnet, rt.Prefix)
 			}
 			if rt.NextHop != ifAddr {
 				continue
 			}
-			v.allowForward(brCfg.Name, source, rt.Prefix)
+			v.allowForward(brName, brName, source, rt.Prefix)
 			if rt.Mode == "snat" {
-				v.enableMasq(brCfg.Name, source, rt.Prefix)
+				v.enableMasq(brName, brName, source, rt.Prefix)
 			}
 		}
 	}
@@ -528,8 +544,8 @@ func (v *Switch) NewTap(tenant string) (network.Taper, error) {
 		return nil, err
 	}
 	dev.Up()
-	// add new tap to puppet bridge.
-	_ = br.Puppet().AddSlave(dev.Name())
+	// add new tap to bridge.
+	_ = br.AddSlave(dev.Name())
 	v.out.Info("Switch.NewTap: %s on %s", dev.Name(), tenant)
 	return dev, nil
 }
