@@ -29,29 +29,36 @@ func (u Config) List(c *cli.Context) error {
 }
 
 func (u Config) Check(c *cli.Context) error {
+	out := u.Log()
 	dir := c.String("dir")
 	// Check proxy configurations.
-	pxFile := filepath.Join(dir, "proxy.json")
-	if err := libol.FileExist(pxFile); err == nil {
+	file := filepath.Join(dir, "proxy.json")
+	if err := libol.FileExist(file); err == nil {
 		obj := &config.Proxy{}
-		if err := libol.UnmarshalLoad(obj, pxFile); err != nil {
-			libol.Warn("proxy.json: %s", err)
+		if err := libol.UnmarshalLoad(obj, file); err != nil {
+			out.Warn("%15s: %s", filepath.Base(file), err)
+		} else {
+			out.Info("%15s: %s", filepath.Base(file), "success")
 		}
 	}
 	// Check OLAP configurations.
-	ptFile := filepath.Join(dir, "point.json")
-	if err := libol.FileExist(ptFile); err == nil {
+	file = filepath.Join(dir, "point.json")
+	if err := libol.FileExist(file); err == nil {
 		obj := &config.Point{}
-		if err := libol.UnmarshalLoad(obj, ptFile); err != nil {
-			libol.Warn("point.json: %s", err)
+		if err := libol.UnmarshalLoad(obj, file); err != nil {
+			out.Warn("%15s: %s", filepath.Base(file), err)
+		} else {
+			out.Info("%15s: %s", filepath.Base(file), "success")
 		}
 	}
 	// Check OLSW configurations.
-	swFile := filepath.Join(dir, "switch", "switch.json")
-	if err := libol.FileExist(swFile); err == nil {
+	file = filepath.Join(dir, "switch", "switch.json")
+	if err := libol.FileExist(file); err == nil {
 		obj := &config.Switch{}
-		if err := libol.UnmarshalLoad(obj, swFile); err != nil {
-			libol.Warn("switch.json: %s", err)
+		if err := libol.UnmarshalLoad(obj, file); err != nil {
+			out.Warn("%15s: %s", filepath.Base(file), err)
+		} else {
+			out.Info("%15s: %s", filepath.Base(file), "success")
 		}
 	}
 	// Check network configurations.
@@ -60,7 +67,21 @@ func (u Config) Check(c *cli.Context) error {
 		for _, file := range files {
 			obj := &config.Network{}
 			if err := libol.UnmarshalLoad(obj, file); err != nil {
-				libol.Warn("%s: %s", filepath.Base(file), err)
+				out.Warn("%15s: %s", filepath.Base(file), err)
+			} else {
+				out.Info("%15s: %s", filepath.Base(file), "success")
+			}
+		}
+	}
+	// Check ACL configurations.
+	pattern = filepath.Join(dir, "switch", "acl", "*.json")
+	if files, err := filepath.Glob(pattern); err == nil {
+		for _, file := range files {
+			obj := &config.ACL{}
+			if err := libol.UnmarshalLoad(obj, file); err != nil {
+				out.Warn("%15s: %s", filepath.Base(file), err)
+			} else {
+				out.Info("%15s: %s", filepath.Base(file), "success")
 			}
 		}
 	}

@@ -48,6 +48,7 @@ func (cl Client) GetBody(url string) ([]byte, error) {
 }
 
 func (cl Client) GetJSON(url string, v interface{}) error {
+	out := cl.Log()
 	client := cl.NewRequest(url)
 	r, err := client.Do()
 	if err != nil {
@@ -61,7 +62,7 @@ func (cl Client) GetJSON(url string, v interface{}) error {
 	if err != nil {
 		return err
 	}
-	libol.Debug("client.GetJSON %s", body)
+	out.Debug("client.GetJSON %s", body)
 	if err := json.Unmarshal(body, v); err != nil {
 		return err
 	}
@@ -69,11 +70,12 @@ func (cl Client) GetJSON(url string, v interface{}) error {
 }
 
 func (cl Client) SetJSON(client *libol.HttpClient, v interface{}) error {
+	out := cl.Log()
 	data, err := json.Marshal(v)
 	if err != nil {
 		return err
 	}
-	libol.Debug("Client.SetJSON %s %s %s", client.Url, client.Method, string(data))
+	out.Debug("Client.SetJSON %s %s %s", client.Url, client.Method, string(data))
 	client.Payload = bytes.NewReader(data)
 	if r, err := client.Do(); err != nil {
 		return err
@@ -99,6 +101,10 @@ func (cl Client) DeleteJSON(url string, v interface{}) error {
 	client := cl.NewRequest(url)
 	client.Method = "DELETE"
 	return cl.SetJSON(client, v)
+}
+
+func (cl Client) Log() *libol.SubLogger {
+	return libol.NewSubLogger("cli")
 }
 
 type Cmd struct {
@@ -178,4 +184,8 @@ func (c Cmd) Out(data interface{}, format string, tmpl string) error {
 	default:
 		return c.OutTable(data, tmpl)
 	}
+}
+
+func (c Cmd) Log() *libol.SubLogger {
+	return libol.NewSubLogger("cli")
 }
