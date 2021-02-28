@@ -35,7 +35,7 @@ func DefaultPoint() *Point {
 		Protocol:   "tls", // udp, kcp, tcp, tls, ws and wss etc.
 		Timeout:    60,
 		Log: Log{
-			File:    "./openlan-point.log",
+			File:    LogFile("openlan-point.log"),
 			Verbose: libol.INFO,
 		},
 		Interface: Interface{
@@ -49,29 +49,24 @@ func DefaultPoint() *Point {
 		Cert:        &Cert{},
 		Terminal:    "on",
 	}
-	obj.Right(nil)
-	if runtime.GOOS == "linux" {
-		obj.Log.File = "/var/log/openlan-point.log"
-	} else {
-		obj.Log.File = "./openlan-point.log"
-	}
+	obj.Correct(nil)
 	return obj
 }
 
 func NewPoint() *Point {
 	obj := DefaultPoint()
-	pin := &Point{
+	p := &Point{
 		RequestAddr: true,
 		Crypt:       obj.Crypt,
 		Cert:        obj.Cert,
 	}
-	pin.Flags()
-	pin.Parse()
-	pin.Initialize()
+	p.Flags()
+	p.Parse()
+	p.Initialize()
 	if Manager.Point == nil {
-		Manager.Point = pin
+		Manager.Point = p
 	}
-	return pin
+	return p
 }
 
 func (ap *Point) Flags() {
@@ -106,13 +101,13 @@ func (ap *Point) Id() string {
 
 func (ap *Point) Initialize() {
 	if err := ap.Load(); err != nil {
-		libol.Warn("NewPoint.load %s", err)
+		libol.Warn("NewPoint.Initialize %s", err)
 	}
 	ap.Default()
 	libol.SetLogger(ap.Log.File, ap.Log.Verbose)
 }
 
-func (ap *Point) Right(obj *Point) {
+func (ap *Point) Correct(obj *Point) {
 	if ap.Alias == "" {
 		ap.Alias = GetAlias()
 	}
@@ -123,7 +118,7 @@ func (ap *Point) Right(obj *Point) {
 			ap.Network = obj.Network
 		}
 	}
-	RightAddr(&ap.Connection, 10002)
+	CorrectAddr(&ap.Connection, 10002)
 	if runtime.GOOS == "darwin" {
 		ap.Interface.Provider = "tun"
 	}
@@ -136,13 +131,13 @@ func (ap *Point) Right(obj *Point) {
 		if ap.Cert.Dir == "" {
 			ap.Cert.Dir = "."
 		}
-		ap.Cert.Right()
+		ap.Cert.Correct()
 	}
 }
 
 func (ap *Point) Default() {
 	obj := DefaultPoint()
-	ap.Right(obj)
+	ap.Correct(obj)
 	if ap.Queue == nil {
 		ap.Queue = &Queue{}
 	}

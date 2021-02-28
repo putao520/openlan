@@ -8,8 +8,13 @@ import (
 	"github.com/xtaci/kcp-go/v5"
 	"io/ioutil"
 	"os"
+	"runtime"
 	"strings"
 )
+
+func VarDir(name ...string) string {
+	return "/var/openlan/" + strings.Join(name, "/")
+}
 
 type Queue struct {
 	SockWr int `json:"swr"` // per frames about 1572(1514+4+20+20+14)bytes
@@ -56,6 +61,13 @@ type Log struct {
 	Verbose int    `json:"level,omitempty"`
 }
 
+func LogFile(file string) string {
+	if runtime.GOOS == "linux" {
+		return "/var/log/" + file
+	}
+	return file
+}
+
 type Http struct {
 	Listen string `json:"listen,omitempty"`
 	Public string `json:"public,omitempty"`
@@ -84,7 +96,7 @@ type Cert struct {
 	Insecure bool   `json:"insecure"`
 }
 
-func (c *Cert) Right() {
+func (c *Cert) Correct() {
 	if c.Dir == "" {
 		return
 	}
@@ -143,10 +155,9 @@ type Bridge struct {
 	Delay    int    `json:"delay"`
 }
 
-func RightBridge(br *Bridge, name string) {
-	br.Network = name
+func (br *Bridge) Correct() {
 	if br.Name == "" {
-		br.Name = "br-" + name
+		br.Name = "br-" + br.Network
 	}
 	if br.Provider == "" {
 		br.Provider = "linux"
@@ -211,7 +222,7 @@ type Interface struct {
 	Cost     int    `json:"cost,omitempty"`
 }
 
-func RightAddr(listen *string, port int) {
+func CorrectAddr(listen *string, port int) {
 	values := strings.Split(*listen, ":")
 	if len(values) == 1 {
 		*listen = fmt.Sprintf("%s:%d", values[0], port)

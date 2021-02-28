@@ -25,19 +25,19 @@ func DefaultOpenVPN() *OpenVPN {
 		Protocol:  "tcp",
 		Auth:      "xauth",
 		Device:    "tun",
-		RootCa:    "/var/openlan/cert/ca.crt",
-		ServerCrt: "/var/openlan/cert/crt",
-		ServerKey: "/var/openlan/cert/key",
-		DhPem:     "/var/openlan/openvpn/dh.pem",
-		TlsAuth:   "/var/openlan/openvpn/ta.key",
+		RootCa:    VarDir("cert/ca.crt"),
+		ServerCrt: VarDir("cert/crt"),
+		ServerKey: VarDir("cert/key"),
+		DhPem:     VarDir("openvpn/dh.pem"),
+		TlsAuth:   VarDir("openvpn/ta.key"),
 		Cipher:    "AES-256-CBC",
 		Script:    "/usr/bin/openlan",
 	}
 }
 
-func (o *OpenVPN) Right(obj *OpenVPN) {
+func (o *OpenVPN) Correct(obj *OpenVPN) {
 	if o.Directory == "" {
-		o.Directory = "/var/openlan/openvpn/" + o.Network
+		o.Directory = VarDir("openvpn", o.Network)
 	}
 	if o.Auth == "" && obj != nil {
 		o.Auth = obj.Auth

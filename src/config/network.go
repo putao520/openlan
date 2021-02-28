@@ -17,8 +17,10 @@ type Network struct {
 	Acl      string        `json:"acl"`
 }
 
-func (n *Network) Right() {
-	RightBridge(&n.Bridge, n.Name)
+func (n *Network) Correct() {
+	br := &n.Bridge
+	br.Network = n.Name
+	br.Correct()
 	ifAddr := strings.SplitN(n.Bridge.Address, "/", 2)[0]
 	for i := range n.Routes {
 		if n.Routes[i].Metric == 0 {
@@ -34,6 +36,6 @@ func (n *Network) Right() {
 	if n.OpenVPN != nil {
 		n.OpenVPN.Network = n.Name
 		obj := DefaultOpenVPN()
-		n.OpenVPN.Right(obj)
+		n.OpenVPN.Correct(obj)
 	}
 }

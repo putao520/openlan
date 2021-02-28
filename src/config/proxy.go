@@ -3,7 +3,6 @@ package config
 import (
 	"flag"
 	"github.com/danieldin95/openlan-go/src/libol"
-	"runtime"
 )
 
 type SocksProxy struct {
@@ -34,28 +33,23 @@ type Proxy struct {
 func DefaultProxy() *Proxy {
 	obj := &Proxy{
 		Log: Log{
-			File:    "./openlan-proxy.log",
+			File:    LogFile("openlan-proxy.log"),
 			Verbose: libol.INFO,
 		},
 	}
-	obj.Right(nil)
-	if runtime.GOOS == "linux" {
-		obj.Log.File = "/var/log/openlan-proxy.log"
-	} else {
-		obj.Log.File = "./openlan-proxy.log"
-	}
+	obj.Correct(nil)
 	return obj
 }
 
 func NewProxy() *Proxy {
-	px := &Proxy{}
-	px.Flags()
-	px.Parse()
-	px.Initialize()
+	p := &Proxy{}
+	p.Flags()
+	p.Parse()
+	p.Initialize()
 	if Manager.Proxy == nil {
-		Manager.Proxy = px
+		Manager.Proxy = p
 	}
-	return px
+	return p
 }
 
 func (p *Proxy) Flags() {
@@ -72,22 +66,22 @@ func (p *Proxy) Parse() {
 
 func (p *Proxy) Initialize() {
 	if err := p.Load(); err != nil {
-		libol.Error("Switch.Initialize %s", err)
+		libol.Error("Proxy.Initialize %s", err)
 	}
 	p.Default()
 	libol.Debug("Proxy.Initialize %v", p)
 }
 
-func (p *Proxy) Right(obj *Proxy) {
+func (p *Proxy) Correct(obj *Proxy) {
 	for _, h := range p.Http {
 		if h.Cert != nil {
-			h.Cert.Right()
+			h.Cert.Correct()
 		}
 	}
 }
 
 func (p *Proxy) Default() {
-	p.Right(nil)
+	p.Correct(nil)
 }
 
 func (p *Proxy) Load() error {

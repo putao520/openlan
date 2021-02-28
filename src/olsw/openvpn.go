@@ -273,7 +273,6 @@ func (o *OpenVPN) Stop() {
 	}
 	if data, err := ioutil.ReadFile(o.ServerPid()); err != nil {
 		o.out.Debug("OpenVPN.Stop %s", err)
-		return
 	} else {
 		pid := strings.TrimSpace(string(data))
 		cmd := exec.Command("/usr/bin/kill", pid)
@@ -281,6 +280,7 @@ func (o *OpenVPN) Stop() {
 			o.out.Warn("OpenVPN.Stop %s: %s", pid, err)
 		}
 	}
+	o.Clean()
 }
 
 type OpenVPNProfile struct {

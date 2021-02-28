@@ -4,7 +4,6 @@ import (
 	"flag"
 	"github.com/danieldin95/openlan-go/src/libol"
 	"path/filepath"
-	"runtime"
 )
 
 func DefaultPerf() *Perf {
@@ -25,7 +24,7 @@ type Perf struct {
 	User     int `json:"user"`
 }
 
-func (p *Perf) Right(obj *Perf) {
+func (p *Perf) Correct(obj *Perf) {
 	if p.Point == 0 && obj != nil {
 		p.Point = obj.Point
 	}
@@ -45,7 +44,7 @@ func (p *Perf) Right(obj *Perf) {
 
 type Switch struct {
 	Alias     string     `json:"alias"`
-	Perf      *Perf      `json:"perf,omitempty"`
+	Perf      Perf       `json:"perf,omitempty"`
 	Protocol  string     `json:"protocol"` // tcp, tls, udp, kcp, ws and wss.
 	Listen    string     `json:"listen"`
 	Timeout   int        `json:"timeout"`
@@ -58,7 +57,7 @@ type Switch struct {
 	Acl       []*ACL     `json:"acl"`
 	FireWall  []FlowRule `json:"firewall,omitempty"`
 	Inspect   []string   `json:"inspect"`
-	Queue     *Queue     `json:"queue"`
+	Queue     Queue      `json:"queue"`
 	Password  string     `json:"password"`
 	ConfDir   string     `json:"-"`
 	TokenFile string     `json:"-"`
@@ -69,111 +68,101 @@ func DefaultSwitch() *Switch {
 	obj := &Switch{
 		Timeout: 120,
 		Log: Log{
-			File:    "./openlan-switch.log",
+			File:    LogFile("openlan-switch.log"),
 			Verbose: libol.INFO,
 		},
 		Http: &Http{
 			Listen: "0.0.0.0:10000",
 		},
 		Listen: "0.0.0.0:10002",
-		Perf:   DefaultPerf(),
 	}
-	obj.Right(nil)
-	if runtime.GOOS == "linux" {
-		obj.Log.File = "/var/log/openlan-switch.log"
-	} else {
-		obj.Log.File = "./openlan-switch.log"
-	}
+	obj.Correct(nil)
 	return obj
 }
 
 func NewSwitch() *Switch {
-	sw := &Switch{}
-	sw.Flags()
-	sw.Parse()
-	sw.Initialize()
+	s := &Switch{}
+	s.Flags()
+	s.Parse()
+	s.Initialize()
 	if Manager.Switch == nil {
-		Manager.Switch = sw
+		Manager.Switch = s
 	}
-	return sw
+	return s
 }
 
-func (sw *Switch) Flags() {
+func (s *Switch) Flags() {
 	obj := DefaultSwitch()
-	flag.StringVar(&sw.Log.File, "log:file", obj.Log.File, "Configure log file")
-	flag.StringVar(&sw.ConfDir, "conf:dir", obj.ConfDir, "Configure switch's directory")
-	flag.StringVar(&sw.PProf, "prof", obj.PProf, "Http listen for CPU prof")
-	flag.IntVar(&sw.Log.Verbose, "log:level", obj.Log.Verbose, "Configure log level")
+	flag.StringVar(&s.Log.File, "log:file", obj.Log.File, "Configure log file")
+	flag.StringVar(&s.ConfDir, "conf:dir", obj.ConfDir, "Configure switch's directory")
+	flag.StringVar(&s.PProf, "prof", obj.PProf, "Http listen for CPU prof")
+	flag.IntVar(&s.Log.Verbose, "log:level", obj.Log.Verbose, "Configure log level")
 }
 
-func (sw *Switch) Parse() {
+func (s *Switch) Parse() {
 	flag.Parse()
 }
 
-func (sw *Switch) Initialize() {
-	sw.SaveFile = sw.ConfDir + "/switch.json"
-	if err := sw.Load(); err != nil {
+func (s *Switch) Initialize() {
+	s.SaveFile = s.ConfDir + "/switch.json"
+	if err := s.Load(); err != nil {
 		libol.Error("Switch.Initialize %s", err)
 	}
-	sw.Default()
-	libol.Debug("Switch.Initialize %v", sw)
+	s.Default()
+	libol.Debug("Switch.Initialize %v", s)
 }
 
-func (sw *Switch) Right(obj *Switch) {
-	if sw.Alias == "" {
-		sw.Alias = GetAlias()
+func (s *Switch) Correct(obj *Switch) {
+	if s.Alias == "" {
+		s.Alias = GetAlias()
 	}
-	RightAddr(&sw.Listen, 10002)
-	if sw.Http != nil {
-		RightAddr(&sw.Http.Listen, 10000)
+	CorrectAddr(&s.Listen, 10002)
+	if s.Http != nil {
+		CorrectAddr(&s.Http.Listen, 10000)
 	}
-	libol.Debug("Proxy.Right Http %v", sw.Http)
-	sw.TokenFile = sw.ConfDir + "/token"
-	sw.SaveFile = sw.ConfDir + "/switch.json"
-	if sw.Cert != nil {
-		sw.Cert.Right()
+	libol.Debug("Proxy.Correct Http %v", s.Http)
+	s.TokenFile = s.ConfDir + "/token"
+	s.SaveFile = s.ConfDir + "/switch.json"
+	if s.Cert != nil {
+		s.Cert.Correct()
 		// default is tls if cert configured
-		if sw.Protocol == "" {
-			sw.Protocol = "tls"
+		if s.Protocol == "" {
+			s.Protocol = "tls"
 		}
 	}
-	if sw.Perf != nil {
-		obj := DefaultPerf()
-		sw.Perf.Right(obj)
-	} else {
-		sw.Perf = DefaultPerf()
-	}
-	if sw.Password == "" {
-		sw.Password = sw.ConfDir + "/password"
+	perf := &s.Perf
+	perf.Correct(DefaultPerf())
+	if s.Password == "" {
+		s.Password = s.ConfDir + "/password"
 	}
 }
 
-func (sw *Switch) LoadNetwork() {
-	files, err := filepath.Glob(sw.ConfDir + "/network/*.json")
+func (s *Switch) LoadNetwork() {
+	files, err := filepath.Glob(s.ConfDir + "/network/*.json")
 	if err != nil {
 		libol.Error("Switch.LoadNetwork %s", err)
 	}
 	for _, k := range files {
 		obj := &Network{
-			Alias: sw.Alias,
+			Alias: s.Alias,
 		}
 		if err := libol.UnmarshalLoad(obj, k); err != nil {
 			libol.Error("Switch.LoadNetwork %s", err)
 			continue
 		}
-		sw.Network = append(sw.Network, obj)
+		s.Network = append(s.Network, obj)
 	}
-	for _, obj := range sw.Network {
+	for _, obj := range s.Network {
 		for _, link := range obj.Links {
 			link.Default()
 		}
-		obj.Right()
-		obj.Alias = sw.Alias
+		obj.Correct()
+		obj.Alias = s.Alias
 	}
 }
 
-func (sw *Switch) LoadAcl() {
-	files, err := filepath.Glob(sw.ConfDir + "/acl/*.json")
+func (s *Switch) LoadAcl() {
+	files, err := filepath.Glob(s.ConfDir + "/acl/*.json")
 	if err != nil {
 		libol.Error("Switch.LoadAcl %s", err)
 	}
@@ -183,35 +172,33 @@ func (sw *Switch) LoadAcl() {
 			libol.Error("Switch.LoadAcl %s", err)
 			continue
 		}
-		sw.Acl = append(sw.Acl, obj)
+		s.Acl = append(s.Acl, obj)
 	}
-	for _, obj := range sw.Acl {
+	for _, obj := range s.Acl {
 		for _, rule := range obj.Rules {
-			rule.Right()
+			rule.Correct()
 		}
 	}
 }
 
-func (sw *Switch) Default() {
+func (s *Switch) Default() {
 	obj := DefaultSwitch()
-	sw.Right(obj)
-	if sw.Network == nil {
-		sw.Network = make([]*Network, 0, 32)
+	s.Correct(obj)
+	if s.Network == nil {
+		s.Network = make([]*Network, 0, 32)
 	}
-	if sw.Timeout == 0 {
-		sw.Timeout = obj.Timeout
+	if s.Timeout == 0 {
+		s.Timeout = obj.Timeout
 	}
-	if sw.Crypt != nil {
-		sw.Crypt.Default()
+	if s.Crypt != nil {
+		s.Crypt.Default()
 	}
-	if sw.Queue == nil {
-		sw.Queue = &Queue{}
-	}
-	sw.Queue.Default()
-	sw.LoadAcl()
-	sw.LoadNetwork()
+	queue := &s.Queue
+	queue.Default()
+	s.LoadAcl()
+	s.LoadNetwork()
 }
 
-func (sw *Switch) Load() error {
-	return libol.UnmarshalLoad(sw, sw.SaveFile)
+func (s *Switch) Load() error {
+	return libol.UnmarshalLoad(s, s.SaveFile)
 }

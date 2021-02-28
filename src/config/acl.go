@@ -15,5 +15,5 @@ type ACLRule struct {
 	Action  string `json:"action"`
 }
 
-func (ru *ACLRule) Right() {
+func (ru *ACLRule) Correct() {
 }

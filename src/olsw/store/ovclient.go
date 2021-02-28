@@ -2,6 +2,7 @@ package store
 
 import (
 	"bufio"
+	"github.com/danieldin95/openlan-go/src/config"
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/schema"
 	"io"
@@ -106,5 +107,5 @@ func (o *_ovClient) List(name string) <-chan *schema.OvClient {
 }
 
 var OvClient = _ovClient{
-	WorkDir: "/var/openlan/openvpn/",
+	WorkDir: config.VarDir("openvpn"),
 }
