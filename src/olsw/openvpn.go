@@ -214,7 +214,7 @@ func (o *OpenVPN) Clean() {
 }
 
 func (o *OpenVPN) Initialize() {
-	if !o.ValidCfg() {
+	if !o.ValidConf() {
 		return
 	}
 	o.Clean()
@@ -235,7 +235,7 @@ func (o *OpenVPN) Initialize() {
 	}
 }
 
-func (o *OpenVPN) ValidCfg() bool {
+func (o *OpenVPN) ValidConf() bool {
 	if o.Cfg == nil {
 		return false
 	}
@@ -246,7 +246,7 @@ func (o *OpenVPN) ValidCfg() bool {
 }
 
 func (o *OpenVPN) Start() {
-	if !o.ValidCfg() {
+	if !o.ValidConf() {
 		return
 	}
 	log, err := libol.CreateFile(o.ServerLog())
@@ -268,7 +268,7 @@ func (o *OpenVPN) Start() {
 }
 
 func (o *OpenVPN) Stop() {
-	if !o.ValidCfg() {
+	if !o.ValidConf() {
 		return
 	}
 	if data, err := ioutil.ReadFile(o.ServerPid()); err != nil {

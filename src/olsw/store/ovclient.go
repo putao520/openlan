@@ -7,13 +7,14 @@ import (
 	"github.com/danieldin95/openlan-go/src/schema"
 	"io"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 )
 
 type _ovClient struct {
-	WorkDir string
+	Directory string
 }
 
 func ParseInt64(value string) (int64, error) {
@@ -67,8 +68,13 @@ func (o *_ovClient) scanStatus(reader io.Reader) (map[string]*schema.OvClient, e
 				clients[name] = client
 			}
 		case "routing":
-			// TODO
-			continue
+			if len(columns) == 4 {
+				name := columns[1]
+				address := columns[0]
+				if client, ok := clients[name]; ok {
+					client.Address = address
+				}
+			}
 		}
 	}
 	if err := scanner.Err(); err != nil {
@@ -77,8 +83,12 @@ func (o *_ovClient) scanStatus(reader io.Reader) (map[string]*schema.OvClient, e
 	return clients, nil
 }
 
+func (o *_ovClient) statusFile(name string) string {
+	return filepath.Join(o.Directory, name, "server.status")
+}
+
 func (o *_ovClient) readStatus(network string) map[string]*schema.OvClient {
-	reader, err := os.Open(o.WorkDir + network + "/server.status")
+	reader, err := os.Open(o.statusFile(network))
 	if err != nil {
 		libol.Debug("_ovClient.readStatus %v", err)
 		return nil
@@ -107,5 +117,5 @@ func (o *_ovClient) List(name string) <-chan *schema.OvClient {
 }
 
 var OvClient = _ovClient{
-	WorkDir: config.VarDir("openvpn"),
+	Directory: config.VarDir("openvpn"),
 }

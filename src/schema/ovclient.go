@@ -13,4 +13,5 @@ type OvClient struct {
 	ErrPkt    string `json:"errors"`
 	State     string `json:"state"`
 	AliveTime int64  `json:"aliveTime"`
+	Address   string `json:"address"`
 }

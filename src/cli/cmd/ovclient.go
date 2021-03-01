@@ -19,9 +19,9 @@ func (u OvClient) Url(prefix, name string) string {
 
 func (u OvClient) Tmpl() string {
 	return `# total {{ len . }}
-{{ps -8 "alive"}} {{ps -15 "name"}} {{ps -22 "remote"}} {{ ps -6 "state"}}
+{{ps -8 "alive"}} {{ps -16 "address"}} {{ps -15 "name"}} {{ps -22 "remote"}} {{ ps -6 "state"}}
 {{- range . }}
-{{pt .AliveTime | ps -8}} {{ps -15 .Name}} {{ps -22 .Remote}} {{ ps -6 .State}}
+{{pt .AliveTime | ps -8}} {{ps -16 .Address}} {{ps -15 .Name}} {{ps -22 .Remote}} {{ ps -6 .State}}
 {{- end }}
 `
 }
