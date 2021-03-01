@@ -7,10 +7,10 @@ type ACL struct {
 
 type ACLRule struct {
 	Name    string `json:"name"`
-	SrcIp   string `json:"source"`
-	DstIp   string `json:"dest"`
+	SrcIp   string `json:"src"`
+	DstIp   string `json:"dst"`
 	Proto   string `json:"proto"`
-	SrcPort int    `json:"sourcePort"`
-	DstPort int    `json:"destPort"`
+	SrcPort int    `json:"sport"`
+	DstPort int    `json:"dport"`
 	Action  string `json:"action"`
 }
