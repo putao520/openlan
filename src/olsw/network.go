@@ -74,7 +74,7 @@ func (w *NetworkWorker) Initialize() {
 			w.out.Warn("NetworkWorker.Initialize: %s noNextHop", rt.Prefix)
 			continue
 		}
-		rte := models.NewRoute(rt.Prefix, rt.NextHop)
+		rte := models.NewRoute(rt.Prefix, rt.NextHop, rt.Mode)
 		if rt.Metric > 0 {
 			rte.Metric = rt.Metric
 		}
@@ -173,6 +173,9 @@ func (w *NetworkWorker) UnLoadRoutes() {
 
 func (w *NetworkWorker) UpBridge(cfg config.Bridge) {
 	master := w.bridge
+	// new it and configure address
+	master.Open(cfg.Address)
+	// configure stp
 	if cfg.Stp == "on" {
 		if err := master.Stp(true); err != nil {
 			w.out.Warn("NetworkWorker.UpBridge: Stp %s", err)
@@ -180,12 +183,11 @@ func (w *NetworkWorker) UpBridge(cfg config.Bridge) {
 	} else {
 		_ = master.Stp(false)
 	}
+	// configure forward delay
 	if err := master.Delay(cfg.Delay); err != nil {
 		w.out.Warn("NetworkWorker.UpBridge: Delay %s", err)
 	}
 	w.ConnectPeer(cfg)
-	// ensure address configure not on puppet.
-	w.bridge.Open(cfg.Address)
 }
 
 func (w *NetworkWorker) ConnectPeer(cfg config.Bridge) {

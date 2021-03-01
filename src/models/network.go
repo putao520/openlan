@@ -11,13 +11,15 @@ type Route struct {
 	Prefix  string `json:"prefix"`
 	NextHop string `json:"nexthop"`
 	Metric  int    `json:"metric"`
+	Mode    string `json:"mode"`
 }
 
-func NewRoute(prefix string, nexthop string) (this *Route) {
+func NewRoute(prefix string, nexthop, mode string) (this *Route) {
 	this = &Route{
 		Prefix:  prefix,
 		NextHop: nexthop,
 		Metric:  250,
+		Mode:    mode,
 	}
 	return
 }
