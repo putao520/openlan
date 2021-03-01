@@ -21,7 +21,24 @@ func ParseInt64(value string) (int64, error) {
 	return strconv.ParseInt(value, 10, 64)
 }
 
-func (o *_ovClient) scanStatus(reader io.Reader) (map[string]*schema.OvClient, error) {
+func (o *_ovClient) GetDevice(name string) string {
+	sw := config.Manager.Switch
+	if sw == nil {
+		return ""
+	}
+	for _, n := range sw.Network {
+		vpn := n.OpenVPN
+		if vpn == nil {
+			continue
+		}
+		if vpn.Network == name {
+			return vpn.Device
+		}
+	}
+	return ""
+}
+
+func (o *_ovClient) scanStatus(network string, reader io.Reader) (map[string]*schema.OvClient, error) {
 	readAt := "header"
 	offset := 0
 	scanner := bufio.NewScanner(reader)
@@ -53,6 +70,7 @@ func (o *_ovClient) scanStatus(reader io.Reader) (map[string]*schema.OvClient, e
 					Name:   columns[0],
 					Remote: columns[1],
 					State:  "success",
+					Device: o.GetDevice(network),
 				}
 				if rxc, err := ParseInt64(columns[2]); err == nil {
 					client.RxBytes = rxc
@@ -94,7 +112,7 @@ func (o *_ovClient) readStatus(network string) map[string]*schema.OvClient {
 		return nil
 	}
 	defer reader.Close()
-	if clients, err := o.scanStatus(reader); err != nil {
+	if clients, err := o.scanStatus(network, reader); err != nil {
 		libol.Warn("_ovClient.readStatus %v", err)
 		return nil
 	} else {
