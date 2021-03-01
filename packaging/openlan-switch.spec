@@ -29,6 +29,7 @@ mkdir -p %{buildroot}/etc/openlan/switch/acl
 cp %_source_dir/packaging/resource/acl-1.json.example %{buildroot}/etc/openlan/switch/acl
 mkdir -p %{buildroot}/etc/openlan/switch/network
 cp %_source_dir/packaging/resource/network.json.example %{buildroot}/etc/openlan/switch/network
+cp %_source_dir/packaging/resource/default.json.example %{buildroot}/etc/openlan/switch/network
 mkdir -p %{buildroot}/etc/sysconfig/openlan
 cp %_source_dir/packaging/resource/switch.cfg %{buildroot}/etc/sysconfig/openlan
 mkdir -p %{buildroot}/etc/sysctl.d

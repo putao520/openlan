@@ -38,9 +38,9 @@
         }
     ],
     "openvpn": {
-        "protocol": "udp",
+        "protocol": "tcp",
         "listen": "0.0.0.0:11194",
         "subnet": "172.32.194.0/24"
     },
-    "acl": "acl-1"
+    "acl": "acl-100"
 }
