@@ -9,7 +9,6 @@
     "username": "hi",
     "password": "12345",
     "protocol": "tls",
-    "cert": {
-        "insecure": true
-    }
+    "cert": { "insecure": true },
+    "crypt": { "secret": "12345^" }
 }
