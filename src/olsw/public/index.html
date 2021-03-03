@@ -197,7 +197,7 @@
                         <td><span class="{{ .State }}">{{ .State }}</span></td>
                     </tr>
                 {{ end }}
-                {{ range .OvClients }}
+                {{ range .Clients }}
                     <tr>
                         <td>{{ .Name }}</td>
                         <td>{{ prettyTime .AliveTime }}</td>

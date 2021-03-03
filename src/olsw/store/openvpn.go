@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-type _ovClient struct {
+type _VPNClient struct {
 	Directory string
 }
 
@@ -21,7 +21,7 @@ func ParseInt64(value string) (int64, error) {
 	return strconv.ParseInt(value, 10, 64)
 }
 
-func (o *_ovClient) GetDevice(name string) string {
+func (o *_VPNClient) GetDevice(name string) string {
 	sw := config.Manager.Switch
 	if sw == nil {
 		return ""
@@ -38,11 +38,11 @@ func (o *_ovClient) GetDevice(name string) string {
 	return ""
 }
 
-func (o *_ovClient) scanStatus(network string, reader io.Reader) (map[string]*schema.OvClient, error) {
+func (o *_VPNClient) scanStatus(network string, reader io.Reader) (map[string]*schema.VPNClient, error) {
 	readAt := "header"
 	offset := 0
 	scanner := bufio.NewScanner(reader)
-	clients := make(map[string]*schema.OvClient, 32)
+	clients := make(map[string]*schema.VPNClient, 32)
 	for scanner.Scan() {
 		line := scanner.Text()
 		if line == "OpenVPN CLIENT LIST" {
@@ -66,7 +66,7 @@ func (o *_ovClient) scanStatus(network string, reader io.Reader) (map[string]*sc
 		case "common":
 			if len(columns) == 5 {
 				name := columns[0]
-				client := &schema.OvClient{
+				client := &schema.VPNClient{
 					Name:   columns[0],
 					Remote: columns[1],
 					State:  "success",
@@ -101,27 +101,27 @@ func (o *_ovClient) scanStatus(network string, reader io.Reader) (map[string]*sc
 	return clients, nil
 }
 
-func (o *_ovClient) statusFile(name string) string {
+func (o *_VPNClient) statusFile(name string) string {
 	return filepath.Join(o.Directory, name, "server.status")
 }
 
-func (o *_ovClient) readStatus(network string) map[string]*schema.OvClient {
+func (o *_VPNClient) readStatus(network string) map[string]*schema.VPNClient {
 	reader, err := os.Open(o.statusFile(network))
 	if err != nil {
-		libol.Debug("_ovClient.readStatus %v", err)
+		libol.Debug("_VPNClient.readStatus %v", err)
 		return nil
 	}
 	defer reader.Close()
 	if clients, err := o.scanStatus(network, reader); err != nil {
-		libol.Warn("_ovClient.readStatus %v", err)
+		libol.Warn("_VPNClient.readStatus %v", err)
 		return nil
 	} else {
 		return clients
 	}
 }
 
-func (o *_ovClient) List(name string) <-chan *schema.OvClient {
-	c := make(chan *schema.OvClient, 128)
+func (o *_VPNClient) List(name string) <-chan *schema.VPNClient {
+	c := make(chan *schema.VPNClient, 128)
 
 	clients := o.readStatus(name)
 	go func() {
@@ -134,6 +134,6 @@ func (o *_ovClient) List(name string) <-chan *schema.OvClient {
 	return c
 }
 
-var OvClient = _ovClient{
+var VPNClient = _VPNClient{
 	Directory: config.VarDir("openvpn"),
 }

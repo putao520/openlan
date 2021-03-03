@@ -7,25 +7,25 @@ import (
 	"net/http"
 )
 
-type OvClient struct {
+type VPNClient struct {
 }
 
-func (h OvClient) Router(router *mux.Router) {
-	router.HandleFunc("/api/ovclient", h.List).Methods("GET")
-	router.HandleFunc("/api/ovclient/{id}", h.List).Methods("GET")
+func (h VPNClient) Router(router *mux.Router) {
+	router.HandleFunc("/api/vpn/client", h.List).Methods("GET")
+	router.HandleFunc("/api/vpn/client/{id}", h.List).Methods("GET")
 }
 
-func (h OvClient) List(w http.ResponseWriter, r *http.Request) {
+func (h VPNClient) List(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["id"]
 
-	clients := make([]schema.OvClient, 0, 1024)
+	clients := make([]schema.VPNClient, 0, 1024)
 	if name == "" {
 		for n := range store.Network.List() {
 			if n == nil {
 				break
 			}
-			for client := range store.OvClient.List(n.Name) {
+			for client := range store.VPNClient.List(n.Name) {
 				if client == nil {
 					break
 				}
@@ -33,7 +33,7 @@ func (h OvClient) List(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	} else {
-		for client := range store.OvClient.List(name) {
+		for client := range store.VPNClient.List(name) {
 			if client == nil {
 				break
 			}

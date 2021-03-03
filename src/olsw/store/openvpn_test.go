@@ -6,15 +6,15 @@ import (
 	"time"
 )
 
-func TestOvClient_ListStatus(t *testing.T) {
+func Test_VPNClient_ListStatus(t *testing.T) {
 	fmt.Println(time.Now().Unix())
-	for v := range OvClient.List("yunex") {
+	for v := range VPNClient.List("yunex") {
 		if v == nil {
 			break
 		}
 		fmt.Println(v)
 	}
-	for v := range OvClient.List("guest") {
+	for v := range VPNClient.List("guest") {
 		if v == nil {
 			break
 		}

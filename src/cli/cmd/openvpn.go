@@ -5,19 +5,19 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-type OvClient struct {
+type VPNClient struct {
 	Cmd
 }
 
-func (u OvClient) Url(prefix, name string) string {
+func (u VPNClient) Url(prefix, name string) string {
 	if name == "" {
-		return prefix + "/api/ovclient"
+		return prefix + "/api/vpn/client"
 	} else {
-		return prefix + "/api/ovclient/" + name
+		return prefix + "/api/vpn/client/" + name
 	}
 }
 
-func (u OvClient) Tmpl() string {
+func (u VPNClient) Tmpl() string {
 	return `# total {{ len . }}
 {{ps -8 "alive"}} {{ps -16 "address"}} {{ ps -13 "device" }} {{ps -15 "name"}} {{ps -22 "remote"}} {{ ps -6 "state"}}
 {{- range . }}
@@ -26,20 +26,20 @@ func (u OvClient) Tmpl() string {
 `
 }
 
-func (u OvClient) List(c *cli.Context) error {
+func (u VPNClient) List(c *cli.Context) error {
 	url := u.Url(c.String("url"), c.String("network"))
 	clt := u.NewHttp(c.String("token"))
-	var items []schema.OvClient
+	var items []schema.VPNClient
 	if err := clt.GetJSON(url, &items); err != nil {
 		return err
 	}
 	return u.Out(items, c.String("format"), u.Tmpl())
 }
 
-func (u OvClient) Commands(app *cli.App) cli.Commands {
+func (u VPNClient) Commands(app *cli.App) cli.Commands {
 	return append(app.Commands, &cli.Command{
-		Name:    "openvpn",
-		Aliases: []string{"ov"},
+		Name:    "client",
+		Aliases: []string{"cl"},
 		Usage:   "Connected client by OpenVPN",
 		Subcommands: []*cli.Command{
 			{

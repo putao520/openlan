@@ -1,6 +1,6 @@
 package schema
 
-type OvClient struct {
+type VPNClient struct {
 	Uptime    int64  `json:"uptime"`
 	Name      string `json:"name"`
 	UUID      string `json:"uuid"`

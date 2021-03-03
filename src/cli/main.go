@@ -90,7 +90,7 @@ func main() {
 	app.Commands = cmd.Lease{}.Commands(app)
 	app.Commands = cmd.Config{}.Commands(app)
 	app.Commands = cmd.Point{}.Commands(app)
-	app.Commands = cmd.OvClient{}.Commands(app)
+	app.Commands = cmd.VPNClient{}.Commands(app)
 	app.Commands = cmd.Link{}.Commands(app)
 	app.Commands = cmd.Server{}.Commands(app)
 	app.Commands = cmd.Network{}.Commands(app)
