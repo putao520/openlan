@@ -12,6 +12,7 @@ import (
 	"github.com/danieldin95/openlan-go/src/olsw/store"
 	"net"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -266,7 +267,7 @@ func (v *Switch) preApplication() {
 }
 
 func (v *Switch) preController() {
-	ctrls.Load(v.cfg.ConfDir + "/ctrl.json")
+	ctrls.Load(filepath.Join(v.cfg.ConfDir, "ctrl.json"))
 	if ctrls.Ctrl.Name == "" {
 		ctrls.Ctrl.Name = v.cfg.Alias
 	}

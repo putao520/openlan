@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"text/template"
 )
@@ -138,42 +139,42 @@ func (o *OpenVPN) ServerConf() string {
 	if o.Cfg == nil {
 		return ""
 	}
-	return o.Cfg.Directory + "/server.conf"
+	return filepath.Join(o.Cfg.Directory, "server.conf")
 }
 
 func (o *OpenVPN) ClientConf() string {
 	if o.Cfg == nil {
 		return ""
 	}
-	return o.Cfg.Directory + "/client.ovpn"
+	return filepath.Join(o.Cfg.Directory, "client.ovpn")
 }
 
 func (o *OpenVPN) ServerLog() string {
 	if o.Cfg == nil {
 		return ""
 	}
-	return o.Cfg.Directory + "/server.log"
+	return filepath.Join(o.Cfg.Directory, "server.log")
 }
 
 func (o *OpenVPN) ServerPid() string {
 	if o.Cfg == nil {
 		return ""
 	}
-	return o.Cfg.Directory + "/server.pid"
+	return filepath.Join(o.Cfg.Directory, "server.pid")
 }
 
 func (o *OpenVPN) ServerStats() string {
 	if o.Cfg == nil {
 		return ""
 	}
-	return o.Cfg.Directory + "/server.stats"
+	return filepath.Join(o.Cfg.Directory, "server.stats")
 }
 
 func (o *OpenVPN) IppTxt() string {
 	if o.Cfg == nil {
 		return ""
 	}
-	return o.Cfg.Directory + "/ipp.txt"
+	return filepath.Join(o.Cfg.Directory, "ipp.txt")
 }
 
 func (o *OpenVPN) WriteConf(path string) error {
@@ -257,12 +258,14 @@ func (o *OpenVPN) Start() {
 	libol.Go(func() {
 		defer log.Close()
 		args := []string{
-			"--cd", o.Directory(), "--config", o.ServerConf(), "--writepid", o.ServerPid(),
+			"--cd", o.Directory(),
+			"--config", o.ServerConf(),
+			"--writepid", o.ServerPid(),
 		}
 		cmd := exec.Command(o.Path(), args...)
 		cmd.Stdout = log
 		if err := cmd.Run(); err != nil {
-			o.out.Error("OpenVPN.Start %s, and see log %s", err, o.ServerLog())
+			o.out.Error("OpenVPN.Start %s, and log in %s", err, o.ServerLog())
 		}
 	})
 }

@@ -104,7 +104,7 @@ func (s *Switch) Parse() {
 }
 
 func (s *Switch) Initialize() {
-	s.SaveFile = s.ConfDir + "/switch.json"
+	s.SaveFile = filepath.Join(s.ConfDir, "switch.json")
 	if err := s.Load(); err != nil {
 		libol.Error("Switch.Initialize %s", err)
 	}
@@ -121,8 +121,8 @@ func (s *Switch) Correct(obj *Switch) {
 		CorrectAddr(&s.Http.Listen, 10000)
 	}
 	libol.Debug("Proxy.Correct Http %v", s.Http)
-	s.TokenFile = s.ConfDir + "/token"
-	s.SaveFile = s.ConfDir + "/switch.json"
+	s.TokenFile = filepath.Join(s.ConfDir, "token")
+	s.SaveFile = filepath.Join(s.ConfDir, "switch.json")
 	if s.Cert != nil {
 		s.Cert.Correct()
 		// default is tls if cert configured
@@ -133,12 +133,12 @@ func (s *Switch) Correct(obj *Switch) {
 	perf := &s.Perf
 	perf.Correct(DefaultPerf())
 	if s.Password == "" {
-		s.Password = s.ConfDir + "/password"
+		s.Password = filepath.Join(s.ConfDir, "password")
 	}
 }
 
 func (s *Switch) LoadNetwork() {
-	files, err := filepath.Glob(s.ConfDir + "/network/*.json")
+	files, err := filepath.Glob(filepath.Join(s.ConfDir, "network", "*.json"))
 	if err != nil {
 		libol.Error("Switch.LoadNetwork %s", err)
 	}
@@ -162,7 +162,7 @@ func (s *Switch) LoadNetwork() {
 }
 
 func (s *Switch) LoadAcl() {
-	files, err := filepath.Glob(s.ConfDir + "/acl/*.json")
+	files, err := filepath.Glob(filepath.Join(s.ConfDir, "acl", "*.json"))
 	if err != nil {
 		libol.Error("Switch.LoadAcl %s", err)
 	}
