@@ -140,6 +140,7 @@ func (h *Http) LoadRouter() {
 	api.Server{Switcher: h.switcher}.Router(router)
 	api.Device{}.Router(router)
 	api.VPNClient{}.Router(router)
+	api.PProf{}.Router(router)
 }
 
 func (h *Http) LoadToken() error {

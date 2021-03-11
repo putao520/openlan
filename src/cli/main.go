@@ -94,6 +94,7 @@ func main() {
 	app.Commands = cmd.Link{}.Commands(app)
 	app.Commands = cmd.Server{}.Commands(app)
 	app.Commands = cmd.Network{}.Commands(app)
+	app.Commands = cmd.PProf{}.Commands(app)
 
 	err := app.Run(os.Args)
 	if err != nil {

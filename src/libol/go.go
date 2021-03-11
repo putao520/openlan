@@ -42,6 +42,7 @@ func Go(call func()) {
 type PProf struct {
 	File   string
 	Listen string
+	Error  error
 }
 
 func (p *PProf) Start() {
@@ -52,6 +53,7 @@ func (p *PProf) Start() {
 		Info("PProf.Start %s", p.Listen)
 		if err := http.ListenAndServe(p.Listen, nil); err != nil {
 			Error("PProf.Start %s", err)
+			p.Error = err
 		}
 	})
 }

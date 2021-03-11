@@ -69,5 +69,7 @@ golang.org/x/net/internal/socket
 golang.org/x/sys/unix
 golang.org/x/sys/windows/registry
 golang.org/x/sys/windows
+# golang.org/x/time v0.0.0 => github.com/golang/time v0.0.0-20210220033141-f8bda1e9f3ba
+golang.org/x/time/rate
 # gopkg.in/yaml.v2 v2.2.3
 gopkg.in/yaml.v2

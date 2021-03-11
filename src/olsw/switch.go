@@ -454,10 +454,6 @@ func (v *Switch) Start() {
 	defer v.lock.Unlock()
 
 	v.out.Debug("Switch.Start")
-	if v.cfg.PProf != "" {
-		f := libol.PProf{Listen: v.cfg.PProf}
-		f.Start()
-	}
 	// firstly, start network.
 	for _, w := range v.worker {
 		w.Start(v)
