@@ -63,29 +63,33 @@ func (f *FireWall) Initialize() {
 		Table: network.TNat,
 		Name:  OLCPost,
 	})
-	libol.Info("FireWall.Initialize total %d chains", len(f.chains))
+	libol.Info("FireWall.Initialize %d chains", len(f.chains))
 	// Enable chains
 	f.AddRule(network.IpRule{
+		Order: "-I",
 		Table: network.TFilter,
 		Chain: network.CInput,
 		Jump:  OLCInput,
 	})
 	f.AddRule(network.IpRule{
+		Order: "-I",
 		Table: network.TFilter,
 		Chain: network.CForward,
 		Jump:  OLCForward,
 	})
 	f.AddRule(network.IpRule{
+		Order: "-I",
 		Table: network.TFilter,
 		Chain: network.COutput,
 		Jump:  OLCOutput,
 	})
 	f.AddRule(network.IpRule{
+		Order: "-I",
 		Table: network.TNat,
 		Chain: network.CPostRoute,
 		Jump:  OLCPost,
 	})
-	libol.Info("FireWall.Initialize total %d rules", len(f.rules))
+	libol.Info("FireWall.Initialize %d rules", len(f.rules))
 }
 
 func (f *FireWall) AddChain(chain network.IpChain) {
@@ -99,7 +103,11 @@ func (f *FireWall) AddRule(rule network.IpRule) {
 func (f *FireWall) ApplyRule(rule network.IpRule) error {
 	f.lock.Lock()
 	defer f.lock.Unlock()
-	if _, err := rule.Opr("-I"); err != nil {
+	order := rule.Order
+	if order == "" {
+		order = "-A"
+	}
+	if _, err := rule.Opr(order); err != nil {
 		return err
 	}
 	f.rules = f.rules.Add(rule)
@@ -113,7 +121,11 @@ func (f *FireWall) install() {
 		}
 	}
 	for _, r := range f.rules {
-		if _, err := r.Opr("-I"); err != nil {
+		order := r.Order
+		if order == "" {
+			order = "-A"
+		}
+		if _, err := r.Opr(order); err != nil {
 			libol.Error("FireWall.install %s", err)
 		}
 	}

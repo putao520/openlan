@@ -24,7 +24,7 @@ func DefaultOpenVPN() *OpenVPN {
 	return &OpenVPN{
 		Protocol:  "tcp",
 		Auth:      "xauth",
-		Device:    "tun",
+		Device:    "tun0",
 		RootCa:    VarDir("cert/ca.crt"),
 		ServerCrt: VarDir("cert/crt"),
 		ServerKey: VarDir("cert/key"),
@@ -44,9 +44,9 @@ func (o *OpenVPN) Correct(obj *OpenVPN) {
 	}
 	if o.Device == "" {
 		if strings.Contains(o.Listen, ":") {
-			o.Device = "tun-" + strings.SplitN(o.Listen, ":", 2)[1]
+			o.Device = "tun" + strings.SplitN(o.Listen, ":", 2)[1]
 		} else {
-			o.Device = "tun"
+			o.Device = "tun0"
 		}
 	}
 	if o.Protocol == "" && obj != nil {

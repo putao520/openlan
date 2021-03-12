@@ -265,7 +265,7 @@ func (o *OpenVPN) Start() {
 		cmd := exec.Command(o.Path(), args...)
 		cmd.Stdout = log
 		if err := cmd.Run(); err != nil {
-			o.out.Error("OpenVPN.Start %s, and log in %s", err, o.ServerLog())
+			o.out.Error("OpenVPN.Start %s", err)
 		}
 	})
 }

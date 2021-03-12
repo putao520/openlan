@@ -24,6 +24,7 @@ func (u User) Url(prefix, name string) string {
 func (u User) Add(c *cli.Context) error {
 	username := c.String("name")
 	user := &schema.User{
+		Name:     username,
 		Password: c.String("password"),
 		Role:     c.String("role"),
 	}
@@ -33,8 +34,8 @@ func (u User) Add(c *cli.Context) error {
 	if user.Password == "" {
 		return libol.NewErr("password is empty")
 	}
-	if strings.Contains(username, "@") {
-		return libol.NewErr("name not contains '@' for network")
+	if !strings.Contains(username, "@") {
+		return libol.NewErr("name not contains network")
 	}
 	values := strings.SplitN(username, "@", 2)
 	user.Name = values[0]

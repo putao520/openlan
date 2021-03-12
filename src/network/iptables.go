@@ -35,6 +35,7 @@ type IpRule struct {
 	Output   string
 	Comment  string
 	Jump     string
+	Order    string
 }
 
 type IpRules []IpRule
