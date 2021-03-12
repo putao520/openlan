@@ -9,11 +9,11 @@ import (
 )
 
 const (
-	OLCInput   = "openlan_IN"
-	OLCForward = "openlan_FWD"
-	OLCOutput  = "openlan_OUT"
-	OLCPre     = "openlan_PRE"
-	OLCPost    = "openlan_POST"
+	OLCInput   = "INPUT_direct"
+	OLCForward = "FORWARD_direct"
+	OLCOutput  = "OUTPUT_direct"
+	OLCPre     = "PREROUTING_direct"
+	OLCPost    = "POSTROUTING_direct"
 )
 
 type FireWall struct {
