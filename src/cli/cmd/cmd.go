@@ -164,6 +164,14 @@ func (c Cmd) OutTable(data interface{}, tmpl string) error {
 		"pt": func(value int64) string {
 			return libol.PrettyTime(value)
 		},
+		"p2": func(space int, format, key1, key2 string) string {
+			value := fmt.Sprintf(format, key1, key2)
+			format = "%" + strconv.Itoa(space) + "s"
+			if space < 0 {
+				format = "%-" + strconv.Itoa(space) + "s"
+			}
+			return fmt.Sprintf(format, value)
+		},
 	}
 	if tmpl, err := template.New("main").Funcs(funcMap).Parse(tmpl); err != nil {
 		return err
