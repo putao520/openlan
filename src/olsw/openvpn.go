@@ -353,7 +353,7 @@ func NewOpenVpnProfileFromConf(cfg *config.OpenVPN) *OpenVPNProfile {
 	data := &OpenVPNProfile{
 		Remote:   strings.ReplaceAll(cfg.Listen, ":", " "),
 		Cipher:   cfg.Cipher,
-		Device:   cfg.Device,
+		Device:   cfg.Device[:3],
 		Protocol: cfg.Protocol,
 	}
 	if ctx, err := ioutil.ReadFile(cfg.RootCa); err == nil {
