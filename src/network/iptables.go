@@ -19,6 +19,7 @@ const (
 	CPostRoute = "POSTROUTING"
 	CPreRoute  = "PREROUTING"
 	CMasq      = "MASQUERADE"
+	CNoTrk     = "NOTRACK"
 )
 
 type IpRule struct {

@@ -185,15 +185,17 @@ func (v *Switch) preWorker(w *NetworkWorker) {
 }
 
 func (v *Switch) enableAcl(acl, input string) {
-	if acl == "" || input == "" {
+	if input == "" {
 		return
 	}
-	v.firewall.AddRule(network.IpRule{
-		Table: network.TRaw,
-		Chain: network.CPreRoute,
-		Input: input,
-		Jump:  acl,
-	})
+	if acl != "" {
+		v.firewall.AddRule(network.IpRule{
+			Table: network.TRaw,
+			Chain: network.CPreRoute,
+			Input: input,
+			Jump:  acl,
+		})
+	}
 }
 
 func (v *Switch) preNetwork() {

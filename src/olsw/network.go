@@ -231,18 +231,20 @@ func (w *NetworkWorker) Start(v api.Switcher) {
 	w.out.Info("NetworkWorker.Start")
 	brCfg := w.cfg.Bridge
 	w.UpBridge(brCfg)
-	if w.cfg.Acl != "" {
-		if err := w.bridge.CallIptables(1); err != nil {
-			w.out.Warn("NetworkWorker.Start: CallIptables %s", err)
-		}
+	call := 1
+	if w.cfg.Acl == "" {
+		call = 0
+	}
+	if err := w.bridge.CallIptables(call); err != nil {
+		w.out.Warn("NetworkWorker.Start: CallIptables %s", err)
 	}
 	w.uuid = v.UUID()
-	w.startTime = time.Now().Unix()
 	w.LoadLinks()
 	w.LoadRoutes()
 	if w.openVPN != nil {
 		w.openVPN.Start()
 	}
+	w.startTime = time.Now().Unix()
 }
 
 func (w *NetworkWorker) DownBridge(cfg config.Bridge) {
