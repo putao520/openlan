@@ -52,7 +52,6 @@ type Switch struct {
 	Log       Log        `json:"log"`
 	Cert      *Cert      `json:"cert,omitempty"`
 	Crypt     *Crypt     `json:"crypt,omitempty"`
-	PProf     string     `json:"pprof"`
 	Network   []*Network `json:"network,omitempty"`
 	Acl       []*ACL     `json:"acl"`
 	FireWall  []FlowRule `json:"firewall,omitempty"`
@@ -95,7 +94,6 @@ func (s *Switch) Flags() {
 	obj := DefaultSwitch()
 	flag.StringVar(&s.Log.File, "log:file", obj.Log.File, "Configure log file")
 	flag.StringVar(&s.ConfDir, "conf:dir", obj.ConfDir, "Configure switch's directory")
-	flag.StringVar(&s.PProf, "prof", obj.PProf, "Http listen for CPU prof")
 	flag.IntVar(&s.Log.Verbose, "log:level", obj.Log.Verbose, "Configure log level")
 }
 

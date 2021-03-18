@@ -76,10 +76,9 @@ linux-proxy: env
 linux-rpm: env ## build rpm packages
 	@./packaging/spec.sh
 	@[ -e "$(BD)"/cert ] || ln -s $(SD)/../freecert $(BD)/cert
-	rpmbuild -ba packaging/openlan-proxy.spec
-	rpmbuild -ba packaging/openlan-ctrl.spec
-	rpmbuild -ba packaging/openlan-point.spec
-	rpmbuild -ba packaging/openlan-switch.spec
+	rpmbuild -ba $(BD)/openlan-proxy.spec
+	rpmbuild -ba $(BD)/openlan-point.spec
+	rpmbuild -ba $(BD)/openlan-switch.spec
 	@cp -rf ~/rpmbuild/RPMS/x86_64/openlan-*.rpm $(BD)
 
 linux-zip: env linux-point linux-switch linux-proxy ## build linux packages
