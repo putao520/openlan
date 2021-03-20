@@ -50,11 +50,11 @@ cp -R %_source_dir/packaging/resource/openvpn.md %{buildroot}/var/openlan/openvp
 cp -R %_source_dir/packaging/resource/example.ovpn %{buildroot}/var/openlan/openvpn
 
 %pre
-/usr/bin/firewall-cmd --permanent --zone=public --permanent \
+/usr/bin/firewall-cmd --zone=public --permanent \
  --add-port=10002/udp --add-port=10002/tcp || {
   echo "YOU NEED ALLOW TCP/UDP PORT:10002."
 }
-/usr/bin/firewall-cmd --permanent --zone=public --permanent \
+/usr/bin/firewall-cmd --zone=public --permanent \
   --add-port=10000/tcp --add-port=11080-11084/tcp || {
   echo "YOU NEED ALLOW TCP PORT:10000 and 11080-11084"
 }
