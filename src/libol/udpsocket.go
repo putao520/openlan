@@ -10,6 +10,8 @@ type UdpConfig struct {
 	Block   kcp.BlockCrypt
 	Timeout time.Duration // ns
 	Clients int
+	RdQus   int // per frames
+	WrQus   int // per frames
 }
 
 var defaultUdpConfig = UdpConfig{
@@ -95,6 +97,7 @@ func NewUdpClient(addr string, cfg *UdpConfig) *UdpClient {
 		SocketClientImpl: NewSocketClient(addr, &PacketMessagerImpl{
 			timeout: cfg.Timeout,
 			block:   cfg.Block,
+			bufSize: cfg.RdQus * MaxFrame,
 		}),
 	}
 	return c
@@ -109,6 +112,7 @@ func NewUdpClientFromConn(conn net.Conn, cfg *UdpConfig) *UdpClient {
 		SocketClientImpl: NewSocketClient(addr, &PacketMessagerImpl{
 			timeout: cfg.Timeout,
 			block:   cfg.Block,
+			bufSize: cfg.RdQus * MaxFrame,
 		}),
 	}
 	c.updateConn(conn)

@@ -80,6 +80,8 @@ func GetSocketClient(p *config.Point) libol.SocketClient {
 	case "kcp":
 		c := &libol.KcpConfig{
 			Block: config.GetBlock(p.Crypt),
+			RdQus: p.Queue.SockRd,
+			WrQus: p.Queue.SockWr,
 		}
 		return libol.NewKcpClient(p.Connection, c)
 	case "tcp":
@@ -93,6 +95,8 @@ func GetSocketClient(p *config.Point) libol.SocketClient {
 		c := &libol.UdpConfig{
 			Block:   config.GetBlock(p.Crypt),
 			Timeout: time.Duration(p.Timeout) * time.Second,
+			RdQus:   p.Queue.SockRd,
+			WrQus:   p.Queue.SockWr,
 		}
 		return libol.NewUdpClient(p.Connection, c)
 	case "ws":

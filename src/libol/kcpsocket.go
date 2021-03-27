@@ -11,6 +11,8 @@ type KcpConfig struct {
 	DataShards   int           // default 1024
 	ParityShards int           // default 3
 	Timeout      time.Duration // ns
+	RdQus        int           // per frames
+	WrQus        int           // per frames
 }
 
 var defaultKcpConfig = KcpConfig{
@@ -102,6 +104,7 @@ func NewKcpClient(addr string, cfg *KcpConfig) *KcpClient {
 		kcpCfg: cfg,
 		SocketClientImpl: NewSocketClient(addr, &StreamMessagerImpl{
 			timeout: cfg.Timeout,
+			bufSize: cfg.RdQus * MaxFrame,
 		}),
 	}
 	return c
@@ -115,6 +118,7 @@ func NewKcpClientFromConn(conn net.Conn, cfg *KcpConfig) *KcpClient {
 	c := &KcpClient{
 		SocketClientImpl: NewSocketClient(addr, &StreamMessagerImpl{
 			timeout: cfg.Timeout,
+			bufSize: cfg.RdQus * MaxFrame,
 		}),
 	}
 	c.updateConn(conn)

@@ -587,7 +587,7 @@ func (v *Switch) ReadTap(device network.Taper, readAt func(f *libol.FrameMessage
 	queue := make(chan *libol.FrameMessage, v.cfg.Queue.TapWr)
 	libol.Go(func() {
 		for {
-			frame := libol.NewFrameMessage()
+			frame := libol.NewFrameMessage(0)
 			n, err := device.Read(frame.Frame())
 			if err != nil {
 				v.out.Error("Switch.ReadTap: %s", err)

@@ -16,6 +16,7 @@ const (
 	HlLI     = 0x04
 	HlSize   = 0x04
 	EthDI    = 0x06
+	MaxMsg   = 1600 * 8
 )
 
 var MAGIC = []byte{0xff, 0xff}
@@ -103,10 +104,17 @@ type FrameMessage struct {
 	proto   *FrameProto
 }
 
-func NewFrameMessage() *FrameMessage {
+func NewFrameMessage(maxSize int) *FrameMessage {
+	if maxSize <= 0 {
+		maxSize = MaxBuf
+	}
+	maxSize += HlSize + EthDI
+	if HasLog(DEBUG) {
+		Debug("NewFrameMessage: size %d", maxSize)
+	}
 	m := FrameMessage{
 		params: make([]byte, 0, 2),
-		buffer: make([]byte, HlSize+MaxBuf),
+		buffer: make([]byte, maxSize),
 	}
 	m.frame = m.buffer[HlSize:]
 	m.total = len(m.frame)
@@ -127,8 +135,12 @@ func NewFrameMessageFromBytes(buffer []byte) *FrameMessage {
 func (m *FrameMessage) Decode() bool {
 	m.control = isControl(m.frame)
 	if m.control {
-		m.action = string(m.frame[EthDI : 2*EthDI])
-		m.params = m.frame[2*EthDI:]
+		if len(m.frame) < 2*EthDI {
+			Warn("FrameMessage.Decode: too small message")
+		} else {
+			m.action = string(m.frame[EthDI : 2*EthDI])
+			m.params = m.frame[2*EthDI:]
+		}
 	}
 	return m.control
 }
@@ -162,6 +174,8 @@ func (m *FrameMessage) Append(data []byte) {
 	if m.total-m.size >= add {
 		copy(m.frame[m.size:], data)
 		m.size += add
+	} else {
+		Warn("FrameMessage.Append: %d not enough buffer", m.total)
 	}
 }
 
@@ -209,7 +223,7 @@ func NewControlMessage(action, opr string, body []byte) *ControlMessage {
 
 func (c *ControlMessage) Encode() *FrameMessage {
 	p := fmt.Sprintf("%s%s%s", c.action[:4], c.operator[:2], c.params)
-	frame := NewFrameMessage()
+	frame := NewFrameMessage(len(p))
 	frame.control = c.control
 	frame.action = c.action + c.operator
 	frame.params = c.params
@@ -278,7 +292,7 @@ func (s *StreamMessagerImpl) writeX(conn net.Conn, buf []byte) error {
 	return nil
 }
 
-func (s *StreamMessagerImpl) decode(frame *FrameMessage) {
+func (s *StreamMessagerImpl) encode(frame *FrameMessage) {
 	frame.buffer[0] = MAGIC[0]
 	frame.buffer[1] = MAGIC[1]
 	binary.BigEndian.PutUint16(frame.buffer[HlMI:HlLI], uint16(frame.size))
@@ -288,7 +302,7 @@ func (s *StreamMessagerImpl) decode(frame *FrameMessage) {
 }
 
 func (s *StreamMessagerImpl) Send(conn net.Conn, frame *FrameMessage) (int, error) {
-	s.decode(frame)
+	s.encode(frame)
 	fs := frame.size + HlSize
 	if err := s.writeX(conn, frame.buffer[:fs]); err != nil {
 		return 0, err
@@ -336,7 +350,7 @@ func (s *StreamMessagerImpl) readX(conn net.Conn, buf []byte) error {
 	return nil
 }
 
-func (s *StreamMessagerImpl) encode(tmp []byte, min int) (*FrameMessage, error) {
+func (s *StreamMessagerImpl) decode(tmp []byte, min int) (*FrameMessage, error) {
 	ts := len(tmp)
 	if ts < min {
 		return nil, nil
@@ -351,6 +365,9 @@ func (s *StreamMessagerImpl) encode(tmp []byte, min int) (*FrameMessage, error) 
 		if s.block != nil {
 			s.block.Decrypt(tmp[HlSize:fs], tmp[HlSize:fs])
 		}
+		if HasLog(DEBUG) {
+			Debug("StreamMessagerImpl.decode: %d %x", fs, tmp[:fs])
+		}
 		return NewFrameMessageFromBytes(tmp[:fs]), nil
 	}
 	return nil, nil
@@ -358,7 +375,7 @@ func (s *StreamMessagerImpl) encode(tmp []byte, min int) (*FrameMessage, error) 
 
 // 430Mib
 func (s *StreamMessagerImpl) Receive(conn net.Conn, max, min int) (*FrameMessage, error) {
-	frame, err := s.encode(s.buffer, min)
+	frame, err := s.decode(s.buffer, min)
 	if err != nil {
 		return nil, err
 	}
@@ -366,7 +383,7 @@ func (s *StreamMessagerImpl) Receive(conn net.Conn, max, min int) (*FrameMessage
 		return frame, nil
 	}
 	if s.bufSize == 0 {
-		s.bufSize = 12576 // 1572 * 8
+		s.bufSize = MaxMsg // 1572 * 8
 	}
 	bs := len(s.buffer)
 	tmp := make([]byte, s.bufSize)
@@ -379,7 +396,7 @@ func (s *StreamMessagerImpl) Receive(conn net.Conn, max, min int) (*FrameMessage
 			return nil, err
 		}
 		rs := bs + rn
-		frame, err := s.encode(tmp[:rs], min)
+		frame, err := s.decode(tmp[:rs], min)
 		if err != nil {
 			return nil, err
 		}
@@ -394,6 +411,7 @@ func (s *StreamMessagerImpl) Receive(conn net.Conn, max, min int) (*FrameMessage
 type PacketMessagerImpl struct {
 	timeout time.Duration // ns for read and write deadline
 	block   kcp.BlockCrypt
+	bufSize int // default is (1518 + 20+20+14) * 8
 }
 
 func (s *PacketMessagerImpl) Flush() {
@@ -423,7 +441,10 @@ func (s *PacketMessagerImpl) Send(conn net.Conn, frame *FrameMessage) (int, erro
 }
 
 func (s *PacketMessagerImpl) Receive(conn net.Conn, max, min int) (*FrameMessage, error) {
-	frame := NewFrameMessage()
+	if s.bufSize == 0 {
+		s.bufSize = MaxMsg
+	}
+	frame := NewFrameMessage(s.bufSize)
 	if HasLog(DEBUG) {
 		Debug("PacketMessagerImpl.Receive %s %d", conn.RemoteAddr(), s.timeout)
 	}

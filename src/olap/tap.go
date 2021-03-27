@@ -157,7 +157,7 @@ func (a *TapWorker) onMiss(dest []byte) {
 	reply.SHwAddr = a.ether.HwAddr
 	reply.THwAddr = libol.EthZero
 
-	frame := libol.NewFrameMessage()
+	frame := libol.NewFrameMessage(0)
 	frame.Append(eth.Encode())
 	frame.Append(reply.Encode())
 	a.out.Debug("TapWorker.onMiss: %x.", frame.Frame()[:64])
@@ -194,7 +194,7 @@ func (a *TapWorker) onFrame(frame *libol.FrameMessage, data []byte) int {
 
 func (a *TapWorker) Read(device network.Taper) {
 	for {
-		frame := libol.NewFrameMessage()
+		frame := libol.NewFrameMessage(0)
 		data := frame.Frame()
 		if a.IsTun() {
 			data = data[libol.EtherLen:]
@@ -321,7 +321,7 @@ func (a *TapWorker) toArp(data []byte) bool {
 				rep.TIpAddr = arp.SIpAddr
 				rep.SHwAddr = a.ether.HwAddr
 				rep.THwAddr = arp.SHwAddr
-				frame := libol.NewFrameMessage()
+				frame := libol.NewFrameMessage(0)
 				frame.Append(eth.Encode())
 				frame.Append(rep.Encode())
 				a.out.Event("TapWorker.toArp: reply %v on %x.", rep.SIpAddr, rep.SHwAddr)
