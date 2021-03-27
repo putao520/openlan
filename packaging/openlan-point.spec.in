@@ -28,7 +28,7 @@ mkdir -p %{buildroot}/etc/openlan
 cp %_source_dir/packaging/resource/point.json*.example %{buildroot}/etc/openlan
 
 mkdir -p %{buildroot}/usr/lib/systemd/system
-cp %_source_dir/packaging/resource/openlan-point.service %{buildroot}/usr/lib/systemd/system
+cp %_source_dir/packaging/resource/openlan-point@.service %{buildroot}/usr/lib/systemd/system
 
 %pre
 
