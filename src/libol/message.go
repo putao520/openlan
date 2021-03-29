@@ -426,7 +426,7 @@ func (s *PacketMessagerImpl) Send(conn net.Conn, frame *FrameMessage) (int, erro
 		s.block.Encrypt(frame.frame, frame.frame)
 	}
 	if HasLog(DEBUG) {
-		Debug("PacketMessagerImpl.Send: %s %x", conn.RemoteAddr(), frame)
+		Debug("PacketMessagerImpl.Send: %s %d %x", conn.RemoteAddr(), frame.size, frame.buffer)
 	}
 	if s.timeout != 0 {
 		err := conn.SetWriteDeadline(time.Now().Add(s.timeout))

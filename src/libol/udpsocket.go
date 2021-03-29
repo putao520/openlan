@@ -41,7 +41,7 @@ func NewUdpServer(listen string, cfg *UdpConfig) *UdpServer {
 }
 
 func (k *UdpServer) Listen() (err error) {
-	k.listener, err = XDPListen(k.address, k.udpCfg.Clients)
+	k.listener, err = XDPListen(k.address, k.udpCfg.Clients, k.udpCfg.RdQus*2)
 	if err != nil {
 		k.listener = nil
 		return err

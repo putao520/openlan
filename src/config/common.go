@@ -27,7 +27,7 @@ type Queue struct {
 
 var (
 	QdSwr = 1024 * 4
-	QdSrd = 8
+	QdSrd = 1024 * 4
 	QdTwr = 1024 * 2
 	QdTrd = 2
 	QdVsd = 1024 * 8

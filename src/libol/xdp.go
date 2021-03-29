@@ -15,16 +15,20 @@ type XDP struct {
 	accept     chan *XDPConn
 }
 
-func XDPListen(addr string, clients int) (net.Listener, error) {
+func XDPListen(addr string, clients, bufSize int) (net.Listener, error) {
 	udpAddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {
 		return nil, err
 	}
+	if bufSize == 0 {
+		bufSize = MaxBuf
+	}
+	Debug("bufSize: %d", bufSize)
 	x := &XDP{
 		address:  udpAddr,
 		sessions: NewSafeStrMap(clients),
 		accept:   make(chan *XDPConn, 2),
-		bufSize:  MaxBuf,
+		bufSize:  bufSize,
 	}
 	conn, err := net.ListenUDP("udp", udpAddr)
 	if err != nil {
