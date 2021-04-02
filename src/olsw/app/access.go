@@ -96,7 +96,8 @@ func (p *Access) onAuth(client libol.SocketClient, user *models.User) error {
 		return err
 	}
 	out.Info("Access.onAuth: on >>> %s <<<", dev.Name())
-	m := models.NewPoint(client, dev)
+	proto := p.master.Protocol()
+	m := models.NewPoint(client, dev, proto)
 	m.SetUser(user)
 	// free point has same uuid.
 	if om := store.Point.GetByUUID(m.UUID); om != nil {

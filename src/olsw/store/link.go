@@ -16,16 +16,17 @@ func (p *_link) Init(size int) {
 
 func (p *_link) Add(m *olap.Point) {
 	link := &models.Point{
-		Alias:   "",
-		User:    m.User(),
-		Network: m.Tenant(),
-		Server:  m.Addr(),
-		Uptime:  m.UpTime(),
-		Status:  m.Status().String(),
-		Client:  m.Client(),
-		Device:  m.Device(),
-		IfName:  m.IfName(),
-		UUID:    m.UUID(),
+		Alias:    "",
+		User:     m.User(),
+		Network:  m.Tenant(),
+		Protocol: m.Protocol(),
+		Server:   m.Addr(),
+		Uptime:   m.UpTime(),
+		Status:   m.Status().String(),
+		Client:   m.Client(),
+		Device:   m.Device(),
+		IfName:   m.IfName(),
+		UUID:     m.UUID(),
 	}
 	_ = p.Links.Set(m.UUID(), link)
 }

@@ -114,6 +114,13 @@ func NewSwitch(c *config.Switch) *Switch {
 	return &v
 }
 
+func (v *Switch) Protocol() string {
+	if v.cfg == nil {
+		return ""
+	}
+	return v.cfg.Protocol
+}
+
 func (v *Switch) allowForward(input, output, source, prefix string) {
 	if source == prefix {
 		return

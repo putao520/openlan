@@ -143,6 +143,7 @@
                     <th>Alive</th>
                     <th>Device</th>
                     <th>User</th>
+                    <th>Protocol</th>
                     <th>Connection</th>
                     <th>r/t|Traffic</th>
                     <th>State</th>
@@ -155,6 +156,7 @@
                         <td>{{ prettyTime .AliveTime }}</td>
                         <td>{{ .Device }}</td>
                         <td>{{ .User }}@{{ .Network }}</td>
+                        <td>{{ .Protocol }}</td>
                         <td><a href="https://{{ getIpAddr .Server }}:10000">{{ .Server }}</a></td>
                         <td>{{ prettyBytes .RxBytes }}/{{ prettyBytes .TxBytes }}</td>
                         <td><span class="{{ .State }}">{{ .State }}</span></td>

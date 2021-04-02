@@ -6,6 +6,7 @@ type Point struct {
 	Network   string `json:"network"`
 	User      string `json:"user"`
 	Alias     string `json:"alias"`
+	Protocol  string `json:"protocol"`
 	Remote    string `json:"remote"`
 	Switch    string `json:"switch,omitempty"`
 	Device    string `json:"device"`

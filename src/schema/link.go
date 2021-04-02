@@ -6,6 +6,7 @@ type Link struct {
 	Alias     string `json:"alias"`
 	Network   string `json:"network"`
 	User      string `json:"user"`
+	Protocol  string `json:"protocol"`
 	Server    string `json:"server"`
 	Device    string `json:"device"`
 	RxBytes   int64  `json:"rxBytes"`

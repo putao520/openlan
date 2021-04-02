@@ -18,6 +18,7 @@ type Pointer interface {
 	Status() libol.SocketStatus
 	UpTime() int64
 	UUID() string
+	Protocol() string
 	User() string
 	Record() map[string]int64
 	Tenant() string
@@ -141,4 +142,8 @@ func (p *MixPoint) Config() *config.Point {
 
 func (p *MixPoint) Network() *models.Network {
 	return p.worker.network
+}
+
+func (p *MixPoint) Protocol() string {
+	return p.config.Protocol
 }

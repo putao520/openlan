@@ -6,25 +6,27 @@ import (
 )
 
 type Point struct {
-	UUID    string             `json:"uuid"`
-	Alias   string             `json:"alias"`
-	Network string             `json:"network"`
-	User    string             `json:"user"`
-	Server  string             `json:"server"`
-	Uptime  int64              `json:"uptime"`
-	Status  string             `json:"status"`
-	IfName  string             `json:"device"`
-	Client  libol.SocketClient `json:"-"`
-	Device  network.Taper      `json:"-"`
-	System  string             `json:"system"`
+	UUID     string             `json:"uuid"`
+	Alias    string             `json:"alias"`
+	Network  string             `json:"network"`
+	User     string             `json:"user"`
+	Protocol string             `json:"protocol"`
+	Server   string             `json:"server"`
+	Uptime   int64              `json:"uptime"`
+	Status   string             `json:"status"`
+	IfName   string             `json:"device"`
+	Client   libol.SocketClient `json:"-"`
+	Device   network.Taper      `json:"-"`
+	System   string             `json:"system"`
 }
 
-func NewPoint(c libol.SocketClient, d network.Taper) (w *Point) {
+func NewPoint(c libol.SocketClient, d network.Taper, proto string) (w *Point) {
 	return &Point{
-		Alias:  "",
-		Server: c.LocalAddr(),
-		Client: c,
-		Device: d,
+		Alias:    "",
+		Server:   c.LocalAddr(),
+		Client:   c,
+		Device:   d,
+		Protocol: proto,
 	}
 }
 
