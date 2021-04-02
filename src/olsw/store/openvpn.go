@@ -38,6 +38,10 @@ func (o *_VPNClient) GetDevice(name string) string {
 	return ""
 }
 
+func (o *_VPNClient) getTime(layout, value string) (time.Time, error) {
+	return time.ParseInLocation(layout, value, time.Local)
+}
+
 func (o *_VPNClient) scanStatus(network string, reader io.Reader) (map[string]*schema.VPNClient, error) {
 	readAt := "header"
 	offset := 0
@@ -78,10 +82,9 @@ func (o *_VPNClient) scanStatus(network string, reader io.Reader) (map[string]*s
 				if txc, err := ParseInt64(columns[3]); err == nil {
 					client.TxBytes = txc
 				}
-				if uptime, err := time.Parse(time.ANSIC, columns[4]); err == nil {
+				if uptime, err := o.getTime(time.ANSIC, columns[4]); err == nil {
 					client.Uptime = uptime.Unix()
 					client.AliveTime = time.Now().Unix() - client.Uptime
-
 				}
 				clients[name] = client
 			}
