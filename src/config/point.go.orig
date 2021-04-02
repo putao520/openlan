@@ -133,9 +133,6 @@ func (ap *Point) Correct(obj *Point) {
 		}
 		ap.Cert.Correct()
 	}
-	if ap.Protocol == "" {
-		ap.Protocol = "tls"
-	}
 }
 
 func (ap *Point) Default() {
