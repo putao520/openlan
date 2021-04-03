@@ -111,7 +111,7 @@ func (u User) Check(c *cli.Context) error {
 	url += "/check"
 	client := u.NewHttp(c.String("token"))
 	user := &schema.User{
-		Name: fullName,
+		Name:     fullName,
 		Password: passFromE,
 	}
 	if err := client.PostJSON(url, user); err != nil {

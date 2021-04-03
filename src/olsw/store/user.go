@@ -105,16 +105,15 @@ func (w *_user) CheckLdap(username, password string) *models.User {
 }
 
 func (w *_user) Check(username, password string) *models.User {
+	if u := w.Get(username); u != nil {
+		if u.Role != "ldap" {
+			if u.Password == password {
+				return u
+			}
+		}
+	}
 	if u := w.CheckLdap(username, password); u != nil {
 		return u
-	}
-	if u := w.Get(username); u != nil {
-		if u.Role == "ldap" {
-			return nil
-		}
-		if u.Password == password {
-			return u
-		}
 	}
 	return nil
 }
