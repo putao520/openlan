@@ -60,9 +60,9 @@ func (u User) Remove(c *cli.Context) error {
 
 func (u User) Tmpl() string {
 	return `# total {{ len . }}
-{{ps -16 "username"}} {{ps -24 "password"}} {{ps -6 "role"}}
+{{ps -24 "username"}} {{ps -24 "password"}} {{ps -6 "role"}}
 {{- range . }}
-{{p2 -16 "%s@%s" .Name .Network}} {{ps -24 .Password}} {{ps -6 .Role}}
+{{p2 -24 "%s@%s" .Name .Network}} {{ps -24 .Password}} {{ps -6 .Role}}
 {{- end }}
 `
 }

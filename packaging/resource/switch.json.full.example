@@ -9,43 +9,16 @@
     "crypt": {
         "secret": "12345^"
     },
-    "network": [
-        {
-            "name": "default",
-            "bridge": {
-                "name": "br-default",
-                "address": "172.32.100.40/24"
-            },
-            "subnet": {
-                "start": "172.32.100.250",
-                "end": "172.32.100.254",
-                "netmask": "255.255.255.0"
-            },
-            "hosts": [
-            ],
-            "links": [
-                {
-                    "protocol": "tls",
-                    "connection": "you.openlan.net",
-                    "username": "hi",
-                    "password": "12345"
-                }
-            ],
-            "routes": [
-                {
-                    "prefix": "172.32.10.0/24"
-                }
-            ],
-            "password": [
-                {
-                    "username": "hi",
-                    "password": "12345^"
-                }
-            ]
-        }
-    ],
     "inspect": [
         "neighbor",
         "online"
-    ]
+    ],
+    "ldap": {
+        "server": "ldap-server.net:389",
+        "bindDN": "cn=openlan,dc=nanjing,dc=yuhua",
+        "password": "your-passowrd",
+        "baseDN": "dc=nanjing,dc=yuhua",
+        "attribute": "cn",
+        "searchFilter": "(mail=%s)"
+    }
 }

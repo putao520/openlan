@@ -1,6 +1,7 @@
 {
     "name": "example",
     "bridge": {
+        "name": "br-eth0",
         "address": "172.32.100.40/24"
     },
     "subnet": {
@@ -12,10 +13,6 @@
         {
             "hostname": "pc-99",
             "address": "172.32.100.99"
-        },
-        {
-            "hostname": "pc-100",
-            "address": "172.32.100.100"
         }
     ],
     "routes": [
