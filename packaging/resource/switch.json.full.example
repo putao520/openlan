@@ -15,10 +15,10 @@
     ],
     "ldap": {
         "server": "ldap-server.net:389",
-        "bindDN": "cn=openlan,dc=nanjing,dc=yuhua",
+        "bindDN": "cn=admin,dc=openlan,dc=com",
         "password": "your-passowrd",
-        "baseDN": "dc=nanjing,dc=yuhua",
+        "baseDN": "dc=openlan,dc=com",
         "attribute": "cn",
-        "searchFilter": "(mail=%s)"
+        "filter": "(mail=%s)"
     }
 }
