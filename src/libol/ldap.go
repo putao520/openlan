@@ -12,7 +12,7 @@ type LDAPConfig struct {
 	Password  string
 	BaseDN    string
 	Attr      string
-	Filter    string
+	Search    string
 	EnableTls bool
 }
 
@@ -43,10 +43,11 @@ func (l *LDAPService) Login(userName, password string) (bool, error) {
 		l.Cfg.BaseDN,
 		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases,
 		0, 0, false,
-		fmt.Sprintf(l.Cfg.Filter, userName),
-		[]string{l.Cfg.Server},
+		fmt.Sprintf(l.Cfg.Search, userName),
+		[]string{l.Cfg.Attr},
 		nil,
 	)
+	Debug("LDAPService.Login %v", request)
 	result, err := l.Conn.Search(request)
 	if err != nil {
 		return false, err

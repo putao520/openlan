@@ -80,13 +80,15 @@ func NewUserSchema(u *User) schema.User {
 }
 
 func SchemaToUserModel(user *schema.User) *User {
-	return &User{
+	obj := &User{
 		Alias:    user.Alias,
 		Password: user.Password,
 		Name:     user.Name,
 		Network:  user.Network,
 		Role:     user.Role,
 	}
+	obj.Update()
+	return obj
 }
 
 func NewNetworkSchema(n *Network) schema.Network {

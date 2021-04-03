@@ -29,7 +29,7 @@ func NewUser(name, network, password string) *User {
 }
 
 func (u *User) String() string {
-	return fmt.Sprintf("%s, %s, %s", u.Name, u.Password, u.Role)
+	return fmt.Sprintf("%s, %s, %s", u.Id(), u.Password, u.Role)
 }
 
 func (u *User) Update() {

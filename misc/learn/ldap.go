@@ -12,7 +12,7 @@ func main() {
 	cfg.Password = os.Getenv("LDAPPassword")
 	cfg.BaseDN = os.Getenv("LDAPBaseDN")
 	cfg.BindDN = os.Getenv("LDAPBindDN")
-	cfg.Filter = os.Getenv("LDAPSearchFilter")
+	cfg.Search = os.Getenv("LDAPSearchFilter")
 	cfg.Attr = os.Getenv("LDAPAttr")
 
 	if l, err := libol.NewLDAPService(cfg); err != nil {

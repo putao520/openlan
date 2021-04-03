@@ -83,11 +83,12 @@ func (w *_user) CheckLdap(username, password string) *models.User {
 		return nil
 	}
 	u := w.Get(username)
+	libol.Debug("CheckLdap %s", u)
 	if u != nil && u.Role != "ldap" {
 		return nil
 	}
-	ok, _ := svc.Login(username, password)
-	if !ok {
+	if ok, err := svc.Login(username, password); !ok {
+		libol.Warn("CheckLdap %s", err)
 		return nil
 	}
 	user := &models.User{
@@ -95,6 +96,7 @@ func (w *_user) CheckLdap(username, password string) *models.User {
 		Password: password,
 		Role:     "ldap",
 	}
+	user.Update()
 	w.Add(user)
 	return user
 }
@@ -113,7 +115,7 @@ func (w *_user) Check(username, password string) *models.User {
 func (w *_user) GetLdap() *libol.LDAPService {
 	w.Lock.Lock()
 	defer w.Lock.Unlock()
-	if w.LdapCfg != nil {
+	if w.LdapCfg == nil {
 		return nil
 	}
 	if w.LdapSvc == nil || w.LdapSvc.Conn.IsClosing() {
@@ -130,12 +132,13 @@ func (w *_user) GetLdap() *libol.LDAPService {
 func (w *_user) SetLdap(cfg *libol.LDAPConfig) {
 	w.Lock.Lock()
 	defer w.Lock.Unlock()
-	if w.LdapCfg == cfg {
+	if w.LdapCfg != cfg {
 		w.LdapCfg = cfg
 	}
 	if l, err := libol.NewLDAPService(*cfg); err != nil {
 		libol.Warn("_user.SetLdap %s", err)
 	} else {
+		libol.Info("_user.SetLdap %s", w.LdapCfg.Server)
 		w.LdapSvc = l
 	}
 }

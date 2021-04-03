@@ -317,7 +317,7 @@ func (v *Switch) SetLdap(ldap *config.LDAP) {
 		Password:  ldap.Password,
 		BaseDN:    ldap.BaseDN,
 		Attr:      ldap.Attribute,
-		Filter:    ldap.SearchFilter,
+		Search:    ldap.SearchFilter,
 		EnableTls: ldap.EnableTls,
 	}
 	store.User.SetLdap(&cfg)
