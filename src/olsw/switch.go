@@ -307,7 +307,26 @@ func (v *Switch) preAcl() {
 	}
 }
 
+func (v *Switch) SetLdap(ldap *config.LDAP) {
+	if ldap == nil || ldap.Server == "" {
+		return
+	}
+	cfg := libol.LDAPConfig{
+		Server:    ldap.Server,
+		BindDN:    ldap.BindDN,
+		Password:  ldap.Password,
+		BaseDN:    ldap.BaseDN,
+		Attr:      ldap.Attribute,
+		Filter:    ldap.SearchFilter,
+		EnableTls: ldap.EnableTls,
+	}
+	store.User.SetLdap(&cfg)
+}
+
 func (v *Switch) LoadPass(file string) {
+	if file == "" {
+		return
+	}
 	reader, err := os.Open(file)
 	if err != nil {
 		if !os.IsNotExist(err) {
@@ -361,9 +380,9 @@ func (v *Switch) Initialize() {
 		w.Initialize()
 	}
 	// Load password for guest access
-	if v.cfg.Password != "" {
-		v.LoadPass(v.cfg.Password)
-	}
+
+	v.LoadPass(v.cfg.Password)
+	v.SetLdap(v.cfg.Ldap)
 }
 
 func (v *Switch) onFrame(client libol.SocketClient, frame *libol.FrameMessage) error {
@@ -544,6 +563,7 @@ func (v *Switch) NewTap(tenant string) (network.Taper, error) {
 		Type:     network.TAP,
 		VirBuf:   v.cfg.Queue.VirWrt,
 		KernBuf:  v.cfg.Queue.VirSnd,
+		Name:     "auto",
 	})
 	if err != nil {
 		v.out.Error("Switch.NewTap: %s", err)

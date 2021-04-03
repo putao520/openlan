@@ -58,6 +58,7 @@ type Switch struct {
 	Inspect   []string   `json:"inspect"`
 	Queue     Queue      `json:"queue"`
 	Password  string     `json:"password"`
+	Ldap      *LDAP      `json:"ldap"`
 	ConfDir   string     `json:"-"`
 	TokenFile string     `json:"-"`
 	SaveFile  string     `json:"-"`

@@ -108,16 +108,18 @@ func (u User) Check(c *cli.Context) error {
 		return libol.NewErr("wrong: zo=%s, us=%s", netFromO, nameFromE)
 	}
 	url := u.Url(c.String("url"), fullName)
+	url += "/check"
 	client := u.NewHttp(c.String("token"))
-	var user schema.User
-	if err := client.GetJSON(url, &user); err != nil {
-		return err
+	user := &schema.User{
+		Name: fullName,
+		Password: passFromE,
 	}
-	if user.Password == passFromE {
+	if err := client.PostJSON(url, user); err != nil {
+		return err
+	} else {
 		fmt.Printf("success: us=%s\n", nameFromE)
 		return nil
 	}
-	return libol.NewErr("wrong: us=%s, pa=%s", nameFromE, passFromE)
 }
 
 func (u User) Commands(app *cli.App) cli.Commands {

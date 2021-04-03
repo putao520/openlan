@@ -14,7 +14,7 @@ type User struct {
 	Password string             `json:"password"`
 	UUID     string             `json:"uuid"`
 	System   string             `json:"system"`
-	Role     string             `json:"type"` // admin or guest
+	Role     string             `json:"type"` // admin , guest or ldap
 	Last     libol.SocketClient `json:"last"` // lastly accessed by this.
 }
 

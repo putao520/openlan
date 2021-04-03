@@ -65,20 +65,17 @@ func (p *Access) handleLogin(client libol.SocketClient, data []byte) error {
 	}
 	user.Update()
 	out.Info("Access.handleLogin: %s on %s", user.Id(), user.Alias)
-	nowUser := store.User.Get(user.Id())
-	if nowUser != nil {
-		if nowUser.Password == user.Password {
-			if nowUser.Role == "guest" && nowUser.Last != nil {
-				// To offline lastly client if guest.
-				p.master.OffClient(nowUser.Last)
-			}
-			p.success++
-			nowUser.Last = client
-			client.SetStatus(libol.ClAuth)
-			out.Info("Access.handleLogin: success")
-			_ = p.onAuth(client, user)
-			return nil
+	if now := store.User.Check(user.Id(), user.Password); now != nil {
+		if now.Role != "admin" && now.Last != nil {
+			// To offline lastly client if guest.
+			p.master.OffClient(now.Last)
 		}
+		p.success++
+		now.Last = client
+		client.SetStatus(libol.ClAuth)
+		out.Info("Access.handleLogin: success")
+		_ = p.onAuth(client, user)
+		return nil
 	}
 	p.failed++
 	client.SetStatus(libol.ClUnAuth)

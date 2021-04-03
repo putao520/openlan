@@ -21,6 +21,7 @@ func (h User) Router(router *mux.Router) {
 	router.HandleFunc("/api/user/{id}", h.Get).Methods("GET")
 	router.HandleFunc("/api/user/{id}", h.Add).Methods("POST")
 	router.HandleFunc("/api/user/{id}", h.Del).Methods("DELETE")
+	router.HandleFunc("/api/user/{id}/check", h.Check).Methods("POST")
 }
 
 func (h User) List(w http.ResponseWriter, r *http.Request) {
@@ -77,4 +78,25 @@ func (h User) Del(w http.ResponseWriter, r *http.Request) {
 		libol.Warn("DelUser %s", err)
 	}
 	ResponseMsg(w, 0, "")
+}
+
+func (h User) Check(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	user := &schema.User{}
+	if err := json.Unmarshal(body, user); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	model := models.SchemaToUserModel(user)
+	if obj := store.User.Check(model.Id(), model.Password); obj != nil {
+		ResponseJson(w, models.NewUserSchema(obj))
+	} else {
+		http.Error(w, "invalid user", http.StatusUnauthorized)
+		return
+	}
 }

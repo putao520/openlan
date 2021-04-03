@@ -3,11 +3,15 @@ package store
 import (
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
+	"sync"
 )
 
 type _user struct {
-	File  string
-	Users *libol.SafeStrMap
+	Lock    sync.RWMutex
+	File    string
+	Users   *libol.SafeStrMap
+	LdapCfg *libol.LDAPConfig
+	LdapSvc *libol.LDAPService
 }
 
 func (w *_user) Save() error {
@@ -71,6 +75,69 @@ func (w *_user) List() <-chan *models.User {
 	}()
 
 	return c
+}
+
+func (w *_user) CheckLdap(username, password string) *models.User {
+	svc := w.GetLdap()
+	if svc == nil {
+		return nil
+	}
+	u := w.Get(username)
+	if u != nil && u.Role != "ldap" {
+		return nil
+	}
+	ok, _ := svc.Login(username, password)
+	if !ok {
+		return nil
+	}
+	user := &models.User{
+		Name:     username,
+		Password: password,
+		Role:     "ldap",
+	}
+	w.Add(user)
+	return user
+}
+
+func (w *_user) Check(username, password string) *models.User {
+	if u := w.CheckLdap(username, password); u != nil {
+		return u
+	} else if u := w.Get(username); u != nil {
+		if u.Password == password {
+			return u
+		}
+	}
+	return nil
+}
+
+func (w *_user) GetLdap() *libol.LDAPService {
+	w.Lock.Lock()
+	defer w.Lock.Unlock()
+	if w.LdapCfg != nil {
+		return nil
+	}
+	if w.LdapSvc == nil || w.LdapSvc.Conn.IsClosing() {
+		if l, err := libol.NewLDAPService(*w.LdapCfg); err != nil {
+			libol.Warn("_user.GetLdap %s", err)
+			w.LdapSvc = nil
+		} else {
+			w.LdapSvc = l
+		}
+	}
+	return w.LdapSvc
+}
+
+func (w *_user) SetLdap(cfg *libol.LDAPConfig) {
+	w.Lock.Lock()
+	defer w.Lock.Unlock()
+	if w.LdapCfg == cfg {
+		w.LdapCfg = cfg
+	}
+	if l, err := libol.NewLDAPService(*cfg); err != nil {
+		libol.Warn("_user.SetLdap %s", err)
+	} else {
+		w.LdapSvc = l
+	}
 }
 
 var User = _user{

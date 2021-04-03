@@ -291,6 +291,7 @@ func (w *NetworkWorker) AddLink(c *config.Point) {
 	c.Alias = w.alias
 	c.RequestAddr = false
 	c.Network = w.cfg.Name
+	c.Interface.Name = "auto"
 	c.Interface.Bridge = brName // reset bridge name.
 	c.Interface.Address = w.cfg.Bridge.Address
 	c.Interface.Provider = w.cfg.Bridge.Provider
