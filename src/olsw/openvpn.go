@@ -170,6 +170,25 @@ func (o *OpenVPN) ServerStats() string {
 	return filepath.Join(o.Cfg.Directory, "server.stats")
 }
 
+func (o *OpenVPN) ServerTmpl() string {
+	if o.Cfg == nil {
+		return ""
+	}
+	tmplStr := xAuthConfTmpl
+	if o.Cfg.Auth == "cert" {
+		tmplStr = certConfTmpl
+	}
+	cfgTmpl := filepath.Join(o.Cfg.Directory, "server.tmpl")
+	if err := libol.FileExist(cfgTmpl); err == nil {
+		if data, err := ioutil.ReadFile(cfgTmpl); err == nil {
+			tmplStr = string(data)
+		}
+	} else {
+		_ = ioutil.WriteFile(cfgTmpl, []byte(tmplStr), 0600)
+	}
+	return tmplStr
+}
+
 func (o *OpenVPN) IppTxt() string {
 	if o.Cfg == nil {
 		return ""
@@ -185,10 +204,7 @@ func (o *OpenVPN) WriteConf(path string) error {
 	defer fp.Close()
 	data := NewOpenVpnDataFromConf(o.Cfg)
 	o.out.Debug("OpenVPN.WriteConf %v", data)
-	tmplStr := xAuthConfTmpl
-	if o.Cfg.Auth == "cert" {
-		tmplStr = certConfTmpl
-	}
+	tmplStr := o.ServerTmpl()
 	if tmpl, err := template.New("main").Parse(tmplStr); err != nil {
 		return err
 	} else {
