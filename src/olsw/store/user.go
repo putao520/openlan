@@ -26,6 +26,9 @@ func (w *_user) Save() error {
 		if obj == nil {
 			break
 		}
+		if obj.Role == "ldap" {
+			continue
+		}
 		line := obj.Id() + ":" + obj.Password + ":" + obj.Role
 		_, _ = fp.WriteString(line + "\n")
 	}
@@ -104,7 +107,11 @@ func (w *_user) CheckLdap(username, password string) *models.User {
 func (w *_user) Check(username, password string) *models.User {
 	if u := w.CheckLdap(username, password); u != nil {
 		return u
-	} else if u := w.Get(username); u != nil {
+	}
+	if u := w.Get(username); u != nil {
+		if u.Role == "ldap" {
+			return nil
+		}
 		if u.Password == password {
 			return u
 		}
