@@ -4,12 +4,12 @@ After=network.target
 
 [Service]
 Type=notify
-RemainAfterExit=yes
 EnvironmentFile=/etc/sysconfig/openlan/switch.cfg
 ExecStartPre=-/usr/sbin/modprobe bridge
 ExecStartPre=-/usr/sbin/modprobe br_netfilter
 ExecStart=/usr/bin/openlan-switch $OPTIONS
 LimitNOFILE=102400
+Restart=always
 
 [Install]
 WantedBy=multi-user.target

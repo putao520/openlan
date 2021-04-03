@@ -49,7 +49,7 @@ clean: ## clean cache
 ## prepare environment
 env:
 	@mkdir -p $(BD)
-	@gofmt -w -s ./src
+	@gofmt -w -s ./src ./misc
 
 ## linux platform
 linux: linux-proxy linux-point linux-switch linux-ctrl ## build linux binary

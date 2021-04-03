@@ -31,7 +31,7 @@ func (s *socket) ReadFull() (error, []byte) {
 			}
 		}
 	}
-	tmp := make([]byte, 1518 * s.frames)
+	tmp := make([]byte, 1518*s.frames)
 	if size > 0 {
 		copy(tmp[:size], s.buffer[:size])
 	}
@@ -89,8 +89,8 @@ func xClient(addr string, frames int) {
 	}
 
 	sock := &socket{
-		conn:conn,
-		frames:frames,
+		conn:   conn,
+		frames: frames,
 	}
 	fmt.Printf("Local: <%s> \n", device.Name())
 
@@ -161,8 +161,8 @@ func xServer(addr string, frames int) {
 	fmt.Printf("Remote: <%s> \n", conn.LocalAddr().String())
 
 	sock := &socket{
-		conn:conn,
-		frames:frames,
+		conn:   conn,
+		frames: frames,
 	}
 	go func() {
 		for {
@@ -174,7 +174,7 @@ func xServer(addr string, frames int) {
 			if data == nil {
 				continue
 			}
-			_, err = device.Write(data[4 :])
+			_, err = device.Write(data[4:])
 			if err != nil {
 				fmt.Println(err)
 			}

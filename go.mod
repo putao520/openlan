@@ -9,6 +9,7 @@ require (
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e
 	github.com/coreos/go-systemd/v22 v22.0.0
 	github.com/docker/libnetwork v0.5.6 // indirect
+	github.com/go-ldap/ldap v3.0.3+incompatible
 	github.com/godbus/dbus v4.1.0+incompatible // indirect
 	github.com/gorilla/mux v1.7.4
 	github.com/moby/libnetwork v0.5.6
@@ -24,6 +25,7 @@ require (
 	golang.org/x/net v0.0.0
 	golang.org/x/sys v0.0.0 // indirect
 	golang.org/x/time v0.0.0
+	gopkg.in/asn1-ber.v1 v1.0.0-20181015200546-f715ec2f112d // indirect
 	gopkg.in/yaml.v2 v2.2.3
 )
 

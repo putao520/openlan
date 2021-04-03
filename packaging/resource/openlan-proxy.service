@@ -4,10 +4,10 @@ After=network.target
 
 [Service]
 Type=notify
-RemainAfterExit=yes
 EnvironmentFile=/etc/sysconfig/openlan/proxy.cfg
 ExecStart=/usr/bin/openlan-proxy $OPTIONS
 LimitNOFILE=102400
+Restart=always
 
 [Install]
 WantedBy=multi-user.target

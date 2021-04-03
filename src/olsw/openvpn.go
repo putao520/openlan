@@ -171,9 +171,6 @@ func (o *OpenVPN) ServerStats() string {
 }
 
 func (o *OpenVPN) ServerTmpl() string {
-	if o.Cfg == nil {
-		return ""
-	}
 	tmplStr := xAuthConfTmpl
 	if o.Cfg.Auth == "cert" {
 		tmplStr = certConfTmpl
@@ -302,6 +299,37 @@ func (o *OpenVPN) Stop() {
 	o.Clean()
 }
 
+func (o *OpenVPN) ProfileTmpl() string {
+	tmplStr := xAuthClientProfile
+	if o.Cfg.Auth == "cert" {
+		tmplStr = certClientProfile
+	}
+	cfgTmpl := filepath.Join(o.Cfg.Directory, "client.tmpl")
+	if err := libol.FileExist(cfgTmpl); err == nil {
+		if data, err := ioutil.ReadFile(cfgTmpl); err == nil {
+			tmplStr = string(data)
+		}
+	} else {
+		_ = ioutil.WriteFile(cfgTmpl, []byte(tmplStr), 0600)
+	}
+	return tmplStr
+}
+
+func (o *OpenVPN) Profile() ([]byte, error) {
+	data := NewOpenVpnProfileFromConf(o.Cfg)
+	tmplStr := o.ProfileTmpl()
+	tmpl, err := template.New("main").Parse(tmplStr)
+	if err != nil {
+		return nil, err
+	}
+	var out bytes.Buffer
+	if err := tmpl.Execute(&out, data); err == nil {
+		return out.Bytes(), nil
+	} else {
+		return nil, err
+	}
+}
+
 type OpenVPNProfile struct {
 	Remote   string
 	Ca       string
@@ -379,22 +407,4 @@ func NewOpenVpnProfileFromConf(cfg *config.OpenVPN) *OpenVPNProfile {
 		data.TlsAuth = string(ctx)
 	}
 	return data
-}
-
-func (o *OpenVPN) Profile() ([]byte, error) {
-	data := NewOpenVpnProfileFromConf(o.Cfg)
-	tmplStr := xAuthClientProfile
-	if o.Cfg.Auth == "cert" {
-		tmplStr = certClientProfile
-	}
-	tmpl, err := template.New("main").Parse(tmplStr)
-	if err != nil {
-		return nil, err
-	}
-	var out bytes.Buffer
-	if err := tmpl.Execute(&out, data); err == nil {
-		return out.Bytes(), nil
-	} else {
-		return nil, err
-	}
 }

@@ -4,11 +4,11 @@ After=network.target
 
 [Service]
 Type=notify
-RemainAfterExit=yes
 EnvironmentFile=/etc/sysconfig/openlan/ctrl.cfg
 ExecStart=/usr/bin/openlan-ctrl $OPTIONS
 ExecStop=/usr/bin/kill `/usr/sbin/pidof openlan-ctrl`
 LimitNOFILE=102400
+Restart=always
 
 [Install]
 WantedBy=multi-user.target

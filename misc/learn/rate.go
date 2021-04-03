@@ -10,7 +10,7 @@ import (
 
 func test(limit rate.Limit, burst int, size uint32, wg *sync.WaitGroup) {
 	var (
-		numOK = uint32(0)
+		numOK   = uint32(0)
 		numFail = uint32(0)
 	)
 
@@ -31,14 +31,13 @@ func test(limit rate.Limit, burst int, size uint32, wg *sync.WaitGroup) {
 		}
 	}
 
-	for ; at.After(time.Now()); {
+	for at.After(time.Now()) {
 		go f()
 	}
 	dt := time.Now().Unix() - now
-	fmt.Printf("size = %d rate: %d\n", size, numOK / uint32(dt))
+	fmt.Printf("size = %d rate: %d\n", size, numOK/uint32(dt))
 	wg.Done()
 }
-
 
 func main() {
 	const (
@@ -47,10 +46,10 @@ func main() {
 		numRequests = uint32(50)
 	)
 
-	wg  := &sync.WaitGroup{}
+	wg := &sync.WaitGroup{}
 	wg.Add(int(numRequests))
 	for i := uint32(0); i < numRequests; i++ {
-		go test(limit, burst, 64 + (i * 64), wg)
+		go test(limit, burst, 64+(i*64), wg)
 	}
 	wg.Wait()
 }
