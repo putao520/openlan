@@ -6,6 +6,10 @@
 #	      |                        |
 # 192.168.209.141  <=====>   192.168.209.130
 
+# KEY1=0x`dd if=/dev/urandom count=32 bs=1 2> /dev/null| xxd -p -c 64`
+# KEY2=0x`dd if=/dev/urandom count=32 bs=1 2> /dev/null| xxd -p -c 64`
+# ID=0x`dd if=/dev/urandom count=4 bs=1 2> /dev/null| xxd -p -c 8`
+
 sun=192.168.209.130
 sun_net=192.168.200.0/24
 moon=192.168.209.141

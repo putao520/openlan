@@ -21,7 +21,7 @@ ip xfrm state add src ${sun} dst ${moon} proto esp spi 0x00000302 mode tunnel au
 ip xfrm policy flush
 
 ip xfrm policy add src ${moon_net} dst ${sun} dir out ptype main tmpl src ${moon} dst ${sun} proto esp mode tunnel
-ip xfrm policy add src ${sun} dst ${moon_net} dir in ptype main tmpl src ${sun} dst ${moon} proto esp mode tunnel
-ip xfrm policy add src ${sun} dst ${moon_net} dir fwd ptype main tmpl src ${sun} dst ${moon} proto esp mode tunnel
+ip xfrm policy add src ${sun_net} dst ${moon_net} dir in ptype main tmpl src ${sun} dst ${moon} proto esp mode tunnel
+ip xfrm policy add src ${sun_net} dst ${moon_net} dir fwd ptype main tmpl src ${sun} dst ${moon} proto esp mode tunnel
 
 ip xfrm policy ls
