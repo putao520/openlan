@@ -210,12 +210,15 @@ func (v *Switch) preNetwork() {
 	for _, nCfg := range v.cfg.Network {
 		name := nCfg.Name
 		w := NewNetworker(nCfg)
-		v.preWorker(w)
 		v.worker[name] = w
-
 		brCfg := nCfg.Bridge
-		vpnCfg := nCfg.OpenVPN
+		if brCfg == nil {
+			continue
+		}
+
+		v.preWorker(w)
 		brName := brCfg.Name
+		vpnCfg := nCfg.OpenVPN
 
 		v.enableAcl(nCfg.Acl, brName)
 		source := brCfg.Address

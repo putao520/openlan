@@ -171,7 +171,7 @@ func (w *OpenLANWorker) UnLoadRoutes() {
 	}
 }
 
-func (w *OpenLANWorker) UpBridge(cfg config.Bridge) {
+func (w *OpenLANWorker) UpBridge(cfg *config.Bridge) {
 	master := w.bridge
 	// new it and configure address
 	master.Open(cfg.Address)
@@ -187,10 +187,17 @@ func (w *OpenLANWorker) UpBridge(cfg config.Bridge) {
 	if err := master.Delay(cfg.Delay); err != nil {
 		w.out.Warn("OpenLANWorker.UpBridge: Delay %s", err)
 	}
-	w.ConnectPeer(cfg)
+	w.connectPeer(cfg)
+	call := 1
+	if w.cfg.Acl == "" {
+		call = 0
+	}
+	if err := w.bridge.CallIptables(call); err != nil {
+		w.out.Warn("OpenLANWorker.Start: CallIptables %s", err)
+	}
 }
 
-func (w *OpenLANWorker) ConnectPeer(cfg config.Bridge) {
+func (w *OpenLANWorker) connectPeer(cfg *config.Bridge) {
 	if cfg.Peer == "" {
 		return
 	}
@@ -212,16 +219,16 @@ func (w *OpenLANWorker) ConnectPeer(cfg config.Bridge) {
 		}
 		err := netlink.LinkAdd(link)
 		if err != nil {
-			w.out.Error("OpenLANWorker.ConnectPeer: %s", err)
+			w.out.Error("OpenLANWorker.connectPeer: %s", err)
 			return nil
 		}
 		br0 := network.NewBrCtl(cfg.Name)
 		if err := br0.AddPort(in); err != nil {
-			w.out.Error("OpenLANWorker.ConnectPeer: %s", err)
+			w.out.Error("OpenLANWorker.connectPeer: %s", err)
 		}
 		br1 := network.NewBrCtl(cfg.Peer)
 		if err := br1.AddPort(ex); err != nil {
-			w.out.Error("OpenLANWorker.ConnectPeer: %s", err)
+			w.out.Error("OpenLANWorker.connectPeer: %s", err)
 		}
 		return nil
 	})
@@ -229,15 +236,7 @@ func (w *OpenLANWorker) ConnectPeer(cfg config.Bridge) {
 
 func (w *OpenLANWorker) Start(v api.Switcher) {
 	w.out.Info("OpenLANWorker.Start")
-	brCfg := w.cfg.Bridge
-	w.UpBridge(brCfg)
-	call := 1
-	if w.cfg.Acl == "" {
-		call = 0
-	}
-	if err := w.bridge.CallIptables(call); err != nil {
-		w.out.Warn("OpenLANWorker.Start: CallIptables %s", err)
-	}
+	w.UpBridge(w.cfg.Bridge)
 	w.uuid = v.UUID()
 	w.LoadLinks()
 	w.LoadRoutes()
@@ -247,12 +246,12 @@ func (w *OpenLANWorker) Start(v api.Switcher) {
 	w.startTime = time.Now().Unix()
 }
 
-func (w *OpenLANWorker) DownBridge(cfg config.Bridge) {
-	w.ClosePeer(cfg)
+func (w *OpenLANWorker) downBridge(cfg *config.Bridge) {
+	w.closePeer(cfg)
 	_ = w.bridge.Close()
 }
 
-func (w *OpenLANWorker) ClosePeer(cfg config.Bridge) {
+func (w *OpenLANWorker) closePeer(cfg *config.Bridge) {
 	if cfg.Peer == "" {
 		return
 	}
@@ -263,7 +262,7 @@ func (w *OpenLANWorker) ClosePeer(cfg config.Bridge) {
 	}
 	err := netlink.LinkDel(link)
 	if err != nil {
-		w.out.Error("OpenLANWorker.ClosePeer: %s", err)
+		w.out.Error("OpenLANWorker.closePeer: %s", err)
 		return
 	}
 }
@@ -276,7 +275,7 @@ func (w *OpenLANWorker) Stop() {
 	w.UnLoadRoutes()
 	w.UnLoadLinks()
 	w.startTime = 0
-	w.DownBridge(w.cfg.Bridge)
+	w.downBridge(w.cfg.Bridge)
 }
 
 func (w *OpenLANWorker) UpTime() int64 {
