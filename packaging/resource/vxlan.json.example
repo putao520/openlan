@@ -13,7 +13,7 @@
             {
                 "name": "vxlan-200",
                 "vni": 200,
-                "local": "100.64.0.10",
+                "local": "100.64.0.11",
                 "remote": "100.64.0.20",
                 "network": "default"
             }

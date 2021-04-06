@@ -30,7 +30,7 @@ type OpenLANWorker struct {
 	crypt     *config.Crypt
 	bridge    network.Bridger
 	out       *libol.SubLogger
-	openVPN   *OpenVPN
+	openVPN   *OpenVpn
 }
 
 func NewOpenLANWorker(c *config.Network) *OpenLANWorker {

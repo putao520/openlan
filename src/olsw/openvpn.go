@@ -112,65 +112,65 @@ func NewOpenVpnDataFromConf(cfg *config.OpenVPN) *OpenVPNData {
 	return data
 }
 
-type OpenVPN struct {
+type OpenVpn struct {
 	Cfg *config.OpenVPN
 	out *libol.SubLogger
 }
 
-func NewOpenVPN(cfg *config.OpenVPN) *OpenVPN {
-	return &OpenVPN{
+func NewOpenVPN(cfg *config.OpenVPN) *OpenVpn {
+	return &OpenVpn{
 		Cfg: cfg,
 		out: libol.NewSubLogger(cfg.Network),
 	}
 }
 
-func (o *OpenVPN) Path() string {
+func (o *OpenVpn) Path() string {
 	return OpenVPNBin
 }
 
-func (o *OpenVPN) Directory() string {
+func (o *OpenVpn) Directory() string {
 	if o.Cfg == nil {
 		return DefaultCurDir
 	}
 	return o.Cfg.Directory
 }
 
-func (o *OpenVPN) ServerConf() string {
+func (o *OpenVpn) ServerConf() string {
 	if o.Cfg == nil {
 		return ""
 	}
 	return filepath.Join(o.Cfg.Directory, "server.conf")
 }
 
-func (o *OpenVPN) ClientConf() string {
+func (o *OpenVpn) ClientConf() string {
 	if o.Cfg == nil {
 		return ""
 	}
 	return filepath.Join(o.Cfg.Directory, "client.ovpn")
 }
 
-func (o *OpenVPN) ServerLog() string {
+func (o *OpenVpn) ServerLog() string {
 	if o.Cfg == nil {
 		return ""
 	}
 	return filepath.Join(o.Cfg.Directory, "server.log")
 }
 
-func (o *OpenVPN) ServerPid() string {
+func (o *OpenVpn) ServerPid() string {
 	if o.Cfg == nil {
 		return ""
 	}
 	return filepath.Join(o.Cfg.Directory, "server.pid")
 }
 
-func (o *OpenVPN) ServerStats() string {
+func (o *OpenVpn) ServerStats() string {
 	if o.Cfg == nil {
 		return ""
 	}
 	return filepath.Join(o.Cfg.Directory, "server.stats")
 }
 
-func (o *OpenVPN) ServerTmpl() string {
+func (o *OpenVpn) ServerTmpl() string {
 	tmplStr := xAuthConfTmpl
 	if o.Cfg.Auth == "cert" {
 		tmplStr = certConfTmpl
@@ -186,21 +186,21 @@ func (o *OpenVPN) ServerTmpl() string {
 	return tmplStr
 }
 
-func (o *OpenVPN) IppTxt() string {
+func (o *OpenVpn) IppTxt() string {
 	if o.Cfg == nil {
 		return ""
 	}
 	return filepath.Join(o.Cfg.Directory, "ipp.txt")
 }
 
-func (o *OpenVPN) WriteConf(path string) error {
+func (o *OpenVpn) WriteConf(path string) error {
 	fp, err := libol.CreateFile(path)
 	if err != nil || fp == nil {
 		return err
 	}
 	defer fp.Close()
 	data := NewOpenVpnDataFromConf(o.Cfg)
-	o.out.Debug("OpenVPN.WriteConf %v", data)
+	o.out.Debug("OpenVpn.WriteConf %v", data)
 	tmplStr := o.ServerTmpl()
 	if tmpl, err := template.New("main").Parse(tmplStr); err != nil {
 		return err
@@ -212,44 +212,44 @@ func (o *OpenVPN) WriteConf(path string) error {
 	return nil
 }
 
-func (o *OpenVPN) Clean() {
+func (o *OpenVpn) Clean() {
 	status := o.ServerStats()
 	if err := libol.FileExist(status); err == nil {
 		if err := os.Remove(status); err != nil {
-			o.out.Warn("OpenVPN.Clean %s", err)
+			o.out.Warn("OpenVpn.Clean %s", err)
 		}
 	}
 	ipp := o.IppTxt()
 	if err := libol.FileExist(ipp); err == nil {
 		if err := os.Remove(ipp); err != nil {
-			o.out.Warn("OpenVPN.Clean %s", err)
+			o.out.Warn("OpenVpn.Clean %s", err)
 		}
 	}
 }
 
-func (o *OpenVPN) Initialize() {
+func (o *OpenVpn) Initialize() {
 	if !o.ValidConf() {
 		return
 	}
 	o.Clean()
 	if err := os.Mkdir(o.Directory(), 0600); err != nil {
-		o.out.Warn("OpenVPN.Initialize %s", err)
+		o.out.Warn("OpenVpn.Initialize %s", err)
 	}
 	if err := o.WriteConf(o.ServerConf()); err != nil {
-		o.out.Warn("OpenVPN.Initialize %s", err)
+		o.out.Warn("OpenVpn.Initialize %s", err)
 		return
 	}
 	if ctx, err := o.Profile(); err == nil {
 		file := o.ClientConf()
 		if err := ioutil.WriteFile(file, ctx, 0600); err != nil {
-			o.out.Warn("OpenVPN.Initialize %s", err)
+			o.out.Warn("OpenVpn.Initialize %s", err)
 		}
 	} else {
-		o.out.Warn("OpenVPN.Initialize %s", err)
+		o.out.Warn("OpenVpn.Initialize %s", err)
 	}
 }
 
-func (o *OpenVPN) ValidConf() bool {
+func (o *OpenVpn) ValidConf() bool {
 	if o.Cfg == nil {
 		return false
 	}
@@ -259,13 +259,13 @@ func (o *OpenVPN) ValidConf() bool {
 	return true
 }
 
-func (o *OpenVPN) Start() {
+func (o *OpenVpn) Start() {
 	if !o.ValidConf() {
 		return
 	}
 	log, err := libol.CreateFile(o.ServerLog())
 	if err != nil {
-		o.out.Warn("OpenVPN.Start %s", err)
+		o.out.Warn("OpenVpn.Start %s", err)
 		return
 	}
 	libol.Go(func() {
@@ -278,28 +278,28 @@ func (o *OpenVPN) Start() {
 		cmd := exec.Command(o.Path(), args...)
 		cmd.Stdout = log
 		if err := cmd.Run(); err != nil {
-			o.out.Error("OpenVPN.Start %s", err)
+			o.out.Error("OpenVpn.Start %s", err)
 		}
 	})
 }
 
-func (o *OpenVPN) Stop() {
+func (o *OpenVpn) Stop() {
 	if !o.ValidConf() {
 		return
 	}
 	if data, err := ioutil.ReadFile(o.ServerPid()); err != nil {
-		o.out.Debug("OpenVPN.Stop %s", err)
+		o.out.Debug("OpenVpn.Stop %s", err)
 	} else {
 		pid := strings.TrimSpace(string(data))
 		cmd := exec.Command("/usr/bin/kill", pid)
 		if err := cmd.Run(); err != nil {
-			o.out.Warn("OpenVPN.Stop %s: %s", pid, err)
+			o.out.Warn("OpenVpn.Stop %s: %s", pid, err)
 		}
 	}
 	o.Clean()
 }
 
-func (o *OpenVPN) ProfileTmpl() string {
+func (o *OpenVpn) ProfileTmpl() string {
 	tmplStr := xAuthClientProfile
 	if o.Cfg.Auth == "cert" {
 		tmplStr = certClientProfile
@@ -315,7 +315,7 @@ func (o *OpenVPN) ProfileTmpl() string {
 	return tmplStr
 }
 
-func (o *OpenVPN) Profile() ([]byte, error) {
+func (o *OpenVpn) Profile() ([]byte, error) {
 	data := NewOpenVpnProfileFromConf(o.Cfg)
 	tmplStr := o.ProfileTmpl()
 	tmpl, err := template.New("main").Parse(tmplStr)

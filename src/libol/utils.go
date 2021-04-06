@@ -234,3 +234,12 @@ func OpenRead(path string) (*os.File, error) {
 func CreateFile(path string) (*os.File, error) {
 	return os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 }
+
+func ParseNet(addr string) (*net.IPNet, error) {
+	if ip, ipNet, err := net.ParseCIDR(addr); err != nil {
+		return nil, err
+	} else {
+		ipNet.IP = ip
+		return ipNet, nil
+	}
+}

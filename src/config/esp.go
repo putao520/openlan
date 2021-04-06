@@ -5,23 +5,23 @@ import (
 	"github.com/danieldin95/openlan-go/src/libol"
 )
 
-type ESPState struct {
+type EspState struct {
 	Local   string `json:"local"`
 	Private string `json:"private"`
 	Remote  string `json:"remote"`
 	Auth    string `json:"auth"`
-	Secret  string `json:"secret"`
+	Crypt   string `json:"crypt"`
 }
 
-func (s *ESPState) Correct(obj *ESPState) {
+func (s *EspState) Correct(obj *EspState) {
 	if s.Local == "" {
 		s.Local = obj.Local
 	}
 	if s.Auth == "" {
 		s.Auth = obj.Auth
 	}
-	if s.Secret == "" {
-		s.Secret = obj.Secret
+	if s.Crypt == "" {
+		s.Crypt = obj.Crypt
 	}
 	if s.Private == "" {
 		s.Private = obj.Private
@@ -37,18 +37,18 @@ type ESPPolicy struct {
 }
 
 type ESPMember struct {
-	Name     string      `json:"name"`
-	Local    string      `json:"local"`
-	Remote   string      `json:"remote"`
-	Spi      uint32      `json:"spi"`
-	State    ESPState    `json:"state"`
-	Policies []ESPPolicy `json:"policies"`
+	Name     string       `json:"name"`
+	Local    string       `json:"local"`
+	Remote   string       `json:"remote"`
+	Spi      uint32       `json:"spi"`
+	State    EspState     `json:"state"`
+	Policies []*ESPPolicy `json:"policies"`
 }
 
 type ESPInterface struct {
 	Name    string       `json:"name"`
 	Local   string       `json:"local"`
-	State   ESPState     `json:"state"`
+	State   EspState     `json:"state"`
 	Members []*ESPMember `json:"members"`
 }
 
@@ -64,11 +64,11 @@ func (n *ESPInterface) Correct() {
 		s := &m.State
 		s.Correct(&n.State)
 		if m.Policies == nil {
-			m.Policies = make([]ESPPolicy, 0, 2)
+			m.Policies = make([]*ESPPolicy, 0, 2)
 		}
-		m.Policies = append(m.Policies, ESPPolicy{
-			Source:      m.Local,
-			Destination: m.Remote,
+		m.Policies = append(m.Policies, &ESPPolicy{
+			Source:      m.Local + "/32",
+			Destination: m.Remote + "/32",
 		})
 		if m.Spi == 0 {
 			m.Spi = libol.GenUint32()

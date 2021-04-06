@@ -268,7 +268,7 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 	sort.SliceStable(body.OnLines, func(i, j int) bool {
 		return body.OnLines[i].HitTime < body.OnLines[j].HitTime
 	})
-	// display OpenVPN Clients.
+	// display OpenVpn Clients.
 	for n := range store.Network.List() {
 		if n == nil {
 			break
