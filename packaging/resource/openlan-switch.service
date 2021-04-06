@@ -8,6 +8,7 @@ EnvironmentFile=/etc/sysconfig/openlan/switch.cfg
 ExecStartPre=-/usr/sbin/modprobe bridge
 ExecStartPre=-/usr/sbin/modprobe br_netfilter
 ExecStartPre=-/usr/sbin/modprobe xfrm4_mode_tunnel
+ExecStartPre=-/usr/sbin/modprobe vxlan
 ExecStart=/usr/bin/openlan-switch $OPTIONS
 LimitNOFILE=102400
 Restart=always

@@ -197,7 +197,7 @@ func (w *EspWorker) Start(v api.Switcher) {
 	}
 	for _, mem := range w.inCfg.Members {
 		if err := w.UpDummy(mem.Name, mem.Address, mem.Peer); err != nil {
-			w.out.Error("EspWorker.Start %s dummy %s", mem.Name, err)
+			w.out.Error("EspWorker.Start %s %s", mem.Name, err)
 		}
 	}
 }

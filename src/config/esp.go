@@ -64,8 +64,8 @@ func (n *ESPInterface) Correct() {
 		if !strings.Contains(m.Peer, "/") {
 			m.Peer += "/32"
 		}
-		s := &m.State
-		s.Correct(&n.State)
+		ptr := &m.State
+		ptr.Correct(&n.State)
 		if m.Policies == nil {
 			m.Policies = make([]*ESPPolicy, 0, 2)
 		}

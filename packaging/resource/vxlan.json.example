@@ -5,7 +5,6 @@
         "local": "100.64.0.10",
         "members": [
             {
-                "name": "vxlan-100",
                 "vni": 100,
                 "remote": "100.64.0.20",
                 "bridge": "br-em1"

@@ -1,6 +1,9 @@
 package config
 
-import "github.com/danieldin95/openlan-go/src/libol"
+import (
+	"fmt"
+	"github.com/danieldin95/openlan-go/src/libol"
+)
 
 type VxLANMember struct {
 	Name    string `json:"name"`
@@ -9,6 +12,13 @@ type VxLANMember struct {
 	Remote  string `json:"remote"`
 	Network string `json:"network"`
 	Bridge  string `json:"bridge"`
+	Port    int    `json:"port"`
+}
+
+func (m *VxLANMember) Correct() {
+	if m.Name == "" {
+		m.Name = fmt.Sprintf("vxlan-%d", m.VNI)
+	}
 }
 
 type VxLANInterface struct {
@@ -26,5 +36,6 @@ func (n *VxLANInterface) Correct() {
 			libol.Warn("VxLANInterface.Correct %s need local", n.Name)
 			continue
 		}
+		m.Correct()
 	}
 }
