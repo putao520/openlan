@@ -37,20 +37,27 @@ if [ -z "${moon_port}" ]; then
      moon_port="22"
 fi
 
+if [ -z "${sun_addr}" ]; then
+    sun_addr=${sun}
+fi
+if [ -z "${moon_addr}" ]; then
+    moon_addr=${moon}
+fi
+
 ssh -p ${sun_port} ${sun} /bin/bash << EOF
     # --
     ip xfrm state flush
 
-    ip xfrm state add src ${moon} dst ${sun} proto esp spi 0x${moon_spi} reqid 0x${reqid} mode tunnel auth sha256 0x${auth_key} enc aes 0x${enc_key} encap espinudp 4500 4500 0.0.0.0
-    ip xfrm state add src ${sun} dst ${moon} proto esp spi 0x${sun_spi} reqid 0x${reqid} mode tunnel auth sha256 0x${auth_key} enc aes 0x${enc_key} encap espinudp 4500 4500 0.0.0.0
+    ip xfrm state add src ${moon} dst ${sun_addr} proto esp spi 0x${moon_spi} reqid 0x${reqid} mode tunnel auth sha256 0x${auth_key} enc aes 0x${enc_key} encap espinudp 4500 4500 0.0.0.0
+    ip xfrm state add src ${sun_addr} dst ${moon} proto esp spi 0x${sun_spi} reqid 0x${reqid} mode tunnel auth sha256 0x${auth_key} enc aes 0x${enc_key} encap espinudp 4500 4500 0.0.0.0
     ip xfrm state ls
 
     # --
     ip xfrm policy flush
 
-    ip xfrm policy add src ${moon_net} dst ${sun_net} dir in ptype main tmpl src ${moon} dst ${sun} proto esp reqid 0x${reqid} mode tunnel
-    ip xfrm policy add src ${moon_net} dst ${sun_net} dir fwd ptype main tmpl src ${moon} dst ${sun} proto esp reqid 0x${reqid} mode tunnel
-    ip xfrm policy add src ${sun_net} dst ${moon_net} dir out ptype main tmpl src ${sun} dst ${moon} proto esp reqid 0x${reqid} mode tunnel
+    ip xfrm policy add src ${moon_net} dst ${sun_net} dir in ptype main tmpl src ${moon} dst ${sun_addr} proto esp reqid 0x${reqid} mode tunnel
+    ip xfrm policy add src ${moon_net} dst ${sun_net} dir fwd ptype main tmpl src ${moon} dst ${sun_addr} proto esp reqid 0x${reqid} mode tunnel
+    ip xfrm policy add src ${sun_net} dst ${moon_net} dir out ptype main tmpl src ${sun_addr} dst ${moon} proto esp reqid 0x${reqid} mode tunnel
     ip xfrm policy ls
     ip link show dummy0 || ip link add type dummy
     ip link set dummy0 up
@@ -62,16 +69,16 @@ ssh -p ${moon_port} ${moon} /bin/bash << EOF
     # --
     ip xfrm state flush
 
-    ip xfrm state add src ${sun} dst ${moon} proto esp spi 0x${sun_spi} reqid 0x${reqid} mode tunnel auth sha256 0x${auth_key} enc aes 0x${enc_key} encap espinudp 4500 4500 0.0.0.0
-    ip xfrm state add src ${moon} dst ${sun} proto esp spi 0x${moon_spi} reqid 0x${reqid} mode tunnel auth sha256 0x${auth_key} enc aes 0x${enc_key} encap espinudp 4500 4500 0.0.0.0
+    ip xfrm state add src ${sun} dst ${moon_addr} proto esp spi 0x${sun_spi} reqid 0x${reqid} mode tunnel auth sha256 0x${auth_key} enc aes 0x${enc_key} encap espinudp 4500 4500 0.0.0.0
+    ip xfrm state add src ${moon_addr} dst ${sun} proto esp spi 0x${moon_spi} reqid 0x${reqid} mode tunnel auth sha256 0x${auth_key} enc aes 0x${enc_key} encap espinudp 4500 4500 0.0.0.0
     ip xfrm state ls
 
     # --
     ip xfrm policy flush
 
-    ip xfrm policy add src ${sun_net} dst ${moon_net} dir in ptype main tmpl src ${sun} dst ${moon} proto esp reqid 0x${reqid} mode tunnel
-    ip xfrm policy add src ${sun_net} dst ${moon_net} dir fwd ptype main tmpl src ${sun} dst ${moon} proto esp reqid 0x${reqid} mode tunnel
-    ip xfrm policy add src ${moon_net} dst ${sun_net} dir out ptype main tmpl src ${moon} dst ${sun} proto esp reqid 0x${reqid} mode tunnel
+    ip xfrm policy add src ${sun_net} dst ${moon_net} dir in ptype main tmpl src ${sun} dst ${moon_addr} proto esp reqid 0x${reqid} mode tunnel
+    ip xfrm policy add src ${sun_net} dst ${moon_net} dir fwd ptype main tmpl src ${sun} dst ${moon_addr} proto esp reqid 0x${reqid} mode tunnel
+    ip xfrm policy add src ${moon_net} dst ${sun_net} dir out ptype main tmpl src ${moon_addr} dst ${sun} proto esp reqid 0x${reqid} mode tunnel
     ip xfrm policy ls
     ip link show dummy0 || ip link add type dummy
     ip link set dummy0 up
