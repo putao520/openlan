@@ -12,7 +12,9 @@ type VxLANWorker struct {
 }
 
 func NewVxLANWorker(c *config.Network) *VxLANWorker {
-	w := &VxLANWorker{}
+	w := &VxLANWorker{
+		cfg: c,
+	}
 	return w
 }
 

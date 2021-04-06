@@ -19,7 +19,7 @@ func PeerName(name, prefix string) (string, string) {
 	return name + prefix + "i", name + prefix + "o"
 }
 
-type OLANWorker struct {
+type OpenLANWorker struct {
 	alias     string
 	cfg       *config.Network
 	newTime   int64
@@ -33,8 +33,8 @@ type OLANWorker struct {
 	openVPN   *OpenVPN
 }
 
-func NewOLANWorker(c *config.Network) *OLANWorker {
-	return &OLANWorker{
+func NewOpenLANWorker(c *config.Network) *OpenLANWorker {
+	return &OpenLANWorker{
 		alias:     c.Alias,
 		cfg:       c,
 		newTime:   time.Now().Unix(),
@@ -45,11 +45,11 @@ func NewOLANWorker(c *config.Network) *OLANWorker {
 	}
 }
 
-func (w *OLANWorker) String() string {
+func (w *OpenLANWorker) String() string {
 	return w.cfg.Name
 }
 
-func (w *OLANWorker) Initialize() {
+func (w *OpenLANWorker) Initialize() {
 	brCfg := w.cfg.Bridge
 	for _, pass := range w.cfg.Password {
 		user := &models.User{
@@ -71,7 +71,7 @@ func (w *OLANWorker) Initialize() {
 	}
 	for _, rt := range w.cfg.Routes {
 		if rt.NextHop == "" {
-			w.out.Warn("OLANWorker.Initialize: %s noNextHop", rt.Prefix)
+			w.out.Warn("OpenLANWorker.Initialize: %s noNextHop", rt.Prefix)
 			continue
 		}
 		rte := models.NewRoute(rt.Prefix, rt.NextHop, rt.Mode)
@@ -95,11 +95,11 @@ func (w *OLANWorker) Initialize() {
 	}
 }
 
-func (w *OLANWorker) ID() string {
+func (w *OpenLANWorker) ID() string {
 	return w.uuid
 }
 
-func (w *OLANWorker) LoadLinks() {
+func (w *OpenLANWorker) LoadLinks() {
 	if w.cfg.Links != nil {
 		for _, lin := range w.cfg.Links {
 			lin.Default()
@@ -108,15 +108,15 @@ func (w *OLANWorker) LoadLinks() {
 	}
 }
 
-func (w *OLANWorker) UnLoadLinks() {
+func (w *OpenLANWorker) UnLoadLinks() {
 	for _, p := range w.links {
 		p.Stop()
 	}
 }
 
-func (w *OLANWorker) LoadRoutes() {
+func (w *OpenLANWorker) LoadRoutes() {
 	// install routes
-	w.out.Debug("OLANWorker.LoadRoute: %v", w.cfg.Routes)
+	w.out.Debug("OpenLANWorker.LoadRoute: %v", w.cfg.Routes)
 	ifAddr := strings.SplitN(w.cfg.Bridge.Address, "/", 2)[0]
 	link, err := netlink.LinkByName(w.bridge.Name())
 	if ifAddr == "" || err != nil {
@@ -137,16 +137,16 @@ func (w *OLANWorker) LoadRoutes() {
 			Gw:        next,
 			Priority:  rt.Metric,
 		}
-		w.out.Debug("OLANWorker.LoadRoute: %s", rte)
+		w.out.Debug("OpenLANWorker.LoadRoute: %s", rte)
 		if err := netlink.RouteAdd(&rte); err != nil {
-			w.out.Warn("OLANWorker.LoadRoute: %s", err)
+			w.out.Warn("OpenLANWorker.LoadRoute: %s", err)
 			continue
 		}
-		w.out.Info("OLANWorker.LoadRoute: %v", rt)
+		w.out.Info("OpenLANWorker.LoadRoute: %v", rt)
 	}
 }
 
-func (w *OLANWorker) UnLoadRoutes() {
+func (w *OpenLANWorker) UnLoadRoutes() {
 	link, err := netlink.LinkByName(w.bridge.Name())
 	if w.cfg.Bridge.Address == "" || err != nil {
 		return
@@ -162,35 +162,35 @@ func (w *OLANWorker) UnLoadRoutes() {
 			Dst:       dst,
 			Gw:        next,
 		}
-		w.out.Debug("OLANWorker.UnLoadRoute: %s", rte)
+		w.out.Debug("OpenLANWorker.UnLoadRoute: %s", rte)
 		if err := netlink.RouteDel(&rte); err != nil {
-			w.out.Warn("OLANWorker.UnLoadRoute: %s", err)
+			w.out.Warn("OpenLANWorker.UnLoadRoute: %s", err)
 			continue
 		}
-		w.out.Info("OLANWorker.UnLoadRoute: %v", rt)
+		w.out.Info("OpenLANWorker.UnLoadRoute: %v", rt)
 	}
 }
 
-func (w *OLANWorker) UpBridge(cfg config.Bridge) {
+func (w *OpenLANWorker) UpBridge(cfg config.Bridge) {
 	master := w.bridge
 	// new it and configure address
 	master.Open(cfg.Address)
 	// configure stp
 	if cfg.Stp == "on" {
 		if err := master.Stp(true); err != nil {
-			w.out.Warn("OLANWorker.UpBridge: Stp %s", err)
+			w.out.Warn("OpenLANWorker.UpBridge: Stp %s", err)
 		}
 	} else {
 		_ = master.Stp(false)
 	}
 	// configure forward delay
 	if err := master.Delay(cfg.Delay); err != nil {
-		w.out.Warn("OLANWorker.UpBridge: Delay %s", err)
+		w.out.Warn("OpenLANWorker.UpBridge: Delay %s", err)
 	}
 	w.ConnectPeer(cfg)
 }
 
-func (w *OLANWorker) ConnectPeer(cfg config.Bridge) {
+func (w *OpenLANWorker) ConnectPeer(cfg config.Bridge) {
 	if cfg.Peer == "" {
 		return
 	}
@@ -212,23 +212,23 @@ func (w *OLANWorker) ConnectPeer(cfg config.Bridge) {
 		}
 		err := netlink.LinkAdd(link)
 		if err != nil {
-			w.out.Error("OLANWorker.ConnectPeer: %s", err)
+			w.out.Error("OpenLANWorker.ConnectPeer: %s", err)
 			return nil
 		}
 		br0 := network.NewBrCtl(cfg.Name)
 		if err := br0.AddPort(in); err != nil {
-			w.out.Error("OLANWorker.ConnectPeer: %s", err)
+			w.out.Error("OpenLANWorker.ConnectPeer: %s", err)
 		}
 		br1 := network.NewBrCtl(cfg.Peer)
 		if err := br1.AddPort(ex); err != nil {
-			w.out.Error("OLANWorker.ConnectPeer: %s", err)
+			w.out.Error("OpenLANWorker.ConnectPeer: %s", err)
 		}
 		return nil
 	})
 }
 
-func (w *OLANWorker) Start(v api.Switcher) {
-	w.out.Info("OLANWorker.Start")
+func (w *OpenLANWorker) Start(v api.Switcher) {
+	w.out.Info("OpenLANWorker.Start")
 	brCfg := w.cfg.Bridge
 	w.UpBridge(brCfg)
 	call := 1
@@ -236,7 +236,7 @@ func (w *OLANWorker) Start(v api.Switcher) {
 		call = 0
 	}
 	if err := w.bridge.CallIptables(call); err != nil {
-		w.out.Warn("OLANWorker.Start: CallIptables %s", err)
+		w.out.Warn("OpenLANWorker.Start: CallIptables %s", err)
 	}
 	w.uuid = v.UUID()
 	w.LoadLinks()
@@ -247,12 +247,12 @@ func (w *OLANWorker) Start(v api.Switcher) {
 	w.startTime = time.Now().Unix()
 }
 
-func (w *OLANWorker) DownBridge(cfg config.Bridge) {
+func (w *OpenLANWorker) DownBridge(cfg config.Bridge) {
 	w.ClosePeer(cfg)
 	_ = w.bridge.Close()
 }
 
-func (w *OLANWorker) ClosePeer(cfg config.Bridge) {
+func (w *OpenLANWorker) ClosePeer(cfg config.Bridge) {
 	if cfg.Peer == "" {
 		return
 	}
@@ -263,13 +263,13 @@ func (w *OLANWorker) ClosePeer(cfg config.Bridge) {
 	}
 	err := netlink.LinkDel(link)
 	if err != nil {
-		w.out.Error("OLANWorker.ClosePeer: %s", err)
+		w.out.Error("OpenLANWorker.ClosePeer: %s", err)
 		return
 	}
 }
 
-func (w *OLANWorker) Stop() {
-	w.out.Info("OLANWorker.Close")
+func (w *OpenLANWorker) Stop() {
+	w.out.Info("OpenLANWorker.Close")
 	if w.openVPN != nil {
 		w.openVPN.Stop()
 	}
@@ -279,14 +279,14 @@ func (w *OLANWorker) Stop() {
 	w.DownBridge(w.cfg.Bridge)
 }
 
-func (w *OLANWorker) UpTime() int64 {
+func (w *OpenLANWorker) UpTime() int64 {
 	if w.startTime != 0 {
 		return time.Now().Unix() - w.startTime
 	}
 	return 0
 }
 
-func (w *OLANWorker) AddLink(c *config.Point) {
+func (w *OpenLANWorker) AddLink(c *config.Point) {
 	brName := w.cfg.Bridge.Name
 	c.Alias = w.alias
 	c.RequestAddr = false
@@ -306,7 +306,7 @@ func (w *OLANWorker) AddLink(c *config.Point) {
 	})
 }
 
-func (w *OLANWorker) DelLink(addr string) {
+func (w *OpenLANWorker) DelLink(addr string) {
 	w.linksLock.Lock()
 	defer w.linksLock.Unlock()
 	if p, ok := w.links[addr]; ok {
@@ -316,7 +316,7 @@ func (w *OLANWorker) DelLink(addr string) {
 	}
 }
 
-func (w *OLANWorker) GetSubnet() string {
+func (w *OpenLANWorker) GetSubnet() string {
 	addr := ""
 	if w.cfg.Bridge.Address != "" {
 		addr = w.cfg.Bridge.Address
@@ -331,10 +331,10 @@ func (w *OLANWorker) GetSubnet() string {
 	return ""
 }
 
-func (w *OLANWorker) GetBridge() network.Bridger {
+func (w *OpenLANWorker) GetBridge() network.Bridger {
 	return w.bridge
 }
 
-func (w *OLANWorker) GetConfig() *config.Network {
+func (w *OpenLANWorker) GetConfig() *config.Network {
 	return w.cfg
 }

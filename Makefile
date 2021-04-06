@@ -27,6 +27,7 @@ BD = $(SD)/build
 LD = openlan-linux-$(VER)
 WD = openlan-windows-$(VER)
 XD = openlan-darwin-$(VER)
+DEST = $(DST)
 
 help: ## show make targets
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {sub("\\\\n",sprintf("\n%22c"," "), $$2);\
@@ -40,6 +41,9 @@ pkg: linux-rpm windows-zip darwin-zip ## build all plaftorm packages
 ## upgrade
 upgrade:
 	ansible-playbook ./misc/playbook/upgrade.yaml -e "version=$(VER)"
+
+install:
+	echo $(DEST)
 
 clean: ## clean cache
 	rm -rvf ./build

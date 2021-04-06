@@ -483,6 +483,7 @@ func (v *Switch) Start() {
 	defer v.lock.Unlock()
 
 	v.out.Debug("Switch.Start")
+	OpenUDP()
 	// firstly, start network.
 	for _, w := range v.worker {
 		w.Start(v)

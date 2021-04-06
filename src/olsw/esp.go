@@ -2,8 +2,15 @@ package olsw
 
 import (
 	"github.com/danieldin95/openlan-go/src/config"
+	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/network"
 	"github.com/danieldin95/openlan-go/src/olsw/api"
+	"os/exec"
+)
+
+const (
+	UDPPort = "4500"
+	UDPBin  = "/usr/bin/udp-4500"
 )
 
 type ESPWorker struct {
@@ -12,7 +19,9 @@ type ESPWorker struct {
 }
 
 func NewESPWorker(c *config.Network) *ESPWorker {
-	w := &ESPWorker{}
+	w := &ESPWorker{
+		cfg: c,
+	}
 	return w
 }
 
@@ -46,4 +55,14 @@ func (w *ESPWorker) GetConfig() *config.Network {
 
 func (w *ESPWorker) GetSubnet() string {
 	return ""
+}
+
+func OpenUDP() {
+	libol.Go(func() {
+		args := []string{UDPPort}
+		cmd := exec.Command(UDPBin, args...)
+		if err := cmd.Run(); err != nil {
+			libol.Error("esp.init %s", err)
+		}
+	})
 }

@@ -39,11 +39,12 @@ func NewHttp(switcher api.Switcher) (h *Http) {
 		switcher:  switcher,
 		listen:    c.Http.Listen,
 		adminFile: c.TokenFile,
-		crtFile:   c.Cert.CrtFile,
-		keyFile:   c.Cert.KeyFile,
 		pubDir:    c.Http.Public,
 	}
-
+	if c.Cert != nil {
+		h.crtFile = c.Cert.CrtFile
+		h.keyFile = c.Cert.KeyFile
+	}
 	return
 }
 

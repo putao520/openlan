@@ -12,5 +12,5 @@ type VxLANMember struct {
 type VxLANInterface struct {
 	Name    string        `json:"name"`
 	Local   string        `json:"local"`
-	Members []VxLANMember `json:"member"`
+	Members []VxLANMember `json:"members"`
 }

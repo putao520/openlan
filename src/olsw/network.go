@@ -24,6 +24,6 @@ func NewNetworker(c *config.Network) Networker {
 	case "vxlan":
 		return NewVxLANWorker(c)
 	default:
-		return NewOLANWorker(c)
+		return NewOpenLANWorker(c)
 	}
 }
