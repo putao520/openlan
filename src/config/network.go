@@ -34,6 +34,9 @@ func (n *Network) Correct() {
 		if n.Bridge == nil {
 			n.Bridge = &Bridge{}
 		}
+		if n.Subnet == nil {
+			n.Subnet = &IpSubnet{}
+		}
 		br := n.Bridge
 		ifAddr := ""
 		br.Network = n.Name

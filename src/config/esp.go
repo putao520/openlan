@@ -3,14 +3,14 @@ package config
 import (
 	"fmt"
 	"github.com/danieldin95/openlan-go/src/libol"
+	"strings"
 )
 
 type EspState struct {
-	Local   string `json:"local"`
-	Private string `json:"private"`
-	Remote  string `json:"remote"`
-	Auth    string `json:"auth"`
-	Crypt   string `json:"crypt"`
+	Local  string `json:"local"`
+	Remote string `json:"remote"`
+	Auth   string `json:"auth"`
+	Crypt  string `json:"crypt"`
 }
 
 func (s *EspState) Correct(obj *EspState) {
@@ -23,11 +23,8 @@ func (s *EspState) Correct(obj *EspState) {
 	if s.Crypt == "" {
 		s.Crypt = obj.Crypt
 	}
-	if s.Private == "" {
-		s.Private = obj.Private
-	}
-	if s.Private == "" {
-		s.Private = s.Local
+	if s.Crypt == "" {
+		s.Crypt = s.Auth
 	}
 }
 
@@ -38,8 +35,8 @@ type ESPPolicy struct {
 
 type ESPMember struct {
 	Name     string       `json:"name"`
-	Local    string       `json:"local"`
-	Remote   string       `json:"remote"`
+	Address  string       `json:"address"`
+	Peer     string       `json:"peer"`
 	Spi      uint32       `json:"spi"`
 	State    EspState     `json:"state"`
 	Policies []*ESPPolicy `json:"policies"`
@@ -47,19 +44,25 @@ type ESPMember struct {
 
 type ESPInterface struct {
 	Name    string       `json:"name"`
-	Local   string       `json:"local"`
+	Address string       `json:"address"`
 	State   EspState     `json:"state"`
 	Members []*ESPMember `json:"members"`
 }
 
 func (n *ESPInterface) Correct() {
 	for _, m := range n.Members {
-		if m.Local == "" {
-			m.Local = n.Local
+		if m.Address == "" {
+			m.Address = n.Address
 		}
-		if m.Local == "" {
-			libol.Warn("ESPInterface.Correct %s need local", n.Name)
+		if m.Address == "" {
+			libol.Warn("ESPInterface.Correct %s need address", n.Name)
 			continue
+		}
+		if !strings.Contains(m.Address, "/") {
+			m.Address += "/32"
+		}
+		if !strings.Contains(m.Peer, "/") {
+			m.Peer += "/32"
 		}
 		s := &m.State
 		s.Correct(&n.State)
@@ -67,8 +70,8 @@ func (n *ESPInterface) Correct() {
 			m.Policies = make([]*ESPPolicy, 0, 2)
 		}
 		m.Policies = append(m.Policies, &ESPPolicy{
-			Source:      m.Local + "/32",
-			Destination: m.Remote + "/32",
+			Source:      m.Address,
+			Destination: m.Peer,
 		})
 		if m.Spi == 0 {
 			m.Spi = libol.GenUint32()

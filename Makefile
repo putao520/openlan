@@ -34,7 +34,7 @@ help: ## show make targets
 		printf " \033[36m%-20s\033[0m  %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 ## all platform
-bin: linux windows darwin udp-4500 ## build all platform binary
+bin: linux windows darwin ## build all platform binary
 
 pkg: linux-rpm windows-zip darwin-zip ## build all plaftorm packages
 
@@ -58,8 +58,8 @@ env:
 ## linux platform
 linux: linux-proxy linux-point linux-switch linux-ctrl ## build linux binary
 
-udp-4500: env
-	gcc ./misc/learn/xfrm/udp-4500.c -o  $(BD)/udp-4500
+openudp: env
+	gcc ./misc/learn/xfrm/udp.c -o  $(BD)/openudp
 
 linux-ctrl: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-ctrl ./src/cli/ctrl
@@ -69,7 +69,7 @@ linux-point: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point ./src/cli/point_linux
 	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point.i386 ./src/cli/point_linux
 
-linux-switch: env
+linux-switch: env openudp
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch ./src/cli/switch
 	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch.i386 ./src/cli/switch
 

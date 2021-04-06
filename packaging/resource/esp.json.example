@@ -2,35 +2,34 @@
     "name": "esp",
     "provider": "esp",
     "interface": {
-        "local": "100.64.0.10",
+        "address": "100.64.0.10",
         "state": {
             "auth": "a4b88c8e96db11eba164525400d1aa29",
             "crypt": "a3ae861896db11eba2ff525400d1aa29",
-            "local": "2.16.1.1",
-            "private": "192.168.1.10"
+            "local": "192.168.1.10"
         },
         "members": [
             {
                 "spi": 100,
-                "remote": "100.64.0.20",
+                "peer": "100.64.0.20",
                 "state": {
                     "remote": "2.16.1.2"
                 }
             },
             {
                 "spi": 200,
-                "local": "100.64.0.11",
-                "remote": "100.64.0.30",
+                "address": "100.64.0.11",
+                "peer": "100.64.0.30",
                 "state": {
-                    "local": "2.16.1.1",
+                    "local": "192.168.1.10",
                     "remote": "2.16.1.2",
                     "auth": "a263d01a96db11eba445525400d1aa29",
                     "crypt": "9b73bc48e3864b3ebf0098b9c37d803c"
                 },
                 "policy": [
                     {
-                        "local": "192.168.1.0/24",
-                        "remote": "192.168.2.0/24"
+                        "source": "192.168.1.0/24",
+                        "destination": "192.168.2.0/24"
                     }
                 ]
             }

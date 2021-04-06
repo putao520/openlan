@@ -9,29 +9,31 @@ import (
 	"net"
 	"os/exec"
 	"strconv"
+	"strings"
 )
 
 const (
 	UDPPort = 4500
-	UDPBin  = "/usr/bin/udp-4500"
+	UDPBin  = "/usr/bin/openudp"
 )
 
 type EspWorker struct {
-	netCfg   *config.Network
+	uuid     string
+	cfg      *config.Network
 	states   []*netlink.XfrmState
 	policies []*netlink.XfrmPolicy
-	cfg      *config.ESPInterface
+	inCfg    *config.ESPInterface
 	out      *libol.SubLogger
 }
 
 func NewESPWorker(c *config.Network) *EspWorker {
 	w := &EspWorker{
-		netCfg:   c,
+		cfg:      c,
 		states:   make([]*netlink.XfrmState, 0, 4),
 		policies: make([]*netlink.XfrmPolicy, 0, 32),
 		out:      libol.NewSubLogger(c.Name),
 	}
-	w.cfg, _ = c.Interface.(*config.ESPInterface)
+	w.inCfg, _ = c.Interface.(*config.ESPInterface)
 	return w
 }
 
@@ -49,6 +51,12 @@ func (w *EspWorker) newState(spi uint32, src, dst, auth, crypt string) *netlink.
 		Crypt: &netlink.XfrmStateAlgo{
 			Name: "cbc(aes)",
 			Key:  []byte(crypt),
+		},
+		Encap: &netlink.XfrmStateEncap{
+			Type:            netlink.XFRM_ENCAP_ESPINUDP,
+			SrcPort:         UDPPort,
+			DstPort:         UDPPort,
+			OriginalAddress: net.ParseIP("0.0.0.0").To4(),
 		},
 	}
 }
@@ -73,7 +81,7 @@ func (w *EspWorker) newPolicy(spi uint32, local, remote string,
 
 func (w *EspWorker) addState(mem *config.ESPMember) {
 	spi := mem.Spi
-	local := mem.State.Private
+	local := mem.State.Local
 	remote := mem.State.Remote
 	auth := mem.State.Auth
 	crypt := mem.State.Crypt
@@ -87,7 +95,7 @@ func (w *EspWorker) addState(mem *config.ESPMember) {
 
 func (w *EspWorker) addPolicy(mem *config.ESPMember, pol *config.ESPPolicy) {
 	spi := mem.Spi
-	local := mem.State.Private
+	local := mem.State.Local
 	remote := mem.State.Remote
 
 	src, err := libol.ParseNet(pol.Source)
@@ -103,16 +111,16 @@ func (w *EspWorker) addPolicy(mem *config.ESPMember, pol *config.ESPPolicy) {
 	if po := w.newPolicy(spi, local, remote, src, dst, netlink.XFRM_DIR_OUT); po != nil {
 		w.policies = append(w.policies, po)
 	}
-	if po := w.newPolicy(spi, remote, local, src, dst, netlink.XFRM_DIR_IN); po != nil {
+	if po := w.newPolicy(spi, remote, local, dst, src, netlink.XFRM_DIR_IN); po != nil {
 		w.policies = append(w.policies, po)
 	}
-	if po := w.newPolicy(spi, remote, local, src, dst, netlink.XFRM_DIR_FWD); po != nil {
+	if po := w.newPolicy(spi, remote, local, dst, src, netlink.XFRM_DIR_FWD); po != nil {
 		w.policies = append(w.policies, po)
 	}
 }
 
 func (w *EspWorker) Initialize() {
-	for _, mem := range w.cfg.Members {
+	for _, mem := range w.inCfg.Members {
 		if mem == nil {
 			continue
 		}
@@ -128,50 +136,126 @@ func (w *EspWorker) Initialize() {
 	}
 }
 
+func (w *EspWorker) UpDummy(name, addr, peer string) error {
+	link, _ := netlink.LinkByName(name)
+	if link == nil {
+		port := &netlink.Dummy{
+			LinkAttrs: netlink.LinkAttrs{
+				TxQLen: -1,
+				Name:   name,
+			},
+		}
+		if err := netlink.LinkAdd(port); err != nil {
+			return err
+		}
+		link, _ = netlink.LinkByName(name)
+	}
+	if err := netlink.LinkSetUp(link); err != nil {
+		w.out.Error("EspWorker.UpDummy: %s", err)
+	}
+	w.out.Info("EspWorker.Open %s success", name)
+	if addr != "" {
+		ipAddr, err := netlink.ParseAddr(addr)
+		if err != nil {
+			return err
+		}
+		if err := netlink.AddrAdd(link, ipAddr); err != nil {
+			return err
+		}
+	}
+	// add peer routes.
+	_, dst, err := net.ParseCIDR(peer)
+	if err != nil {
+		return err
+	}
+	ip := strings.SplitN(addr, "/", 2)[0]
+	next := net.ParseIP(ip)
+	rte := netlink.Route{
+		LinkIndex: link.Attrs().Index,
+		Dst:       dst,
+		Gw:        next,
+	}
+	w.out.Debug("EspWorker.AddRoute: %s", rte)
+	if err := netlink.RouteAdd(&rte); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (w *EspWorker) Start(v api.Switcher) {
+	w.uuid = v.UUID()
 	for _, state := range w.states {
-		libol.Info("EspWorker.Start State %s", state)
+		w.out.Debug("EspWorker.Start State %s", state)
 		if err := netlink.XfrmStateAdd(state); err != nil {
-			libol.Error("EspWorker.Start State %s", err)
+			w.out.Error("EspWorker.Start State %s", err)
 		}
 	}
 	for _, policy := range w.policies {
 		if err := netlink.XfrmPolicyAdd(policy); err != nil {
-			libol.Error("EspWorker.Start Policy %s", err)
+			w.out.Error("EspWorker.Start Policy %s", err)
+		}
+	}
+	for _, mem := range w.inCfg.Members {
+		if err := w.UpDummy(mem.Name, mem.Address, mem.Peer); err != nil {
+			w.out.Error("EspWorker.Start %s dummy %s", mem.Name, err)
 		}
 	}
 }
 
+func (w *EspWorker) DownDummy(name string) error {
+	link, _ := netlink.LinkByName(name)
+	if link == nil {
+		return nil
+	}
+	port := &netlink.Dummy{
+		LinkAttrs: netlink.LinkAttrs{
+			TxQLen: -1,
+			Name:   name,
+		},
+	}
+	if err := netlink.LinkDel(port); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (w *EspWorker) Stop() {
+	for _, mem := range w.inCfg.Members {
+		if err := w.DownDummy(mem.Name); err != nil {
+			w.out.Error("EspWorker.Stop %s dummy %s", mem.Name, err)
+		}
+	}
 	for _, state := range w.states {
 		if err := netlink.XfrmStateDel(state); err != nil {
-			libol.Error("EspWorker.Stop State %s", err)
+			w.out.Error("EspWorker.Stop State %s", err)
 		}
 	}
 	for _, policy := range w.policies {
 		if err := netlink.XfrmPolicyDel(policy); err != nil {
-			libol.Error("EspWorker.Stop Policy %s", err)
+			w.out.Error("EspWorker.Stop Policy %s", err)
 		}
 	}
 }
 
 func (w *EspWorker) String() string {
-	return ""
+	return w.cfg.Name
 }
 
 func (w *EspWorker) ID() string {
-	return ""
+	return w.uuid
 }
 
 func (w *EspWorker) GetBridge() network.Bridger {
+	w.out.Warn("EspWorker.GetBridge operation notSupport")
 	return nil
 }
 
 func (w *EspWorker) GetConfig() *config.Network {
-	return w.netCfg
+	return w.cfg
 }
 
 func (w *EspWorker) GetSubnet() string {
+	w.out.Warn("EspWorker.GetSubnet operation notSupport")
 	return ""
 }
 

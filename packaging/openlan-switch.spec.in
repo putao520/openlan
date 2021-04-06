@@ -21,6 +21,7 @@ cd %_source_dir && make linux-switch
 mkdir -p %{buildroot}/usr/bin
 cp %_source_dir/build/openlan %{buildroot}/usr/bin
 cp %_source_dir/build/openlan-switch %{buildroot}/usr/bin
+cp %_source_dir/build/openudp %{buildroot}/usr/bin
 
 mkdir -p %{buildroot}/etc/openlan/switch
 cp %_source_dir/packaging/resource/ctrl.json.example %{buildroot}/etc/openlan/switch
@@ -30,6 +31,8 @@ cp %_source_dir/packaging/resource/acl-1.json.example %{buildroot}/etc/openlan/s
 mkdir -p %{buildroot}/etc/openlan/switch/network
 cp %_source_dir/packaging/resource/network.json.example %{buildroot}/etc/openlan/switch/network
 cp %_source_dir/packaging/resource/default.json.example %{buildroot}/etc/openlan/switch/network
+cp %_source_dir/packaging/resource/esp.json.example %{buildroot}/etc/openlan/switch/network
+cp %_source_dir/packaging/resource/vxlan.json.example %{buildroot}/etc/openlan/switch/network
 mkdir -p %{buildroot}/etc/sysconfig/openlan
 cp %_source_dir/packaging/resource/switch.cfg %{buildroot}/etc/sysconfig/openlan
 mkdir -p %{buildroot}/etc/sysctl.d
@@ -51,12 +54,12 @@ cp -R %_source_dir/packaging/resource/example.ovpn %{buildroot}/var/openlan/open
 
 %pre
 /usr/bin/firewall-cmd --zone=public --permanent \
- --add-port=10002/udp --add-port=10002/tcp || {
-  echo "YOU NEED ALLOW TCP/UDP PORT:10002."
+ --add-port=4500/udp --add-port=10002/udp --add-port=10002/tcp || {
+  echo "YOU NEED ALLOW TCP/UDP 10002, and UDP 4500."
 }
 /usr/bin/firewall-cmd --zone=public --permanent \
   --add-port=10000/tcp --add-port=11080-11084/tcp || {
-  echo "YOU NEED ALLOW TCP PORT:10000 and 11080-11084"
+  echo "YOU NEED ALLOW TCP 10000 and 11080-11084"
 }
 firewall-cmd --reload || :
 
