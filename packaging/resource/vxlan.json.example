@@ -1,0 +1,20 @@
+{
+    "name": "vxlan",
+    "provider": "vxlan",
+    "interface": [
+        {
+            "name": "vxlan-100",
+            "vni": 100,
+            "local": "100.64.0.10",
+            "remote": "100.64.0.20",
+            "bridge": "br-em1"
+        },
+        {
+            "name": "vxlan-101",
+            "vni": 100,
+            "local": "100.64.0.10",
+            "remote": "100.64.0.20",
+            "network": "default"
+        }
+    ]
+}
