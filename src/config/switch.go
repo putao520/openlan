@@ -149,6 +149,18 @@ func (s *Switch) LoadNetwork() {
 			libol.Error("Switch.LoadNetwork %s", err)
 			continue
 		}
+		switch obj.Provider {
+		case "esp":
+			obj.Interface = &ESPInterface{}
+		case "vxlan":
+			obj.Interface = &VxLANInterface{}
+		}
+		if obj.Interface != nil {
+			if err := libol.UnmarshalLoad(obj, k); err != nil {
+				libol.Error("Switch.LoadNetwork %s", err)
+				continue
+			}
+		}
 		s.Network = append(s.Network, obj)
 	}
 	for _, obj := range s.Network {
@@ -157,6 +169,7 @@ func (s *Switch) LoadNetwork() {
 		}
 		obj.Correct()
 		obj.Alias = s.Alias
+		obj.Crypt = s.Crypt
 	}
 }
 

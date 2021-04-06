@@ -94,7 +94,7 @@ type Switch struct {
 	hooks    []Hook
 	http     *Http
 	server   libol.SocketServer
-	worker   map[string]*NetworkWorker
+	worker   map[string]Networker
 	uuid     string
 	newTime  int64
 	out      *libol.SubLogger
@@ -105,7 +105,7 @@ func NewSwitch(c *config.Switch) *Switch {
 	v := Switch{
 		cfg:      c,
 		firewall: NewFireWall(c.FireWall),
-		worker:   make(map[string]*NetworkWorker, 32),
+		worker:   make(map[string]Networker, 32),
 		server:   server,
 		newTime:  time.Now().Unix(),
 		hooks:    make([]Hook, 0, 64),
@@ -173,15 +173,16 @@ func (v *Switch) enableMasq(input, output, source, prefix string) {
 	})
 }
 
-func (v *Switch) preWorker(w *NetworkWorker) {
-	vnpCfg := w.cfg.OpenVPN
+func (v *Switch) preWorker(w Networker) {
+	cfg := w.GetConfig()
+	vnpCfg := cfg.OpenVPN
 	if vnpCfg != nil {
 		routes := vnpCfg.Routes
 		routes = append(routes, vnpCfg.Subnet)
 		if addr := w.GetSubnet(); addr != "" {
 			routes = append(routes, addr)
 		}
-		for _, rt := range w.cfg.Routes {
+		for _, rt := range cfg.Routes {
 			addr := rt.Prefix
 			if _, inet, err := net.ParseCIDR(addr); err == nil {
 				routes = append(routes, inet.String())
@@ -206,17 +207,17 @@ func (v *Switch) enableAcl(acl, input string) {
 }
 
 func (v *Switch) preNetwork() {
-	crypt := v.cfg.Crypt
 	for _, nCfg := range v.cfg.Network {
 		name := nCfg.Name
-		w := NewNetworkWorker(nCfg, crypt)
+		w := NewNetworker(nCfg)
+		v.preWorker(w)
 		v.worker[name] = w
+
 		brCfg := nCfg.Bridge
 		vpnCfg := nCfg.OpenVPN
-
 		brName := brCfg.Name
+
 		v.enableAcl(nCfg.Acl, brName)
-		v.preWorker(w)
 		source := brCfg.Address
 		ifAddr := strings.SplitN(source, "/", 2)[0]
 		// Enable MASQUERADE for OpenVPN
@@ -543,7 +544,7 @@ func (v *Switch) GetBridge(tenant string) (network.Bridger, error) {
 	if !ok {
 		return nil, libol.NewErr("bridge %s notFound", tenant)
 	}
-	return w.bridge, nil
+	return w.GetBridge(), nil
 }
 
 func (v *Switch) NewTap(tenant string) (network.Taper, error) {
@@ -586,7 +587,7 @@ func (v *Switch) FreeTap(dev network.Taper) error {
 	if !ok {
 		return libol.NewErr("bridge %s notFound", tenant)
 	}
-	br := w.bridge
+	br := w.GetBridge()
 	_ = br.DelSlave(dev.Name())
 	v.out.Info("Switch.FreeTap: %s", name)
 	return nil

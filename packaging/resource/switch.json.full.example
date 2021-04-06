@@ -7,6 +7,7 @@
         "public": "/var/openlan/public"
     },
     "crypt": {
+        "algo": "aes-128",
         "secret": "12345^"
     },
     "inspect": [
@@ -19,6 +20,6 @@
         "password": "your-passowrd",
         "baseDN": "dc=openlan,dc=com",
         "attribute": "cn",
-        "filter": "(mail=%s)"
+        "filter": "(cn=%s)"
     }
 }

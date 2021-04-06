@@ -5,16 +5,19 @@ import (
 )
 
 type Network struct {
-	Alias    string        `json:"-"`
-	Name     string        `json:"name,omitempty"`
-	Bridge   Bridge        `json:"bridge,omitempty"`
-	Subnet   IpSubnet      `json:"subnet,omitempty"`
-	OpenVPN  *OpenVPN      `json:"openvpn,omitempty"`
-	Links    []*Point      `json:"links,omitempty"`
-	Hosts    []HostLease   `json:"hosts,omitempty"`
-	Routes   []PrefixRoute `json:"routes,omitempty"`
-	Password []Password    `json:"password,omitempty"`
-	Acl      string        `json:"acl"`
+	Alias     string        `json:"-"`
+	Name      string        `json:"name,omitempty"`
+	Provider  string        `json:"provider,omitempty"`
+	Bridge    Bridge        `json:"bridge,omitempty"`
+	Subnet    IpSubnet      `json:"subnet,omitempty"`
+	OpenVPN   *OpenVPN      `json:"openvpn,omitempty"`
+	Links     []*Point      `json:"links,omitempty"`
+	Hosts     []HostLease   `json:"hosts,omitempty"`
+	Routes    []PrefixRoute `json:"routes,omitempty"`
+	Password  []Password    `json:"password,omitempty"`
+	Acl       string        `json:"acl"`
+	Interface interface{}   `json:"interface,omitempty"`
+	Crypt     *Crypt        `json:"crypt"`
 }
 
 func (n *Network) Correct() {
