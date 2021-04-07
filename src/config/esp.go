@@ -6,11 +6,20 @@ import (
 	"strings"
 )
 
+const (
+	EspAuth  = "8bc736635c0642aebc20ba5420c3e93a"
+	EspCrypt = "4ac161f6635843b8b02c60cc36822515"
+)
+
 type EspState struct {
 	Local  string `json:"local"`
 	Remote string `json:"remote"`
 	Auth   string `json:"auth"`
 	Crypt  string `json:"crypt"`
+}
+
+func (s *EspState) Pad32(value string) string {
+	return strings.Repeat(value, 64/len(value))[:32]
 }
 
 func (s *EspState) Correct(obj *EspState) {
@@ -26,6 +35,14 @@ func (s *EspState) Correct(obj *EspState) {
 	if s.Crypt == "" {
 		s.Crypt = s.Auth
 	}
+	if s.Auth == "" {
+		s.Auth = EspAuth
+	}
+	if s.Crypt == "" {
+		s.Crypt = EspCrypt
+	}
+	s.Auth = s.Pad32(s.Auth)
+	s.Crypt = s.Pad32(s.Crypt)
 }
 
 type ESPPolicy struct {

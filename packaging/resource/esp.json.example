@@ -4,8 +4,6 @@
     "interface": {
         "address": "100.64.0.10",
         "state": {
-            "auth": "a4b88c8e96db11eba164525400d1aa29",
-            "crypt": "a3ae861896db11eba2ff525400d1aa29",
             "local": "192.168.1.10"
         },
         "members": [
@@ -23,8 +21,8 @@
                 "state": {
                     "local": "192.168.1.10",
                     "remote": "2.16.1.2",
-                    "auth": "a263d01a96db11eba445525400d1aa29",
-                    "crypt": "9b73bc48e3864b3ebf0098b9c37d803c"
+                    "auth": "a263d01a96db11eb9",
+                    "crypt": "9b73bc48e3864b3ebc"
                 },
                 "policy": [
                     {
