@@ -1,11 +1,11 @@
 package olsw
 
 import (
-	"github.com/danieldin95/openlan-go/src/config"
+	co "github.com/danieldin95/openlan-go/src/config"
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/network"
 	"github.com/danieldin95/openlan-go/src/olsw/api"
-	"github.com/vishvananda/netlink"
+	nl "github.com/vishvananda/netlink"
 	"net"
 	"os/exec"
 	"strconv"
@@ -19,41 +19,47 @@ const (
 
 type EspWorker struct {
 	uuid     string
-	cfg      *config.Network
-	states   []*netlink.XfrmState
-	policies []*netlink.XfrmPolicy
-	inCfg    *config.ESPInterface
+	cfg      *co.Network
+	states   []*nl.XfrmState
+	policies []*nl.XfrmPolicy
+	inCfg    *co.ESPInterface
 	out      *libol.SubLogger
 }
 
-func NewESPWorker(c *config.Network) *EspWorker {
+func NewESPWorker(c *co.Network) *EspWorker {
 	w := &EspWorker{
 		cfg:      c,
-		states:   make([]*netlink.XfrmState, 0, 4),
-		policies: make([]*netlink.XfrmPolicy, 0, 32),
+		states:   make([]*nl.XfrmState, 0, 4),
+		policies: make([]*nl.XfrmPolicy, 0, 32),
 		out:      libol.NewSubLogger(c.Name),
 	}
-	w.inCfg, _ = c.Interface.(*config.ESPInterface)
+	w.inCfg, _ = c.Interface.(*co.ESPInterface)
 	return w
 }
 
-func (w *EspWorker) newState(spi uint32, src, dst net.IP, auth, crypt string) *netlink.XfrmState {
-	return &netlink.XfrmState{
-		Src:   dst,
-		Dst:   src,
-		Proto: netlink.XFRM_PROTO_ESP,
-		Mode:  netlink.XFRM_MODE_TUNNEL,
+func (w *EspWorker) newState(mem *co.ESPMember) *nl.XfrmState {
+	spi := mem.Spi
+	local := mem.State.LocalIp
+	remote := mem.State.RemoteIp
+	auth := mem.State.Auth
+	crypt := mem.State.Crypt
+
+	return &nl.XfrmState{
+		Src:   local,
+		Dst:   remote,
+		Proto: nl.XFRM_PROTO_ESP,
+		Mode:  nl.XFRM_MODE_TUNNEL,
 		Spi:   int(spi),
-		Auth: &netlink.XfrmStateAlgo{
+		Auth: &nl.XfrmStateAlgo{
 			Name: "hmac(sha256)",
 			Key:  []byte(auth),
 		},
-		Crypt: &netlink.XfrmStateAlgo{
+		Crypt: &nl.XfrmStateAlgo{
 			Name: "cbc(aes)",
 			Key:  []byte(crypt),
 		},
-		Encap: &netlink.XfrmStateEncap{
-			Type:            netlink.XFRM_ENCAP_ESPINUDP,
+		Encap: &nl.XfrmStateEncap{
+			Type:            nl.XFRM_ENCAP_ESPINUDP,
 			SrcPort:         UDPPort,
 			DstPort:         UDPPort,
 			OriginalAddress: net.ParseIP("0.0.0.0"),
@@ -61,44 +67,36 @@ func (w *EspWorker) newState(spi uint32, src, dst net.IP, auth, crypt string) *n
 	}
 }
 
-func (w *EspWorker) newPolicy(spi uint32, local, remote net.IP,
-	src, dst *net.IPNet, dir netlink.Dir) *netlink.XfrmPolicy {
-	policy := &netlink.XfrmPolicy{
+func (w *EspWorker) newPolicy(mem *co.ESPMember, src, dst *net.IPNet, dir nl.Dir) *nl.XfrmPolicy {
+	spi := mem.Spi
+	local := mem.State.LocalIp
+	remote := mem.State.RemoteIp
+
+	policy := &nl.XfrmPolicy{
 		Src: src,
 		Dst: dst,
 		Dir: dir,
 	}
-	tmpl := netlink.XfrmPolicyTmpl{
+	policy.Tmpls = append(policy.Tmpls, nl.XfrmPolicyTmpl{
 		Src:   local,
 		Dst:   remote,
-		Proto: netlink.XFRM_PROTO_ESP,
-		Mode:  netlink.XFRM_MODE_TUNNEL,
+		Proto: nl.XFRM_PROTO_ESP,
+		Mode:  nl.XFRM_MODE_TUNNEL,
 		Spi:   int(spi),
-	}
-	policy.Tmpls = append(policy.Tmpls, tmpl)
+	})
 	return policy
 }
 
-func (w *EspWorker) addState(mem *config.ESPMember) {
-	spi := mem.Spi
-	local := mem.State.LocalIp
-	remote := mem.State.RemoteIp
-	auth := mem.State.Auth
-	crypt := mem.State.Crypt
-
-	if st := w.newState(spi, local, remote, auth, crypt); st != nil {
+func (w *EspWorker) addState(mem *co.ESPMember) {
+	if st := w.newState(mem); st != nil {
 		w.states = append(w.states, st)
 	}
-	if st := w.newState(spi, remote, local, auth, crypt); st != nil {
+	if st := w.newState(mem); st != nil {
 		w.states = append(w.states, st)
 	}
 }
 
-func (w *EspWorker) addPolicy(mem *config.ESPMember, pol *config.ESPPolicy) {
-	spi := mem.Spi
-	local := mem.State.LocalIp
-	remote := mem.State.RemoteIp
-
+func (w *EspWorker) addPolicy(mem *co.ESPMember, pol *co.ESPPolicy) {
 	src, err := libol.ParseNet(pol.Source)
 	if err != nil {
 		w.out.Error("EspWorker.addPolicy %s", err)
@@ -109,13 +107,13 @@ func (w *EspWorker) addPolicy(mem *config.ESPMember, pol *config.ESPPolicy) {
 		w.out.Error("EspWorker.addPolicy %s", err)
 		return
 	}
-	if po := w.newPolicy(spi, local, remote, src, dst, netlink.XFRM_DIR_OUT); po != nil {
+	if po := w.newPolicy(mem, src, dst, nl.XFRM_DIR_OUT); po != nil {
 		w.policies = append(w.policies, po)
 	}
-	if po := w.newPolicy(spi, remote, local, dst, src, netlink.XFRM_DIR_IN); po != nil {
+	if po := w.newPolicy(mem, dst, src, nl.XFRM_DIR_IN); po != nil {
 		w.policies = append(w.policies, po)
 	}
-	if po := w.newPolicy(spi, remote, local, dst, src, netlink.XFRM_DIR_FWD); po != nil {
+	if po := w.newPolicy(mem, dst, src, nl.XFRM_DIR_FWD); po != nil {
 		w.policies = append(w.policies, po)
 	}
 }
@@ -146,29 +144,29 @@ func (w *EspWorker) Initialize() {
 }
 
 func (w *EspWorker) UpDummy(name, addr, peer string) error {
-	link, _ := netlink.LinkByName(name)
+	link, _ := nl.LinkByName(name)
 	if link == nil {
-		port := &netlink.Dummy{
-			LinkAttrs: netlink.LinkAttrs{
+		port := &nl.Dummy{
+			LinkAttrs: nl.LinkAttrs{
 				TxQLen: -1,
 				Name:   name,
 			},
 		}
-		if err := netlink.LinkAdd(port); err != nil {
+		if err := nl.LinkAdd(port); err != nil {
 			return err
 		}
-		link, _ = netlink.LinkByName(name)
+		link, _ = nl.LinkByName(name)
 	}
-	if err := netlink.LinkSetUp(link); err != nil {
+	if err := nl.LinkSetUp(link); err != nil {
 		w.out.Error("EspWorker.UpDummy: %s", err)
 	}
 	w.out.Info("EspWorker.Open %s success", name)
 	if addr != "" {
-		ipAddr, err := netlink.ParseAddr(addr)
+		ipAddr, err := nl.ParseAddr(addr)
 		if err != nil {
 			return err
 		}
-		if err := netlink.AddrAdd(link, ipAddr); err != nil {
+		if err := nl.AddrAdd(link, ipAddr); err != nil {
 			return err
 		}
 	}
@@ -179,13 +177,13 @@ func (w *EspWorker) UpDummy(name, addr, peer string) error {
 	}
 	ip := strings.SplitN(addr, "/", 2)[0]
 	next := net.ParseIP(ip)
-	rte := netlink.Route{
+	rte := nl.Route{
 		LinkIndex: link.Attrs().Index,
 		Dst:       dst,
 		Gw:        next,
 	}
 	w.out.Debug("EspWorker.AddRoute: %s", rte)
-	if err := netlink.RouteAdd(&rte); err != nil {
+	if err := nl.RouteAdd(&rte); err != nil {
 		return err
 	}
 	return nil
@@ -195,12 +193,12 @@ func (w *EspWorker) Start(v api.Switcher) {
 	w.uuid = v.UUID()
 	for _, state := range w.states {
 		w.out.Debug("EspWorker.Start State %s", state)
-		if err := netlink.XfrmStateAdd(state); err != nil {
+		if err := nl.XfrmStateAdd(state); err != nil {
 			w.out.Error("EspWorker.Start State %s", err)
 		}
 	}
 	for _, policy := range w.policies {
-		if err := netlink.XfrmPolicyAdd(policy); err != nil {
+		if err := nl.XfrmPolicyAdd(policy); err != nil {
 			w.out.Error("EspWorker.Start Policy %s", err)
 		}
 	}
@@ -212,17 +210,17 @@ func (w *EspWorker) Start(v api.Switcher) {
 }
 
 func (w *EspWorker) DownDummy(name string) error {
-	link, _ := netlink.LinkByName(name)
+	link, _ := nl.LinkByName(name)
 	if link == nil {
 		return nil
 	}
-	port := &netlink.Dummy{
-		LinkAttrs: netlink.LinkAttrs{
+	port := &nl.Dummy{
+		LinkAttrs: nl.LinkAttrs{
 			TxQLen: -1,
 			Name:   name,
 		},
 	}
-	if err := netlink.LinkDel(port); err != nil {
+	if err := nl.LinkDel(port); err != nil {
 		return err
 	}
 	return nil
@@ -235,12 +233,12 @@ func (w *EspWorker) Stop() {
 		}
 	}
 	for _, state := range w.states {
-		if err := netlink.XfrmStateDel(state); err != nil {
+		if err := nl.XfrmStateDel(state); err != nil {
 			w.out.Error("EspWorker.Stop State %s", err)
 		}
 	}
 	for _, policy := range w.policies {
-		if err := netlink.XfrmPolicyDel(policy); err != nil {
+		if err := nl.XfrmPolicyDel(policy); err != nil {
 			w.out.Error("EspWorker.Stop Policy %s", err)
 		}
 	}
@@ -259,7 +257,7 @@ func (w *EspWorker) GetBridge() network.Bridger {
 	return nil
 }
 
-func (w *EspWorker) GetConfig() *config.Network {
+func (w *EspWorker) GetConfig() *co.Network {
 	return w.cfg
 }
 
