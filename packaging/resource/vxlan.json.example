@@ -2,7 +2,6 @@
     "name": "vxlan",
     "provider": "vxlan",
     "interface": {
-        "local": "100.64.0.10",
         "members": [
             {
                 "vni": 100,
@@ -12,9 +11,9 @@
             {
                 "name": "vxlan-200",
                 "vni": 200,
-                "local": "100.64.0.11",
+                "local": "100.64.0.10",
                 "remote": "100.64.0.20",
-                "network": "default"
+                "bridge": "br-em2"
             }
         ]
     }

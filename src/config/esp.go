@@ -23,14 +23,22 @@ func (s *EspState) Pad32(value string) string {
 }
 
 func (s *EspState) Correct(obj *EspState) {
+	if obj != nil {
+		if s.Local == "" {
+			s.Local = obj.Local
+		}
+		if s.Auth == "" {
+			s.Auth = obj.Auth
+		}
+		if s.Crypt == "" {
+			s.Crypt = obj.Crypt
+		}
+	}
 	if s.Local == "" {
-		s.Local = obj.Local
-	}
-	if s.Auth == "" {
-		s.Auth = obj.Auth
-	}
-	if s.Crypt == "" {
-		s.Crypt = obj.Crypt
+		addr, err := libol.GetAddrByGw()
+		if err == nil {
+			s.Local = addr.String()
+		}
 	}
 	if s.Crypt == "" {
 		s.Crypt = s.Auth
@@ -67,6 +75,8 @@ type ESPInterface struct {
 }
 
 func (n *ESPInterface) Correct() {
+	ptr := &n.State
+	ptr.Correct(nil)
 	for _, m := range n.Members {
 		if m.Address == "" {
 			m.Address = n.Address

@@ -105,7 +105,7 @@ func (w *VxLANWorker) DownVxLAN(cfg *config.VxLANMember) error {
 func (w *VxLANWorker) Stop() {
 	for _, mem := range w.inCfg.Members {
 		if err := w.DownVxLAN(mem); err != nil {
-			w.out.Error("VxLANWorker.Stop %s dummy %s", mem.Name, err)
+			w.out.Error("VxLANWorker.Stop %s %s", mem.Name, err)
 		}
 	}
 }

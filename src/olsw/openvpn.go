@@ -39,7 +39,7 @@ local {{ .Local }}
 port {{ .Port }}
 proto {{ .Protocol }}
 dev {{ .Device }}
-keepalive 10 120
+keepalive 5 120
 persist-key
 persist-tun
 ca {{ .Ca }}

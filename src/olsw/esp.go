@@ -39,8 +39,8 @@ func NewESPWorker(c *config.Network) *EspWorker {
 
 func (w *EspWorker) newState(spi uint32, src, dst, auth, crypt string) *netlink.XfrmState {
 	return &netlink.XfrmState{
-		Src:   net.ParseIP(dst).To4(),
-		Dst:   net.ParseIP(src).To4(),
+		Src:   net.ParseIP(dst),
+		Dst:   net.ParseIP(src),
 		Proto: netlink.XFRM_PROTO_ESP,
 		Mode:  netlink.XFRM_MODE_TUNNEL,
 		Spi:   int(spi),
@@ -56,7 +56,7 @@ func (w *EspWorker) newState(spi uint32, src, dst, auth, crypt string) *netlink.
 			Type:            netlink.XFRM_ENCAP_ESPINUDP,
 			SrcPort:         UDPPort,
 			DstPort:         UDPPort,
-			OriginalAddress: net.ParseIP("0.0.0.0").To4(),
+			OriginalAddress: net.ParseIP("0.0.0.0"),
 		},
 	}
 }
@@ -124,9 +124,7 @@ func (w *EspWorker) Initialize() {
 		if mem == nil {
 			continue
 		}
-		// add xfrm states
 		w.addState(mem)
-		// add xfrm policies
 		for _, pol := range mem.Policies {
 			if pol == nil {
 				continue
@@ -222,7 +220,7 @@ func (w *EspWorker) DownDummy(name string) error {
 func (w *EspWorker) Stop() {
 	for _, mem := range w.inCfg.Members {
 		if err := w.DownDummy(mem.Name); err != nil {
-			w.out.Error("EspWorker.Stop %s dummy %s", mem.Name, err)
+			w.out.Error("EspWorker.Stop %s %s", mem.Name, err)
 		}
 	}
 	for _, state := range w.states {

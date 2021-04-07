@@ -3,9 +3,6 @@
     "provider": "esp",
     "interface": {
         "address": "100.64.0.10",
-        "state": {
-            "local": "192.168.1.10"
-        },
         "members": [
             {
                 "spi": 100,

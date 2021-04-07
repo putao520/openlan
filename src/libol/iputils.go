@@ -20,7 +20,7 @@ func IpLinkUp(name string) ([]byte, error) {
 		}
 		return exec.Command("netsh", args...).CombinedOutput()
 	default:
-		return nil, NewErr("IpLinkUp %s not support", runtime.GOOS)
+		return nil, NewErr("IpLinkUp %s notSupport", runtime.GOOS)
 	}
 }
 
@@ -38,7 +38,7 @@ func IpLinkDown(name string) ([]byte, error) {
 		}
 		return exec.Command("netsh", args...).CombinedOutput()
 	default:
-		return nil, NewErr("IpLinkDown %s not support", runtime.GOOS)
+		return nil, NewErr("IpLinkDown %s notSupport", runtime.GOOS)
 	}
 }
 
@@ -61,7 +61,7 @@ func IpAddrAdd(name, addr string, opts ...string) ([]byte, error) {
 		}, opts...)
 		return exec.Command("/sbin/ifconfig", args...).CombinedOutput()
 	default:
-		return nil, NewErr("IpAddrAdd %s not support", runtime.GOOS)
+		return nil, NewErr("IpAddrAdd %s notSupport", runtime.GOOS)
 	}
 }
 
@@ -85,7 +85,7 @@ func IpAddrDel(name, addr string) ([]byte, error) {
 		}
 		return exec.Command("/sbin/ifconfig", args...).CombinedOutput()
 	default:
-		return nil, NewErr("IpAddrDel %s not support", runtime.GOOS)
+		return nil, NewErr("IpAddrDel %s notSupport", runtime.GOOS)
 	}
 }
 
@@ -98,16 +98,17 @@ func IpAddrShow(name string) []string {
 			"interface=" + name, "level=verbose",
 		}
 		out, err := exec.Command("netsh", args...).Output()
-		if err == nil {
-			outArr := strings.Split(string(out), "\n")
-			for _, addrStr := range outArr {
-				addrArr := strings.SplitN(addrStr, " ", 3)
-				if len(addrArr) != 3 {
-					continue
-				}
-				if addrArr[0] == "Remote" && strings.Contains(addrArr[2], "Parameters") {
-					addrs = append(addrs, addrArr[1])
-				}
+		if err != nil {
+			return nil
+		}
+		outArr := strings.Split(string(out), "\n")
+		for _, addrStr := range outArr {
+			addrArr := strings.SplitN(addrStr, " ", 3)
+			if len(addrArr) != 3 {
+				continue
+			}
+			if addrArr[0] == "Remote" && strings.Contains(addrArr[2], "Parameters") {
+				addrs = append(addrs, addrArr[1])
 			}
 		}
 		return addrs
@@ -142,7 +143,7 @@ func IpRouteAdd(name, prefix, nexthop string, opts ...string) ([]byte, error) {
 		args = append(args, opts...)
 		return exec.Command("/sbin/route", args...).CombinedOutput()
 	default:
-		return nil, NewErr("IpRouteAdd %s not support", runtime.GOOS)
+		return nil, NewErr("IpRouteAdd %s notSupport", runtime.GOOS)
 	}
 }
 
@@ -172,7 +173,7 @@ func IpRouteDel(name, prefix, nexthop string, opts ...string) ([]byte, error) {
 		args = append(args, opts...)
 		return exec.Command("/sbin/route", args...).CombinedOutput()
 	default:
-		return nil, NewErr("IpRouteDel %s not support", runtime.GOOS)
+		return nil, NewErr("IpRouteDel %s notSupport", runtime.GOOS)
 	}
 }
 
@@ -197,6 +198,6 @@ func IpMetricSet(name, metric string, opts ...string) ([]byte, error) {
 		//TODO
 		return nil, nil
 	default:
-		return nil, NewErr("IpAddrAdd %s not support", runtime.GOOS)
+		return nil, NewErr("IpAddrAdd %s notSupport", runtime.GOOS)
 	}
 }
