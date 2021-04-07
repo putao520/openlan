@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"github.com/danieldin95/openlan-go/src/libol"
+	"net"
 	"strings"
 )
 
@@ -12,10 +13,12 @@ const (
 )
 
 type EspState struct {
-	Local  string `json:"local"`
-	Remote string `json:"remote"`
-	Auth   string `json:"auth"`
-	Crypt  string `json:"crypt"`
+	Local    string `json:"local"`
+	LocalIp  net.IP `json:"-"`
+	Remote   string `json:"remote"`
+	RemoteIp net.IP `json:"-"`
+	Auth     string `json:"auth"`
+	Crypt    string `json:"crypt"`
 }
 
 func (s *EspState) Pad32(value string) string {

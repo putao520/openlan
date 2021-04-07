@@ -37,10 +37,10 @@ func NewESPWorker(c *config.Network) *EspWorker {
 	return w
 }
 
-func (w *EspWorker) newState(spi uint32, src, dst, auth, crypt string) *netlink.XfrmState {
+func (w *EspWorker) newState(spi uint32, src, dst net.IP, auth, crypt string) *netlink.XfrmState {
 	return &netlink.XfrmState{
-		Src:   net.ParseIP(dst),
-		Dst:   net.ParseIP(src),
+		Src:   dst,
+		Dst:   src,
 		Proto: netlink.XFRM_PROTO_ESP,
 		Mode:  netlink.XFRM_MODE_TUNNEL,
 		Spi:   int(spi),
@@ -61,7 +61,7 @@ func (w *EspWorker) newState(spi uint32, src, dst, auth, crypt string) *netlink.
 	}
 }
 
-func (w *EspWorker) newPolicy(spi uint32, local, remote string,
+func (w *EspWorker) newPolicy(spi uint32, local, remote net.IP,
 	src, dst *net.IPNet, dir netlink.Dir) *netlink.XfrmPolicy {
 	policy := &netlink.XfrmPolicy{
 		Src: src,
@@ -69,8 +69,8 @@ func (w *EspWorker) newPolicy(spi uint32, local, remote string,
 		Dir: dir,
 	}
 	tmpl := netlink.XfrmPolicyTmpl{
-		Src:   net.ParseIP(local),
-		Dst:   net.ParseIP(remote),
+		Src:   local,
+		Dst:   remote,
 		Proto: netlink.XFRM_PROTO_ESP,
 		Mode:  netlink.XFRM_MODE_TUNNEL,
 		Spi:   int(spi),
@@ -81,10 +81,11 @@ func (w *EspWorker) newPolicy(spi uint32, local, remote string,
 
 func (w *EspWorker) addState(mem *config.ESPMember) {
 	spi := mem.Spi
-	local := mem.State.Local
-	remote := mem.State.Remote
+	local := mem.State.LocalIp
+	remote := mem.State.RemoteIp
 	auth := mem.State.Auth
 	crypt := mem.State.Crypt
+
 	if st := w.newState(spi, local, remote, auth, crypt); st != nil {
 		w.states = append(w.states, st)
 	}
@@ -95,8 +96,8 @@ func (w *EspWorker) addState(mem *config.ESPMember) {
 
 func (w *EspWorker) addPolicy(mem *config.ESPMember, pol *config.ESPPolicy) {
 	spi := mem.Spi
-	local := mem.State.Local
-	remote := mem.State.Remote
+	local := mem.State.LocalIp
+	remote := mem.State.RemoteIp
 
 	src, err := libol.ParseNet(pol.Source)
 	if err != nil {
@@ -124,6 +125,16 @@ func (w *EspWorker) Initialize() {
 		if mem == nil {
 			continue
 		}
+		local, _ := net.LookupIP(mem.State.Local)
+		if local == nil {
+			continue
+		}
+		remote, _ := net.LookupIP(mem.State.Remote)
+		if remote == nil {
+			continue
+		}
+		mem.State.LocalIp = local[0]
+		mem.State.RemoteIp = remote[0]
 		w.addState(mem)
 		for _, pol := range mem.Policies {
 			if pol == nil {
