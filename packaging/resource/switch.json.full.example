@@ -8,7 +8,7 @@
     },
     "crypt": {
         "algo": "aes-128",
-        "secret": "12345^"
+        "secret": "cb2ff088a34d"
     },
     "inspect": [
         "neighbor",

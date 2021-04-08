@@ -2,6 +2,6 @@
     "protocol": "tls",
     "connection": "who.openlan.net",
     "username": "hi@default",
-    "password": "12345",
+    "password": "cb2ff088a34d",
     "cert": { "insecure": true }
 }

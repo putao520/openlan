@@ -1,4 +1,4 @@
 {
-    "admin": { "role": "admin", "password": "12345^" },
-    "guest": { "role": "guest", "password": "12345^" }
+    "admin": { "role": "admin", "password": "1f4ee82b5eb6" },
+    "guest": { "role": "guest", "password": "1f4ee82b5eb6" }
 }

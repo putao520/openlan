@@ -23,7 +23,7 @@
     "password": [
         {
             "username": "hi",
-            "password": "12345^"
+            "password": "1f4ee82b5eb6"
         }
     ],
     "links": [
@@ -31,7 +31,7 @@
             "protocol": "tls",
             "connection": "hi.openlan.net",
             "username": "hi",
-            "password": "12345^"
+            "password": "1f4ee82b5eb6"
         }
     ],
     "openvpn": {

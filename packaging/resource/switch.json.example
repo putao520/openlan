@@ -6,6 +6,6 @@
         "public": "/var/openlan/public"
     },
     "crypt": {
-        "secret": "12345^"
+        "secret": "cb2ff088a34d"
     }
 }
