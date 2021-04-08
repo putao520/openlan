@@ -13,6 +13,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -121,11 +122,26 @@ func (v *Switch) Protocol() string {
 	return v.cfg.Protocol
 }
 
-func (v *Switch) allowFwd(input, output, source, prefix string) {
+func (v *Switch) enablePort(protocol, port string) {
+	value, err := strconv.Atoi(port)
+	if err != nil {
+		v.out.Warn("Switch.enablePort invalid port %s", port)
+	}
+	v.out.Debug("Switch.enablePort %s, %s", protocol, port)
+	// allowed forward between source and prefix.
+	v.firewall.AddRule(network.IpRule{
+		Table:   network.TFilter,
+		Chain:   OLCInput,
+		Proto:   protocol,
+		DstPort: value,
+	})
+}
+
+func (v *Switch) enableFwd(input, output, source, prefix string) {
 	if source == prefix {
 		return
 	}
-	v.out.Debug("Switch.allowFwd %s, %s", source, prefix)
+	v.out.Debug("Switch.enableFwd %s, %s", source, prefix)
 	// allowed forward between source and prefix.
 	v.firewall.AddRule(network.IpRule{
 		Table:  network.TFilter,
@@ -212,7 +228,7 @@ func (v *Switch) preNetwork() {
 			devName := vpnCfg.Device
 			v.enableAcl(nCfg.Acl, devName)
 			for _, rt := range vpnCfg.Routes {
-				v.allowFwd(devName, devName, vpnCfg.Subnet, rt)
+				v.enableFwd(devName, devName, vpnCfg.Subnet, rt)
 				v.enableMasq(devName, devName, vpnCfg.Subnet, rt)
 			}
 		}
@@ -222,13 +238,13 @@ func (v *Switch) preNetwork() {
 		// Enable MASQUERADE, and allowed forward.
 		for _, rt := range nCfg.Routes {
 			if vpnCfg != nil {
-				v.allowFwd(brName, brName, vpnCfg.Subnet, rt.Prefix)
+				v.enableFwd(brName, brName, vpnCfg.Subnet, rt.Prefix)
 				v.enableMasq(brName, brName, vpnCfg.Subnet, rt.Prefix)
 			}
 			if rt.NextHop != ifAddr {
 				continue
 			}
-			v.allowFwd(brName, brName, source, rt.Prefix)
+			v.enableFwd(brName, brName, source, rt.Prefix)
 			if rt.Mode == "snat" {
 				v.enableMasq(brName, brName, source, rt.Prefix)
 			}
@@ -295,6 +311,40 @@ func (v *Switch) preAcl() {
 	}
 }
 
+func (v *Switch) GetPort(listen string) string {
+	if strings.Contains(listen, ":") {
+		return strings.SplitN(listen, ":", 2)[1]
+	}
+	return ""
+}
+
+func (v *Switch) preAllow() {
+	port := v.GetPort(v.cfg.Listen)
+	if v.cfg.Protocol == "kcp" || v.cfg.Protocol == "udp" {
+		v.enablePort("udp", port)
+	} else {
+		v.enablePort("tcp", port)
+	}
+	v.enablePort("udp", "4500")
+	v.enablePort("udp", "8472")
+	v.enablePort("udp", "4789")
+	if v.cfg.Http != nil {
+		port := v.GetPort(v.cfg.Http.Listen)
+		v.enablePort("tcp", port)
+	}
+	for _, nCfg := range v.cfg.Network {
+		if nCfg.OpenVPN == nil {
+			continue
+		}
+		port := v.GetPort(nCfg.OpenVPN.Listen)
+		if nCfg.OpenVPN.Protocol == "udp" {
+			v.enablePort("udp", port)
+		} else {
+			v.enablePort("tcp", port)
+		}
+	}
+}
+
 func (v *Switch) SetLdap(ldap *config.LDAP) {
 	if ldap == nil || ldap.Server == "" {
 		return
@@ -355,6 +405,7 @@ func (v *Switch) Initialize() {
 
 	store.User.SetFile(v.cfg.Password)
 	v.preAcl()
+	v.preAllow()
 	v.preApplication()
 	if v.cfg.Http != nil {
 		v.http = NewHttp(v)
