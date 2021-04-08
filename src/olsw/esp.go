@@ -1,7 +1,7 @@
 package olsw
 
 import (
-	co "github.com/danieldin95/openlan-go/src/config"
+	"github.com/danieldin95/openlan-go/src/config"
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/network"
 	"github.com/danieldin95/openlan-go/src/olsw/api"
@@ -19,34 +19,29 @@ const (
 
 type EspWorker struct {
 	uuid     string
-	cfg      *co.Network
+	cfg      *config.Network
 	states   []*nl.XfrmState
 	policies []*nl.XfrmPolicy
-	inCfg    *co.ESPInterface
+	inCfg    *config.ESPInterface
 	out      *libol.SubLogger
 }
 
-func NewESPWorker(c *co.Network) *EspWorker {
+func NewESPWorker(c *config.Network) *EspWorker {
 	w := &EspWorker{
 		cfg:      c,
 		states:   make([]*nl.XfrmState, 0, 4),
 		policies: make([]*nl.XfrmPolicy, 0, 32),
 		out:      libol.NewSubLogger(c.Name),
 	}
-	w.inCfg, _ = c.Interface.(*co.ESPInterface)
+	w.inCfg, _ = c.Interface.(*config.ESPInterface)
 	return w
 }
 
-func (w *EspWorker) newState(mem *co.ESPMember) *nl.XfrmState {
-	spi := mem.Spi
-	local := mem.State.LocalIp
-	remote := mem.State.RemoteIp
-	auth := mem.State.Auth
-	crypt := mem.State.Crypt
-
+func (w *EspWorker) newState(spi uint32, local, remote net.IP,
+	auth, crypt string) *nl.XfrmState {
 	return &nl.XfrmState{
-		Src:   local,
-		Dst:   remote,
+		Src:   remote,
+		Dst:   local,
 		Proto: nl.XFRM_PROTO_ESP,
 		Mode:  nl.XFRM_MODE_TUNNEL,
 		Spi:   int(spi),
@@ -67,36 +62,43 @@ func (w *EspWorker) newState(mem *co.ESPMember) *nl.XfrmState {
 	}
 }
 
-func (w *EspWorker) newPolicy(mem *co.ESPMember, src, dst *net.IPNet, dir nl.Dir) *nl.XfrmPolicy {
-	spi := mem.Spi
-	local := mem.State.LocalIp
-	remote := mem.State.RemoteIp
-
+func (w *EspWorker) newPolicy(spi uint32, local, remote net.IP,
+	src, dst *net.IPNet, dir nl.Dir) *nl.XfrmPolicy {
 	policy := &nl.XfrmPolicy{
 		Src: src,
 		Dst: dst,
 		Dir: dir,
 	}
-	policy.Tmpls = append(policy.Tmpls, nl.XfrmPolicyTmpl{
+	tmpl := nl.XfrmPolicyTmpl{
 		Src:   local,
 		Dst:   remote,
 		Proto: nl.XFRM_PROTO_ESP,
 		Mode:  nl.XFRM_MODE_TUNNEL,
 		Spi:   int(spi),
-	})
+	}
+	policy.Tmpls = append(policy.Tmpls, tmpl)
 	return policy
 }
 
-func (w *EspWorker) addState(mem *co.ESPMember) {
-	if st := w.newState(mem); st != nil {
+func (w *EspWorker) addState(mem *config.ESPMember) {
+	spi := mem.Spi
+	local := mem.State.LocalIp
+	remote := mem.State.RemoteIp
+	auth := mem.State.Auth
+	crypt := mem.State.Crypt
+
+	if st := w.newState(spi, local, remote, auth, crypt); st != nil {
 		w.states = append(w.states, st)
 	}
-	if st := w.newState(mem); st != nil {
+	if st := w.newState(spi, remote, local, auth, crypt); st != nil {
 		w.states = append(w.states, st)
 	}
 }
 
-func (w *EspWorker) addPolicy(mem *co.ESPMember, pol *co.ESPPolicy) {
+func (w *EspWorker) addPolicy(mem *config.ESPMember, pol *config.ESPPolicy) {
+	spi := mem.Spi
+	local := mem.State.LocalIp
+	remote := mem.State.RemoteIp
 	src, err := libol.ParseNet(pol.Source)
 	if err != nil {
 		w.out.Error("EspWorker.addPolicy %s", err)
@@ -107,13 +109,13 @@ func (w *EspWorker) addPolicy(mem *co.ESPMember, pol *co.ESPPolicy) {
 		w.out.Error("EspWorker.addPolicy %s", err)
 		return
 	}
-	if po := w.newPolicy(mem, src, dst, nl.XFRM_DIR_OUT); po != nil {
+	if po := w.newPolicy(spi, local, remote, src, dst, nl.XFRM_DIR_OUT); po != nil {
 		w.policies = append(w.policies, po)
 	}
-	if po := w.newPolicy(mem, dst, src, nl.XFRM_DIR_IN); po != nil {
+	if po := w.newPolicy(spi, remote, local, dst, src, nl.XFRM_DIR_IN); po != nil {
 		w.policies = append(w.policies, po)
 	}
-	if po := w.newPolicy(mem, dst, src, nl.XFRM_DIR_FWD); po != nil {
+	if po := w.newPolicy(spi, remote, local, dst, src, nl.XFRM_DIR_FWD); po != nil {
 		w.policies = append(w.policies, po)
 	}
 }
@@ -257,7 +259,7 @@ func (w *EspWorker) GetBridge() network.Bridger {
 	return nil
 }
 
-func (w *EspWorker) GetConfig() *co.Network {
+func (w *EspWorker) GetConfig() *config.Network {
 	return w.cfg
 }
 

@@ -121,11 +121,11 @@ func (v *Switch) Protocol() string {
 	return v.cfg.Protocol
 }
 
-func (v *Switch) allowForward(input, output, source, prefix string) {
+func (v *Switch) allowFwd(input, output, source, prefix string) {
 	if source == prefix {
 		return
 	}
-	v.out.Info("Switch.allowForward %s, %s", source, prefix)
+	v.out.Debug("Switch.allowFwd %s, %s", source, prefix)
 	// allowed forward between source and prefix.
 	v.firewall.AddRule(network.IpRule{
 		Table:  network.TFilter,
@@ -141,34 +141,18 @@ func (v *Switch) allowForward(input, output, source, prefix string) {
 		Source: prefix,
 		Dest:   source,
 	})
-	// allowed input from source to prefix.
-	v.firewall.AddRule(network.IpRule{
-		Table:  network.TFilter,
-		Chain:  OLCInput,
-		Input:  input,
-		Source: source,
-		Dest:   prefix,
-	})
 }
 
 func (v *Switch) enableMasq(input, output, source, prefix string) {
 	if source == prefix {
 		return
 	}
-	// enable masquerade between source and prefix.
+	// enable masquerade from source to prefix.
 	v.firewall.AddRule(network.IpRule{
 		Table:  network.TNat,
 		Chain:  OLCPost,
 		Source: source,
 		Dest:   prefix,
-		Jump:   network.CMasq,
-	})
-	v.firewall.AddRule(network.IpRule{
-		Table:  network.TNat,
-		Chain:  OLCPost,
-		Output: output,
-		Source: prefix,
-		Dest:   source,
 		Jump:   network.CMasq,
 	})
 }
@@ -228,7 +212,7 @@ func (v *Switch) preNetwork() {
 			devName := vpnCfg.Device
 			v.enableAcl(nCfg.Acl, devName)
 			for _, rt := range vpnCfg.Routes {
-				v.allowForward(devName, devName, vpnCfg.Subnet, rt)
+				v.allowFwd(devName, devName, vpnCfg.Subnet, rt)
 				v.enableMasq(devName, devName, vpnCfg.Subnet, rt)
 			}
 		}
@@ -238,13 +222,13 @@ func (v *Switch) preNetwork() {
 		// Enable MASQUERADE, and allowed forward.
 		for _, rt := range nCfg.Routes {
 			if vpnCfg != nil {
-				v.allowForward(brName, brName, vpnCfg.Subnet, rt.Prefix)
+				v.allowFwd(brName, brName, vpnCfg.Subnet, rt.Prefix)
 				v.enableMasq(brName, brName, vpnCfg.Subnet, rt.Prefix)
 			}
 			if rt.NextHop != ifAddr {
 				continue
 			}
-			v.allowForward(brName, brName, source, rt.Prefix)
+			v.allowFwd(brName, brName, source, rt.Prefix)
 			if rt.Mode == "snat" {
 				v.enableMasq(brName, brName, source, rt.Prefix)
 			}
