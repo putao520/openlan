@@ -331,7 +331,8 @@ func (o *OpenVpn) Profile() ([]byte, error) {
 }
 
 type OpenVPNProfile struct {
-	Remote   string
+	Server   string
+	Port     string
 	Ca       string
 	Cert     string
 	Key      string
@@ -347,17 +348,17 @@ client
 dev {{ .Device }}
 route-metric 300
 proto {{ .Protocol }}
-remote {{ .Remote }}
+remote {{ .Server }} {{ .Port }}
 resolv-retry infinite
 nobind
 persist-key
 persist-tun
 <ca>
-{{ .Ca }}
+{{ .Ca -}}
 </ca>
 remote-cert-tls server
 <tls-auth>
-{{ .TlsAuth }}
+{{ .TlsAuth -}}
 </tls-auth>
 key-direction 1
 cipher {{ .Cipher }}
@@ -370,13 +371,13 @@ client
 dev {{ .Device }}
 route-metric 300
 proto {{ .Protocol }}
-remote {{ .Remote }}
+remote {{ .Server }} {{ .Port }}
 resolv-retry infinite
 nobind
 persist-key
 persist-tun
 <ca>
-{{ .Ca }}
+{{ .Ca -}}
 </ca>
 <cert>
 </cert>
@@ -384,7 +385,7 @@ persist-tun
 </key>
 remote-cert-tls server
 <tls-auth>
-{{ .TlsAuth }}
+{{ .TlsAuth -}}
 </tls-auth>
 key-direction 1
 cipher {{ .Cipher }}
@@ -395,7 +396,8 @@ verb 4
 
 func NewOpenVpnProfileFromConf(cfg *config.OpenVPN) *OpenVPNProfile {
 	data := &OpenVPNProfile{
-		Remote:   strings.ReplaceAll(cfg.Listen, ":", " "),
+		Server:   strings.SplitN(cfg.Listen, ":", 2)[0],
+		Port:     strings.SplitN(cfg.Listen, ":", 2)[1],
 		Cipher:   cfg.Cipher,
 		Device:   cfg.Device[:3],
 		Protocol: cfg.Protocol,

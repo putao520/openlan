@@ -44,9 +44,10 @@ func (o *OpenVPN) Correct(obj *OpenVPN) {
 	}
 	if o.Device == "" {
 		if strings.Contains(o.Listen, ":") {
-			o.Device = "tun" + strings.SplitN(o.Listen, ":", 2)[1]
+			o.Device = "tun-" + strings.SplitN(o.Listen, ":", 2)[1]
 		} else {
-			o.Device = "tun0"
+			o.Listen += ":1194"
+			o.Device = "tun-1194"
 		}
 	}
 	if o.Protocol == "" && obj != nil {
