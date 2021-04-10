@@ -5,6 +5,7 @@ import (
 	"github.com/danieldin95/openlan-go/src/libol"
 	"runtime"
 	"strings"
+	"time"
 )
 
 type User struct {
@@ -16,6 +17,7 @@ type User struct {
 	System   string             `json:"system"`
 	Role     string             `json:"type"` // admin , guest or ldap
 	Last     libol.SocketClient `json:"last"` // lastly accessed by this.
+	UpdateAt int64
 }
 
 func NewUser(name, network, password string) *User {
@@ -49,6 +51,7 @@ func (u *User) Update() {
 	if u.UUID == "" {
 		u.UUID = u.Alias
 	}
+	u.UpdateAt = time.Now().Unix()
 }
 
 func (u *User) Id() string {

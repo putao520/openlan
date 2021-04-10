@@ -4,6 +4,7 @@ import (
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
 	"sync"
+	"time"
 )
 
 type _user struct {
@@ -52,6 +53,8 @@ func (w *_user) Add(user *models.User) {
 	} else { // Update pass and role.
 		older.Role = user.Role
 		older.Password = user.Password
+		older.Alias = user.Alias
+		older.UpdateAt = user.UpdateAt
 	}
 }
 
@@ -80,39 +83,49 @@ func (w *_user) List() <-chan *models.User {
 	return c
 }
 
-func (w *_user) CheckLdap(username, password string) *models.User {
+func (w *_user) CheckLdap(obj *models.User) *models.User {
 	svc := w.GetLdap()
 	if svc == nil {
 		return nil
 	}
-	u := w.Get(username)
+	u := w.Get(obj.Id())
 	libol.Debug("CheckLdap %s", u)
 	if u != nil && u.Role != "ldap" {
 		return nil
 	}
-	if ok, err := svc.Login(username, password); !ok {
+	if ok, err := svc.Login(obj.Id(), obj.Password); !ok {
 		libol.Warn("CheckLdap %s", err)
 		return nil
 	}
 	user := &models.User{
-		Name:     username,
-		Password: password,
+		Name:     obj.Id(),
+		Password: obj.Password,
 		Role:     "ldap",
+		Alias:    obj.Alias,
 	}
 	user.Update()
 	w.Add(user)
 	return user
 }
 
-func (w *_user) Check(username, password string) *models.User {
-	if u := w.Get(username); u != nil {
-		if u.Role != "ldap" {
-			if u.Password == password {
+func (w *_user) Timeout(user *models.User) bool {
+	if user.Role == "ldap" {
+		return time.Now().Unix()-user.UpdateAt > w.LdapCfg.Timeout
+	}
+	return true
+}
+
+func (w *_user) Check(obj *models.User) *models.User {
+	if u := w.Get(obj.Id()); u != nil {
+		if u.Role == "ldap" {
+			// check it by ldap.
+		} else {
+			if u.Password == obj.Password {
 				return u
 			}
 		}
 	}
-	if u := w.CheckLdap(username, password); u != nil {
+	if u := w.CheckLdap(obj); u != nil {
 		return u
 	}
 	return nil

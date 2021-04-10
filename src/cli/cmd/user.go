@@ -107,12 +107,17 @@ func (u User) Check(c *cli.Context) error {
 	if netFromO != "" && netFromE != netFromO {
 		return libol.NewErr("wrong: zo=%s, us=%s", netFromO, nameFromE)
 	}
+	alias := ""
+	if ip, ok := os.LookupEnv("untrusted_ip"); ok {
+		alias = ip + ":" + os.Getenv("untrusted_port")
+	}
 	url := u.Url(c.String("url"), fullName)
 	url += "/check"
 	client := u.NewHttp(c.String("token"))
 	user := &schema.User{
 		Name:     fullName,
 		Password: passFromE,
+		Alias:    alias,
 	}
 	if err := client.PostJSON(url, user); err != nil {
 		return err
