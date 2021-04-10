@@ -32,7 +32,7 @@ func DefaultPoint() *Point {
 		Alias:      "",
 		Connection: "openlan.net",
 		Network:    "default",
-		Protocol:   "tls", // udp, kcp, tcp, tls, ws and wss etc.
+		Protocol:   "tcp", // udp, kcp, tcp, tls, ws and wss etc.
 		Timeout:    60,
 		Log: Log{
 			File:    LogFile("openlan-point.log"),
@@ -134,7 +134,7 @@ func (ap *Point) Correct(obj *Point) {
 		ap.Cert.Correct()
 	}
 	if ap.Protocol == "" {
-		ap.Protocol = "tls"
+		ap.Protocol = "tcp"
 	}
 }
 

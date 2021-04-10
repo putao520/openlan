@@ -124,15 +124,14 @@ func (s *Switch) Correct(obj *Switch) {
 	s.SaveFile = filepath.Join(s.ConfDir, "switch.json")
 	if s.Cert != nil {
 		s.Cert.Correct()
-		// default is tls if cert configured
-		if s.Protocol == "" {
-			s.Protocol = "tls"
-		}
 	}
 	perf := &s.Perf
 	perf.Correct(DefaultPerf())
 	if s.Password == "" {
 		s.Password = filepath.Join(s.ConfDir, "password")
+	}
+	if s.Protocol == "" {
+		s.Protocol = "tcp"
 	}
 }
 
