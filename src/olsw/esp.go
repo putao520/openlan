@@ -37,8 +37,7 @@ func NewESPWorker(c *config.Network) *EspWorker {
 	return w
 }
 
-func (w *EspWorker) newState(spi uint32, local, remote net.IP,
-	auth, crypt string) *nl.XfrmState {
+func (w *EspWorker) newState(spi uint32, local, remote net.IP, auth, crypt string) *nl.XfrmState {
 	return &nl.XfrmState{
 		Src:   remote,
 		Dst:   local,
@@ -62,8 +61,7 @@ func (w *EspWorker) newState(spi uint32, local, remote net.IP,
 	}
 }
 
-func (w *EspWorker) newPolicy(spi uint32, local, remote net.IP,
-	src, dst *net.IPNet, dir nl.Dir) *nl.XfrmPolicy {
+func (w *EspWorker) newPolicy(spi uint32, local, remote net.IP, src, dst *net.IPNet, dir nl.Dir) *nl.XfrmPolicy {
 	policy := &nl.XfrmPolicy{
 		Src: src,
 		Dst: dst,

@@ -14,6 +14,7 @@ type LDAPConfig struct {
 	Attr      string
 	Filter    string
 	EnableTls bool
+	Timeout   int64
 }
 
 type LDAPService struct {
@@ -34,6 +35,9 @@ func NewLDAPService(cfg LDAPConfig) (*LDAPService, error) {
 	}
 	if err = conn.Bind(cfg.BindDN, cfg.Password); err != nil {
 		return nil, err
+	}
+	if cfg.Timeout == 0 {
+		cfg.Timeout = 8 * 3600
 	}
 	return &LDAPService{Conn: conn, Cfg: cfg}, nil
 }

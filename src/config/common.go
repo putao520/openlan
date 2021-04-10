@@ -252,6 +252,12 @@ func GetBlock(cfg *Crypt) kcp.BlockCrypt {
 		block, _ = kcp.NewAESBlockCrypt(pass[:16])
 	case "aes-192":
 		block, _ = kcp.NewAESBlockCrypt(pass[:24])
+	case "aes-256":
+		block, _ = kcp.NewAESBlockCrypt(pass[:32])
+	case "tea":
+		block, _ = kcp.NewTEABlockCrypt(pass[:16])
+	case "xtea":
+		block, _ = kcp.NewXTEABlockCrypt(pass[:16])
 	default:
 		block, _ = kcp.NewSimpleXORBlockCrypt(pass)
 	}
