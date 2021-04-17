@@ -24,7 +24,6 @@ var (
 
 func parseBasicAuth(auth string) (username, password string, ok bool) {
 	const prefix = "Basic "
-	// Case insensitive prefix match. See Issue 22736.
 	if len(auth) < len(prefix) || !strings.EqualFold(auth[:len(prefix)], prefix) {
 		return
 	}
