@@ -50,7 +50,7 @@
         },
         "members": [
             {
-                "spi": 10,
+                "spi": 11,
                 "peer": "10.10.10.11",
                 "state": {
                     "remote": "sh.esp.net"
@@ -126,7 +126,7 @@ EOF
         },
         "members": [
             {
-                "spi": 10,
+                "spi": 11,
                 "peer": "10.10.10.10",
                 "state": {
                     "remote": "sz.esp.net"
