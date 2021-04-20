@@ -8,7 +8,7 @@
                                    \               --br-v11--
                                 --br-v10--            /
                                      \               /
-                             VNI[1110/1210]    VNI[1111/1211]  
+                           VNI[101110/101210]   VNI[101111/101211]  
                                         \         /
                                       OLSW(ShenZhen) 10.10.10.10
                                             |
@@ -23,7 +23,7 @@
                           |                                    |
         10.10.10.11 OLSW(ShangHai)                       OLSW(NanJing) 10.10.10.12
                       /   |                                    |    \
-             VNI[1111] VNI[1110]                         VNI[1210] VNI[1211]
+            VNI[101111] VNI[101110]                     VNI[101210] VNI[101211]
                    /      |                                    |        \ 
                   /    --br-v10--                         --br-v10--     \    
       --br-v11-- |        |                                    |          | --br-v11-- 
@@ -50,14 +50,14 @@
         },
         "members": [
             {
-                "spi": 11,
+                "spi": 1011,
                 "peer": "10.10.10.11",
                 "state": {
                     "remote": "sh.esp.net"
                 }
             },
             {
-                "spi": 12,
+                "spi": 1012,
                 "peer": "10.10.10.12",
                 "state": {
                     "remote": "nj.esp.net"
@@ -80,22 +80,22 @@ EOF
     "interface": {
         "members": [
             {
-                "vni": 1110,
+                "vni": 101110,
                 "remote": "10.10.10.11",
                 "bridge": "br-v10"
             },
             {
-                "vni": 1210,
+                "vni": 101210,
                 "remote": "10.10.10.12",
                 "bridge": "br-v10"
             },
             {
-                "vni": 1111,
+                "vni": 101111,
                 "remote": "10.10.10.11",
                 "bridge": "br-v11"
             },
             {
-                "vni": 1211,
+                "vni": 101211,
                 "remote": "10.10.10.12",
                 "bridge": "br-v11"
             }
@@ -126,7 +126,7 @@ EOF
         },
         "members": [
             {
-                "spi": 11,
+                "spi": 1011,
                 "peer": "10.10.10.10",
                 "state": {
                     "remote": "sz.esp.net"
@@ -149,12 +149,12 @@ EOF
     "interface": {
         "members": [
             {
-                "vni": 1110,
+                "vni": 101110,
                 "remote": "10.10.10.10",
                 "bridge": "br-v10"
             },
             {
-                "vni": 1111,
+                "vni": 101111,
                 "remote": "10.10.10.10",
                 "bridge": "br-v11"
             }
@@ -188,7 +188,7 @@ EOF
         },
         "members": [
             {
-                "spi": 12,
+                "spi": 1012,
                 "peer": "10.10.10.10",
                 "state": {
                     "remote": "sz.esp.net"
@@ -211,12 +211,12 @@ EOF
     "interface": {
         "members": [
             {
-                "vni": 1210,
+                "vni": 101210,
                 "remote": "10.10.10.10",
                 "bridge": "br-v10"
             },
             {
-                "vni": 1211,
+                "vni": 101211,
                 "remote": "10.10.10.10",
                 "bridge": "br-v11"
             }
