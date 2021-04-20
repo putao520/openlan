@@ -64,3 +64,9 @@ OpenLAN提供一种局域网数据报文在广域网的传输实现，并能够�
                        |                        |                           |
                      OLAP                     OLAP                         OLAP
                 192.168.1.11/24           192.168.1.12/24             192.168.1.13/24
+
+## 文档
+- [软件安装](docs/install.md)
+- [分支接入](docs/central.md)
+- [多区域互联](docs/multiarea.md)
+- [基于VxLAN网络](docs/vxlan.md)
