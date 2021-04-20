@@ -3,7 +3,7 @@
 ## Topology
 
 ```
-                                    OLSW(Cental) - 10.16.1.10/24
+                                    OLSW(Central) - 10.16.1.10/24
                                             ^
                                             |
                                          Wifi(DNAT)
