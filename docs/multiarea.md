@@ -8,13 +8,13 @@
                   OLAP1 -- Hotal Wifi --> OLSW(NJ) <--- Other Wifi --- OLAP2
                                             |
                                             |
-                                         Internat
+                                         Internet
                                             |
                                             |
                                          OLSW(SH) - 192.168.1.10/24
                                             |
                                             |
-                   ------------------------------------------------------
+                   +------------------------+---------------------------+
                    ^                        ^                           ^
                    |                        |                           |
               Office Wifi               Home Wifi                  Hotal Wifi     
