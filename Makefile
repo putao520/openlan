@@ -60,7 +60,7 @@ env:
 linux: linux-proxy linux-point linux-switch linux-ctrl ## build linux binary
 
 openudp: env
-	gcc ./misc/learn/xfrm/udp.c -o  $(BD)/openudp
+	gcc ./core/src/xfrm/udp.c -o  $(BD)/openudp
 
 linux-ctrl: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-ctrl ./src/cli/ctrl

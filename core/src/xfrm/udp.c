@@ -1,4 +1,9 @@
-// make udp-4500
+// This program will open udp port for espinudp.
+//
+// build deps:
+//   kernel-headers
+// compile it:
+//   make udp
 
 #include <stdio.h>
 #include <stdint.h>
