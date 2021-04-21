@@ -53,6 +53,7 @@ clean: ## clean cache
 ## prepare environment
 env:
 	@mkdir -p $(BD)
+	@go version
 	@gofmt -w -s ./src ./misc
 
 ## linux platform
