@@ -1,5 +1,5 @@
 [Unit]
-Description=OpenLan point daemon for %I
+Description=OpenLAN Point daemon for %I
 After=network.target
 
 [Service]
