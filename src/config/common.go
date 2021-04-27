@@ -180,12 +180,18 @@ type IpSubnet struct {
 	Netmask string `json:"netmask"`
 }
 
-type PrefixRoute struct {
-	Network string `json:"network"`
-	Prefix  string `json:"prefix"`
+type MultiPath struct {
 	NextHop string `json:"nexthop"`
-	Metric  int    `json:"metric"`
-	Mode    string `json:"mode"` // route or snat
+	Weight  int    `json:"weight"`
+}
+
+type PrefixRoute struct {
+	Network   string      `json:"network"`
+	Prefix    string      `json:"prefix"`
+	NextHop   string      `json:"nexthop"`
+	MultiPath []MultiPath `json:"multipath"`
+	Metric    int         `json:"metric"`
+	Mode      string      `json:"mode"` // route or snat
 }
 
 type HostLease struct {

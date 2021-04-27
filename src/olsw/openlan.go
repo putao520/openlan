@@ -123,22 +123,29 @@ func (w *OpenLANWorker) LoadRoutes() {
 		return
 	}
 	for _, rt := range w.cfg.Routes {
-		if ifAddr == rt.NextHop { // route's next-hop is local not install again.
-			continue
-		}
 		_, dst, err := net.ParseCIDR(rt.Prefix)
 		if err != nil {
 			continue
 		}
-		next := net.ParseIP(rt.NextHop)
-		rte := netlink.Route{
-			LinkIndex: link.Attrs().Index,
-			Dst:       dst,
-			Gw:        next,
-			Priority:  rt.Metric,
+		if ifAddr == rt.NextHop && rt.MultiPath == nil {
+			// route's next-hop is local not install again.
+			continue
 		}
-		w.out.Debug("OpenLANWorker.LoadRoute: %s", rte)
-		if err := netlink.RouteAdd(&rte); err != nil {
+		nlrt := netlink.Route{Dst: dst}
+		for _, hop := range rt.MultiPath {
+			nxhe := &netlink.NexthopInfo{
+				Hops: hop.Weight,
+				Gw:   net.ParseIP(hop.NextHop),
+			}
+			nlrt.MultiPath = append(nlrt.MultiPath, nxhe)
+		}
+		if rt.MultiPath == nil {
+			nlrt.LinkIndex = link.Attrs().Index
+			nlrt.Gw = net.ParseIP(rt.NextHop)
+			nlrt.Priority = rt.Metric
+		}
+		w.out.Debug("OpenLANWorker.LoadRoute: %s", nlrt)
+		if err := netlink.RouteAdd(&nlrt); err != nil {
 			w.out.Warn("OpenLANWorker.LoadRoute: %s", err)
 			continue
 		}
@@ -156,14 +163,14 @@ func (w *OpenLANWorker) UnLoadRoutes() {
 		if err != nil {
 			continue
 		}
-		next := net.ParseIP(rt.NextHop)
-		rte := netlink.Route{
-			LinkIndex: link.Attrs().Index,
-			Dst:       dst,
-			Gw:        next,
+		nlrt := netlink.Route{Dst: dst}
+		if rt.MultiPath == nil {
+			nlrt.LinkIndex = link.Attrs().Index
+			nlrt.Gw = net.ParseIP(rt.NextHop)
+			nlrt.Priority = rt.Metric
 		}
-		w.out.Debug("OpenLANWorker.UnLoadRoute: %s", rte)
-		if err := netlink.RouteDel(&rte); err != nil {
+		w.out.Debug("OpenLANWorker.UnLoadRoute: %s", nlrt)
+		if err := netlink.RouteDel(&nlrt); err != nil {
 			w.out.Warn("OpenLANWorker.UnLoadRoute: %s", err)
 			continue
 		}
