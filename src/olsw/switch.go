@@ -127,7 +127,7 @@ func (v *Switch) enablePort(protocol, port string) {
 	if err != nil {
 		v.out.Warn("Switch.enablePort invalid port %s", port)
 	}
-	v.out.Debug("Switch.enablePort %s, %s", protocol, port)
+	v.out.Info("Switch.enablePort %s, %s", protocol, port)
 	// allowed forward between source and prefix.
 	v.firewall.AddRule(network.IpRule{
 		Table:   network.TFilter,
