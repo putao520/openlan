@@ -119,6 +119,10 @@ func (w *EspWorker) addPolicy(mem *config.ESPMember, pol *config.ESPPolicy) {
 }
 
 func (w *EspWorker) Initialize() {
+	if w.inCfg == nil {
+		w.out.Error("EspWorker.Initialize inCfg is nil")
+		return
+	}
 	for _, mem := range w.inCfg.Members {
 		if mem == nil {
 			continue
@@ -190,6 +194,10 @@ func (w *EspWorker) UpDummy(name, addr, peer string) error {
 }
 
 func (w *EspWorker) Start(v api.Switcher) {
+	if w.inCfg == nil {
+		w.out.Error("EspWorker.Start inCfg is nil")
+		return
+	}
 	w.uuid = v.UUID()
 	for _, state := range w.states {
 		w.out.Debug("EspWorker.Start State %s", state)
@@ -227,6 +235,10 @@ func (w *EspWorker) DownDummy(name string) error {
 }
 
 func (w *EspWorker) Stop() {
+	if w.inCfg == nil {
+		w.out.Error("EspWorker.Stop inCfg is nil")
+		return
+	}
 	for _, mem := range w.inCfg.Members {
 		if err := w.DownDummy(mem.Name); err != nil {
 			w.out.Error("EspWorker.Stop %s %s", mem.Name, err)

@@ -10,6 +10,7 @@ import (
 func main() {
 	c := config.NewSwitch()
 	libol.SetLogger(c.Log.File, c.Log.Verbose)
+	libol.Debug("main %s", c)
 	store.Init(&c.Perf)
 	s := olsw.NewSwitch(c)
 	libol.PreNotify()

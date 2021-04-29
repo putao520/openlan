@@ -59,7 +59,7 @@ if [ ! -e "/etc/openlan/switch/switch.json" ]; then
     /usr/bin/cp -rvf /etc/openlan/switch/switch.json.example /etc/openlan/switch/switch.json
 fi
 if [ ! -e "/var/openlan/openvpn/dh.pem" ]; then
-    /usr/bin/openssl dhparam -out /var/openlan/openvpn/dh.pem 1024
+    /usr/bin/openssl dhparam -out /var/openlan/openvpn/dh.pem 2048
 fi
 if [ ! -e "/var/openlan/openvpn/ta.key" ]; then
     /usr/sbin/openvpn --genkey --secret /var/openlan/openvpn/ta.key

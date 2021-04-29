@@ -20,6 +20,7 @@ const (
 	CPreRoute  = "PREROUTING"
 	CMasq      = "MASQUERADE"
 	CNoTrk     = "NOTRACK"
+	CSnat      = "SNAT"
 )
 
 type IpRule struct {

@@ -77,6 +77,10 @@ func (w *VxLANWorker) UpVxLAN(cfg *co.VxLANMember) error {
 
 func (w *VxLANWorker) Start(v api.Switcher) {
 	w.uuid = v.UUID()
+	if w.inCfg == nil {
+		w.out.Error("VxLANWorker.Start inCfg is nil")
+		return
+	}
 	for _, mem := range w.inCfg.Members {
 		if err := w.UpVxLAN(mem); err != nil {
 			w.out.Error("VxLANWorker.Start %s %s", mem.Name, err)
@@ -103,6 +107,10 @@ func (w *VxLANWorker) DownVxLAN(cfg *co.VxLANMember) error {
 }
 
 func (w *VxLANWorker) Stop() {
+	if w.inCfg == nil {
+		w.out.Error("VxLANWorker.Stop inCfg is nil")
+		return
+	}
 	for _, mem := range w.inCfg.Members {
 		if err := w.DownVxLAN(mem); err != nil {
 			w.out.Error("VxLANWorker.Stop %s %s", mem.Name, err)
