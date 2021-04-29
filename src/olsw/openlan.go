@@ -145,11 +145,19 @@ func (w *OpenLANWorker) LoadRoutes() {
 			nlrt.Priority = rt.Metric
 		}
 		w.out.Debug("OpenLANWorker.LoadRoute: %s", nlrt)
-		if err := netlink.RouteAdd(&nlrt); err != nil {
-			w.out.Warn("OpenLANWorker.LoadRoute: %s", err)
-			continue
+		promise := &libol.Promise{
+			First:  time.Second * 2,
+			MaxInt: time.Minute,
+			MinInt: time.Second * 10,
 		}
-		w.out.Info("OpenLANWorker.LoadRoute: %v", rt)
+		promise.Go(func() error {
+			if err := netlink.RouteAdd(&nlrt); err != nil {
+				w.out.Warn("OpenLANWorker.LoadRoute: %s", err)
+				return err
+			}
+			w.out.Info("OpenLANWorker.LoadRoute: %v", rt)
+			return nil
+		})
 	}
 }
 

@@ -173,6 +173,20 @@ func (v *Switch) enableMasq(input, output, source, prefix string) {
 	})
 }
 
+func (v *Switch) enableSnat(input, output, source, prefix string) {
+	if source == prefix {
+		return
+	}
+	// enable masquerade from source to prefix.
+	v.firewall.AddRule(network.IpRule{
+		Table:    network.TNat,
+		Chain:    OLCPost,
+		ToSource: source,
+		Dest:     prefix,
+		Jump:     network.CSnat,
+	})
+}
+
 func (v *Switch) preWorker(w Networker) {
 	cfg := w.GetConfig()
 	vnpCfg := cfg.OpenVPN
@@ -245,7 +259,9 @@ func (v *Switch) preNetwork() {
 				continue
 			}
 			v.enableFwd(brName, brName, source, rt.Prefix)
-			if rt.Mode == "snat" {
+			if rt.MultiPath != nil {
+				v.enableSnat(brName, brName, ifAddr, rt.Prefix)
+			} else if rt.Mode == "snat" {
 				v.enableMasq(brName, brName, source, rt.Prefix)
 			}
 		}
