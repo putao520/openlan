@@ -45,10 +45,14 @@ func (t *TcpProxy) tunnel(src net.Conn, dst net.Conn) {
 	t.out.Debug("TcpProxy.tunnel %s exit", dst.RemoteAddr())
 }
 
-func (t *TcpProxy) loadBalance() string {
-	i := t.rr % uint64(len(t.target))
-	t.rr++
-	return t.target[i]
+func (t *TcpProxy) loadBalance(fail int) string {
+	size := len(t.target)
+	if fail < size {
+		i := t.rr % uint64(size)
+		t.rr++
+		return t.target[i]
+	}
+	return ""
 }
 
 func (t *TcpProxy) Start() {
@@ -77,15 +81,23 @@ func (t *TcpProxy) Start() {
 				break
 			}
 			// connect target and pipe it.
-			backend := t.loadBalance()
-			target, err := net.Dial("tcp", backend)
-			if err != nil {
-				t.out.Error("TcpProxy.Accept %s", err)
-				continue
+			fail := 0
+			for {
+				backend := t.loadBalance(fail)
+				if backend == "" {
+					break
+				}
+				target, err := net.Dial("tcp", backend)
+				if err != nil {
+					t.out.Error("TcpProxy.Accept %s", err)
+					fail++
+					continue
+				}
+				libol.Go(func() {
+					t.tunnel(conn, target)
+				})
+				break
 			}
-			libol.Go(func() {
-				t.tunnel(conn, target)
-			})
 		}
 	})
 	return
@@ -93,7 +105,7 @@ func (t *TcpProxy) Start() {
 
 func (t *TcpProxy) Stop() {
 	if t.listener != nil {
-		t.listener.Close()
+		_ = t.listener.Close()
 	}
 	t.out.Info("TcpProxy.Stop")
 	t.listener = nil
