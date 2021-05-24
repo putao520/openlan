@@ -17,6 +17,7 @@ type OpenVPN struct {
 	TlsAuth   string   `json:"tlsAuth"`
 	Cipher    string   `json:"cipher"`
 	Routes    []string `json:"routes"`
+	Renego    int      `json:"renego"`
 	Script    string   `json:"-"`
 }
 

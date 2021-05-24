@@ -31,6 +31,7 @@ type OpenVPNData struct {
 	Protocol string
 	Script   string
 	Routes   []string
+	Renego   int
 }
 
 const (
@@ -39,7 +40,8 @@ local {{ .Local }}
 port {{ .Port }}
 proto {{ .Protocol }}
 dev {{ .Device }}
-keepalive 5 120
+reneg-sec {{ .Renego }}
+keepalive 10 120
 persist-key
 persist-tun
 ca {{ .Ca }}
@@ -65,6 +67,7 @@ local {{ .Local }}
 port {{ .Port }}
 proto {{ .Protocol }}
 dev {{ .Device }}
+reneg-sec {{ .Renego }}
 keepalive 10 120
 persist-key
 persist-tun
@@ -97,6 +100,7 @@ func NewOpenVpnDataFromConf(cfg *config.OpenVPN) *OpenVPNData {
 		Protocol: cfg.Protocol,
 		Script:   cfg.Script,
 		Port:     "1194",
+		Renego:   cfg.Renego,
 	}
 	addr, _ := libol.IPNetwork(cfg.Subnet)
 	data.Server = strings.ReplaceAll(addr, "/", " ")
@@ -176,13 +180,7 @@ func (o *OpenVpn) ServerTmpl() string {
 		tmplStr = certConfTmpl
 	}
 	cfgTmpl := filepath.Join(o.Cfg.Directory, "server.tmpl")
-	if err := libol.FileExist(cfgTmpl); err == nil {
-		if data, err := ioutil.ReadFile(cfgTmpl); err == nil {
-			tmplStr = string(data)
-		}
-	} else {
-		_ = ioutil.WriteFile(cfgTmpl, []byte(tmplStr), 0600)
-	}
+	_ = ioutil.WriteFile(cfgTmpl, []byte(tmplStr), 0600)
 	return tmplStr
 }
 
@@ -305,13 +303,7 @@ func (o *OpenVpn) ProfileTmpl() string {
 		tmplStr = certClientProfile
 	}
 	cfgTmpl := filepath.Join(o.Cfg.Directory, "client.tmpl")
-	if err := libol.FileExist(cfgTmpl); err == nil {
-		if data, err := ioutil.ReadFile(cfgTmpl); err == nil {
-			tmplStr = string(data)
-		}
-	} else {
-		_ = ioutil.WriteFile(cfgTmpl, []byte(tmplStr), 0600)
-	}
+	_ = ioutil.WriteFile(cfgTmpl, []byte(tmplStr), 0600)
 	return tmplStr
 }
 
@@ -340,6 +332,7 @@ type OpenVPNProfile struct {
 	Cipher   string
 	Device   string
 	Protocol string
+	Renego   int
 }
 
 const (
@@ -349,6 +342,7 @@ dev {{ .Device }}
 route-metric 300
 proto {{ .Protocol }}
 remote {{ .Server }} {{ .Port }}
+reneg-sec {{ .Renego }}
 resolv-retry infinite
 nobind
 persist-key
@@ -372,6 +366,7 @@ dev {{ .Device }}
 route-metric 300
 proto {{ .Protocol }}
 remote {{ .Server }} {{ .Port }}
+reneg-sec {{ .Renego }}
 resolv-retry infinite
 nobind
 persist-key
@@ -379,10 +374,6 @@ persist-tun
 <ca>
 {{ .Ca -}}
 </ca>
-<cert>
-</cert>
-<key>
-</key>
 remote-cert-tls server
 <tls-auth>
 {{ .TlsAuth -}}
@@ -401,6 +392,7 @@ func NewOpenVpnProfileFromConf(cfg *config.OpenVPN) *OpenVPNProfile {
 		Cipher:   cfg.Cipher,
 		Device:   cfg.Device[:3],
 		Protocol: cfg.Protocol,
+		Renego:   cfg.Renego,
 	}
 	if ctx, err := ioutil.ReadFile(cfg.RootCa); err == nil {
 		data.Ca = string(ctx)
