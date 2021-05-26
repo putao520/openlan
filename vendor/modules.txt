@@ -26,8 +26,17 @@ github.com/moby/libnetwork/iptables
 github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
+# github.com/riobard/go-bloom v0.0.0-20200614022211-cdc8013cb5b3
+github.com/riobard/go-bloom
 # github.com/russross/blackfriday/v2 v2.0.1
 github.com/russross/blackfriday/v2
+# github.com/shadowsocks/go-shadowsocks2 v0.1.5
+github.com/shadowsocks/go-shadowsocks2/core
+github.com/shadowsocks/go-shadowsocks2/internal
+github.com/shadowsocks/go-shadowsocks2/nfutil
+github.com/shadowsocks/go-shadowsocks2/pfutil
+github.com/shadowsocks/go-shadowsocks2/shadowaead
+github.com/shadowsocks/go-shadowsocks2/socks
 # github.com/shurcooL/sanitized_anchor_name v1.0.0
 github.com/shurcooL/sanitized_anchor_name
 # github.com/songgao/water v0.0.0-20190725173103-fd331bda3f4b
@@ -52,25 +61,30 @@ github.com/xtaci/kcp-go/v5
 # golang.org/x/crypto v0.0.0 => github.com/golang/crypto v0.0.0-20200604202706-70a84ac30bf9
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/cast5
+golang.org/x/crypto/chacha20
+golang.org/x/crypto/chacha20poly1305
+golang.org/x/crypto/hkdf
+golang.org/x/crypto/internal/subtle
 golang.org/x/crypto/pbkdf2
+golang.org/x/crypto/poly1305
 golang.org/x/crypto/salsa20
+golang.org/x/crypto/salsa20/salsa
 golang.org/x/crypto/tea
 golang.org/x/crypto/twofish
 golang.org/x/crypto/xtea
-golang.org/x/crypto/internal/subtle
-golang.org/x/crypto/salsa20/salsa
 # golang.org/x/net v0.0.0 => github.com/golang/net v0.0.0-20190812203447-cdfb69ac37fc
-golang.org/x/net/websocket
-golang.org/x/net/ipv4
-golang.org/x/net/ipv6
-golang.org/x/net/context
 golang.org/x/net/bpf
+golang.org/x/net/context
 golang.org/x/net/internal/iana
 golang.org/x/net/internal/socket
+golang.org/x/net/ipv4
+golang.org/x/net/ipv6
+golang.org/x/net/websocket
 # golang.org/x/sys v0.0.0 => github.com/golang/sys v0.0.0-20190209173611-3b5209105503
+golang.org/x/sys/cpu
 golang.org/x/sys/unix
-golang.org/x/sys/windows/registry
 golang.org/x/sys/windows
+golang.org/x/sys/windows/registry
 # golang.org/x/time v0.0.0 => github.com/golang/time v0.0.0-20210220033141-f8bda1e9f3ba
 golang.org/x/time/rate
 # gopkg.in/asn1-ber.v1 v1.0.0-20181015200546-f715ec2f112d

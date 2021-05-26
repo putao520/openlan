@@ -4,6 +4,13 @@
             "listen": "0.0.0.0:11080"
         }
     ],
+    "shadow": [
+        {
+            "server": ":8488",
+            "password": "ecd0820973c9",
+            "cipher": "AEAD_CHACHA20_POLY1305"
+        }
+    ],
     "http": [
         {
             "listen": "0.0.0.0:11082",
