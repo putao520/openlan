@@ -5,6 +5,16 @@ import (
 	"github.com/danieldin95/openlan-go/src/libol"
 )
 
+type ShadowProxy struct {
+	Server     string `json:"server,omitempty"`
+	Key        string `json:"key,omitempty"`
+	Cipher     string `json:"cipher,omitempty"`
+	Password   string `json:"password,omitempty"`
+	Plugin     string `json:"plugin,omitempty"`
+	PluginOpts string `json:"pluginOpts,omitempty"`
+	Protocol   string `json:"protocol,omitempty"`
+}
+
 type SocksProxy struct {
 	Listen string   `json:"listen,omitempty"`
 	Auth   Password `json:"auth,omitempty"`
@@ -22,12 +32,13 @@ type TcpProxy struct {
 }
 
 type Proxy struct {
-	Conf  string        `json:"-"`
-	Log   Log           `json:"log"`
-	Socks []*SocksProxy `json:"socks,omitempty"`
-	Http  []*HttpProxy  `json:"http,omitempty"`
-	Tcp   []*TcpProxy   `json:"tcp,omitempty"`
-	PProf string        `json:"pprof"`
+	Conf   string         `json:"-"`
+	Log    Log            `json:"log"`
+	Socks  []*SocksProxy  `json:"socks,omitempty"`
+	Http   []*HttpProxy   `json:"http,omitempty"`
+	Tcp    []*TcpProxy    `json:"tcp,omitempty"`
+	Shadow []*ShadowProxy `json:"shadow,omitempty"`
+	PProf  string         `json:"pprof"`
 }
 
 func DefaultProxy() *Proxy {

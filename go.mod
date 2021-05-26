@@ -13,6 +13,7 @@ require (
 	github.com/godbus/dbus v4.1.0+incompatible // indirect
 	github.com/gorilla/mux v1.7.4
 	github.com/moby/libnetwork v0.5.6
+	github.com/shadowsocks/go-shadowsocks2 v0.1.5
 	github.com/songgao/water v0.0.0-20190725173103-fd331bda3f4b
 	github.com/stretchr/testify v1.5.1
 	github.com/urfave/cli v1.22.4 // indirect
