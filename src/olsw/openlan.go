@@ -30,7 +30,7 @@ type OpenLANWorker struct {
 	crypt     *config.Crypt
 	bridge    network.Bridger
 	out       *libol.SubLogger
-	openVPN   *OpenVpn
+	openVPN   []*OpenVPN
 }
 
 func NewOpenLANWorker(c *config.Network) *OpenLANWorker {
@@ -89,9 +89,19 @@ func (w *OpenLANWorker) Initialize() {
 		}
 	}
 	w.bridge = network.NewBridger(brCfg.Provider, brCfg.Name, brCfg.IfMtu)
-	if w.cfg.OpenVPN != nil {
-		w.openVPN = NewOpenVPN(w.cfg.OpenVPN)
-		w.openVPN.Initialize()
+	vCfg := w.cfg.OpenVPN
+	if vCfg != nil {
+		obj := NewOpenVPN(vCfg)
+		obj.Initialize()
+		w.openVPN = append(w.openVPN, obj)
+		for _, _vCfg := range vCfg.Breed {
+			if _vCfg == nil {
+				continue
+			}
+			obj := NewOpenVPN(_vCfg)
+			obj.Initialize()
+			w.openVPN = append(w.openVPN, obj)
+		}
 	}
 }
 
@@ -255,8 +265,8 @@ func (w *OpenLANWorker) Start(v api.Switcher) {
 	w.uuid = v.UUID()
 	w.LoadLinks()
 	w.LoadRoutes()
-	if w.openVPN != nil {
-		w.openVPN.Start()
+	for _, vpn := range w.openVPN {
+		vpn.Start()
 	}
 	w.startTime = time.Now().Unix()
 }
@@ -284,8 +294,8 @@ func (w *OpenLANWorker) closePeer(cfg *config.Bridge) {
 
 func (w *OpenLANWorker) Stop() {
 	w.out.Info("OpenLANWorker.Close")
-	if w.openVPN != nil {
-		w.openVPN.Stop()
+	for _, vpn := range w.openVPN {
+		vpn.Stop()
 	}
 	w.UnLoadRoutes()
 	w.UnLoadLinks()

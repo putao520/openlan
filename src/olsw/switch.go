@@ -187,22 +187,32 @@ func (v *Switch) enableSnat(input, output, source, prefix string) {
 	})
 }
 
+func (v *Switch) preWorkerVPN(w Networker, vCfg *config.OpenVPN) {
+	if w == nil || vCfg == nil {
+		return
+	}
+	cfg := w.GetConfig()
+	routes := vCfg.Routes
+	routes = append(routes, vCfg.Subnet)
+	if addr := w.GetSubnet(); addr != "" {
+		routes = append(routes, addr)
+	}
+	for _, rt := range cfg.Routes {
+		addr := rt.Prefix
+		if _, inet, err := net.ParseCIDR(addr); err == nil {
+			routes = append(routes, inet.String())
+		}
+	}
+	vCfg.Routes = routes
+	for _, _vCfg := range vCfg.Breed {
+		v.preWorkerVPN(w, _vCfg)
+	}
+}
+
 func (v *Switch) preWorker(w Networker) {
 	cfg := w.GetConfig()
-	vnpCfg := cfg.OpenVPN
-	if vnpCfg != nil {
-		routes := vnpCfg.Routes
-		routes = append(routes, vnpCfg.Subnet)
-		if addr := w.GetSubnet(); addr != "" {
-			routes = append(routes, addr)
-		}
-		for _, rt := range cfg.Routes {
-			addr := rt.Prefix
-			if _, inet, err := net.ParseCIDR(addr); err == nil {
-				routes = append(routes, inet.String())
-			}
-		}
-		vnpCfg.Routes = routes
+	if cfg.OpenVPN != nil {
+		v.preWorkerVPN(w, cfg.OpenVPN)
 	}
 }
 
@@ -220,6 +230,33 @@ func (v *Switch) enableAcl(acl, input string) {
 	}
 }
 
+func (v *Switch) preNetworkVPN0(nCfg *config.Network, vCfg *config.OpenVPN) {
+	if nCfg == nil || vCfg == nil {
+		return
+	}
+	devName := vCfg.Device
+	v.enableAcl(nCfg.Acl, devName)
+	for _, rt := range vCfg.Routes {
+		v.enableFwd(devName, devName, vCfg.Subnet, rt)
+		v.enableMasq(devName, devName, vCfg.Subnet, rt)
+	}
+	for _, _vCfg := range vCfg.Breed {
+		v.preNetworkVPN0(nCfg, _vCfg)
+	}
+}
+
+func (v *Switch) preNetworkVPN1(bridge, prefix string, vCfg *config.OpenVPN) {
+	if vCfg == nil {
+		return
+	}
+	// Enable MASQUERADE, and allowed forward.
+	v.enableFwd(bridge, bridge, vCfg.Subnet, prefix)
+	v.enableMasq(bridge, bridge, vCfg.Subnet, prefix)
+	for _, _vCfg := range vCfg.Breed {
+		v.preNetworkVPN1(bridge, prefix, _vCfg)
+	}
+}
+
 func (v *Switch) preNetwork() {
 	for _, nCfg := range v.cfg.Network {
 		name := nCfg.Name
@@ -232,29 +269,21 @@ func (v *Switch) preNetwork() {
 
 		v.preWorker(w)
 		brName := brCfg.Name
-		vpnCfg := nCfg.OpenVPN
+		vCfg := nCfg.OpenVPN
 
 		v.enableAcl(nCfg.Acl, brName)
 		source := brCfg.Address
 		ifAddr := strings.SplitN(source, "/", 2)[0]
 		// Enable MASQUERADE for OpenVPN
-		if vpnCfg != nil {
-			devName := vpnCfg.Device
-			v.enableAcl(nCfg.Acl, devName)
-			for _, rt := range vpnCfg.Routes {
-				v.enableFwd(devName, devName, vpnCfg.Subnet, rt)
-				v.enableMasq(devName, devName, vpnCfg.Subnet, rt)
-			}
+		if vCfg != nil {
+			v.preNetworkVPN0(nCfg, vCfg)
 		}
 		if ifAddr == "" {
 			continue
 		}
 		// Enable MASQUERADE, and allowed forward.
 		for _, rt := range nCfg.Routes {
-			if vpnCfg != nil {
-				v.enableFwd(brName, brName, vpnCfg.Subnet, rt.Prefix)
-				v.enableMasq(brName, brName, vpnCfg.Subnet, rt.Prefix)
-			}
+			v.preNetworkVPN1(brName, rt.Prefix, vCfg)
 			if rt.NextHop != ifAddr {
 				continue
 			}
@@ -334,6 +363,21 @@ func (v *Switch) GetPort(listen string) string {
 	return ""
 }
 
+func (v *Switch) preAllowVPN(cfg *config.OpenVPN) {
+	if cfg == nil {
+		return
+	}
+	port := v.GetPort(cfg.Listen)
+	if cfg.Protocol == "udp" {
+		v.enablePort("udp", port)
+	} else {
+		v.enablePort("tcp", port)
+	}
+	for _, _cfg := range cfg.Breed {
+		v.preAllowVPN(_cfg)
+	}
+}
+
 func (v *Switch) preAllow() {
 	port := v.GetPort(v.cfg.Listen)
 	if v.cfg.Protocol == "kcp" || v.cfg.Protocol == "udp" {
@@ -352,12 +396,7 @@ func (v *Switch) preAllow() {
 		if nCfg.OpenVPN == nil {
 			continue
 		}
-		port := v.GetPort(nCfg.OpenVPN.Listen)
-		if nCfg.OpenVPN.Protocol == "udp" {
-			v.enablePort("udp", port)
-		} else {
-			v.enablePort("tcp", port)
-		}
+		v.preAllowVPN(nCfg.OpenVPN)
 	}
 }
 

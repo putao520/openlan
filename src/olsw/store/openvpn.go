@@ -42,11 +42,10 @@ func (o *_VPNClient) getTime(layout, value string) (time.Time, error) {
 	return time.ParseInLocation(layout, value, time.Local)
 }
 
-func (o *_VPNClient) scanStatus(network string, reader io.Reader) (map[string]*schema.VPNClient, error) {
+func (o *_VPNClient) scanStatus(network string, reader io.Reader, clients map[string]*schema.VPNClient) error {
 	readAt := "header"
 	offset := 0
 	scanner := bufio.NewScanner(reader)
-	clients := make(map[string]*schema.VPNClient, 32)
 	for scanner.Scan() {
 		line := scanner.Text()
 		if line == "OpenVPN CLIENT LIST" {
@@ -70,9 +69,10 @@ func (o *_VPNClient) scanStatus(network string, reader io.Reader) (map[string]*s
 		case "common":
 			if len(columns) == 5 {
 				name := columns[0]
+				remote := columns[1]
 				client := &schema.VPNClient{
-					Name:   columns[0],
-					Remote: columns[1],
+					Name:   name,
+					Remote: remote,
 					State:  "success",
 					Device: o.GetDevice(network),
 				}
@@ -86,41 +86,46 @@ func (o *_VPNClient) scanStatus(network string, reader io.Reader) (map[string]*s
 					client.Uptime = uptime.Unix()
 					client.AliveTime = time.Now().Unix() - client.Uptime
 				}
-				clients[name] = client
+				clients[remote] = client
 			}
 		case "routing":
 			if len(columns) == 4 {
-				name := columns[1]
+				remote := columns[2]
 				address := columns[0]
-				if client, ok := clients[name]; ok {
+				if client, ok := clients[remote]; ok {
 					client.Address = address
 				}
 			}
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		return nil, err
+		return err
 	}
-	return clients, nil
+	return nil
 }
 
-func (o *_VPNClient) statusFile(name string) string {
-	return filepath.Join(o.Directory, name, "server.status")
+func (o *_VPNClient) statusFile(name string) []string {
+	files, err := filepath.Glob(filepath.Join(o.Directory, name, "*server.status"))
+	if err != nil {
+		libol.Warn("_VPNClient.statusFile %v", err)
+	}
+	return files
 }
 
 func (o *_VPNClient) readStatus(network string) map[string]*schema.VPNClient {
-	reader, err := os.Open(o.statusFile(network))
-	if err != nil {
-		libol.Debug("_VPNClient.readStatus %v", err)
-		return nil
+	clients := make(map[string]*schema.VPNClient, 32)
+	for _, file := range o.statusFile(network) {
+		reader, err := os.Open(file)
+		if err != nil {
+			libol.Debug("_VPNClient.readStatus %v", err)
+			return nil
+		}
+		if err := o.scanStatus(network, reader, clients); err != nil {
+			libol.Warn("_VPNClient.readStatus %v", err)
+		}
+		reader.Close()
 	}
-	defer reader.Close()
-	if clients, err := o.scanStatus(network, reader); err != nil {
-		libol.Warn("_VPNClient.readStatus %v", err)
-		return nil
-	} else {
-		return clients
-	}
+	return clients
 }
 
 func (o *_VPNClient) List(name string) <-chan *schema.VPNClient {
