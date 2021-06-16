@@ -23,6 +23,7 @@ type OpenVPN struct {
 	Renego    int        `json:"renego"`
 	Script    string     `json:"-"`
 	Breed     []*OpenVPN `json:"breed"`
+	Push      []string   `json:"push"`
 }
 
 var index = 1194
@@ -78,6 +79,9 @@ func (o *OpenVPN) Correct(obj *OpenVPN) {
 		}
 		if o.Routes == nil || len(o.Routes) == 0 {
 			o.Routes = append(o.Routes, obj.Routes...)
+		}
+		if o.Push == nil || len(o.Push) == 0 {
+			o.Push = append(o.Push, obj.Push...)
 		}
 		if o.Script == "" {
 			bin := obj.Script + " user check --network " + o.Network
