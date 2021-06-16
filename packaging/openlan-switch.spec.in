@@ -55,9 +55,6 @@ cp -R %_source_dir/packaging/resource/example.ovpn %{buildroot}/var/openlan/open
 
 
 %post
-
-find /var/openlan/openvpn -name '*server.status' | xargs rm -rf
-
 if [ ! -e "/etc/openlan/switch/switch.json" ]; then
     /usr/bin/cp -rvf /etc/openlan/switch/switch.json.example /etc/openlan/switch/switch.json
 fi
