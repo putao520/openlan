@@ -37,7 +37,10 @@
     "openvpn": {
         "protocol": "tcp",
         "listen": "0.0.0.0:3295",
-        "subnet": "172.32.195.0/24"
+        "subnet": "172.32.195.0/24",
+        "push": [
+            "dhcp-option DNS 8.8.8.8"
+        ]
     },
     "acl": "acl-100"
 }

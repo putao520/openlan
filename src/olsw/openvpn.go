@@ -34,6 +34,7 @@ type OpenVPNData struct {
 	Renego   int
 	Stats    string
 	IpIp     string
+	Push     []string
 }
 
 const (
@@ -53,6 +54,9 @@ dh {{ .DhPem }}
 server {{ .Server }}
 {{- range .Routes }}
 push "route {{ . }}"
+{{- end }}
+{{- range .Push }}
+push "{{ . }}"
 {{- end }}
 ifconfig-pool-persist {{ .Protocol }}{{ .Port }}ipp
 tls-auth {{ .TlsAuth }} 0
@@ -104,6 +108,7 @@ func NewOpenVpnDataFromConf(obj *OpenVPN) *OpenVPNData {
 		Protocol: cfg.Protocol,
 		Script:   cfg.Script,
 		Renego:   cfg.Renego,
+		Push:     cfg.Push,
 	}
 	addr, _ := libol.IPNetwork(cfg.Subnet)
 	data.Server = strings.ReplaceAll(addr, "/", " ")
