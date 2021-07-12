@@ -6,6 +6,7 @@
 //   make udp
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
@@ -31,6 +32,11 @@ int main(int argc, char *argv[]) {
             .s_addr = INADDR_ANY,
         },
     };
+
+    if (argc > 1) {
+       int port = atoi(argv[1]);
+       addr.sin_port = htons(port);
+    }
 
     fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (fd == -1) {
