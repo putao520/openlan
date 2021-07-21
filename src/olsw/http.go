@@ -247,11 +247,11 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 		return body.Neighbors[i].IpAddr > body.Neighbors[j].IpAddr
 	})
 	// display links.
-	for p := range store.Link.List() {
-		if p == nil {
+	for l := range store.Link.List() {
+		if l == nil {
 			break
 		}
-		body.Links = append(body.Links, models.NewLinkSchema(p))
+		body.Links = append(body.Links, models.NewLinkSchema(l))
 	}
 	sort.SliceStable(body.Links, func(i, j int) bool {
 		ii := body.Links[i]

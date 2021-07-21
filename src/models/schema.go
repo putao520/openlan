@@ -26,22 +26,21 @@ func NewPointSchema(p *Point) schema.Point {
 	}
 }
 
-func NewLinkSchema(p *Point) schema.Link {
-	client, dev := p.Client, p.Device
-	sts := client.Statistics()
+func NewLinkSchema(l *Link) schema.Link {
+	sts := l.Status()
 	return schema.Link{
-		UUID:      p.UUID,
-		User:      p.User,
-		Uptime:    client.UpTime(),
-		Device:    dev.Name(),
-		Protocol:  p.Protocol,
-		Server:    client.String(),
-		State:     client.Status().String(),
-		RxBytes:   sts[libol.CsRecvOkay],
-		TxBytes:   sts[libol.CsSendOkay],
-		ErrPkt:    sts[libol.CsSendError],
-		Network:   p.Network,
-		AliveTime: client.AliveTime(),
+		UUID:      sts.UUID,
+		User:      sts.User,
+		Uptime:    sts.Uptime,
+		Device:    sts.Device,
+		Protocol:  sts.Protocol,
+		Server:    sts.Remote,
+		State:     sts.State,
+		RxBytes:   sts.RxBytes,
+		TxBytes:   sts.TxBytes,
+		ErrPkt:    sts.ErrPkt,
+		Network:   sts.Network,
+		AliveTime: sts.AliveTime,
 	}
 }
 

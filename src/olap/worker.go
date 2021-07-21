@@ -7,7 +7,11 @@ import (
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
 	"github.com/danieldin95/openlan-go/src/network"
+	"github.com/danieldin95/openlan-go/src/schema"
 	"net"
+	"os"
+	"runtime"
+	"strings"
 	"time"
 )
 
@@ -162,6 +166,8 @@ type Worker struct {
 	network   *models.Network
 	routes    []PrefixRule
 	out       *libol.SubLogger
+	done      chan bool
+	ticker    *time.Ticker
 }
 
 func NewWorker(cfg *config.Point) *Worker {
@@ -170,12 +176,18 @@ func NewWorker(cfg *config.Point) *Worker {
 		cfg:    cfg,
 		routes: make([]PrefixRule, 0, 32),
 		out:    libol.NewSubLogger(cfg.Id()),
+		done:   make(chan bool),
+		ticker: time.NewTicker(2 * time.Second),
 	}
 }
 
 func (w *Worker) Initialize() {
 	if w.cfg == nil {
 		return
+	}
+	pid := os.Getpid()
+	if fp, err := libol.OpenWrite(w.cfg.PidFile); err == nil {
+		_, _ = fp.WriteString(fmt.Sprintf("%d", pid))
 	}
 	w.out.Info("Worker.Initialize")
 	client := GetSocketClient(w.cfg)
@@ -215,16 +227,55 @@ func (w *Worker) Initialize() {
 	w.tapWorker.Initialize()
 }
 
+func (w *Worker) FlushStatus() {
+	file := w.cfg.StatusFile
+	device := w.tapWorker.device
+	client := w.conWorker.client
+	if file == "" || device == nil || client == nil {
+		return
+	}
+	sts := client.Statistics()
+	status := &schema.Point{
+		RxBytes:   sts[libol.CsRecvOkay],
+		TxBytes:   sts[libol.CsSendOkay],
+		ErrPkt:    sts[libol.CsSendError],
+		Uptime:    client.UpTime(),
+		State:     client.Status().String(),
+		Device:    device.Name(),
+		Network:   w.cfg.Network,
+		Protocol:  w.cfg.Protocol,
+		User:      strings.SplitN(w.cfg.Username, "@", 2)[0],
+		Remote:    w.cfg.Connection,
+		AliveTime: client.AliveTime(),
+		UUID:      w.uuid,
+		Alias:     w.cfg.Alias,
+		System:    runtime.GOOS,
+	}
+	_ = libol.MarshalSave(status, file, true)
+}
+
 func (w *Worker) Start() {
 	w.out.Debug("Worker.Start linux.")
 	w.tapWorker.Start()
 	w.conWorker.Start()
+	w.FlushStatus()
+	libol.Go(func() {
+		for {
+			select {
+			case <-w.done:
+				return
+			case <-w.ticker.C:
+				w.FlushStatus()
+			}
+		}
+	})
 }
 
 func (w *Worker) Stop() {
 	if w.tapWorker == nil || w.conWorker == nil {
 		return
 	}
+	w.done <- true
 	w.FreeIpAddr()
 	w.conWorker.Stop()
 	w.tapWorker.Stop()

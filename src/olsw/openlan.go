@@ -5,13 +5,11 @@ import (
 	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
 	"github.com/danieldin95/openlan-go/src/network"
-	"github.com/danieldin95/openlan-go/src/olap"
 	"github.com/danieldin95/openlan-go/src/olsw/api"
 	"github.com/danieldin95/openlan-go/src/olsw/store"
 	"github.com/vishvananda/netlink"
 	"net"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -24,8 +22,7 @@ type OpenLANWorker struct {
 	cfg       *config.Network
 	newTime   int64
 	startTime int64
-	linksLock sync.RWMutex
-	links     map[string]*olap.Point
+	links     *Links
 	uuid      string
 	crypt     *config.Crypt
 	bridge    network.Bridger
@@ -39,7 +36,7 @@ func NewOpenLANWorker(c *config.Network) *OpenLANWorker {
 		cfg:       c,
 		newTime:   time.Now().Unix(),
 		startTime: 0,
-		links:     make(map[string]*olap.Point),
+		links:     NewLinks(),
 		crypt:     c.Crypt,
 		out:       libol.NewSubLogger(c.Name),
 	}
@@ -119,8 +116,10 @@ func (w *OpenLANWorker) LoadLinks() {
 }
 
 func (w *OpenLANWorker) UnLoadLinks() {
-	for _, p := range w.links {
-		p.Stop()
+	w.links.lock.RLock()
+	defer w.links.lock.RUnlock()
+	for _, l := range w.links.links {
+		l.Stop()
 	}
 }
 
@@ -311,32 +310,30 @@ func (w *OpenLANWorker) UpTime() int64 {
 }
 
 func (w *OpenLANWorker) AddLink(c *config.Point) {
-	brName := w.cfg.Bridge.Name
+	br := w.cfg.Bridge
+	uuid := libol.GenRandom(13)
+
 	c.Alias = w.alias
 	c.RequestAddr = false
 	c.Network = w.cfg.Name
-	c.Interface.Name = "auto"
-	c.Interface.Bridge = brName // reset bridge name.
-	c.Interface.Address = w.cfg.Bridge.Address
-	c.Interface.Provider = w.cfg.Bridge.Provider
+	c.Interface.Name = network.Taps.GenName()
+	c.Interface.Bridge = br.Name
+	c.Interface.Address = br.Address
+	c.Interface.Provider = br.Provider
+	c.Log.File = "/dev/null"
 	libol.Go(func() {
-		p := olap.NewPoint(c)
-		p.Initialize()
-		w.linksLock.Lock()
-		w.links[c.Connection] = p
-		w.linksLock.Unlock()
-		store.Link.Add(p)
-		p.Start()
+		l := NewLink(uuid, c)
+		l.Initialize()
+		store.Link.Add(uuid, l.Model())
+		w.links.Add(l)
+		l.Start()
 	})
+
 }
 
 func (w *OpenLANWorker) DelLink(addr string) {
-	w.linksLock.Lock()
-	defer w.linksLock.Unlock()
-	if p, ok := w.links[addr]; ok {
-		p.Stop()
-		store.Link.Del(p.UUID())
-		delete(w.links, addr)
+	if l := w.links.Remove(addr); l != nil {
+		store.Link.Del(l.uuid)
 	}
 }
 
