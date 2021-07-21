@@ -25,17 +25,18 @@ type Point struct {
 	Queue       *Queue    `json:"queue"`
 	Terminal    string    `json:"-"`
 	Cert        *Cert     `json:"cert"`
+	StatusFile  string    `json:"status"`
 }
 
 func DefaultPoint() *Point {
 	obj := &Point{
 		Alias:      "",
-		Connection: "openlan.net",
+		Connection: "xx.openlan.net",
 		Network:    "default",
 		Protocol:   "tcp", // udp, kcp, tcp, tls, ws and wss etc.
 		Timeout:    60,
 		Log: Log{
-			File:    LogFile("openlan-point.log"),
+			File:    "./point.log",
 			Verbose: libol.INFO,
 		},
 		Interface: Interface{
@@ -77,18 +78,19 @@ func (ap *Point) Flags() {
 	flag.StringVar(&ap.Username, "user", obj.Username, "User access to by <username>@<network>")
 	flag.StringVar(&ap.Password, "pass", obj.Password, "Password for authentication")
 	flag.StringVar(&ap.Protocol, "proto", obj.Protocol, "IP Protocol for connection")
-	flag.StringVar(&ap.Log.File, "log:file", obj.Log.File, "Log saved to file")
+	flag.StringVar(&ap.Log.File, "log:file", obj.Log.File, "File log saved to")
 	flag.StringVar(&ap.Interface.Name, "if:name", obj.Interface.Name, "Configure interface name")
 	flag.StringVar(&ap.Interface.Address, "if:addr", obj.Interface.Address, "Configure interface address")
 	flag.StringVar(&ap.Interface.Bridge, "if:br", obj.Interface.Bridge, "Configure bridge name")
 	flag.StringVar(&ap.Interface.Provider, "if:provider", obj.Interface.Provider, "Interface provider")
 	flag.StringVar(&ap.SaveFile, "conf", obj.SaveFile, "The configuration file")
-	flag.StringVar(&ap.Crypt.Secret, "crypt:secret", obj.Crypt.Secret, "Crypt secret")
-	flag.StringVar(&ap.Crypt.Algo, "crypt:algo", obj.Crypt.Algo, "Crypt algorithm")
-	flag.StringVar(&ap.PProf, "pprof", obj.PProf, "Http listen for CPU prof")
+	flag.StringVar(&ap.Crypt.Secret, "crypt:secret", obj.Crypt.Secret, "Crypt secret key")
+	flag.StringVar(&ap.Crypt.Algo, "crypt:algo", obj.Crypt.Algo, "Crypt algorithm, such as: aes-256")
+	flag.StringVar(&ap.PProf, "pprof", obj.PProf, "Http listen for pprof debug")
 	flag.StringVar(&ap.Cert.CaFile, "cacert", obj.Cert.CaFile, "CA certificate file")
 	flag.IntVar(&ap.Timeout, "timeout", obj.Timeout, "Timeout(s) for socket write/read")
-	flag.IntVar(&ap.Log.Verbose, "log:level", obj.Log.Verbose, "Log level")
+	flag.IntVar(&ap.Log.Verbose, "log:level", obj.Log.Verbose, "Log level value")
+	flag.StringVar(&ap.StatusFile, "status", obj.StatusFile, "File status saved to")
 }
 
 func (ap *Point) Parse() {
