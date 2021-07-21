@@ -9,6 +9,7 @@ import (
 	"github.com/danieldin95/openlan-go/src/network"
 	"github.com/danieldin95/openlan-go/src/schema"
 	"net"
+	"os"
 	"runtime"
 	"strings"
 	"time"
@@ -183,6 +184,10 @@ func NewWorker(cfg *config.Point) *Worker {
 func (w *Worker) Initialize() {
 	if w.cfg == nil {
 		return
+	}
+	pid := os.Getpid()
+	if fp, err := libol.OpenWrite(w.cfg.PidFile); err == nil {
+		_, _ = fp.WriteString(fmt.Sprintf("%d", pid))
 	}
 	w.out.Info("Worker.Initialize")
 	client := GetSocketClient(w.cfg)

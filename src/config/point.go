@@ -20,12 +20,13 @@ type Point struct {
 	Http        *Http     `json:"http,omitempty"`
 	Crypt       *Crypt    `json:"crypt,omitempty"`
 	PProf       string    `json:"pprof,omitempty"`
-	RequestAddr bool      `json:"-"`
+	RequestAddr bool      `json:"requestAddr"`
 	SaveFile    string    `json:"-"`
 	Queue       *Queue    `json:"queue"`
 	Terminal    string    `json:"-"`
 	Cert        *Cert     `json:"cert"`
 	StatusFile  string    `json:"status"`
+	PidFile     string    `json:"pid"`
 }
 
 func DefaultPoint() *Point {
@@ -91,6 +92,7 @@ func (ap *Point) Flags() {
 	flag.IntVar(&ap.Timeout, "timeout", obj.Timeout, "Timeout(s) for socket write/read")
 	flag.IntVar(&ap.Log.Verbose, "log:level", obj.Log.Verbose, "Log level value")
 	flag.StringVar(&ap.StatusFile, "status", obj.StatusFile, "File status saved to")
+	flag.StringVar(&ap.PidFile, "pid", obj.PidFile, "Write pid to file")
 }
 
 func (ap *Point) Parse() {
