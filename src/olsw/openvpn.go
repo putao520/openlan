@@ -231,16 +231,12 @@ func (o *OpenVPN) WriteConf(path string) error {
 }
 
 func (o *OpenVPN) Clean() {
-	status := o.ServerStats()
-	if err := libol.FileExist(status); err == nil {
-		if err := os.Remove(status); err != nil {
-			o.out.Warn("OpenVPN.Clean %s", err)
-		}
-	}
-	ipp := o.IppTxt()
-	if err := libol.FileExist(ipp); err == nil {
-		if err := os.Remove(ipp); err != nil {
-			o.out.Warn("OpenVPN.Clean %s", err)
+	files := []string{o.ServerStats(), o.IppTxt()}
+	for _, file := range files {
+		if err := libol.FileExist(file); err == nil {
+			if err := os.Remove(file); err != nil {
+				o.out.Warn("OpenVPN.Clean %s", err)
+			}
 		}
 	}
 }
@@ -295,6 +291,7 @@ func (o *OpenVPN) Start() {
 		}
 		cmd := exec.Command(o.Path(), args...)
 		cmd.Stdout = log
+		cmd.Stderr = log
 		if err := cmd.Run(); err != nil {
 			o.out.Error("OpenVPN.Start %s", err)
 		}

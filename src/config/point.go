@@ -25,8 +25,8 @@ type Point struct {
 	Queue       *Queue    `json:"queue"`
 	Terminal    string    `json:"-"`
 	Cert        *Cert     `json:"cert"`
-	StatusFile  string    `json:"status"`
-	PidFile     string    `json:"pid"`
+	StatusFile  string    `json:"status,omitempty"`
+	PidFile     string    `json:"pid,omitempty"`
 }
 
 func DefaultPoint() *Point {

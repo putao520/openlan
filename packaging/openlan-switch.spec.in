@@ -19,6 +19,7 @@ cd %_source_dir && make linux-switch
 %install
 mkdir -p %{buildroot}/usr/bin
 cp %_source_dir/build/openlan %{buildroot}/usr/bin
+cp %_source_dir/build/openlan-point %{buildroot}/usr/bin
 cp %_source_dir/build/openlan-switch %{buildroot}/usr/bin
 cp %_source_dir/build/openudp %{buildroot}/usr/bin
 
@@ -51,6 +52,7 @@ mkdir -p %{buildroot}/var/openlan/openvpn
 cp -R %_source_dir/packaging/resource/openvpn.md %{buildroot}/var/openlan/openvpn
 cp -R %_source_dir/packaging/resource/example.ovpn %{buildroot}/var/openlan/openvpn
 
+mkdir -p %{buildroot}/var/openlan/point
 %pre
 
 
