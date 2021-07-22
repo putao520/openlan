@@ -321,14 +321,12 @@ func (w *OpenLANWorker) AddLink(c *config.Point) {
 	c.Interface.Address = br.Address
 	c.Interface.Provider = br.Provider
 	c.Log.File = "/dev/null"
-	libol.Go(func() {
-		l := NewLink(uuid, c)
-		l.Initialize()
-		store.Link.Add(uuid, l.Model())
-		w.links.Add(l)
-		l.Start()
-	})
 
+	l := NewLink(uuid, c)
+	l.Initialize()
+	store.Link.Add(uuid, l.Model())
+	w.links.Add(l)
+	l.Start()
 }
 
 func (w *OpenLANWorker) DelLink(addr string) {

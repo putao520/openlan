@@ -293,7 +293,7 @@ func (o *OpenVPN) Start() {
 		cmd.Stdout = log
 		cmd.Stderr = log
 		if err := cmd.Run(); err != nil {
-			o.out.Error("OpenVPN.Start %s", err)
+			o.out.Error("OpenVPN.Start %s: %s", o.ID(), err)
 		}
 	})
 }
