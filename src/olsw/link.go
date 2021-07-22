@@ -88,14 +88,14 @@ func (l *Link) Start() {
 	libol.Go(func() {
 		args := []string{
 			"-conf", file,
-			"-terminal", "off",
+			"-terminal", "ww",
 		}
-		l.out.Info("Link.Start %s %s", l.Path(), strings.Join(args, " "))
+		l.out.Debug("Link.Start %s %s", l.Path(), strings.Join(args, " "))
 		cmd := exec.Command(l.Path(), args...)
 		cmd.Stdout = log
 		cmd.Stderr = log
 		if err := cmd.Run(); err != nil {
-			l.out.Error("Link.Start %s", err)
+			l.out.Error("Link.Start %s: %s", l.uuid, err)
 		}
 	})
 }
