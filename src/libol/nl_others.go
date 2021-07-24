@@ -4,6 +4,6 @@ package libol
 
 import "net"
 
-func GetAddrByGw() (net.IP, error) {
-	return nil, NewErr("GetAddrByGw notSupport")
+func GetLocalByGw(addr string) (net.IP, error) {
+	return nil, NewErr("GetLocalByGw notSupport")
 }

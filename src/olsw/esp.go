@@ -85,6 +85,7 @@ func (w *EspWorker) addState(mem *config.ESPMember) {
 	auth := mem.State.Auth
 	crypt := mem.State.Crypt
 
+	w.out.Info("EspWorker.addState %s-%s", local, remote)
 	if st := w.newState(spi, local, remote, auth, crypt); st != nil {
 		w.states = append(w.states, st)
 	}
@@ -97,14 +98,15 @@ func (w *EspWorker) addPolicy(mem *config.ESPMember, pol *config.ESPPolicy) {
 	spi := mem.Spi
 	local := mem.State.LocalIp
 	remote := mem.State.RemoteIp
+	w.out.Info("EspWorker.addPolicy %s-%s %s-%s", local, remote, pol.Source, pol.Dest)
 	src, err := libol.ParseNet(pol.Source)
 	if err != nil {
-		w.out.Error("EspWorker.addPolicy %s", err)
+		w.out.Error("EspWorker.addPolicy %s %s", pol.Source, err)
 		return
 	}
-	dst, err := libol.ParseNet(pol.Destination)
+	dst, err := libol.ParseNet(pol.Dest)
 	if err != nil {
-		w.out.Error("EspWorker.addPolicy %s", err)
+		w.out.Error("EspWorker.addPolicy %s %s", pol.Dest, err)
 		return
 	}
 	if po := w.newPolicy(spi, local, remote, src, dst, nl.XFRM_DIR_OUT); po != nil {
@@ -141,6 +143,12 @@ func (w *EspWorker) Initialize() {
 		for _, pol := range mem.Policies {
 			if pol == nil {
 				continue
+			}
+			if pol.Dest == "" {
+				pol.Dest = mem.Peer
+			}
+			if pol.Source == "" {
+				pol.Source = mem.Address
 			}
 			w.addPolicy(mem, pol)
 		}
