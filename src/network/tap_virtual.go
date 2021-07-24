@@ -198,7 +198,3 @@ func (t *VirtualTap) String() string {
 func (t *VirtualTap) Mtu() int {
 	return t.ifMtu
 }
-
-func (t *VirtualTap) SetMtu(mtu int) {
-	t.ifMtu = mtu
-}

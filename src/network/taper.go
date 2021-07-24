@@ -33,7 +33,6 @@ type Taper interface {
 	Down()
 	Tenant() string
 	Mtu() int
-	SetMtu(mtu int)
 	String() string
 	Has(v uint) bool
 }
@@ -112,4 +111,5 @@ type TapConfig struct {
 	Name     string
 	VirBuf   int
 	KernBuf  int
+	Mtu      int
 }

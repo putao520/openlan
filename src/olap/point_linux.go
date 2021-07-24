@@ -2,7 +2,6 @@ package olap
 
 import (
 	"github.com/danieldin95/openlan-go/src/config"
-	"github.com/danieldin95/openlan-go/src/libol"
 	"github.com/danieldin95/openlan-go/src/models"
 	"github.com/danieldin95/openlan-go/src/network"
 	"github.com/vishvananda/netlink"
@@ -13,6 +12,7 @@ type Point struct {
 	MixPoint
 	// private
 	brName string
+	ipMtu  int
 	addr   string
 	routes []*models.Route
 	link   netlink.Link
@@ -20,7 +20,12 @@ type Point struct {
 }
 
 func NewPoint(config *config.Point) *Point {
+	ipMtu := config.Interface.IPMtu
+	if ipMtu == 0 {
+		ipMtu = 1500
+	}
 	p := Point{
+		ipMtu:    ipMtu,
 		brName:   config.Interface.Bridge,
 		MixPoint: NewMixPoint(config),
 	}
@@ -100,18 +105,7 @@ func (p *Point) OnTap(w *TapWorker) error {
 	tap := w.device
 	name := tap.Name()
 	if tap.Type() == network.ProviderVir { // virtual device
-		br := network.Bridges.Get(p.brName)
-		if br == nil {
-			p.out.Error("Point.OnTap: Get notFound", p.brName)
-			return libol.NewErr("%s notFound", p.brName)
-		}
-		_ = br.AddSlave(name)
-		link, err := netlink.LinkByName(br.Kernel())
-		if err != nil {
-			p.out.Error("Point.OnTap: Get %s: %s", p.brName, err)
-			return err
-		}
-		p.link = link
+		p.out.Error("Point.OnTap: not support %s", tap.Type())
 		return nil
 	}
 	// kernel device
@@ -119,6 +113,9 @@ func (p *Point) OnTap(w *TapWorker) error {
 	if err != nil {
 		p.out.Error("Point.OnTap: Get %s: %s", name, err)
 		return err
+	}
+	if err := netlink.LinkSetMTU(link, p.ipMtu); err != nil {
+		p.out.Error("Point.OnTap.SetMTU: %s", err)
 	}
 	if br := p.UpBr(p.brName); br != nil {
 		if err := netlink.LinkSetMaster(link, br); err != nil {
