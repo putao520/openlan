@@ -13,10 +13,13 @@ type KernelTap struct {
 	tenant string
 	name   string
 	config TapConfig
-	ifMtu  int
+	ipMtu  int
 }
 
 func NewKernelTap(tenant string, c TapConfig) (*KernelTap, error) {
+	if c.Mtu == 0 {
+		c.Mtu = 1500
+	}
 	if c.Name == "auto" {
 		c.Name = Taps.GenName()
 	}
@@ -29,7 +32,7 @@ func NewKernelTap(tenant string, c TapConfig) (*KernelTap, error) {
 		device: device,
 		name:   device.Name(),
 		config: c,
-		ifMtu:  1514,
+		ipMtu:  c.Mtu,
 	}
 	Taps.Add(tap)
 	return tap, nil
@@ -143,9 +146,5 @@ func (t *KernelTap) String() string {
 }
 
 func (t *KernelTap) Mtu() int {
-	return t.ifMtu
-}
-
-func (t *KernelTap) SetMtu(mtu int) {
-	t.ifMtu = mtu
+	return t.ipMtu
 }

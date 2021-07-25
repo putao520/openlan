@@ -8,7 +8,7 @@ import (
 type LinuxBridge struct {
 	sts     DeviceStats
 	address *netlink.Addr
-	ifMtu   int
+	ipMtu   int
 	name    string
 	device  netlink.Link
 	ctl     *BrCtl
@@ -16,10 +16,13 @@ type LinuxBridge struct {
 }
 
 func NewLinuxBridge(name string, mtu int) *LinuxBridge {
+	if mtu == 0 {
+		mtu = 1500
+	}
 	b := &LinuxBridge{
 		name:  name,
-		ifMtu: mtu,
-		ctl:   NewBrCtl(name),
+		ipMtu: mtu,
+		ctl:   NewBrCtl(name, mtu),
 		out:   libol.NewSubLogger(name),
 	}
 	Bridges.Add(b)
@@ -38,6 +41,7 @@ func (b *LinuxBridge) Open(addr string) {
 			LinkAttrs: netlink.LinkAttrs{
 				TxQLen: -1,
 				Name:   b.name,
+				MTU:    b.ipMtu,
 			},
 		}
 		err := netlink.LinkAdd(br)
@@ -118,7 +122,7 @@ func (b *LinuxBridge) Name() string {
 }
 
 func (b *LinuxBridge) Mtu() int {
-	return b.ifMtu
+	return b.ipMtu
 }
 
 func (b *LinuxBridge) Stp(enable bool) error {

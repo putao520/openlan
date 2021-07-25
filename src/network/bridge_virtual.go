@@ -9,7 +9,7 @@ import (
 )
 
 type VirtualBridge struct {
-	ifMtu   int
+	ipMtu   int
 	name    string
 	lock    sync.RWMutex
 	ports   map[string]Taper
@@ -26,7 +26,7 @@ type VirtualBridge struct {
 func NewVirtualBridge(name string, mtu int) *VirtualBridge {
 	b := &VirtualBridge{
 		name:    name,
-		ifMtu:   mtu,
+		ipMtu:   mtu,
 		ports:   make(map[string]Taper, 1024),
 		macs:    make(map[string]*MacFdb, 1024),
 		done:    make(chan bool),
@@ -39,10 +39,13 @@ func NewVirtualBridge(name string, mtu int) *VirtualBridge {
 }
 
 func (b *VirtualBridge) Open(addr string) {
+	tapCfg := TapConfig{
+		Type: TAP,
+		Mtu:  b.ipMtu,
+	}
 	b.out.Info("VirtualBridge.Open %s", addr)
-
 	libol.Go(b.Start)
-	if tap, err := NewKernelTap("", TapConfig{Type: TAP}); err != nil {
+	if tap, err := NewKernelTap("", tapCfg); err != nil {
 		b.out.Error("VirtualBridge.Open new kernel %s", err)
 	} else {
 		out, err := libol.IpLinkUp(tap.Name())
@@ -89,14 +92,13 @@ func (b *VirtualBridge) AddSlave(name string) error {
 		return libol.NewErr("%s notFound", name)
 	}
 	_ = tap.SetMaster(b)
-	tap.SetMtu(b.ifMtu) // consistent mtu value.
 	b.lock.Lock()
 	b.ports[name] = tap
 	b.lock.Unlock()
 	b.out.Info("VirtualBridge.AddSlave: %s", name)
 	libol.Go(func() {
 		for {
-			data := make([]byte, b.ifMtu)
+			data := make([]byte, b.ipMtu)
 			n, err := tap.Recv(data)
 			if err != nil || n == 0 {
 				break
@@ -312,7 +314,7 @@ func (b *VirtualBridge) UniCast(m *Framer) error {
 }
 
 func (b *VirtualBridge) Mtu() int {
-	return b.ifMtu
+	return b.ipMtu
 }
 
 func (b *VirtualBridge) Stp(enable bool) error {

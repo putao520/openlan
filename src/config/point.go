@@ -41,7 +41,7 @@ func DefaultPoint() *Point {
 			Verbose: libol.INFO,
 		},
 		Interface: Interface{
-			IfMtu:    1518,
+			IPMtu:    1518,
 			Provider: "kernel",
 			Name:     "",
 		},
@@ -153,8 +153,8 @@ func (ap *Point) Default() {
 	if ap.Connection == "" {
 		ap.Connection = obj.Connection
 	}
-	if ap.Interface.IfMtu == 0 {
-		ap.Interface.IfMtu = obj.Interface.IfMtu
+	if ap.Interface.IPMtu == 0 {
+		ap.Interface.IPMtu = obj.Interface.IPMtu
 	}
 	if ap.Timeout == 0 {
 		ap.Timeout = obj.Timeout

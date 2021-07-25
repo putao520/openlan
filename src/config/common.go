@@ -148,7 +148,7 @@ type Bridge struct {
 	Network  string `json:"network"`
 	Peer     string `json:"peer"`
 	Name     string `json:"name"`
-	IfMtu    int    `json:"mtu"`
+	IPMtu    int    `json:"mtu"`
 	Address  string `json:"address,omitempty"`
 	Provider string `json:"provider"`
 	Stp      string `json:"stp"`
@@ -162,8 +162,8 @@ func (br *Bridge) Correct() {
 	if br.Provider == "" {
 		br.Provider = "linux"
 	}
-	if br.IfMtu == 0 {
-		br.IfMtu = 1518
+	if br.IPMtu == 0 {
+		br.IPMtu = 1500
 	}
 	if br.Delay == 0 {
 		br.Delay = 2
@@ -221,7 +221,7 @@ type FlowRule struct {
 
 type Interface struct {
 	Name     string `json:"name,omitempty"`
-	IfMtu    int    `json:"mtu"`
+	IPMtu    int    `json:"mtu"`
 	Address  string `json:"address,omitempty"`
 	Bridge   string `json:"bridge,omitempty"`
 	Provider string `json:"provider,omitempty"`

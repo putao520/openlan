@@ -96,7 +96,7 @@ func (t *SocketWorker) Initialize() {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	t.out.Info("SocketWorker.Initialize")
-	t.client.SetMaxSize(t.pinCfg.Interface.IfMtu)
+	t.client.SetMaxSize(t.pinCfg.Interface.IPMtu)
 	t.client.SetListener(libol.ClientListener{
 		OnConnected: func(client libol.SocketClient) error {
 			t.record.Set(rtConnected, time.Now().Unix())

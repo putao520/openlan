@@ -85,7 +85,7 @@ func (w *OpenLANWorker) Initialize() {
 			lease.Network = w.cfg.Name
 		}
 	}
-	w.bridge = network.NewBridger(brCfg.Provider, brCfg.Name, brCfg.IfMtu)
+	w.bridge = network.NewBridger(brCfg.Provider, brCfg.Name, brCfg.IPMtu)
 	vCfg := w.cfg.OpenVPN
 	if vCfg != nil {
 		obj := NewOpenVPN(vCfg)
@@ -230,7 +230,7 @@ func (w *OpenLANWorker) connectPeer(cfg *config.Bridge) {
 		LinkAttrs: netlink.LinkAttrs{Name: in},
 		PeerName:  ex,
 	}
-	br := network.NewBrCtl(cfg.Peer)
+	br := network.NewBrCtl(cfg.Peer, cfg.IPMtu)
 	promise := &libol.Promise{
 		First:  time.Second * 2,
 		MaxInt: time.Minute,
@@ -246,11 +246,11 @@ func (w *OpenLANWorker) connectPeer(cfg *config.Bridge) {
 			w.out.Error("OpenLANWorker.connectPeer: %s", err)
 			return nil
 		}
-		br0 := network.NewBrCtl(cfg.Name)
+		br0 := network.NewBrCtl(cfg.Name, cfg.IPMtu)
 		if err := br0.AddPort(in); err != nil {
 			w.out.Error("OpenLANWorker.connectPeer: %s", err)
 		}
-		br1 := network.NewBrCtl(cfg.Peer)
+		br1 := network.NewBrCtl(cfg.Peer, cfg.IPMtu)
 		if err := br1.AddPort(ex); err != nil {
 			w.out.Error("OpenLANWorker.connectPeer: %s", err)
 		}
@@ -320,6 +320,7 @@ func (w *OpenLANWorker) AddLink(c *config.Point) {
 	c.Interface.Bridge = br.Name
 	c.Interface.Address = br.Address
 	c.Interface.Provider = br.Provider
+	c.Interface.IPMtu = br.IPMtu
 	c.Log.File = "/dev/null"
 
 	l := NewLink(uuid, c)

@@ -10,11 +10,16 @@ import (
 type BrCtl struct {
 	Name string
 	Path string
+	Mtu  int
 }
 
-func NewBrCtl(name string) (b *BrCtl) {
+func NewBrCtl(name string, mtu int) (b *BrCtl) {
+	if mtu == 0 {
+		mtu = 1500
+	}
 	return &BrCtl{
 		Name: name,
+		Mtu:  mtu,
 	}
 }
 
@@ -70,6 +75,9 @@ func (b *BrCtl) AddPort(port string) error {
 		return err
 	}
 	if err := netlink.LinkSetUp(link); err != nil {
+		return err
+	}
+	if err := netlink.LinkSetMTU(link, b.Mtu); err != nil {
 		return err
 	}
 	la := netlink.LinkAttrs{TxQLen: -1, Name: b.Name}
