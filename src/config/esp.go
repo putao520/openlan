@@ -37,11 +37,10 @@ func (s *EspState) Correct(obj *EspState) {
 			s.Crypt = obj.Crypt
 		}
 	}
-	if s.Local == "" {
-		addr, err := libol.GetAddrByGw()
-		if err == nil {
-			s.Local = addr.String()
-		}
+	libol.Info("EspState.Correct: %s %s", s.Local, s.Remote)
+	if s.Local == "" && s.Remote != "" {
+		addr, _ := libol.GetLocalByGw(s.Remote)
+		s.Local = addr.String()
 	}
 	if s.Crypt == "" {
 		s.Crypt = s.Auth
@@ -57,8 +56,8 @@ func (s *EspState) Correct(obj *EspState) {
 }
 
 type ESPPolicy struct {
-	Source      string `json:"source"`
-	Destination string `json:"destination"`
+	Source string `json:"source"`
+	Dest   string `json:"destination"`
 }
 
 type ESPMember struct {
@@ -78,8 +77,6 @@ type ESPInterface struct {
 }
 
 func (n *ESPInterface) Correct() {
-	ptr := &n.State
-	ptr.Correct(nil)
 	for _, m := range n.Members {
 		if m.Address == "" {
 			m.Address = n.Address
@@ -100,8 +97,8 @@ func (n *ESPInterface) Correct() {
 			m.Policies = make([]*ESPPolicy, 0, 2)
 		}
 		m.Policies = append(m.Policies, &ESPPolicy{
-			Source:      m.Address,
-			Destination: m.Peer,
+			Source: m.Address,
+			Dest:   m.Peer,
 		})
 		if m.Spi == 0 {
 			m.Spi = libol.GenUint32()

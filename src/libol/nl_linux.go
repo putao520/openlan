@@ -5,27 +5,30 @@ import (
 	"net"
 )
 
-func GetAddrByGw() (net.IP, error) {
+func GetLocalByGw(addr string) (net.IP, error) {
+	local := net.IP{}
 	routes, err := netlink.RouteList(nil, netlink.FAMILY_V4)
 	if err != nil {
 		return nil, err
 	}
-	for _, route := range routes {
-		if route.Dst != nil {
+	Info("GetLocalByGw: %s", addr)
+	dest := net.ParseIP(addr)
+	for _, rte := range routes {
+		if rte.Dst != nil && !rte.Dst.Contains(dest) {
 			continue
 		}
-		index := route.LinkIndex
-		gateway := route.Gw
-		link, _ := netlink.LinkByIndex(index)
-		adders, err := netlink.AddrList(link, netlink.FAMILY_V4)
-		if err != nil {
-			return nil, err
+		index := rte.LinkIndex
+		source := rte.Gw
+		if source == nil {
+			source = rte.Src
 		}
-		for _, addr := range adders {
-			if addr.Contains(gateway) {
-				return addr.IP, nil
+		link, _ := netlink.LinkByIndex(index)
+		address, _ := netlink.AddrList(link, netlink.FAMILY_V4)
+		for _, ifaddr := range address {
+			if ifaddr.Contains(source) {
+				local = ifaddr.IP
 			}
 		}
 	}
-	return nil, NewErr("notFound")
+	return local, nil
 }
