@@ -145,6 +145,7 @@ func (h *Http) LoadRouter() {
 	api.VxLAN{}.Router(router)
 	api.Esp{}.Router(router)
 	api.EspState{}.Router(router)
+	api.EspPolicy{}.Router(router)
 }
 
 func (h *Http) LoadToken() error {

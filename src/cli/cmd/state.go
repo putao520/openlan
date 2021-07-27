@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/danieldin95/openlan-go/src/schema"
 	"github.com/urfave/cli/v2"
+	"sort"
 )
 
 type State struct {
@@ -33,6 +34,11 @@ func (u State) List(c *cli.Context) error {
 	if err := clt.GetJSON(url, &items); err != nil {
 		return err
 	}
+	sort.SliceStable(items, func(i, j int) bool {
+		ii := items[i]
+		jj := items[j]
+		return ii.Spi > jj.Spi
+	})
 	return u.Out(items, c.String("format"), u.Tmpl())
 }
 

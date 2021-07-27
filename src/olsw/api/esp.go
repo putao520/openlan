@@ -58,5 +58,12 @@ func (l EspPolicy) Router(router *mux.Router) {
 }
 
 func (l EspPolicy) List(w http.ResponseWriter, r *http.Request) {
-	ResponseJson(w, nil)
+	data := make([]schema.EspPolicy, 0, 1024)
+	for e := range store.EspPolicy.List() {
+		if e == nil {
+			break
+		}
+		data = append(data, models.NewEspPolicySchema(e))
+	}
+	ResponseJson(w, data)
 }

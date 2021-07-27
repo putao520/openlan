@@ -47,7 +47,7 @@ func (l *EspState) Update() {
 		l.Bytes = xss.Statistics.Bytes
 		l.Packages = xss.Statistics.Packets
 	} else {
-		libol.Warn("EspState.Update %s", err)
+		libol.Debug("EspState.Update %s", err)
 	}
 }
 
@@ -64,6 +64,27 @@ func NewEspStateSchema(e *EspState) schema.EspState {
 		Dest:     e.Dest,
 		Bytes:    e.Bytes,
 		Packages: e.Packages,
+	}
+	return se
+}
+
+type EspPolicy struct {
+	*schema.EspPolicy
+}
+
+func (l *EspPolicy) Update() {
+}
+
+func (l *EspPolicy) ID() string {
+	return fmt.Sprintf("%d-%s-%s", l.Spi, l.Source, l.Dest)
+}
+
+func NewEspPolicySchema(e *EspPolicy) schema.EspPolicy {
+	e.Update()
+	se := schema.EspPolicy{
+		Name:   e.Name,
+		Source: e.Source,
+		Dest:   e.Dest,
 	}
 	return se
 }

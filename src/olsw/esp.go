@@ -91,9 +91,29 @@ func (w *EspWorker) addState(mem *config.ESPMember) {
 	w.out.Info("EspWorker.addState %s-%s", local, remote)
 	if st := w.newState(spi, local, remote, auth, crypt); st != nil {
 		w.states = append(w.states, st)
+		store.EspState.Add(&models.EspState{
+			EspState: &schema.EspState{
+				Name:   w.inCfg.Name,
+				Spi:    st.Spi,
+				Source: st.Src.String(),
+				Dest:   st.Dst.String(),
+				Proto:  uint8(st.Proto),
+				Mode:   uint8(st.Mode),
+			},
+		})
 	}
 	if st := w.newState(spi, remote, local, auth, crypt); st != nil {
 		w.states = append(w.states, st)
+		store.EspState.Add(&models.EspState{
+			EspState: &schema.EspState{
+				Name:   w.inCfg.Name,
+				Spi:    st.Spi,
+				Source: st.Src.String(),
+				Dest:   st.Dst.String(),
+				Proto:  uint8(st.Proto),
+				Mode:   uint8(st.Mode),
+			},
+		})
 	}
 }
 
@@ -121,6 +141,13 @@ func (w *EspWorker) addPolicy(mem *config.ESPMember, pol *config.ESPPolicy) {
 	if po := w.newPolicy(spi, remote, local, dst, src, nl.XFRM_DIR_FWD); po != nil {
 		w.policies = append(w.policies, po)
 	}
+	store.EspPolicy.Add(&models.EspPolicy{
+		EspPolicy: &schema.EspPolicy{
+			Name:   w.inCfg.Name,
+			Source: pol.Source,
+			Dest:   pol.Dest,
+		},
+	})
 }
 
 func (w *EspWorker) Initialize() {
@@ -215,16 +242,6 @@ func (w *EspWorker) Start(v api.Switcher) {
 		if err := nl.XfrmStateAdd(state); err != nil {
 			w.out.Error("EspWorker.Start State %s", err)
 		}
-		store.EspState.Add(&models.EspState{
-			EspState: &schema.EspState{
-				Name:   w.inCfg.Name,
-				Spi:    state.Spi,
-				Source: state.Src.String(),
-				Dest:   state.Dst.String(),
-				Proto:  uint8(state.Proto),
-				Mode:   uint8(state.Mode),
-			},
-		})
 	}
 	for _, policy := range w.policies {
 		if err := nl.XfrmPolicyAdd(policy); err != nil {

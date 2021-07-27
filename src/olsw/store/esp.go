@@ -86,3 +86,44 @@ func (p *espState) List() <-chan *models.EspState {
 var EspState = espState{
 	State: libol.NewSafeStrMap(1024),
 }
+
+type espPolicy struct {
+	Policy *libol.SafeStrMap
+}
+
+func (p *espPolicy) Init(size int) {
+	p.Policy = libol.NewSafeStrMap(size)
+}
+
+func (p *espPolicy) Add(esp *models.EspPolicy) {
+	_ = p.Policy.Set(esp.ID(), esp)
+}
+
+func (p *espPolicy) Get(key string) *models.EspPolicy {
+	ret := p.Policy.Get(key)
+	if ret != nil {
+		return ret.(*models.EspPolicy)
+	}
+	return nil
+}
+
+func (p *espPolicy) Del(key string) {
+	p.Policy.Del(key)
+}
+
+func (p *espPolicy) List() <-chan *models.EspPolicy {
+	c := make(chan *models.EspPolicy, 128)
+	go func() {
+		p.Policy.Iter(func(k string, v interface{}) {
+			m := v.(*models.EspPolicy)
+			m.Update()
+			c <- m
+		})
+		c <- nil //Finish channel by nil.
+	}()
+	return c
+}
+
+var EspPolicy = espPolicy{
+	Policy: libol.NewSafeStrMap(1024),
+}
