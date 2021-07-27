@@ -40,7 +40,7 @@ func (u VxLAN) Commands(app *cli.App) cli.Commands {
 	return append(app.Commands, &cli.Command{
 		Name:    "vxlan",
 		Aliases: []string{"vx"},
-		Usage:   "VxLAN Configuration",
+		Usage:   "VxLAN configuration",
 		Subcommands: []*cli.Command{
 			{
 				Name:    "list",

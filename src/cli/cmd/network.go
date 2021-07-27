@@ -29,7 +29,7 @@ func (u Network) Commands(app *cli.App) cli.Commands {
 	return append(app.Commands, &cli.Command{
 		Name:    "network",
 		Aliases: []string{"net"},
-		Usage:   "Logical Network",
+		Usage:   "Logical network",
 		Subcommands: []*cli.Command{
 			{
 				Name:    "list",

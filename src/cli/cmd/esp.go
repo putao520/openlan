@@ -40,7 +40,7 @@ func (u Esp) Commands(app *cli.App) cli.Commands {
 	return append(app.Commands, &cli.Command{
 		Name:    "esp",
 		Aliases: []string{"esp"},
-		Usage:   "IPSec ESP Configuration",
+		Usage:   "IPSec ESP configuration",
 		Subcommands: []*cli.Command{
 			{
 				Name:    "list",
