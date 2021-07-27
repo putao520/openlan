@@ -142,6 +142,9 @@ func (h *Http) LoadRouter() {
 	api.Device{}.Router(router)
 	api.VPNClient{}.Router(router)
 	api.PProf{}.Router(router)
+	api.VxLAN{}.Router(router)
+	api.Esp{}.Router(router)
+	api.EspState{}.Router(router)
 }
 
 func (h *Http) LoadToken() error {

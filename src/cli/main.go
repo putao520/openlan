@@ -97,6 +97,7 @@ func main() {
 	app.Commands = cmd.PProf{}.Commands(app)
 	app.Commands = cmd.Esp{}.Commands(app)
 	app.Commands = cmd.VxLAN{}.Commands(app)
+	app.Commands = cmd.State{}.Commands(app)
 
 	err := app.Run(os.Args)
 	if err != nil {

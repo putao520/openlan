@@ -13,12 +13,12 @@ const (
 )
 
 type EspState struct {
-	Local    string `json:"local"`
+	Local    string `json:"local,omitempty"`
 	LocalIp  net.IP `json:"-"`
 	Remote   string `json:"remote"`
 	RemoteIp net.IP `json:"-"`
-	Auth     string `json:"auth"`
-	Crypt    string `json:"crypt"`
+	Auth     string `json:"auth,omitempty"`
+	Crypt    string `json:"crypt,omitempty"`
 }
 
 func (s *EspState) Pad32(value string) string {
@@ -56,13 +56,13 @@ func (s *EspState) Correct(obj *EspState) {
 }
 
 type ESPPolicy struct {
-	Source string `json:"source"`
-	Dest   string `json:"destination"`
+	Source string `json:"source,omitempty"`
+	Dest   string `json:"destination,omitempty"`
 }
 
 type ESPMember struct {
 	Name     string       `json:"name"`
-	Address  string       `json:"address"`
+	Address  string       `json:"address,omitempty"`
 	Peer     string       `json:"peer"`
 	Spi      uint32       `json:"spi"`
 	State    EspState     `json:"state"`
@@ -71,7 +71,7 @@ type ESPMember struct {
 
 type ESPInterface struct {
 	Name    string       `json:"name"`
-	Address string       `json:"address"`
+	Address string       `json:"address,omitempty"`
 	State   EspState     `json:"state"`
 	Members []*ESPMember `json:"members"`
 }

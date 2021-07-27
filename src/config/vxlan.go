@@ -5,13 +5,13 @@ import (
 )
 
 type VxLANMember struct {
-	Name    string `json:"name"`
+	Name    string `json:"name,omitempty"`
 	VNI     int    `json:"vni"`
-	Local   string `json:"local"`
+	Local   string `json:"local,omitempty"`
 	Remote  string `json:"remote"`
-	Network string `json:"network"`
-	Bridge  string `json:"bridge"`
-	Port    int    `json:"port"`
+	Network string `json:"network,omitempty"`
+	Bridge  string `json:"bridge,omitempty"`
+	Port    int    `json:"port,omitempty"`
 }
 
 func (m *VxLANMember) Correct() {
@@ -22,9 +22,9 @@ func (m *VxLANMember) Correct() {
 
 type VxLANInterface struct {
 	Name    string         `json:"name"`
-	Local   string         `json:"local"`
-	Bridge  string         `json:"bridge"`
-	Address string         `json:"address"`
+	Local   string         `json:"local,omitempty"`
+	Bridge  string         `json:"bridge,omitempty"`
+	Address string         `json:"address,omitempty"`
 	Members []*VxLANMember `json:"members"`
 }
 

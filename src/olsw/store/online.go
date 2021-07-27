@@ -5,19 +5,19 @@ import (
 	"github.com/danieldin95/openlan-go/src/models"
 )
 
-type _online struct {
+type online struct {
 	Lines *libol.SafeStrMap
 }
 
-func (p *_online) Init(size int) {
+func (p *online) Init(size int) {
 	p.Lines = libol.NewSafeStrMap(size)
 }
 
-func (p *_online) Add(m *models.Line) {
+func (p *online) Add(m *models.Line) {
 	_ = p.Lines.Set(m.String(), m)
 }
 
-func (p *_online) Update(m *models.Line) *models.Line {
+func (p *online) Update(m *models.Line) *models.Line {
 	if v := p.Lines.Get(m.String()); v != nil {
 		l := v.(*models.Line)
 		l.HitTime = m.HitTime
@@ -25,18 +25,18 @@ func (p *_online) Update(m *models.Line) *models.Line {
 	return nil
 }
 
-func (p *_online) Get(key string) *models.Line {
+func (p *online) Get(key string) *models.Line {
 	if v := p.Lines.Get(key); v != nil {
 		return v.(*models.Line)
 	}
 	return nil
 }
 
-func (p *_online) Del(key string) {
+func (p *online) Del(key string) {
 	p.Lines.Del(key)
 }
 
-func (p *_online) List() <-chan *models.Line {
+func (p *online) List() <-chan *models.Line {
 	c := make(chan *models.Line, 128)
 
 	go func() {
@@ -50,6 +50,6 @@ func (p *_online) List() <-chan *models.Line {
 	return c
 }
 
-var Online = _online{
+var Online = online{
 	Lines: libol.NewSafeStrMap(1024),
 }

@@ -13,6 +13,8 @@ func DefaultPerf() *Perf {
 		OnLine:   64,
 		Link:     1024,
 		User:     1024,
+		Esp:      1024,
+		VxLAN:    1024,
 	}
 }
 
@@ -22,6 +24,8 @@ type Perf struct {
 	OnLine   int `json:"online"`
 	Link     int `json:"link"`
 	User     int `json:"user"`
+	Esp      int `json:"esp"`
+	VxLAN    int `json:"vxlan"`
 }
 
 func (p *Perf) Correct(obj *Perf) {
@@ -39,6 +43,12 @@ func (p *Perf) Correct(obj *Perf) {
 	}
 	if p.User == 0 && obj != nil {
 		p.User = obj.User
+	}
+	if p.Esp == 0 && obj != nil {
+		p.Esp = obj.Esp
+	}
+	if p.VxLAN == 0 && obj != nil {
+		p.VxLAN = obj.VxLAN
 	}
 }
 

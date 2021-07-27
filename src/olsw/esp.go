@@ -3,8 +3,11 @@ package olsw
 import (
 	"github.com/danieldin95/openlan-go/src/config"
 	"github.com/danieldin95/openlan-go/src/libol"
+	"github.com/danieldin95/openlan-go/src/models"
 	"github.com/danieldin95/openlan-go/src/network"
 	"github.com/danieldin95/openlan-go/src/olsw/api"
+	"github.com/danieldin95/openlan-go/src/olsw/store"
+	"github.com/danieldin95/openlan-go/src/schema"
 	nl "github.com/vishvananda/netlink"
 	"net"
 	"os/exec"
@@ -212,6 +215,16 @@ func (w *EspWorker) Start(v api.Switcher) {
 		if err := nl.XfrmStateAdd(state); err != nil {
 			w.out.Error("EspWorker.Start State %s", err)
 		}
+		store.EspState.Add(&models.EspState{
+			EspState: &schema.EspState{
+				Name:   w.inCfg.Name,
+				Spi:    state.Spi,
+				Source: state.Src.String(),
+				Dest:   state.Dst.String(),
+				Proto:  uint8(state.Proto),
+				Mode:   uint8(state.Mode),
+			},
+		})
 	}
 	for _, policy := range w.policies {
 		if err := nl.XfrmPolicyAdd(policy); err != nil {
@@ -223,6 +236,10 @@ func (w *EspWorker) Start(v api.Switcher) {
 			w.out.Error("EspWorker.Start %s %s", mem.Name, err)
 		}
 	}
+	store.Esp.Add(&models.Esp{
+		Name:    w.cfg.Name,
+		Address: w.inCfg.Address,
+	})
 }
 
 func (w *EspWorker) DownDummy(name string) error {

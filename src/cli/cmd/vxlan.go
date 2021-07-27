@@ -19,9 +19,9 @@ func (u VxLAN) Url(prefix, name string) string {
 
 func (u VxLAN) Tmpl() string {
 	return `# total {{ len . }}
-{{ps -16 "uuid"}} {{ps -8 "alive"}} {{ ps -8 "device" }} {{ps -16 "alias"}} {{ps -8 "user"}} {{ps -22 "remote"}} {{ps -8 "network"}} {{ ps -6 "state"}}
+{{ps -16 "name"}} {{ps -15 "bridge"}} {{ ps -16 "address" }} {{ps -16 "vni"}} {{ps -16 "local"}} {{ps -22 "remote"}}
 {{- range . }}
-{{ps -16 .UUID}} {{pt .AliveTime | ps -8}} {{ ps -8 .Device}} {{ps -16 .Alias}} {{ps -8 .User}} {{ps -22 .Remote}} {{ps -8 .Network}}  {{ ps -6 .State}}
+{{ps -16 .UUID}} {{pt .AliveTime | ps -8}} {{ ps -8 .Device}} {{ps -16 .Alias}} {{ps -8 .User}} {{ps -22 .Remote}}
 {{- end }}
 `
 }
