@@ -40,7 +40,7 @@ func (u Lease) Commands(app *cli.App) cli.Commands {
 	return append(app.Commands, &cli.Command{
 		Name:    "lease",
 		Aliases: []string{"le"},
-		Usage:   "DHCP lease",
+		Usage:   "DHCP address lease",
 		Subcommands: []*cli.Command{
 			{
 				Name:    "list",

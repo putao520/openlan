@@ -40,7 +40,7 @@ func (u Device) Commands(app *cli.App) cli.Commands {
 	return append(app.Commands, &cli.Command{
 		Name:    "device",
 		Aliases: []string{"dev"},
-		Usage:   "linux device",
+		Usage:   "linux network device",
 		Subcommands: []*cli.Command{
 			{
 				Name:    "list",

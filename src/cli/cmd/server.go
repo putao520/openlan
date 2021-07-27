@@ -29,7 +29,7 @@ func (u Server) Commands(app *cli.App) cli.Commands {
 	return append(app.Commands, &cli.Command{
 		Name:    "server",
 		Aliases: []string{"sr"},
-		Usage:   "Server status",
+		Usage:   "Socket Server Status",
 		Subcommands: []*cli.Command{
 			{
 				Name:    "list",

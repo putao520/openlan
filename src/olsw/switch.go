@@ -694,14 +694,6 @@ func (v *Switch) UUID() string {
 	return v.uuid
 }
 
-func (v *Switch) AddLink(tenant string, c *config.Point) {
-	//TODO dynamic configure
-}
-
-func (v *Switch) DelLink(tenant, addr string) {
-	//TODO dynamic configure
-}
-
 func (v *Switch) ReadTap(device network.Taper, readAt func(f *libol.FrameMessage) error) {
 	name := device.Name()
 	v.out.Info("Switch.ReadTap: %s", name)
@@ -777,4 +769,28 @@ func (v *Switch) leftClient(client libol.SocketClient) {
 		v.out.Error("Switch.leftClient: %s", err)
 		return
 	}
+}
+
+func (v *Switch) AddLink(tenant string, c *config.Point) {
+	//TODO dynamic configure
+}
+
+func (v *Switch) DelLink(tenant, addr string) {
+	//TODO dynamic configure
+}
+
+func (v *Switch) AddEsp(tenant string, c *config.ESPInterface) {
+	//TODO dynamic configure
+}
+
+func (v *Switch) DelEsp(tenant, c *config.ESPInterface) {
+	//TODO dynamic configure
+}
+
+func (v *Switch) AddVxLAN(tenant string, c *config.VxLANInterface) {
+	//TODO dynamic configure
+}
+
+func (v *Switch) DelVxLAN(tenant, c *config.VxLANInterface) {
+	//TODO dynamic configure
 }

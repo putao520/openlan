@@ -10,10 +10,14 @@ type Switcher interface {
 	UUID() string
 	UpTime() int64
 	Alias() string
-	AddLink(tenant string, c *config.Point)
-	DelLink(tenant, addr string)
 	Config() *config.Switch
 	Server() libol.SocketServer
+	AddLink(tenant string, c *config.Point)
+	DelLink(tenant, addr string)
+	AddEsp(tenant string, c *config.ESPInterface)
+	DelEsp(tenant, c *config.ESPInterface)
+	AddVxLAN(tenant string, c *config.VxLANInterface)
+	DelVxLAN(tenant, c *config.VxLANInterface)
 }
 
 func NewWorkerSchema(s Switcher) schema.Worker {
