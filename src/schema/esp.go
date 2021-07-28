@@ -7,16 +7,18 @@ type Esp struct {
 }
 
 type EspState struct {
-	Name     string `json:"name"`
-	Spi      int    `json:"spi"`
-	Source   string `json:"source"`
-	Mode     uint8  `json:"mode"`
-	Proto    uint8  `json:"proto"`
-	Dest     string `json:"destination"`
-	Auth     string `json:"auth"`
-	Crypt    string `json:"crypt"`
-	Bytes    uint64 `json:"Bytes"`
-	Packages uint64 `json:"packages"`
+	Name       string `json:"name"`
+	Spi        int    `json:"spi"`
+	Source     string `json:"source"`
+	Mode       uint8  `json:"mode"`
+	Proto      uint8  `json:"proto"`
+	Dest       string `json:"destination"`
+	Auth       string `json:"auth"`
+	Crypt      string `json:"crypt"`
+	TxBytes    uint64 `json:"txBytes"`
+	TxPackages uint64 `json:"txPackages"`
+	RxBytes    uint64 `json:"rxBytes"`
+	RxPackages uint64 `json:"rxPackages"`
 }
 
 type EspPolicy struct {

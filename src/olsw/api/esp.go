@@ -23,7 +23,8 @@ func (l Esp) List(w http.ResponseWriter, r *http.Request) {
 		if e == nil {
 			break
 		}
-		data = append(data, models.NewEspSchema(e))
+		item := models.NewEspSchema(e)
+		data = append(data, item)
 	}
 	ResponseJson(w, data)
 }
@@ -38,8 +39,10 @@ func (l EspState) Router(router *mux.Router) {
 }
 
 func (l EspState) List(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	name := vars["id"]
 	data := make([]schema.EspState, 0, 1024)
-	for e := range store.EspState.List() {
+	for e := range store.EspState.List(name) {
 		if e == nil {
 			break
 		}
@@ -58,8 +61,10 @@ func (l EspPolicy) Router(router *mux.Router) {
 }
 
 func (l EspPolicy) List(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	name := vars["id"]
 	data := make([]schema.EspPolicy, 0, 1024)
-	for e := range store.EspPolicy.List() {
+	for e := range store.EspPolicy.List(name) {
 		if e == nil {
 			break
 		}

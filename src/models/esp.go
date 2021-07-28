@@ -44,8 +44,17 @@ func (l *EspState) Update() {
 		Proto: nl.Proto(l.Proto),
 	}
 	if xss, err := nl.XfrmStateGet(xs); xss != nil {
-		l.Bytes = xss.Statistics.Bytes
-		l.Packages = xss.Statistics.Packets
+		l.TxBytes = xss.Statistics.Bytes
+		l.TxPackages = xss.Statistics.Packets
+	} else {
+		libol.Debug("EspState.Update %s", err)
+	}
+	tmp := xs.Src
+	xs.Src = xs.Dst
+	xs.Dst = tmp
+	if xss, err := nl.XfrmStateGet(xs); xss != nil {
+		l.RxBytes = xss.Statistics.Bytes
+		l.RxPackages = xss.Statistics.Packets
 	} else {
 		libol.Debug("EspState.Update %s", err)
 	}
@@ -58,12 +67,14 @@ func (l *EspState) ID() string {
 func NewEspStateSchema(e *EspState) schema.EspState {
 	e.Update()
 	se := schema.EspState{
-		Name:     e.Name,
-		Spi:      e.Spi,
-		Source:   e.Source,
-		Dest:     e.Dest,
-		Bytes:    e.Bytes,
-		Packages: e.Packages,
+		Name:       e.Name,
+		Spi:        e.Spi,
+		Source:     e.Source,
+		Dest:       e.Dest,
+		TxBytes:    e.TxBytes,
+		TxPackages: e.TxPackages,
+		RxBytes:    e.RxBytes,
+		RxPackages: e.RxPackages,
 	}
 	return se
 }

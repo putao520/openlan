@@ -70,13 +70,15 @@ func (p *espState) Del(key string) {
 	p.State.Del(key)
 }
 
-func (p *espState) List() <-chan *models.EspState {
+func (p *espState) List(name string) <-chan *models.EspState {
 	c := make(chan *models.EspState, 128)
 	go func() {
 		p.State.Iter(func(k string, v interface{}) {
 			m := v.(*models.EspState)
-			m.Update()
-			c <- m
+			if m.Name == name || name == "" {
+				m.Update()
+				c <- m
+			}
 		})
 		c <- nil //Finish channel by nil.
 	}()
@@ -111,13 +113,15 @@ func (p *espPolicy) Del(key string) {
 	p.Policy.Del(key)
 }
 
-func (p *espPolicy) List() <-chan *models.EspPolicy {
+func (p *espPolicy) List(name string) <-chan *models.EspPolicy {
 	c := make(chan *models.EspPolicy, 128)
 	go func() {
 		p.Policy.Iter(func(k string, v interface{}) {
 			m := v.(*models.EspPolicy)
-			m.Update()
-			c <- m
+			if m.Name == name || name == "" {
+				m.Update()
+				c <- m
+			}
 		})
 		c <- nil //Finish channel by nil.
 	}()

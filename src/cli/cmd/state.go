@@ -20,9 +20,9 @@ func (u State) Url(prefix, name string) string {
 
 func (u State) Tmpl() string {
 	return `# total {{ len . }}
-{{ps -16 "name"}} {{ps -8 "spi"}} {{ ps -16 "source" }} {{ ps -16 "destination" }} {{ ps -12 "bytes" }} {{ ps -12 "packages" }} 
+{{ps -16 "name"}} {{ps -8 "spi"}} {{ ps -16 "source" }} {{ ps -16 "destination" }} {{ ps -12 "rx bytes" }} {{ ps -12 "tx bytes" }} {{ ps -12 "rx packages" }} {{ ps -12 "tx packages" }} 
 {{- range . }}
-{{ps -16 .Name}} {{pi -8 .Spi }} {{ ps -16 .Source }} {{ ps -16 .Dest }} {{ pi -12 .Bytes }} {{ pi -12 .Packages }}
+{{ps -16 .Name}} {{pi -8 .Spi }} {{ ps -16 .Source }} {{ ps -16 .Dest }} {{ pi -12 .RxBytes }} {{ pi -12 .TxBytes }} {{ pi -12 .RxPackages }} {{ pi -12 .TxPackages }}
 {{- end }}
 `
 }
