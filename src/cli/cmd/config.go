@@ -92,7 +92,7 @@ func (u Config) Commands(app *cli.App) cli.Commands {
 	return append(app.Commands, &cli.Command{
 		Name:    "config",
 		Aliases: []string{"cfg"},
-		Usage:   "Configuration",
+		Usage:   "Switch configuration",
 		Subcommands: []*cli.Command{
 			{
 				Name:    "list",

@@ -5,19 +5,19 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-type Point struct {
+type VxLAN struct {
 	Cmd
 }
 
-func (u Point) Url(prefix, name string) string {
+func (u VxLAN) Url(prefix, name string) string {
 	if name == "" {
-		return prefix + "/api/point"
+		return prefix + "/api/vxlan"
 	} else {
-		return prefix + "/api/point/" + name
+		return prefix + "/api/vxlan/" + name
 	}
 }
 
-func (u Point) Tmpl() string {
+func (u VxLAN) Tmpl() string {
 	return `# total {{ len . }}
 {{ps -16 "uuid"}} {{ps -8 "alive"}} {{ ps -8 "device" }} {{ps -16 "alias"}} {{ps -8 "user"}} {{ps -22 "remote"}} {{ps -8 "network"}} {{ ps -6 "state"}}
 {{- range . }}
@@ -26,25 +26,25 @@ func (u Point) Tmpl() string {
 `
 }
 
-func (u Point) List(c *cli.Context) error {
+func (u VxLAN) List(c *cli.Context) error {
 	url := u.Url(c.String("url"), "")
 	clt := u.NewHttp(c.String("token"))
-	var items []schema.Point
+	var items []schema.VxLAN
 	if err := clt.GetJSON(url, &items); err != nil {
 		return err
 	}
 	return u.Out(items, c.String("format"), u.Tmpl())
 }
 
-func (u Point) Commands(app *cli.App) cli.Commands {
+func (u VxLAN) Commands(app *cli.App) cli.Commands {
 	return append(app.Commands, &cli.Command{
-		Name:    "point",
-		Aliases: []string{"ap"},
-		Usage:   "Point connected to this",
+		Name:    "vxlan",
+		Aliases: []string{"vx"},
+		Usage:   "VxLAN configuration",
 		Subcommands: []*cli.Command{
 			{
 				Name:    "list",
-				Usage:   "Display all points",
+				Usage:   "Display all vxlan",
 				Aliases: []string{"ls"},
 				Action:  u.List,
 			},

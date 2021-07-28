@@ -26,9 +26,17 @@ func NewVxLANWorker(c *co.Network) *VxLANWorker {
 }
 
 func (w *VxLANWorker) Initialize() {
+	if w.inCfg == nil {
+		return
+	}
+	bridge := w.inCfg.Bridge
+	if bridge != "" {
+		addr := w.inCfg.Address
+		_, _ = w.UpBr(bridge, addr)
+	}
 }
 
-func (w *VxLANWorker) UpBr(name string) (*nl.Bridge, error) {
+func (w *VxLANWorker) UpBr(name string, addr string) (*nl.Bridge, error) {
 	la := nl.LinkAttrs{TxQLen: -1, Name: name}
 	br := &nl.Bridge{LinkAttrs: la}
 	if link, err := nl.LinkByName(name); link == nil {
@@ -37,10 +45,21 @@ func (w *VxLANWorker) UpBr(name string) (*nl.Bridge, error) {
 			return nil, err
 		}
 	}
-	if link, err := nl.LinkByName(name); link == nil {
+	link, err := nl.LinkByName(name)
+	if link == nil {
 		return nil, err
-	} else if err := nl.LinkSetUp(link); err != nil {
+	}
+	if err := nl.LinkSetUp(link); err != nil {
 		w.out.Warn("VxLANWorker.UpBr %s", err)
+	}
+	if addr != "" {
+		ipAddr, err := nl.ParseAddr(addr)
+		if err != nil {
+			w.out.Error("VxLANWorker.UpBr.Addr: %s", err)
+		}
+		if err := nl.AddrAdd(link, ipAddr); err != nil {
+			w.out.Error("VxLANWorker.UpBr.Addr: %s", err)
+		}
 	}
 	return br, nil
 }
@@ -67,7 +86,7 @@ func (w *VxLANWorker) UpVxLAN(cfg *co.VxLANMember) error {
 	if err := nl.LinkSetUp(link); err != nil {
 		w.out.Error("VxLANWorker.UpVxLAN: %s", err)
 	}
-	if br, err := w.UpBr(cfg.Bridge); err != nil {
+	if br, err := w.UpBr(cfg.Bridge, ""); err != nil {
 		return err
 	} else if err := nl.LinkSetMaster(link, br); err != nil {
 		return err

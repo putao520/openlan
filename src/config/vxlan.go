@@ -23,6 +23,8 @@ func (m *VxLANMember) Correct() {
 type VxLANInterface struct {
 	Name    string         `json:"name"`
 	Local   string         `json:"local"`
+	Bridge  string         `json:"bridge"`
+	Address string         `json:"address"`
 	Members []*VxLANMember `json:"members"`
 }
 
@@ -30,6 +32,9 @@ func (n *VxLANInterface) Correct() {
 	for _, m := range n.Members {
 		if m.Local == "" {
 			m.Local = n.Local
+		}
+		if m.Bridge == "" {
+			m.Bridge = n.Bridge
 		}
 		m.Correct()
 	}
