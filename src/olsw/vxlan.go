@@ -14,6 +14,7 @@ type VxLANWorker struct {
 	cfg   *co.Network
 	inCfg *co.VxLANInterface
 	out   *libol.SubLogger
+	br    network.Bridger
 }
 
 func NewVxLANWorker(c *co.Network) *VxLANWorker {
@@ -37,29 +38,11 @@ func (w *VxLANWorker) Initialize() {
 }
 
 func (w *VxLANWorker) UpBr(name string, addr string) (*nl.Bridge, error) {
-	la := nl.LinkAttrs{TxQLen: -1, Name: name}
-	br := &nl.Bridge{LinkAttrs: la}
-	if link, err := nl.LinkByName(name); link == nil {
-		w.out.Warn("VxLANWorker.UpBr: %s %s", name, err)
-		if err := nl.LinkAdd(br); err != nil {
-			return nil, err
-		}
-	}
-	link, err := nl.LinkByName(name)
-	if link == nil {
-		return nil, err
-	}
-	if err := nl.LinkSetUp(link); err != nil {
-		w.out.Warn("VxLANWorker.UpBr %s", err)
-	}
-	if addr != "" {
-		ipAddr, err := nl.ParseAddr(addr)
-		if err != nil {
-			w.out.Error("VxLANWorker.UpBr.Addr: %s", err)
-		}
-		if err := nl.AddrAdd(link, ipAddr); err != nil {
-			w.out.Error("VxLANWorker.UpBr.Addr: %s", err)
-		}
+	br := &nl.Bridge{LinkAttrs: nl.LinkAttrs{TxQLen: -1, Name: name}}
+	if w.br == nil {
+		w.br = network.NewBridger("linux", name, 0)
+		w.br.Open(addr)
+		_ = w.br.Stp(true)
 	}
 	return br, nil
 }
