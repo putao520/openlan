@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-type _VPNClient struct {
+type vpnClient struct {
 	Directory string
 }
 
@@ -21,7 +21,7 @@ func ParseInt64(value string) (int64, error) {
 	return strconv.ParseInt(value, 10, 64)
 }
 
-func (o *_VPNClient) GetDevice(name string) string {
+func (o *vpnClient) GetDevice(name string) string {
 	sw := config.Manager.Switch
 	if sw == nil {
 		return ""
@@ -38,11 +38,12 @@ func (o *_VPNClient) GetDevice(name string) string {
 	return ""
 }
 
-func (o *_VPNClient) getTime(layout, value string) (time.Time, error) {
+func (o *vpnClient) getTime(layout, value string) (time.Time, error) {
 	return time.ParseInLocation(layout, value, time.Local)
 }
 
-func (o *_VPNClient) scanStatus(network string, reader io.Reader, clients map[string]*schema.VPNClient) error {
+func (o *vpnClient) scanStatus(network string, reader io.Reader,
+	clients map[string]*schema.VPNClient) error {
 	readAt := "header"
 	offset := 0
 	scanner := bufio.NewScanner(reader)
@@ -82,7 +83,8 @@ func (o *_VPNClient) scanStatus(network string, reader io.Reader, clients map[st
 				if txc, err := ParseInt64(columns[3]); err == nil {
 					client.TxBytes = txc
 				}
-				if uptime, err := o.getTime(time.ANSIC, columns[4]); err == nil {
+				uptime, err := o.getTime(time.ANSIC, columns[4])
+				if err == nil {
 					client.Uptime = uptime.Unix()
 					client.AliveTime = time.Now().Unix() - client.Uptime
 				}
@@ -104,31 +106,31 @@ func (o *_VPNClient) scanStatus(network string, reader io.Reader, clients map[st
 	return nil
 }
 
-func (o *_VPNClient) statusFile(name string) []string {
+func (o *vpnClient) statusFile(name string) []string {
 	files, err := filepath.Glob(filepath.Join(o.Directory, name, "*server.status"))
 	if err != nil {
-		libol.Warn("_VPNClient.statusFile %v", err)
+		libol.Warn("vpnClient.statusFile %v", err)
 	}
 	return files
 }
 
-func (o *_VPNClient) readStatus(network string) map[string]*schema.VPNClient {
+func (o *vpnClient) readStatus(network string) map[string]*schema.VPNClient {
 	clients := make(map[string]*schema.VPNClient, 32)
 	for _, file := range o.statusFile(network) {
 		reader, err := os.Open(file)
 		if err != nil {
-			libol.Debug("_VPNClient.readStatus %v", err)
+			libol.Debug("vpnClient.readStatus %v", err)
 			return nil
 		}
 		if err := o.scanStatus(network, reader, clients); err != nil {
-			libol.Warn("_VPNClient.readStatus %v", err)
+			libol.Warn("vpnClient.readStatus %v", err)
 		}
 		reader.Close()
 	}
 	return clients
 }
 
-func (o *_VPNClient) List(name string) <-chan *schema.VPNClient {
+func (o *vpnClient) List(name string) <-chan *schema.VPNClient {
 	c := make(chan *schema.VPNClient, 128)
 
 	clients := o.readStatus(name)
@@ -142,6 +144,6 @@ func (o *_VPNClient) List(name string) <-chan *schema.VPNClient {
 	return c
 }
 
-var VPNClient = _VPNClient{
+var VPNClient = vpnClient{
 	Directory: config.VarDir("openvpn"),
 }

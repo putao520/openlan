@@ -24,11 +24,13 @@ func (n *Network) Correct() {
 		port := n.Interface
 		if obj, ok := port.(*ESPInterface); ok {
 			obj.Correct()
+			obj.Name = n.Name
 		}
 	case "vxlan":
 		port := n.Interface
 		if obj, ok := port.(*VxLANInterface); ok {
 			obj.Correct()
+			obj.Name = n.Name
 		}
 	default:
 		if n.Bridge == nil {

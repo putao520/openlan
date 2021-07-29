@@ -5,19 +5,19 @@ import (
 	"github.com/danieldin95/openlan-go/src/models"
 )
 
-type _link struct {
+type link struct {
 	Links *libol.SafeStrMap
 }
 
-func (p *_link) Init(size int) {
+func (p *link) Init(size int) {
 	p.Links = libol.NewSafeStrMap(size)
 }
 
-func (p *_link) Add(uuid string, link *models.Link) {
+func (p *link) Add(uuid string, link *models.Link) {
 	_ = p.Links.Set(uuid, link)
 }
 
-func (p *_link) Get(key string) *models.Link {
+func (p *link) Get(key string) *models.Link {
 	ret := p.Links.Get(key)
 	if ret != nil {
 		return ret.(*models.Link)
@@ -25,11 +25,11 @@ func (p *_link) Get(key string) *models.Link {
 	return nil
 }
 
-func (p *_link) Del(key string) {
+func (p *link) Del(key string) {
 	p.Links.Del(key)
 }
 
-func (p *_link) List() <-chan *models.Link {
+func (p *link) List() <-chan *models.Link {
 	c := make(chan *models.Link, 128)
 	go func() {
 		p.Links.Iter(func(k string, v interface{}) {
@@ -41,6 +41,6 @@ func (p *_link) List() <-chan *models.Link {
 	return c
 }
 
-var Link = _link{
+var Link = link{
 	Links: libol.NewSafeStrMap(1024),
 }

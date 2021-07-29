@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-type _user struct {
+type user struct {
 	Lock    sync.RWMutex
 	File    string
 	Users   *libol.SafeStrMap
@@ -15,7 +15,7 @@ type _user struct {
 	LdapSvc *libol.LDAPService
 }
 
-func (w *_user) Save() error {
+func (w *user) Save() error {
 	if w.File == "" {
 		return nil
 	}
@@ -36,16 +36,16 @@ func (w *_user) Save() error {
 	return nil
 }
 
-func (w *_user) SetFile(value string) {
+func (w *user) SetFile(value string) {
 	w.File = value
 }
 
-func (w *_user) Init(size int) {
+func (w *user) Init(size int) {
 	w.Users = libol.NewSafeStrMap(size)
 }
 
-func (w *_user) Add(user *models.User) {
-	libol.Debug("_user.Add %v", user)
+func (w *user) Add(user *models.User) {
+	libol.Debug("user.Add %v", user)
 	key := user.Id()
 	older := w.Get(key)
 	if older == nil {
@@ -58,19 +58,19 @@ func (w *_user) Add(user *models.User) {
 	}
 }
 
-func (w *_user) Del(key string) {
-	libol.Debug("_user.Add %s", key)
+func (w *user) Del(key string) {
+	libol.Debug("user.Add %s", key)
 	w.Users.Del(key)
 }
 
-func (w *_user) Get(key string) *models.User {
+func (w *user) Get(key string) *models.User {
 	if v := w.Users.Get(key); v != nil {
 		return v.(*models.User)
 	}
 	return nil
 }
 
-func (w *_user) List() <-chan *models.User {
+func (w *user) List() <-chan *models.User {
 	c := make(chan *models.User, 128)
 
 	go func() {
@@ -83,7 +83,7 @@ func (w *_user) List() <-chan *models.User {
 	return c
 }
 
-func (w *_user) CheckLdap(obj *models.User) *models.User {
+func (w *user) CheckLdap(obj *models.User) *models.User {
 	svc := w.GetLdap()
 	if svc == nil {
 		return nil
@@ -108,14 +108,14 @@ func (w *_user) CheckLdap(obj *models.User) *models.User {
 	return user
 }
 
-func (w *_user) Timeout(user *models.User) bool {
+func (w *user) Timeout(user *models.User) bool {
 	if user.Role == "ldap" {
 		return time.Now().Unix()-user.UpdateAt > w.LdapCfg.Timeout
 	}
 	return true
 }
 
-func (w *_user) Check(obj *models.User) *models.User {
+func (w *user) Check(obj *models.User) *models.User {
 	if u := w.Get(obj.Id()); u != nil {
 		if u.Role == "ldap" {
 			// check it by ldap.
@@ -131,7 +131,7 @@ func (w *_user) Check(obj *models.User) *models.User {
 	return nil
 }
 
-func (w *_user) GetLdap() *libol.LDAPService {
+func (w *user) GetLdap() *libol.LDAPService {
 	w.Lock.Lock()
 	defer w.Lock.Unlock()
 	if w.LdapCfg == nil {
@@ -139,7 +139,7 @@ func (w *_user) GetLdap() *libol.LDAPService {
 	}
 	if w.LdapSvc == nil || w.LdapSvc.Conn.IsClosing() {
 		if l, err := libol.NewLDAPService(*w.LdapCfg); err != nil {
-			libol.Warn("_user.GetLdap %s", err)
+			libol.Warn("user.GetLdap %s", err)
 			w.LdapSvc = nil
 		} else {
 			w.LdapSvc = l
@@ -148,20 +148,20 @@ func (w *_user) GetLdap() *libol.LDAPService {
 	return w.LdapSvc
 }
 
-func (w *_user) SetLdap(cfg *libol.LDAPConfig) {
+func (w *user) SetLdap(cfg *libol.LDAPConfig) {
 	w.Lock.Lock()
 	defer w.Lock.Unlock()
 	if w.LdapCfg != cfg {
 		w.LdapCfg = cfg
 	}
 	if l, err := libol.NewLDAPService(*cfg); err != nil {
-		libol.Warn("_user.SetLdap %s", err)
+		libol.Warn("user.SetLdap %s", err)
 	} else {
-		libol.Info("_user.SetLdap %s", w.LdapCfg.Server)
+		libol.Info("user.SetLdap %s", w.LdapCfg.Server)
 		w.LdapSvc = l
 	}
 }
 
-var User = _user{
+var User = user{
 	Users: libol.NewSafeStrMap(1024),
 }

@@ -161,6 +161,13 @@ func (c Cmd) OutTable(data interface{}, tmpl string) error {
 			}
 			return fmt.Sprintf(format, args...)
 		},
+		"pu": func(space int, args ...interface{}) string {
+			format := "%" + strconv.Itoa(space) + "u"
+			if space < 0 {
+				format = "%-" + strconv.Itoa(space) + "u"
+			}
+			return fmt.Sprintf(format, args...)
+		},
 		"pt": func(value int64) string {
 			return libol.PrettyTime(value)
 		},

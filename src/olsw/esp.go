@@ -3,8 +3,11 @@ package olsw
 import (
 	"github.com/danieldin95/openlan-go/src/config"
 	"github.com/danieldin95/openlan-go/src/libol"
+	"github.com/danieldin95/openlan-go/src/models"
 	"github.com/danieldin95/openlan-go/src/network"
 	"github.com/danieldin95/openlan-go/src/olsw/api"
+	"github.com/danieldin95/openlan-go/src/olsw/store"
+	"github.com/danieldin95/openlan-go/src/schema"
 	nl "github.com/vishvananda/netlink"
 	"net"
 	"os/exec"
@@ -24,6 +27,8 @@ type EspWorker struct {
 	policies []*nl.XfrmPolicy
 	inCfg    *config.ESPInterface
 	out      *libol.SubLogger
+	proto    nl.Proto
+	mode     nl.Mode
 }
 
 func NewESPWorker(c *config.Network) *EspWorker {
@@ -32,6 +37,8 @@ func NewESPWorker(c *config.Network) *EspWorker {
 		states:   make([]*nl.XfrmState, 0, 4),
 		policies: make([]*nl.XfrmPolicy, 0, 32),
 		out:      libol.NewSubLogger(c.Name),
+		proto:    nl.XFRM_PROTO_ESP,
+		mode:     nl.XFRM_MODE_TUNNEL,
 	}
 	w.inCfg, _ = c.Interface.(*config.ESPInterface)
 	return w
@@ -41,8 +48,8 @@ func (w *EspWorker) newState(spi uint32, local, remote net.IP, auth, crypt strin
 	return &nl.XfrmState{
 		Src:   remote,
 		Dst:   local,
-		Proto: nl.XFRM_PROTO_ESP,
-		Mode:  nl.XFRM_MODE_TUNNEL,
+		Proto: w.proto,
+		Mode:  w.mode,
 		Spi:   int(spi),
 		Auth: &nl.XfrmStateAlgo{
 			Name: "hmac(sha256)",
@@ -70,8 +77,8 @@ func (w *EspWorker) newPolicy(spi uint32, local, remote net.IP, src, dst *net.IP
 	tmpl := nl.XfrmPolicyTmpl{
 		Src:   local,
 		Dst:   remote,
-		Proto: nl.XFRM_PROTO_ESP,
-		Mode:  nl.XFRM_MODE_TUNNEL,
+		Proto: w.proto,
+		Mode:  w.mode,
 		Spi:   int(spi),
 	}
 	policy.Tmpls = append(policy.Tmpls, tmpl)
@@ -92,6 +99,16 @@ func (w *EspWorker) addState(mem *config.ESPMember) {
 	if st := w.newState(spi, remote, local, auth, crypt); st != nil {
 		w.states = append(w.states, st)
 	}
+	store.EspState.Add(&models.EspState{
+		EspState: &schema.EspState{
+			Name:   w.inCfg.Name,
+			Spi:    int(spi),
+			Source: local.String(),
+			Dest:   remote.String(),
+			Proto:  uint8(w.proto),
+			Mode:   uint8(w.mode),
+		},
+	})
 }
 
 func (w *EspWorker) addPolicy(mem *config.ESPMember, pol *config.ESPPolicy) {
@@ -118,6 +135,13 @@ func (w *EspWorker) addPolicy(mem *config.ESPMember, pol *config.ESPPolicy) {
 	if po := w.newPolicy(spi, remote, local, dst, src, nl.XFRM_DIR_FWD); po != nil {
 		w.policies = append(w.policies, po)
 	}
+	store.EspPolicy.Add(&models.EspPolicy{
+		EspPolicy: &schema.EspPolicy{
+			Name:   w.inCfg.Name,
+			Source: pol.Source,
+			Dest:   pol.Dest,
+		},
+	})
 }
 
 func (w *EspWorker) Initialize() {
@@ -223,6 +247,10 @@ func (w *EspWorker) Start(v api.Switcher) {
 			w.out.Error("EspWorker.Start %s %s", mem.Name, err)
 		}
 	}
+	store.Esp.Add(&models.Esp{
+		Name:    w.cfg.Name,
+		Address: w.inCfg.Address,
+	})
 }
 
 func (w *EspWorker) DownDummy(name string) error {

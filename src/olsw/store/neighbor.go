@@ -5,22 +5,22 @@ import (
 	"github.com/danieldin95/openlan-go/src/models"
 )
 
-type _neighbor struct {
+type neighbor struct {
 	Neighbors *libol.SafeStrMap
 }
 
-func (p *_neighbor) Init(size int) {
+func (p *neighbor) Init(size int) {
 	p.Neighbors = libol.NewSafeStrMap(size)
 }
 
-func (p *_neighbor) Add(m *models.Neighbor) {
+func (p *neighbor) Add(m *models.Neighbor) {
 	if v := p.Neighbors.Get(m.IpAddr.String()); v != nil {
 		p.Neighbors.Del(m.IpAddr.String())
 	}
 	_ = p.Neighbors.Set(m.IpAddr.String(), m)
 }
 
-func (p *_neighbor) Update(m *models.Neighbor) *models.Neighbor {
+func (p *neighbor) Update(m *models.Neighbor) *models.Neighbor {
 	if v := p.Neighbors.Get(m.IpAddr.String()); v != nil {
 		n := v.(*models.Neighbor)
 		n.HwAddr = m.HwAddr
@@ -29,18 +29,18 @@ func (p *_neighbor) Update(m *models.Neighbor) *models.Neighbor {
 	return nil
 }
 
-func (p *_neighbor) Get(key string) *models.Neighbor {
+func (p *neighbor) Get(key string) *models.Neighbor {
 	if v := p.Neighbors.Get(key); v != nil {
 		return v.(*models.Neighbor)
 	}
 	return nil
 }
 
-func (p *_neighbor) Del(key string) {
+func (p *neighbor) Del(key string) {
 	p.Neighbors.Del(key)
 }
 
-func (p *_neighbor) List() <-chan *models.Neighbor {
+func (p *neighbor) List() <-chan *models.Neighbor {
 	c := make(chan *models.Neighbor, 128)
 
 	go func() {
@@ -53,6 +53,6 @@ func (p *_neighbor) List() <-chan *models.Neighbor {
 	return c
 }
 
-var Neighbor = _neighbor{
+var Neighbor = neighbor{
 	Neighbors: libol.NewSafeStrMap(1024),
 }
