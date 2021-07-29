@@ -29,6 +29,7 @@ type EspWorker struct {
 	out      *libol.SubLogger
 	proto    nl.Proto
 	mode     nl.Mode
+	encap    *nl.XfrmStateEncap
 }
 
 func NewESPWorker(c *config.Network) *EspWorker {
@@ -41,11 +42,19 @@ func NewESPWorker(c *config.Network) *EspWorker {
 		mode:     nl.XFRM_MODE_TUNNEL,
 	}
 	w.inCfg, _ = c.Interface.(*config.ESPInterface)
+	if w.inCfg.Mode == "udp" {
+		w.encap = &nl.XfrmStateEncap{
+			Type:            nl.XFRM_ENCAP_ESPINUDP,
+			SrcPort:         UDPPort,
+			DstPort:         UDPPort,
+			OriginalAddress: net.ParseIP("0.0.0.0"),
+		}
+	}
 	return w
 }
 
 func (w *EspWorker) newState(spi uint32, local, remote net.IP, auth, crypt string) *nl.XfrmState {
-	return &nl.XfrmState{
+	state := &nl.XfrmState{
 		Src:   remote,
 		Dst:   local,
 		Proto: w.proto,
@@ -59,13 +68,11 @@ func (w *EspWorker) newState(spi uint32, local, remote net.IP, auth, crypt strin
 			Name: "cbc(aes)",
 			Key:  []byte(crypt),
 		},
-		Encap: &nl.XfrmStateEncap{
-			Type:            nl.XFRM_ENCAP_ESPINUDP,
-			SrcPort:         UDPPort,
-			DstPort:         UDPPort,
-			OriginalAddress: net.ParseIP("0.0.0.0"),
-		},
 	}
+	if w.encap != nil {
+		state.Encap = w.encap
+	}
+	return state
 }
 
 func (w *EspWorker) newPolicy(spi uint32, local, remote net.IP, src, dst *net.IPNet, dir nl.Dir) *nl.XfrmPolicy {

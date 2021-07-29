@@ -70,6 +70,7 @@ type ESPMember struct {
 }
 
 type ESPInterface struct {
+	Mode    string       `json:"mode"`
 	Name    string       `json:"name"`
 	Address string       `json:"address,omitempty"`
 	State   EspState     `json:"state"`
