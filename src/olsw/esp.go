@@ -20,6 +20,18 @@ const (
 	UDPBin  = "/usr/bin/openudp"
 )
 
+func GetStateEncap(mode string) *nl.XfrmStateEncap {
+	if mode == "udp" {
+		return &nl.XfrmStateEncap{
+			Type:            nl.XFRM_ENCAP_ESPINUDP,
+			SrcPort:         UDPPort,
+			DstPort:         UDPPort,
+			OriginalAddress: net.ParseIP("0.0.0.0"),
+		}
+	}
+	return nil
+}
+
 type EspWorker struct {
 	uuid     string
 	cfg      *config.Network
@@ -29,7 +41,6 @@ type EspWorker struct {
 	out      *libol.SubLogger
 	proto    nl.Proto
 	mode     nl.Mode
-	encap    *nl.XfrmStateEncap
 }
 
 func NewESPWorker(c *config.Network) *EspWorker {
@@ -42,14 +53,6 @@ func NewESPWorker(c *config.Network) *EspWorker {
 		mode:     nl.XFRM_MODE_TUNNEL,
 	}
 	w.inCfg, _ = c.Interface.(*config.ESPInterface)
-	if w.inCfg.Mode == "udp" {
-		w.encap = &nl.XfrmStateEncap{
-			Type:            nl.XFRM_ENCAP_ESPINUDP,
-			SrcPort:         UDPPort,
-			DstPort:         UDPPort,
-			OriginalAddress: net.ParseIP("0.0.0.0"),
-		}
-	}
 	return w
 }
 
@@ -68,9 +71,6 @@ func (w *EspWorker) newState(spi uint32, local, remote net.IP, auth, crypt strin
 			Name: "cbc(aes)",
 			Key:  []byte(crypt),
 		},
-	}
-	if w.encap != nil {
-		state.Encap = w.encap
 	}
 	return state
 }
@@ -98,12 +98,15 @@ func (w *EspWorker) addState(mem *config.ESPMember) {
 	remote := mem.State.RemoteIp
 	auth := mem.State.Auth
 	crypt := mem.State.Crypt
+	encap := GetStateEncap(mem.State.Encap)
 
 	w.out.Info("EspWorker.addState %s-%s", local, remote)
 	if st := w.newState(spi, local, remote, auth, crypt); st != nil {
+		st.Encap = encap
 		w.states = append(w.states, st)
 	}
 	if st := w.newState(spi, remote, local, auth, crypt); st != nil {
+		st.Encap = encap
 		w.states = append(w.states, st)
 	}
 	store.EspState.Add(&models.EspState{

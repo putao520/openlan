@@ -17,6 +17,7 @@ type EspState struct {
 	LocalIp  net.IP `json:"-"`
 	Remote   string `json:"remote"`
 	RemoteIp net.IP `json:"-"`
+	Encap    string `json:"encap"`
 	Auth     string `json:"auth,omitempty"`
 	Crypt    string `json:"crypt,omitempty"`
 }
@@ -70,7 +71,6 @@ type ESPMember struct {
 }
 
 type ESPInterface struct {
-	Mode    string       `json:"mode"`
 	Name    string       `json:"name"`
 	Address string       `json:"address,omitempty"`
 	State   EspState     `json:"state"`
