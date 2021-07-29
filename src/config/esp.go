@@ -104,7 +104,7 @@ func (n *ESPInterface) Correct() {
 			m.Spi = libol.GenUint32()
 		}
 		if m.Name == "" {
-			m.Name = fmt.Sprintf("spi-%d", m.Spi)
+			m.Name = fmt.Sprintf("spi%d", m.Spi)
 		}
 	}
 }

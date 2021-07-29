@@ -16,7 +16,7 @@ type VxLANMember struct {
 
 func (m *VxLANMember) Correct() {
 	if m.Name == "" {
-		m.Name = fmt.Sprintf("vni-%d", m.VNI)
+		m.Name = fmt.Sprintf("vni%d", m.VNI)
 	}
 }
 
