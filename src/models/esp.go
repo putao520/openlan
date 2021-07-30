@@ -49,9 +49,7 @@ func (l *EspState) Update() {
 	} else {
 		libol.Debug("EspState.Update %s", err)
 	}
-	tmp := xs.Src
-	xs.Src = xs.Dst
-	xs.Dst = tmp
+	xs.Src, xs.Dst = xs.Dst, xs.Src
 	if xss, err := nl.XfrmStateGet(xs); xss != nil {
 		l.RxBytes = xss.Statistics.Bytes
 		l.RxPackages = xss.Statistics.Packets
