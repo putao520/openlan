@@ -30,21 +30,36 @@ func (w *VxLANWorker) Initialize() {
 	if w.inCfg == nil {
 		return
 	}
-	bridge := w.inCfg.Bridge
-	if bridge != "" {
-		addr := w.inCfg.Address
-		_, _ = w.UpBr(bridge, addr)
+	br := w.cfg.Bridge
+	if br != nil {
+		w.br = network.NewBridger(br.Provider, br.Name, br.IPMtu)
+		w.UpBr(br)
 	}
 }
 
-func (w *VxLANWorker) UpBr(name string, addr string) (*nl.Bridge, error) {
-	br := &nl.Bridge{LinkAttrs: nl.LinkAttrs{TxQLen: -1, Name: name}}
-	if w.br == nil {
-		w.br = network.NewBridger("linux", name, 0)
-		w.br.Open(addr)
-		_ = w.br.Stp(true)
+func (w *VxLANWorker) UpBr(cfg *co.Bridge) {
+	master := w.br
+	// new it and configure address
+	master.Open(cfg.Address)
+	// configure stp
+	if cfg.Stp == "on" {
+		if err := master.Stp(true); err != nil {
+			w.out.Warn("VxLANWorker.UpBridge: Stp %s", err)
+		}
+	} else {
+		_ = master.Stp(false)
 	}
-	return br, nil
+	// configure forward delay
+	if err := master.Delay(cfg.Delay); err != nil {
+		w.out.Warn("VxLANWorker.UpBridge: Delay %s", err)
+	}
+	call := 1
+	if w.cfg.Acl == "" {
+		call = 0
+	}
+	if err := master.CallIptables(call); err != nil {
+		w.out.Warn("VxLANWorker.Start: CallIptables %s", err)
+	}
 }
 
 func (w *VxLANWorker) UpVxLAN(cfg *co.VxLANMember) error {
@@ -69,10 +84,16 @@ func (w *VxLANWorker) UpVxLAN(cfg *co.VxLANMember) error {
 	if err := nl.LinkSetUp(link); err != nil {
 		w.out.Error("VxLANWorker.UpVxLAN: %s", err)
 	}
-	if br, err := w.UpBr(cfg.Bridge, ""); err != nil {
-		return err
-	} else if err := nl.LinkSetMaster(link, br); err != nil {
-		return err
+	br := w.cfg.Bridge
+	if br != nil {
+		br := &nl.Bridge{LinkAttrs: nl.LinkAttrs{
+			TxQLen: -1,
+			Name:   br.Name,
+		},
+		}
+		if err := nl.LinkSetMaster(link, br); err != nil {
+			return err
+		}
 	}
 	return nil
 }

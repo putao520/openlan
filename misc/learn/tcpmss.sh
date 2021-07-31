@@ -6,6 +6,6 @@
 
 BR="br-vxlan"
 
-iptables -t mangle -A FORWARD -i $BR -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1348
+iptables -t mangle -A FORWARD -i $BR -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1332
 
 

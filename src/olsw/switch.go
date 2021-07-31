@@ -214,6 +214,19 @@ func (v *Switch) preWorker(w Networker) {
 	if cfg.OpenVPN != nil {
 		v.preWorkerVPN(w, cfg.OpenVPN)
 	}
+	br := cfg.Bridge
+	if br.Mss > 0 {
+		v.firewall.AddRule(network.IpRule{
+			Table:   network.TMangle,
+			Chain:   network.CPostRoute,
+			Output:  br.Name,
+			Proto:   "tcp",
+			Match:   "tcp",
+			TcpFlag: []string{"SYN,RST", "SYN"},
+			Jump:    "TCPMSS",
+			SetMss:  br.Mss,
+		})
+	}
 }
 
 func (v *Switch) enableAcl(acl, input string) {

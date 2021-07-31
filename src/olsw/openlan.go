@@ -216,7 +216,7 @@ func (w *OpenLANWorker) UpBridge(cfg *config.Bridge) {
 	if w.cfg.Acl == "" {
 		call = 0
 	}
-	if err := w.bridge.CallIptables(call); err != nil {
+	if err := master.CallIptables(call); err != nil {
 		w.out.Warn("OpenLANWorker.Start: CallIptables %s", err)
 	}
 }

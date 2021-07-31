@@ -153,6 +153,7 @@ type Bridge struct {
 	Provider string `json:"provider"`
 	Stp      string `json:"stp"`
 	Delay    int    `json:"delay"`
+	Mss      int    `json:"mss,omitempty"`
 }
 
 func (br *Bridge) Correct() {

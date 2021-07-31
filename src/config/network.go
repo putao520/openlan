@@ -32,6 +32,14 @@ func (n *Network) Correct() {
 			obj.Correct()
 			obj.Name = n.Name
 		}
+		br := n.Bridge
+		if br != nil {
+			br.Network = n.Name
+			br.Correct()
+			if br.Mss == 0 {
+				br.Mss = 1332
+			}
+		}
 	default:
 		if n.Bridge == nil {
 			n.Bridge = &Bridge{}

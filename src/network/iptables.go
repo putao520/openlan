@@ -37,10 +37,17 @@ type IpRule struct {
 	Output   string
 	Comment  string
 	Jump     string
+	SetMss   int
 	Order    string
+	Match    string
+	TcpFlag  []string
 }
 
 type IpRules []IpRule
+
+func (ru IpRule) Itoa(value int) string {
+	return strconv.Itoa(value)
+}
 
 func (ru IpRule) Args() []string {
 	var args []string
@@ -54,11 +61,17 @@ func (ru IpRule) Args() []string {
 	if ru.Proto != "" {
 		args = append(args, "-p", ru.Proto)
 	}
+	if ru.Match != "" {
+		args = append(args, "-m", ru.Match)
+	}
+	if len(ru.TcpFlag) > 0 {
+		args = append(args, "--tcp-flags", ru.TcpFlag[0], ru.TcpFlag[1])
+	}
 	if ru.SrcPort > 0 {
-		args = append(args, "--sport", strconv.Itoa(ru.SrcPort))
+		args = append(args, "--sport", ru.Itoa(ru.SrcPort))
 	}
 	if ru.DstPort > 0 {
-		args = append(args, "--dport", strconv.Itoa(ru.DstPort))
+		args = append(args, "--dport", ru.Itoa(ru.DstPort))
 	}
 	if ru.Input != "" {
 		args = append(args, "-i", ru.Input)
@@ -72,6 +85,9 @@ func (ru IpRule) Args() []string {
 			args = append(args, "-j", jump)
 		} else {
 			args = append(args, "-j", ru.Jump)
+		}
+		if ru.SetMss > 0 {
+			args = append(args, "--set-mss", ru.Itoa(ru.SetMss))
 		}
 	} else {
 		args = append(args, "-j", "ACCEPT")
