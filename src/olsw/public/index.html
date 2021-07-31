@@ -157,7 +157,7 @@
                         <td>spi{{ .Spi }}</td>
                         <td>{{ .Source }}</td>
                         <td>esp</td>
-                        <td>{{ .Dest }}</td>
+                        <td><a href="https://{{ .Dest }}:10000">{{ .Dest }}</a></td>
                         <td>{{ prettyBytes .RxBytes }}/{{ prettyBytes .TxBytes }}</td>
                         <td>-</td>
                     </tr>
@@ -169,7 +169,7 @@
                         <td>{{ .Device }}</td>
                         <td>{{ .User }}@{{ .Network }}</td>
                         <td>{{ .Protocol }}</td>
-                        <td><a href="https://{{ getIpAddr .Server }}:10000">{{ .Server }}</a></td>
+                        <td><a href="https://{{ getIpAddr .Server }}:10000">{{ getIpAddr .Server }}</a></td>
                         <td>{{ prettyBytes .RxBytes }}/{{ prettyBytes .TxBytes }}</td>
                         <td><span class="{{ .State }}">{{ .State }}</span></td>
                     </tr>
