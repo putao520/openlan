@@ -132,7 +132,7 @@
     <div class="link">
         <div class="panel-header">
             <div>
-                <span>The link which connect to other, and total </span><span>{{ len .Links }}</span>.
+                <span>The link which connect to other, and total </span><span>{{ len .States }}+{{ len .Links }}</span>.
             </div>
         </div>
         <div class="panel-body">
@@ -150,6 +150,18 @@
                 </tr>
                 </thead>
                 <tbody>
+                {{ range .States }}
+                    <tr>
+                        <td>{{ .Name }}</td>
+                        <td>{{ prettyTime .AliveTime }}</td>
+                        <td>spi{{ .Spi }}</td>
+                        <td>{{ .Source }}</td>
+                        <td>esp</td>
+                        <td>{{ .Dest }}</td>
+                        <td>{{ prettyBytes .RxBytes }}/{{ prettyBytes .TxBytes }}</td>
+                        <td>-</td>
+                    </tr>
+                {{ end }}
                 {{ range .Links }}
                     <tr>
                         <td>{{ .UUID }}</td>
@@ -169,7 +181,7 @@
     <div class="point">
         <div class="panel-header">
             <p>
-                <span>The point accessed to, and total </span><span>{{ len .Points }}+{{ len .Clients }}</span>.
+                <span>The point accessed to, and total </span><span>{{ len .Clients }}+{{ len .Points }}</span>.
             </p>
         </div>
         <div class="panel-body">
@@ -187,18 +199,6 @@
                 </tr>
                 </thead>
                 <tbody>
-                {{ range .Points }}
-                    <tr>
-                        <td>{{ .UUID }}</td>
-                        <td>{{ prettyTime .AliveTime }}</td>
-                        <td>{{ .Device }}</td>
-                        <td>{{ .Alias }}</td>
-                        <td>{{ .Remote }}</td>
-                        <td>{{ .User }}@{{ .Network }}</td>
-                        <td>{{ prettyBytes .RxBytes }}/{{ prettyBytes .TxBytes }}</td>
-                        <td><span class="{{ .State }}">{{ .State }}</span></td>
-                    </tr>
-                {{ end }}
                 {{ range .Clients }}
                     <tr>
                         <td>openvpn</td>
@@ -207,6 +207,18 @@
                         <td>{{ .Address }}</td>
                         <td>{{ .Remote }}</td>
                         <td>{{ .Name }}</td>
+                        <td>{{ prettyBytes .RxBytes }}/{{ prettyBytes .TxBytes }}</td>
+                        <td><span class="{{ .State }}">{{ .State }}</span></td>
+                    </tr>
+                {{ end }}
+                {{ range .Points }}
+                    <tr>
+                        <td>{{ .UUID }}</td>
+                        <td>{{ prettyTime .AliveTime }}</td>
+                        <td>{{ .Device }}</td>
+                        <td>{{ .Alias }}</td>
+                        <td>{{ .Remote }}</td>
+                        <td>{{ .User }}@{{ .Network }}</td>
                         <td>{{ prettyBytes .RxBytes }}/{{ prettyBytes .TxBytes }}</td>
                         <td><span class="{{ .State }}">{{ .State }}</span></td>
                     </tr>

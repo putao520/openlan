@@ -8,11 +8,13 @@ import (
 	"github.com/danieldin95/openlan-go/src/schema"
 	nl "github.com/vishvananda/netlink"
 	"net"
+	"time"
 )
 
 type Esp struct {
 	Name    string
 	Address string
+	NewTime int64
 }
 
 func (l *Esp) Update() {
@@ -33,6 +35,7 @@ func NewEspSchema(e *Esp) schema.Esp {
 
 type EspState struct {
 	*schema.EspState
+	NewTime int64
 }
 
 func (l *EspState) Update() {
@@ -43,23 +46,32 @@ func (l *EspState) Update() {
 		Mode:  nl.Mode(l.Mode),
 		Proto: nl.Proto(l.Proto),
 	}
+	used := int64(0)
 	if xss, err := nl.XfrmStateGet(xs); xss != nil {
-		l.TxBytes = xss.Statistics.Bytes
-		l.TxPackages = xss.Statistics.Packets
+		l.TxBytes = int64(xss.Statistics.Bytes)
+		l.TxPackages = int64(xss.Statistics.Packets)
+		used = int64(xss.Statistics.UseTime)
 	} else {
 		libol.Debug("EspState.Update %s", err)
 	}
 	xs.Src, xs.Dst = xs.Dst, xs.Src
 	if xss, err := nl.XfrmStateGet(xs); xss != nil {
-		l.RxBytes = xss.Statistics.Bytes
-		l.RxPackages = xss.Statistics.Packets
+		l.RxBytes = int64(xss.Statistics.Bytes)
+		l.RxPackages = int64(xss.Statistics.Packets)
 	} else {
 		libol.Debug("EspState.Update %s", err)
+	}
+	if used > 0 {
+		l.AliveTime = time.Now().Unix() - used
 	}
 }
 
 func (l *EspState) ID() string {
 	return fmt.Sprintf("%d-%s-%s", l.Spi, l.Source, l.Dest)
+}
+
+func (l *EspState) UpTime() int64 {
+	return time.Now().Unix() - l.NewTime
 }
 
 func NewEspStateSchema(e *EspState) schema.EspState {
@@ -73,6 +85,7 @@ func NewEspStateSchema(e *EspState) schema.EspState {
 		TxPackages: e.TxPackages,
 		RxBytes:    e.RxBytes,
 		RxPackages: e.RxPackages,
+		AliveTime:  e.AliveTime,
 	}
 	return se
 }

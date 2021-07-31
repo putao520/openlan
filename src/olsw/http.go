@@ -287,6 +287,18 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 			return body.Clients[i].Name < body.Clients[j].Name
 		})
 	}
+	// display esp state
+	for s := range store.EspState.List("") {
+		if s == nil {
+			break
+		}
+		body.States = append(body.States, models.NewEspStateSchema(s))
+	}
+	sort.SliceStable(body.States, func(i, j int) bool {
+		ii := body.States[i]
+		jj := body.States[j]
+		return ii.Spi > jj.Spi
+	})
 	return body
 }
 
@@ -315,6 +327,7 @@ func (h *Http) IndexHtml(w http.ResponseWriter, r *http.Request) {
 		Neighbors: make([]schema.Neighbor, 0, 128),
 		OnLines:   make([]schema.OnLine, 0, 128),
 		Clients:   make([]schema.VPNClient, 0, 128),
+		States:    make([]schema.EspState, 0, 128),
 	}
 	h.getIndex(&body)
 	file := h.getFile("/index.html")

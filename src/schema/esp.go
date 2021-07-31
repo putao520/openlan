@@ -8,6 +8,7 @@ type Esp struct {
 
 type EspState struct {
 	Name       string `json:"name"`
+	AliveTime  int64  `json:"alive"`
 	Spi        int    `json:"spi"`
 	Source     string `json:"source"`
 	Mode       uint8  `json:"mode"`
@@ -15,10 +16,10 @@ type EspState struct {
 	Dest       string `json:"destination"`
 	Auth       string `json:"auth"`
 	Crypt      string `json:"crypt"`
-	TxBytes    uint64 `json:"txBytes"`
-	TxPackages uint64 `json:"txPackages"`
-	RxBytes    uint64 `json:"rxBytes"`
-	RxPackages uint64 `json:"rxPackages"`
+	TxBytes    int64  `json:"txBytes"`
+	TxPackages int64  `json:"txPackages"`
+	RxBytes    int64  `json:"rxBytes"`
+	RxPackages int64  `json:"rxPackages"`
 }
 
 type EspPolicy struct {
