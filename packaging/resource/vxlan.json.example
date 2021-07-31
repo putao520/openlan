@@ -1,19 +1,19 @@
 {
     "name": "vxlan",
     "provider": "vxlan",
+    "bridge": {
+        "address": "192.168.11.22/24"
+    },
     "interface": {
         "members": [
             {
                 "vni": 100,
-                "remote": "100.64.0.20",
-                "bridge": "br-em1"
+                "remote": "100.64.0.20"
             },
             {
-                "name": "vxlan-200",
                 "vni": 200,
                 "local": "100.64.0.10",
-                "remote": "100.64.0.20",
-                "bridge": "br-em2"
+                "remote": "100.64.0.20"
             }
         ]
     }

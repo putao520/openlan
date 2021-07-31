@@ -53,11 +53,7 @@ func (w *VxLANWorker) UpBr(cfg *co.Bridge) {
 	if err := master.Delay(cfg.Delay); err != nil {
 		w.out.Warn("VxLANWorker.UpBridge: Delay %s", err)
 	}
-	call := 1
-	if w.cfg.Acl == "" {
-		call = 0
-	}
-	if err := master.CallIptables(call); err != nil {
+	if err := master.CallIptables(1); err != nil {
 		w.out.Warn("VxLANWorker.Start: CallIptables %s", err)
 	}
 }
