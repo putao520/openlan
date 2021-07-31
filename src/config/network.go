@@ -36,10 +36,10 @@ func (n *Network) Correct() {
 		if br != nil {
 			br.Network = n.Name
 			br.Correct()
-			// 28[udp] - 8 [esp] -
+			// 28 [udp] - 8 [esp] -
 			// 28 [udp] - 8 [vxlan] -
 			// 14 [ethernet] - tcp [40] - 1332 [mss] -
-			// 42 [padding]
+			// 42 [padding] ~= variable 30-45
 			if br.Mss == 0 {
 				br.Mss = 1332
 			}
