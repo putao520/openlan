@@ -138,22 +138,26 @@ func (v *Switch) enablePort(protocol, port string) {
 }
 
 func (v *Switch) enableFwd(input, output, source, prefix string) {
-	v.out.Debug("Switch.enableFwd %s %s:%s", input, source, prefix)
+	v.out.Debug("Switch.enableFwd %s:%s %s:%s", input, output, source, prefix)
 	// allowed forward between source and prefix.
 	v.firewall.AddRule(network.IpRule{
 		Table:  network.TFilter,
 		Chain:  OLCForward,
 		Input:  input,
+		Output: output,
 		Source: source,
 		Dest:   prefix,
 	})
-	v.firewall.AddRule(network.IpRule{
-		Table:  network.TFilter,
-		Chain:  OLCForward,
-		Output: output,
-		Source: prefix,
-		Dest:   source,
-	})
+	if source != prefix {
+		v.firewall.AddRule(network.IpRule{
+			Table:  network.TFilter,
+			Chain:  OLCForward,
+			Output: input,
+			Input:  output,
+			Source: prefix,
+			Dest:   source,
+		})
+	}
 }
 
 func (v *Switch) enableMasq(input, output, source, prefix string) {
@@ -247,8 +251,8 @@ func (v *Switch) preNetworkVPN0(nCfg *config.Network, vCfg *config.OpenVPN) {
 	devName := vCfg.Device
 	v.enableAcl(nCfg.Acl, devName)
 	for _, rt := range vCfg.Routes {
-		v.enableFwd(devName, devName, vCfg.Subnet, rt)
-		v.enableMasq(devName, devName, vCfg.Subnet, rt)
+		v.enableFwd(devName, "", vCfg.Subnet, rt)
+		v.enableMasq(devName, "", vCfg.Subnet, rt)
 	}
 	for _, _vCfg := range vCfg.Breed {
 		v.preNetworkVPN0(nCfg, _vCfg)
@@ -260,7 +264,8 @@ func (v *Switch) preNetworkVPN1(bridge, prefix string, vCfg *config.OpenVPN) {
 		return
 	}
 	// Enable MASQUERADE, and allowed forward.
-	v.enableMasq(bridge, bridge, vCfg.Subnet, prefix)
+	v.enableFwd("", bridge, vCfg.Subnet, prefix)
+	v.enableMasq("", bridge, vCfg.Subnet, prefix)
 	for _, _vCfg := range vCfg.Breed {
 		v.preNetworkVPN1(bridge, prefix, _vCfg)
 	}
@@ -281,7 +286,7 @@ func (v *Switch) preNetwork() {
 		vCfg := nCfg.OpenVPN
 
 		v.enableAcl(nCfg.Acl, brName)
-		v.enableFwd(brName, brName, "0.0.0.0/0", "0.0.0.0/0")
+		v.enableFwd(brName, brName, "", "")
 		source := brCfg.Address
 		ifAddr := strings.SplitN(source, "/", 2)[0]
 		// Enable MASQUERADE for OpenVPN
@@ -297,10 +302,11 @@ func (v *Switch) preNetwork() {
 			if rt.NextHop != ifAddr {
 				continue
 			}
+			v.enableFwd(brName, "", source, rt.Prefix)
 			if rt.MultiPath != nil {
-				v.enableSnat(brName, brName, ifAddr, rt.Prefix)
+				v.enableSnat(brName, "", ifAddr, rt.Prefix)
 			} else if rt.Mode == "snat" {
-				v.enableMasq(brName, brName, source, rt.Prefix)
+				v.enableMasq(brName, "", source, rt.Prefix)
 			}
 		}
 	}
