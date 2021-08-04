@@ -159,7 +159,11 @@
                         <td>esp</td>
                         <td><a href="https://{{ .Dest }}:10000">{{ .Dest }}</a></td>
                         <td>{{ prettyBytes .RxBytes }}/{{ prettyBytes .TxBytes }}</td>
-                        <td>-</td>
+                        <td>
+                            {{ if .RxBytes }}<span class="success">success</span>
+                            {{ else }}<span class="unknown">unknown</span>
+                            {{ end}}
+                        </td>
                     </tr>
                 {{ end }}
                 {{ range .Links }}
