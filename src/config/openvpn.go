@@ -30,7 +30,7 @@ var index = 1194
 
 func genTunName() string {
 	index += 1
-	return fmt.Sprintf("tun-%d", index)
+	return fmt.Sprintf("tun%d", index)
 }
 
 func DefaultOpenVPN() *OpenVPN {
