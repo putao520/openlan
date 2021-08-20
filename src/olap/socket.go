@@ -2,9 +2,9 @@ package olap
 
 import (
 	"encoding/json"
-	"github.com/danieldin95/openlan-go/src/config"
-	"github.com/danieldin95/openlan-go/src/libol"
-	"github.com/danieldin95/openlan-go/src/models"
+	"github.com/danieldin95/openlan/src/config"
+	"github.com/danieldin95/openlan/src/libol"
+	"github.com/danieldin95/openlan/src/models"
 	"runtime"
 	"strings"
 	"sync"

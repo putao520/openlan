@@ -2,7 +2,7 @@ package network
 
 import (
 	"errors"
-	"github.com/danieldin95/openlan-go/src/libol"
+	"github.com/danieldin95/openlan/src/libol"
 	"net"
 	"sync"
 	"time"

@@ -3,7 +3,7 @@ package olap
 import (
 	"fmt"
 	"github.com/chzyer/readline"
-	"github.com/danieldin95/openlan-go/src/libol"
+	"github.com/danieldin95/openlan/src/libol"
 	"io"
 	"strings"
 )

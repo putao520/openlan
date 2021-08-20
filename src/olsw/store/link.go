@@ -1,8 +1,8 @@
 package store
 
 import (
-	"github.com/danieldin95/openlan-go/src/libol"
-	"github.com/danieldin95/openlan-go/src/models"
+	"github.com/danieldin95/openlan/src/libol"
+	"github.com/danieldin95/openlan/src/models"
 )
 
 type link struct {

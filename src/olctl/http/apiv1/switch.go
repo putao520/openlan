@@ -1,9 +1,9 @@
 package apiv1
 
 import (
-	"github.com/danieldin95/openlan-go/src/olctl/ctrlc"
-	"github.com/danieldin95/openlan-go/src/olctl/http/api"
-	"github.com/danieldin95/openlan-go/src/schema"
+	"github.com/danieldin95/openlan/src/olctl/ctrlc"
+	"github.com/danieldin95/openlan/src/olctl/http/api"
+	"github.com/danieldin95/openlan/src/schema"
 	"github.com/gorilla/mux"
 	"net/http"
 )

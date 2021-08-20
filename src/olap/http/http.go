@@ -2,7 +2,7 @@ package http
 
 import (
 	"context"
-	"github.com/danieldin95/openlan-go/src/libol"
+	"github.com/danieldin95/openlan/src/libol"
 	"github.com/gorilla/mux"
 	"net/http"
 )

@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/danieldin95/openlan-go/src/schema"
+	"github.com/danieldin95/openlan/src/schema"
 	"github.com/urfave/cli/v2"
 	"sort"
 )

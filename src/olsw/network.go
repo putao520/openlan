@@ -1,9 +1,9 @@
 package olsw
 
 import (
-	"github.com/danieldin95/openlan-go/src/config"
-	"github.com/danieldin95/openlan-go/src/network"
-	"github.com/danieldin95/openlan-go/src/olsw/api"
+	"github.com/danieldin95/openlan/src/config"
+	"github.com/danieldin95/openlan/src/network"
+	"github.com/danieldin95/openlan/src/olsw/api"
 )
 
 type Networker interface {

@@ -1,7 +1,7 @@
 package ctrls
 
 import (
-	"github.com/danieldin95/openlan-go/src/olctl/libctrl"
+	"github.com/danieldin95/openlan/src/olctl/libctrl"
 )
 
 type OnLine struct {

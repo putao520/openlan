@@ -1,10 +1,10 @@
 package olsw
 
 import (
-	"github.com/danieldin95/openlan-go/src/config"
-	"github.com/danieldin95/openlan-go/src/libol"
-	"github.com/danieldin95/openlan-go/src/models"
-	"github.com/danieldin95/openlan-go/src/schema"
+	"github.com/danieldin95/openlan/src/config"
+	"github.com/danieldin95/openlan/src/libol"
+	"github.com/danieldin95/openlan/src/models"
+	"github.com/danieldin95/openlan/src/schema"
 	"io/ioutil"
 	"os"
 	"os/exec"

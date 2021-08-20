@@ -2,8 +2,8 @@ package proxy
 
 import (
 	"encoding/base64"
-	"github.com/danieldin95/openlan-go/src/config"
-	"github.com/danieldin95/openlan-go/src/libol"
+	"github.com/danieldin95/openlan/src/config"
+	"github.com/danieldin95/openlan/src/libol"
 	"io"
 	"net"
 	"net/http"

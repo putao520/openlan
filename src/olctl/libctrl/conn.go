@@ -1,7 +1,7 @@
 package libctrl
 
 import (
-	"github.com/danieldin95/openlan-go/src/libol"
+	"github.com/danieldin95/openlan/src/libol"
 	"golang.org/x/net/websocket"
 	"strings"
 	"sync"

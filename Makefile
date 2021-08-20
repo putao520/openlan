@@ -1,5 +1,5 @@
 #
-# github.com/danieldin95/openlan-go
+# github.com/danieldin95/openlan
 #
 
 #
@@ -16,7 +16,7 @@ LSB = $(shell lsb_release -i -s)$(shell lsb_release -r -s)
 VER = $(shell cat VERSION)
 
 ## declare flags
-MOD = github.com/danieldin95/openlan-go/src/libol
+MOD = github.com/danieldin95/openlan/src/libol
 LDFLAGS += -X $(MOD).Commit=$(shell git rev-list -1 HEAD)
 LDFLAGS += -X $(MOD).Date=$(shell date +%FT%T%z)
 LDFLAGS += -X $(MOD).Version=$(VER)
@@ -159,6 +159,6 @@ darwin-zip: env darwin ## build darwin packages
 
 ## unit test
 test: ## execute unit test
-	go test -v -mod=vendor -bench=. github.com/danieldin95/openlan-go/src/olap
-	go test -v -mod=vendor -bench=. github.com/danieldin95/openlan-go/src/libol
-	go test -v -mod=vendor -bench=. github.com/danieldin95/openlan-go/src/models
+	go test -v -mod=vendor -bench=. github.com/danieldin95/openlan/src/olap
+	go test -v -mod=vendor -bench=. github.com/danieldin95/openlan/src/libol
+	go test -v -mod=vendor -bench=. github.com/danieldin95/openlan/src/models

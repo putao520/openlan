@@ -2,10 +2,10 @@ package ctrls
 
 import (
 	"encoding/json"
-	"github.com/danieldin95/openlan-go/src/libol"
-	"github.com/danieldin95/openlan-go/src/models"
-	"github.com/danieldin95/openlan-go/src/olctl/libctrl"
-	"github.com/danieldin95/openlan-go/src/olsw/store"
+	"github.com/danieldin95/openlan/src/libol"
+	"github.com/danieldin95/openlan/src/models"
+	"github.com/danieldin95/openlan/src/olctl/libctrl"
+	"github.com/danieldin95/openlan/src/olsw/store"
 )
 
 type Neighbor struct {

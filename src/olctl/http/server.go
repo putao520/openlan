@@ -2,11 +2,11 @@ package http
 
 import (
 	"context"
-	"github.com/danieldin95/openlan-go/src/libol"
-	"github.com/danieldin95/openlan-go/src/olctl/http/api"
-	"github.com/danieldin95/openlan-go/src/olctl/http/apiv1"
-	"github.com/danieldin95/openlan-go/src/olctl/http/olan"
-	"github.com/danieldin95/openlan-go/src/olctl/storage"
+	"github.com/danieldin95/openlan/src/libol"
+	"github.com/danieldin95/openlan/src/olctl/http/api"
+	"github.com/danieldin95/openlan/src/olctl/http/apiv1"
+	"github.com/danieldin95/openlan/src/olctl/http/olan"
+	"github.com/danieldin95/openlan/src/olctl/storage"
 	"github.com/gorilla/mux"
 	"net/http"
 	"net/url"

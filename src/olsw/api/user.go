@@ -2,10 +2,10 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/danieldin95/openlan-go/src/libol"
-	"github.com/danieldin95/openlan-go/src/models"
-	"github.com/danieldin95/openlan-go/src/olsw/store"
-	"github.com/danieldin95/openlan-go/src/schema"
+	"github.com/danieldin95/openlan/src/libol"
+	"github.com/danieldin95/openlan/src/models"
+	"github.com/danieldin95/openlan/src/olsw/store"
+	"github.com/danieldin95/openlan/src/schema"
 	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"

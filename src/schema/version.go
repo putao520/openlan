@@ -1,6 +1,6 @@
 package schema
 
-import "github.com/danieldin95/openlan-go/src/libol"
+import "github.com/danieldin95/openlan/src/libol"
 
 type Version struct {
 	Version string `json:"version"`

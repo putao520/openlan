@@ -1,6 +1,6 @@
 package ctrls
 
-import "github.com/danieldin95/openlan-go/src/config"
+import "github.com/danieldin95/openlan/src/config"
 
 type Switcher interface {
 	UUID() string

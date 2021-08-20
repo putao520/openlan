@@ -2,7 +2,7 @@ package config
 
 import (
 	"fmt"
-	"github.com/danieldin95/openlan-go/src/libol"
+	"github.com/danieldin95/openlan/src/libol"
 	"net"
 	"strings"
 )
