@@ -256,9 +256,9 @@ func (w *Worker) FlushStatus() {
 
 func (w *Worker) Start() {
 	w.out.Debug("Worker.Start linux.")
+	w.FlushStatus()
 	w.tapWorker.Start()
 	w.conWorker.Start()
-	w.FlushStatus()
 	libol.Go(func() {
 		for {
 			select {
