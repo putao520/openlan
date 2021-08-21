@@ -13,12 +13,21 @@ func (c *FabricInterface) Correct() {
 	for _, network := range c.Networks {
 		network.Correct()
 	}
+	for _, tunnel := range c.Tunnels {
+		tunnel.Correct()
+	}
 }
 
 type FabricTunnel struct {
-	DstPort int    `json:"dport"`
+	DstPort uint32 `json:"dport"`
 	Remote  string `json:"remote"`
 	Local   string `json:"local"`
+}
+
+func (c *FabricTunnel) Correct() {
+	if c.DstPort == 0 {
+		c.DstPort = 4789
+	}
 }
 
 type FabricNetwork struct {

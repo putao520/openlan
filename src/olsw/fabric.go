@@ -352,13 +352,14 @@ func (w *FabricWorker) flood2Tunnel(vni uint32) {
 	}
 }
 
-func (w *FabricWorker) AddTunnel(remote string) {
+func (w *FabricWorker) AddTunnel(remote string, dport uint32) {
 	name := w.Addr2Port(remote, "vx-")
 	options := ovs.InterfaceOptions{
 		Type:      ovs.InterfaceTypeVXLAN,
 		RemoteIP:  remote,
 		Key:       "flow",
 		DfDefault: "false",
+		DstPort:   dport,
 	}
 	if err := w.ovs.addPort(name, &options); err != nil {
 		return
@@ -386,7 +387,7 @@ func (w *FabricWorker) AddTunnel(remote string) {
 func (w *FabricWorker) Start(v api.Switcher) {
 	w.out.Info("FabricWorker.Start")
 	for _, tunnel := range w.inCfg.Tunnels {
-		w.AddTunnel(tunnel.Remote)
+		w.AddTunnel(tunnel.Remote, tunnel.DstPort)
 	}
 	for _, net := range w.inCfg.Networks {
 		w.AddNetwork(net.Bridge, net.Vni)
