@@ -8,7 +8,7 @@ require (
 	github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e
 	github.com/coreos/go-systemd/v22 v22.0.0
-	github.com/danieldin95/go-openvswitch v0.0.0-20210610204619-e0e0c7890c6b
+	github.com/danieldin95/go-openvswitch v0.0.1
 	github.com/docker/libnetwork v0.5.6 // indirect
 	github.com/go-ldap/ldap v3.0.3+incompatible
 	github.com/godbus/dbus v4.1.0+incompatible // indirect

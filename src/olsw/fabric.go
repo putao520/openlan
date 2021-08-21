@@ -355,9 +355,10 @@ func (w *FabricWorker) flood2Tunnel(vni uint32) {
 func (w *FabricWorker) AddTunnel(remote string) {
 	name := w.Addr2Port(remote, "vx-")
 	options := ovs.InterfaceOptions{
-		Type:     ovs.InterfaceTypeVXLAN,
-		RemoteIP: remote,
-		Key:      "flow",
+		Type:      ovs.InterfaceTypeVXLAN,
+		RemoteIP:  remote,
+		Key:       "flow",
+		DfDefault: "false",
 	}
 	if err := w.ovs.addPort(name, &options); err != nil {
 		return

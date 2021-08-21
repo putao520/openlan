@@ -16,6 +16,8 @@ github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d h1:U+s90UTSY
 github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d/go.mod h1:maD7wRr/U5Z6m/iR4s+kqSMx2CaBsrgA7czyZG/E6dU=
 github.com/danieldin95/go-openvswitch v0.0.0-20210610204619-e0e0c7890c6b h1:ZXeescY4otnPk4Cx3A2xeBABg6A7Ngv9x2KpvSlljpY=
 github.com/danieldin95/go-openvswitch v0.0.0-20210610204619-e0e0c7890c6b/go.mod h1:7Vfh1pAAV0719OkO7bK+Mz78Toq1OD2rlDSYO1ztviE=
+github.com/danieldin95/go-openvswitch v0.0.1 h1:PwJ+tPw71zbBJjIXiXQ+mN/7/TGTE3gULhYgs68t34w=
+github.com/danieldin95/go-openvswitch v0.0.1/go.mod h1:7Vfh1pAAV0719OkO7bK+Mz78Toq1OD2rlDSYO1ztviE=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/digitalocean/go-openvswitch v0.0.0-20210610204619-e0e0c7890c6b h1:cXK4GT0m69kKQ9s00bOGnID6llnfreCKNKCVuToL+Vw=
