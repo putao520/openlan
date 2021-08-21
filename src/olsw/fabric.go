@@ -241,6 +241,9 @@ func (w *FabricWorker) setupNetwork(bridge string, vni uint32) *OvsNetwork {
 	br := network.NewLinuxBridge(bridge, 0)
 	br.Open("")
 	_ = br.AddSlave(brPort)
+	if err := br.CallIptables(1); err != nil {
+		w.out.Warn("FabricWorker.CallIptables %s", err)
+	}
 	// Add port to Ovs tunnel bridge
 	_ = w.ovs.addPort(tunPort, nil)
 	net := OvsNetwork{
@@ -313,8 +316,30 @@ func (w *FabricWorker) AddNetwork(bridge string, vni uint32) {
 	w.flood2Tunnel(vni)
 }
 
-func (w *FabricWorker) AddOutput(bridge, output string) {
-	//
+func (w *FabricWorker) AddOutput(bridge string, vlan int, output string) {
+	link, err := netlink.LinkByName(output)
+	if err != nil {
+		w.out.Error("FabricWorker.LinkByName %s", err)
+		return
+	}
+	if err := netlink.LinkSetUp(link); err != nil {
+		w.out.Warn("FabricWorker.LinkSetUp %s", err)
+	}
+	subLink := &netlink.Vlan{
+		LinkAttrs: netlink.LinkAttrs{
+			Name:        fmt.Sprintf("%s.%d", output, vlan),
+			ParentIndex: link.Attrs().Index,
+		},
+		VlanId: vlan,
+	}
+	if err := netlink.LinkAdd(subLink); err != nil {
+		w.out.Error("FabricWorker.LinkAdd %s", err)
+		return
+	}
+	br := network.NewBrCtl(bridge, 0)
+	if err := br.AddPort(subLink.Name); err != nil {
+		w.out.Warn("FabricWorker.AddPort %s", err)
+	}
 }
 
 func (w *FabricWorker) Addr2Port(addr, pre string) string {
@@ -386,11 +411,28 @@ func (w *FabricWorker) AddTunnel(remote string, dport uint32) {
 
 func (w *FabricWorker) Start(v api.Switcher) {
 	w.out.Info("FabricWorker.Start")
+	firewall := v.Firewall()
+	mss := w.inCfg.Mss
 	for _, tunnel := range w.inCfg.Tunnels {
 		w.AddTunnel(tunnel.Remote, tunnel.DstPort)
 	}
 	for _, net := range w.inCfg.Networks {
 		w.AddNetwork(net.Bridge, net.Vni)
+		if mss > 0 {
+			firewall.AddRule(network.IpRule{
+				Table:   network.TMangle,
+				Chain:   network.CPostRoute,
+				Output:  net.Bridge,
+				Proto:   "tcp",
+				Match:   "tcp",
+				TcpFlag: []string{"SYN,RST", "SYN"},
+				Jump:    "TCPMSS",
+				SetMss:  mss,
+			})
+		}
+		for _, port := range net.Outputs {
+			w.AddOutput(net.Bridge, port.Vlan, port.Interface)
+		}
 	}
 }
 
@@ -417,9 +459,24 @@ func (w *FabricWorker) DelTunnel(remote string) {
 	_ = w.ovs.delPort(name)
 }
 
+func (w *FabricWorker) DelOutput(bridge string, vlan int, output string) {
+	subLink := &netlink.Vlan{
+		LinkAttrs: netlink.LinkAttrs{
+			Name: fmt.Sprintf("%s.%d", output, vlan),
+		},
+	}
+	if err := netlink.LinkDel(subLink); err != nil {
+		w.out.Error("FabricWorker.LinkDel %s", err)
+		return
+	}
+}
+
 func (w *FabricWorker) Stop() {
 	w.out.Info("FabricWorker.Stop")
 	for _, net := range w.inCfg.Networks {
+		for _, port := range net.Outputs {
+			w.DelOutput(net.Bridge, port.Vlan, port.Interface)
+		}
 		w.DelNetwork(net.Bridge, net.Vni)
 	}
 	for _, tunnel := range w.inCfg.Tunnels {

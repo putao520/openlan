@@ -2,6 +2,7 @@ package network
 
 import (
 	"fmt"
+	"github.com/danieldin95/openlan/src/libol"
 	"github.com/vishvananda/netlink"
 	"os"
 	"strconv"
@@ -72,10 +73,10 @@ func (b *BrCtl) Delay(delay int) error { // by second
 func (b *BrCtl) AddPort(port string) error {
 	link, err := netlink.LinkByName(port)
 	if err != nil {
-		return err
+		return libol.NewErr("LinkByName " + err.Error())
 	}
 	if err := netlink.LinkSetUp(link); err != nil {
-		return err
+		return libol.NewErr("LinkSetUp " + err.Error())
 	}
 	if err := netlink.LinkSetMTU(link, b.Mtu); err != nil {
 		return err
@@ -83,7 +84,7 @@ func (b *BrCtl) AddPort(port string) error {
 	la := netlink.LinkAttrs{TxQLen: -1, Name: b.Name}
 	bridge := &netlink.Bridge{LinkAttrs: la}
 	if err := netlink.LinkSetMaster(link, bridge); err != nil {
-		return err
+		return libol.NewErr("LinkSetMaster " + err.Error())
 	}
 	return nil
 }
