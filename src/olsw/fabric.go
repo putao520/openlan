@@ -111,10 +111,10 @@ const (
 )
 
 const (
-	MatchRegPort = "reg5"
-	MatchRegNet  = "reg6"
-	LoadRegPort  = "NXM_NX_REG5[]"
-	LoadRegNet   = "NXM_NX_REG6[]"
+	MatchRegLv  = "reg5"
+	MatchRegTun = "reg6"
+	LoadRegLv   = "NXM_NX_REG5[]"
+	LoadRegTun  = "NXM_NX_REG6[]"
 )
 
 type OvsPort struct {
@@ -257,7 +257,7 @@ func (w *FabricWorker) AddNetwork(bridge string, vni uint32) {
 			ovs.TunnelID(uint64(vni)),
 		},
 		Actions: []ovs.Action{
-			ovs.Load(libol.Uint2S(vni), LoadRegNet),
+			ovs.Load(libol.Uint2S(vni), LoadRegTun),
 			ovs.Resubmit(0, LearnFromTun),
 		},
 	})
@@ -267,7 +267,7 @@ func (w *FabricWorker) AddNetwork(bridge string, vni uint32) {
 		InPort:   patchPort,
 		Priority: 1,
 		Actions: []ovs.Action{
-			ovs.Load(libol.Uint2S(vni), LoadRegPort),
+			ovs.Load(libol.Uint2S(vni), LoadRegLv),
 			ovs.Resubmit(0, PatchLvToTun),
 		},
 	})
@@ -275,7 +275,7 @@ func (w *FabricWorker) AddNetwork(bridge string, vni uint32) {
 	// dynamically set-up flows in UcastToTun corresponding to remote mac
 	// Once remote mac addresses are learnt, output packet to patch_int
 	learnSpecs := []ovs.Match{
-		ovs.FieldMatch(MatchRegPort, LoadRegNet),
+		ovs.FieldMatch(MatchRegLv, LoadRegTun),
 		ovs.FieldMatch("NXM_OF_ETH_DST[]", "NXM_OF_ETH_SRC[]"),
 	}
 	learnActions := []ovs.Action{
@@ -286,12 +286,11 @@ func (w *FabricWorker) AddNetwork(bridge string, vni uint32) {
 		Table:    LearnFromTun,
 		Priority: 1,
 		Matches: []ovs.Match{
-			ovs.FieldMatch(MatchRegNet, libol.Uint2S(vni)),
+			ovs.FieldMatch(MatchRegTun, libol.Uint2S(vni)),
 		},
 		Actions: []ovs.Action{
 			ovs.Learn(&ovs.LearnedFlow{
 				Table:       UcastToTun,
-				Cookie:      w.cookie,
 				Matches:     learnSpecs,
 				Priority:    1,
 				HardTimeout: 300,
@@ -327,7 +326,7 @@ func (w *FabricWorker) flood2Tunnel(vni uint32) {
 				Table:    FloodToTun,
 				Priority: 1,
 				Matches: []ovs.Match{
-					ovs.FieldMatch(MatchRegPort, libol.Uint2S(vni)),
+					ovs.FieldMatch(MatchRegLv, libol.Uint2S(vni)),
 				},
 				Actions: actions,
 			})
@@ -337,7 +336,7 @@ func (w *FabricWorker) flood2Tunnel(vni uint32) {
 			Table:    FloodToTun,
 			Priority: 1,
 			Matches: []ovs.Match{
-				ovs.FieldMatch(MatchRegPort, libol.Uint2S(vni)),
+				ovs.FieldMatch(MatchRegLv, libol.Uint2S(vni)),
 			},
 			Actions: actions,
 		})
