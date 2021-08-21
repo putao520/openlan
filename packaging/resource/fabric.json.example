@@ -1,0 +1,31 @@
+{
+    "name": "fabric",
+    "provider": "fabric",
+    "bridge": {
+        "name": "br-tun"
+    },
+    "interface": {
+        "mss": 1332,
+        "tunnels": [
+            {
+                "dport": 4789,
+                "remote": "100.64.0.20"
+            },
+            {
+                "dport": 4789,
+                "remote": "100.64.0.21"
+            }
+        ],
+        "outputs": [
+            {
+                "bridge": "br-100",
+                "members": [
+                    {
+                        "vlan": 100,
+                        "interface": "eth1"
+                    }
+                ]
+            }
+        ]
+    }
+}
