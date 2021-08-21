@@ -159,39 +159,59 @@ func (o *OpenVPN) Directory() string {
 	return o.Cfg.Directory
 }
 
-func (o *OpenVPN) ServerConf() string {
+func (o *OpenVPN) FileCfg(full bool) string {
 	if o.Cfg == nil {
 		return ""
 	}
-	return filepath.Join(o.Cfg.Directory, o.ID()+"server.conf")
+	name := o.ID() + "server.conf"
+	if !full {
+		return name
+	}
+	return filepath.Join(o.Cfg.Directory, name)
 }
 
-func (o *OpenVPN) ClientConf() string {
+func (o *OpenVPN) FileClient(full bool) string {
 	if o.Cfg == nil {
 		return ""
 	}
-	return filepath.Join(o.Cfg.Directory, o.ID()+"client.ovpn")
+	name := o.ID() + "client.ovpn"
+	if !full {
+		return name
+	}
+	return filepath.Join(o.Cfg.Directory, name)
 }
 
-func (o *OpenVPN) ServerLog() string {
+func (o *OpenVPN) FileLog(full bool) string {
 	if o.Cfg == nil {
 		return ""
 	}
-	return filepath.Join(o.Cfg.Directory, o.ID()+"server.log")
+	name := o.ID() + "server.log"
+	if !full {
+		return name
+	}
+	return filepath.Join(o.Cfg.Directory, name)
 }
 
-func (o *OpenVPN) ServerPid() string {
+func (o *OpenVPN) FilePid(full bool) string {
 	if o.Cfg == nil {
 		return ""
 	}
-	return filepath.Join(o.Cfg.Directory, o.ID()+"server.pid")
+	name := o.ID() + "server.pid"
+	if !full {
+		return name
+	}
+	return filepath.Join(o.Cfg.Directory, name)
 }
 
-func (o *OpenVPN) ServerStats() string {
+func (o *OpenVPN) FileStats(full bool) string {
 	if o.Cfg == nil {
 		return ""
 	}
-	return filepath.Join(o.Cfg.Directory, o.ID()+"server.stats")
+	name := o.ID() + "server.stats"
+	if !full {
+		return name
+	}
+	return filepath.Join(o.Cfg.Directory, name)
 }
 
 func (o *OpenVPN) ServerTmpl() string {
@@ -204,11 +224,15 @@ func (o *OpenVPN) ServerTmpl() string {
 	return tmplStr
 }
 
-func (o *OpenVPN) IppTxt() string {
+func (o *OpenVPN) FileIpp(full bool) string {
 	if o.Cfg == nil {
 		return ""
 	}
-	return filepath.Join(o.Cfg.Directory, o.ID()+"ipp")
+	name := o.ID() + "ipp"
+	if !full {
+		return name
+	}
+	return filepath.Join(o.Cfg.Directory, name)
 }
 
 func (o *OpenVPN) WriteConf(path string) error {
@@ -231,7 +255,7 @@ func (o *OpenVPN) WriteConf(path string) error {
 }
 
 func (o *OpenVPN) Clean() {
-	files := []string{o.ServerStats(), o.IppTxt()}
+	files := []string{o.FileStats(true), o.FileIpp(true)}
 	for _, file := range files {
 		if err := libol.FileExist(file); err == nil {
 			if err := os.Remove(file); err != nil {
@@ -249,12 +273,12 @@ func (o *OpenVPN) Initialize() {
 	if err := os.Mkdir(o.Directory(), 0600); err != nil {
 		o.out.Warn("OpenVPN.Initialize %s", err)
 	}
-	if err := o.WriteConf(o.ServerConf()); err != nil {
+	if err := o.WriteConf(o.FileCfg(true)); err != nil {
 		o.out.Warn("OpenVPN.Initialize %s", err)
 		return
 	}
 	if ctx, err := o.Profile(); err == nil {
-		file := o.ClientConf()
+		file := o.FileClient(true)
 		if err := ioutil.WriteFile(file, ctx, 0600); err != nil {
 			o.out.Warn("OpenVPN.Initialize %s", err)
 		}
@@ -277,7 +301,7 @@ func (o *OpenVPN) Start() {
 	if !o.ValidConf() {
 		return
 	}
-	log, err := libol.CreateFile(o.ServerLog())
+	log, err := libol.CreateFile(o.FileLog(true))
 	if err != nil {
 		o.out.Warn("OpenVPN.Start %s", err)
 		return
@@ -286,8 +310,8 @@ func (o *OpenVPN) Start() {
 		defer log.Close()
 		args := []string{
 			"--cd", o.Directory(),
-			"--config", o.ServerConf(),
-			"--writepid", o.ServerPid(),
+			"--config", o.FileCfg(false),
+			"--writepid", o.FilePid(false),
 		}
 		cmd := exec.Command(o.Path(), args...)
 		cmd.Stdout = log
@@ -302,7 +326,7 @@ func (o *OpenVPN) Stop() {
 	if !o.ValidConf() {
 		return
 	}
-	if data, err := ioutil.ReadFile(o.ServerPid()); err != nil {
+	if data, err := ioutil.ReadFile(o.FilePid(true)); err != nil {
 		o.out.Debug("OpenVPN.Stop %s", err)
 	} else {
 		pid := strings.TrimSpace(string(data))
