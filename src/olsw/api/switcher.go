@@ -15,10 +15,10 @@ type Switcher interface {
 	Server() libol.SocketServer
 	AddLink(tenant string, c *config.Point)
 	DelLink(tenant, addr string)
-	AddEsp(tenant string, c *config.ESPInterface)
-	DelEsp(tenant, c *config.ESPInterface)
-	AddVxLAN(tenant string, c *config.VxLANInterface)
-	DelVxLAN(tenant, c *config.VxLANInterface)
+	AddEsp(tenant string, c *config.ESPSpecifies)
+	DelEsp(tenant, c *config.ESPSpecifies)
+	AddVxLAN(tenant string, c *config.VxLANSpecifies)
+	DelVxLAN(tenant, c *config.VxLANSpecifies)
 	Firewall() *network.FireWall
 }
 

@@ -19,13 +19,13 @@ func (m *VxLANMember) Correct() {
 	}
 }
 
-type VxLANInterface struct {
+type VxLANSpecifies struct {
 	Name    string         `json:"name"`
 	Local   string         `json:"local,omitempty"`
 	Members []*VxLANMember `json:"members"`
 }
 
-func (n *VxLANInterface) Correct() {
+func (n *VxLANSpecifies) Correct() {
 	for _, m := range n.Members {
 		if m.Local == "" {
 			m.Local = n.Local

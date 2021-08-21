@@ -2,14 +2,14 @@ package config
 
 import "fmt"
 
-type FabricInterface struct {
+type FabricSpecifies struct {
 	Mss      int              `json:"mss"`
 	Name     string           `json:"name"`
 	Tunnels  []*FabricTunnel  `json:"tunnels"`
 	Networks []*FabricNetwork `json:"networks"`
 }
 
-func (c *FabricInterface) Correct() {
+func (c *FabricSpecifies) Correct() {
 	if c.Mss == 0 {
 		c.Mss = 1332
 	}

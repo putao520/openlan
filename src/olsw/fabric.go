@@ -8,13 +8,8 @@ import (
 	"github.com/danieldin95/openlan/src/network"
 	"github.com/danieldin95/openlan/src/olsw/api"
 	"github.com/vishvananda/netlink"
-	"math/rand"
 	"strings"
 )
-
-func GenCookieId() uint64 {
-	return uint64(rand.Uint32())
-}
 
 type OvsBridge struct {
 	name string
@@ -141,7 +136,7 @@ type OvsNetwork struct {
 type FabricWorker struct {
 	uuid     string
 	cfg      *config.Network
-	inCfg    *config.FabricInterface
+	spec     *config.FabricSpecifies
 	out      *libol.SubLogger
 	ovs      *OvsBridge
 	cookie   uint64
@@ -150,16 +145,14 @@ type FabricWorker struct {
 }
 
 func NewFabricWorker(c *config.Network) *FabricWorker {
-	defaultCookie := GenCookieId()
 	w := &FabricWorker{
 		cfg:      c,
 		out:      libol.NewSubLogger(c.Name),
 		ovs:      NewOvsBridge(c.Bridge.Name),
-		cookie:   defaultCookie,
 		tunnels:  make(map[string]*OvsPort, 1024),
 		networks: make(map[uint32]*OvsNetwork, 1024),
 	}
-	w.inCfg, _ = c.Interface.(*config.FabricInterface)
+	w.spec, _ = c.Specifies.(*config.FabricSpecifies)
 	return w
 }
 
@@ -412,11 +405,11 @@ func (w *FabricWorker) AddTunnel(remote string, dport uint32) {
 func (w *FabricWorker) Start(v api.Switcher) {
 	w.out.Info("FabricWorker.Start")
 	firewall := v.Firewall()
-	mss := w.inCfg.Mss
-	for _, tunnel := range w.inCfg.Tunnels {
+	mss := w.spec.Mss
+	for _, tunnel := range w.spec.Tunnels {
 		w.AddTunnel(tunnel.Remote, tunnel.DstPort)
 	}
-	for _, net := range w.inCfg.Networks {
+	for _, net := range w.spec.Networks {
 		w.AddNetwork(net.Bridge, net.Vni)
 		if mss > 0 {
 			firewall.AddRule(network.IpRule{
@@ -473,13 +466,13 @@ func (w *FabricWorker) DelOutput(bridge string, vlan int, output string) {
 
 func (w *FabricWorker) Stop() {
 	w.out.Info("FabricWorker.Stop")
-	for _, net := range w.inCfg.Networks {
+	for _, net := range w.spec.Networks {
 		for _, port := range net.Outputs {
 			w.DelOutput(net.Bridge, port.Vlan, port.Interface)
 		}
 		w.DelNetwork(net.Bridge, net.Vni)
 	}
-	for _, tunnel := range w.inCfg.Tunnels {
+	for _, tunnel := range w.spec.Tunnels {
 		w.DelTunnel(tunnel.Remote)
 	}
 	w.clear()

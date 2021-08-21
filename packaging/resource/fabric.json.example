@@ -4,7 +4,7 @@
     "bridge": {
         "name": "br-tun"
     },
-    "interface": {
+    "specifies": {
         "mss": 1332,
         "tunnels": [
             {

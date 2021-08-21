@@ -14,21 +14,21 @@ type Network struct {
 	Routes    []PrefixRoute `json:"routes,omitempty"`
 	Password  []Password    `json:"password,omitempty"`
 	Acl       string        `json:"acl,omitempty"`
-	Interface interface{}   `json:"interface,omitempty"`
+	Specifies interface{}   `json:"specifies,omitempty"`
 	Crypt     *Crypt        `json:"crypt,omitempty"`
 }
 
 func (n *Network) Correct() {
 	switch n.Provider {
 	case "esp":
-		port := n.Interface
-		if obj, ok := port.(*ESPInterface); ok {
+		spec := n.Specifies
+		if obj, ok := spec.(*ESPSpecifies); ok {
 			obj.Correct()
 			obj.Name = n.Name
 		}
 	case "vxlan":
-		port := n.Interface
-		if obj, ok := port.(*VxLANInterface); ok {
+		spec := n.Specifies
+		if obj, ok := spec.(*VxLANSpecifies); ok {
 			obj.Correct()
 			obj.Name = n.Name
 		}
@@ -45,8 +45,8 @@ func (n *Network) Correct() {
 			}
 		}
 	case "fabric":
-		port := n.Interface
-		if obj, ok := port.(*FabricInterface); ok {
+		spec := n.Specifies
+		if obj, ok := spec.(*FabricSpecifies); ok {
 			obj.Correct()
 			obj.Name = n.Name
 		}

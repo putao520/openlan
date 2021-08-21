@@ -70,20 +70,20 @@ type ESPMember struct {
 	Policies []*ESPPolicy `json:"policies"`
 }
 
-type ESPInterface struct {
+type ESPSpecifies struct {
 	Name    string       `json:"name"`
 	Address string       `json:"address,omitempty"`
 	State   EspState     `json:"state"`
 	Members []*ESPMember `json:"members"`
 }
 
-func (n *ESPInterface) Correct() {
+func (n *ESPSpecifies) Correct() {
 	for _, m := range n.Members {
 		if m.Address == "" {
 			m.Address = n.Address
 		}
 		if m.Address == "" {
-			libol.Warn("ESPInterface.Correct %s need address", n.Name)
+			libol.Warn("ESPSpecifies.Correct %s need address", n.Name)
 			continue
 		}
 		if !strings.Contains(m.Address, "/") {

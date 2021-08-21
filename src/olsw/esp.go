@@ -37,7 +37,7 @@ type EspWorker struct {
 	cfg      *config.Network
 	states   []*nl.XfrmState
 	policies []*nl.XfrmPolicy
-	inCfg    *config.ESPInterface
+	spec     *config.ESPSpecifies
 	out      *libol.SubLogger
 	proto    nl.Proto
 	mode     nl.Mode
@@ -52,7 +52,7 @@ func NewESPWorker(c *config.Network) *EspWorker {
 		proto:    nl.XFRM_PROTO_ESP,
 		mode:     nl.XFRM_MODE_TUNNEL,
 	}
-	w.inCfg, _ = c.Interface.(*config.ESPInterface)
+	w.spec, _ = c.Specifies.(*config.ESPSpecifies)
 	return w
 }
 
@@ -111,7 +111,7 @@ func (w *EspWorker) addState(mem *config.ESPMember) {
 	}
 	store.EspState.Add(&models.EspState{
 		EspState: &schema.EspState{
-			Name:   w.inCfg.Name,
+			Name:   w.spec.Name,
 			Spi:    int(spi),
 			Source: local.String(),
 			Dest:   remote.String(),
@@ -147,7 +147,7 @@ func (w *EspWorker) addPolicy(mem *config.ESPMember, pol *config.ESPPolicy) {
 	}
 	store.EspPolicy.Add(&models.EspPolicy{
 		EspPolicy: &schema.EspPolicy{
-			Name:   w.inCfg.Name,
+			Name:   w.spec.Name,
 			Source: pol.Source,
 			Dest:   pol.Dest,
 		},
@@ -155,11 +155,11 @@ func (w *EspWorker) addPolicy(mem *config.ESPMember, pol *config.ESPPolicy) {
 }
 
 func (w *EspWorker) Initialize() {
-	if w.inCfg == nil {
-		w.out.Error("EspWorker.Initialize inCfg is nil")
+	if w.spec == nil {
+		w.out.Error("EspWorker.Initialize spec is nil")
 		return
 	}
-	for _, mem := range w.inCfg.Members {
+	for _, mem := range w.spec.Members {
 		if mem == nil {
 			continue
 		}
@@ -236,8 +236,8 @@ func (w *EspWorker) UpDummy(name, addr, peer string) error {
 }
 
 func (w *EspWorker) Start(v api.Switcher) {
-	if w.inCfg == nil {
-		w.out.Error("EspWorker.Start inCfg is nil")
+	if w.spec == nil {
+		w.out.Error("EspWorker.Start spec is nil")
 		return
 	}
 	w.uuid = v.UUID()
@@ -252,14 +252,14 @@ func (w *EspWorker) Start(v api.Switcher) {
 			w.out.Error("EspWorker.Start Policy %s", err)
 		}
 	}
-	for _, mem := range w.inCfg.Members {
+	for _, mem := range w.spec.Members {
 		if err := w.UpDummy(mem.Name, mem.Address, mem.Peer); err != nil {
 			w.out.Error("EspWorker.Start %s %s", mem.Name, err)
 		}
 	}
 	store.Esp.Add(&models.Esp{
 		Name:    w.cfg.Name,
-		Address: w.inCfg.Address,
+		Address: w.spec.Address,
 	})
 }
 
@@ -281,11 +281,11 @@ func (w *EspWorker) DownDummy(name string) error {
 }
 
 func (w *EspWorker) Stop() {
-	if w.inCfg == nil {
-		w.out.Error("EspWorker.Stop inCfg is nil")
+	if w.spec == nil {
+		w.out.Error("EspWorker.Stop spec is nil")
 		return
 	}
-	for _, mem := range w.inCfg.Members {
+	for _, mem := range w.spec.Members {
 		if err := w.DownDummy(mem.Name); err != nil {
 			w.out.Error("EspWorker.Stop %s %s", mem.Name, err)
 		}

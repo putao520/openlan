@@ -1,7 +1,7 @@
 {
     "name": "esp",
     "provider": "esp",
-    "interface": {
+    "specifies": {
         "address": "100.64.0.10",
         "members": [
             {
