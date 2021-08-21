@@ -132,6 +132,7 @@ type OvsNetwork struct {
 type FabricWorker struct {
 	uuid     string
 	cfg      *config.Network
+	inCfg    *config.FabricInterface
 	out      *libol.SubLogger
 	ovs      *OvsBridge
 	cookie   uint64
@@ -149,6 +150,7 @@ func NewFabricWorker(c *config.Network) *FabricWorker {
 		tunnels:  make(map[string]*OvsPort, 1024),
 		networks: make(map[uint32]*OvsNetwork, 1024),
 	}
+	w.inCfg, _ = c.Interface.(*config.FabricInterface)
 	return w
 }
 
@@ -177,7 +179,7 @@ func (w *FabricWorker) setupTable() {
 			ovs.Resubmit(0, FloodToTun),
 		},
 	})
-	// Tables VxlanTunToLv will set lvid depending on tun_id
+	// Tables VxlanTunToLv will set REG6 depending on tun_id
 	// for each tunnel type, and resubmit to table LearnFromTun where
 	// remote mac addresses will be learnt
 	_ = w.ovs.addFlow(&ovs.Flow{
@@ -265,7 +267,7 @@ func (w *FabricWorker) AddNetwork(bridge string, vni uint32) {
 		InPort:   patchPort,
 		Priority: 1,
 		Actions: []ovs.Action{
-			ovs.Load(libol.Uint2S(vni), LoadRegNet),
+			ovs.Load(libol.Uint2S(vni), LoadRegPort),
 			ovs.Resubmit(0, PatchLvToTun),
 		},
 	})
@@ -273,7 +275,7 @@ func (w *FabricWorker) AddNetwork(bridge string, vni uint32) {
 	// dynamically set-up flows in UcastToTun corresponding to remote mac
 	// Once remote mac addresses are learnt, output packet to patch_int
 	learnSpecs := []ovs.Match{
-		ovs.FieldMatch(MatchRegNet, LoadRegNet),
+		ovs.FieldMatch(MatchRegPort, LoadRegNet),
 		ovs.FieldMatch("NXM_OF_ETH_DST[]", "NXM_OF_ETH_SRC[]"),
 	}
 	learnActions := []ovs.Action{
@@ -283,6 +285,9 @@ func (w *FabricWorker) AddNetwork(bridge string, vni uint32) {
 	_ = w.ovs.addFlow(&ovs.Flow{
 		Table:    LearnFromTun,
 		Priority: 1,
+		Matches: []ovs.Match{
+			ovs.FieldMatch(MatchRegNet, libol.Uint2S(vni)),
+		},
 		Actions: []ovs.Action{
 			ovs.Learn(&ovs.LearnedFlow{
 				Table:       UcastToTun,
@@ -322,7 +327,7 @@ func (w *FabricWorker) flood2Tunnel(vni uint32) {
 				Table:    FloodToTun,
 				Priority: 1,
 				Matches: []ovs.Match{
-					ovs.FieldMatch(MatchRegNet, libol.Uint2S(vni)),
+					ovs.FieldMatch(MatchRegPort, libol.Uint2S(vni)),
 				},
 				Actions: actions,
 			})
@@ -332,7 +337,7 @@ func (w *FabricWorker) flood2Tunnel(vni uint32) {
 			Table:    FloodToTun,
 			Priority: 1,
 			Matches: []ovs.Match{
-				ovs.FieldMatch(MatchRegNet, libol.Uint2S(vni)),
+				ovs.FieldMatch(MatchRegPort, libol.Uint2S(vni)),
 			},
 			Actions: actions,
 		})
@@ -371,10 +376,12 @@ func (w *FabricWorker) AddTunnel(remote string) {
 
 func (w *FabricWorker) Start(v api.Switcher) {
 	w.out.Info("FabricWorker.Start")
-	w.AddTunnel("192.168.111.119")
-	w.AddTunnel("192.168.111.220")
-	w.AddNetwork("br-1024", 0x1024)
-	w.AddOutput("br-1024", "br-output")
+	for _, tunnel := range w.inCfg.Tunnels {
+		w.AddTunnel(tunnel.Remote)
+	}
+	for _, net := range w.inCfg.Networks {
+		w.AddNetwork(net.Bridge, net.Vni)
+	}
 }
 
 func (w *FabricWorker) clear() {
@@ -405,6 +412,7 @@ func (w *FabricWorker) Stop() {
 	w.DelNetwork("br-1024", 0x1024)
 	w.DelTunnel("192.168.111.119")
 	w.DelTunnel("192.168.111.220")
+	w.clear()
 }
 
 func (w *FabricWorker) String() string {

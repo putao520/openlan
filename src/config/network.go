@@ -44,6 +44,12 @@ func (n *Network) Correct() {
 				br.Mss = 1332
 			}
 		}
+	case "fabric":
+		port := n.Interface
+		if obj, ok := port.(*FabricInterface); ok {
+			obj.Correct()
+			obj.Name = n.Name
+		}
 	default:
 		if n.Bridge == nil {
 			n.Bridge = &Bridge{}
