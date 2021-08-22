@@ -111,10 +111,19 @@ const (
 )
 
 const (
-	MatchRegLv  = "reg5"
-	MatchRegTun = "reg6"
-	LoadRegLv   = "NXM_NX_REG5[]"
-	LoadRegTun  = "NXM_NX_REG6[]"
+	MatchRegLv   = "reg5"
+	MatchRegTun  = "reg6"
+	NxmRegLv     = "NXM_NX_REG5[]"
+	NxmRegTun    = "NXM_NX_REG6[]"
+	NxmRegEthDst = "NXM_OF_ETH_DST[]"
+	NxmRegEthSrc = "NXM_OF_ETH_SRC[]"
+	NxmRegTunId  = "NXM_NX_TUN_ID[]"
+	NxmRegInPort = "NXM_OF_IN_PORT[]"
+)
+
+const (
+	MatchUnicast = "00:00:00:00:00:00/01:00:00:00:00:00"
+	MatchMulcast = "01:00:00:00:00:00/01:00:00:00:00:00"
 )
 
 type OvsPort struct {
@@ -163,7 +172,7 @@ func (w *FabricWorker) setupTable() {
 	_ = w.ovs.addFlow(&ovs.Flow{
 		Table: PatchLvToTun,
 		Matches: []ovs.Match{
-			ovs.DataLinkDestination("00:00:00:00:00:00/01:00:00:00:00:00"),
+			ovs.DataLinkDestination(MatchUnicast),
 		},
 		Actions: []ovs.Action{
 			ovs.Resubmit(0, UcastToTun),
@@ -173,7 +182,7 @@ func (w *FabricWorker) setupTable() {
 	_ = w.ovs.addFlow(&ovs.Flow{
 		Table: PatchLvToTun,
 		Matches: []ovs.Match{
-			ovs.DataLinkDestination("01:00:00:00:00:00/01:00:00:00:00:00"),
+			ovs.DataLinkDestination(MatchMulcast),
 		},
 		Actions: []ovs.Action{
 			ovs.Resubmit(0, FloodToTun),
@@ -257,7 +266,7 @@ func (w *FabricWorker) AddNetwork(bridge string, vni uint32) {
 			ovs.TunnelID(uint64(vni)),
 		},
 		Actions: []ovs.Action{
-			ovs.Load(libol.Uint2S(vni), LoadRegTun),
+			ovs.Load(libol.Uint2S(vni), NxmRegTun),
 			ovs.Resubmit(0, LearnFromTun),
 		},
 	})
@@ -267,7 +276,7 @@ func (w *FabricWorker) AddNetwork(bridge string, vni uint32) {
 		InPort:   patchPort,
 		Priority: 1,
 		Actions: []ovs.Action{
-			ovs.Load(libol.Uint2S(vni), LoadRegLv),
+			ovs.Load(libol.Uint2S(vni), NxmRegLv),
 			ovs.Resubmit(0, PatchLvToTun),
 		},
 	})
@@ -275,12 +284,12 @@ func (w *FabricWorker) AddNetwork(bridge string, vni uint32) {
 	// dynamically set-up flows in UcastToTun corresponding to remote mac
 	// Once remote mac addresses are learnt, output packet to patch_int
 	learnSpecs := []ovs.Match{
-		ovs.FieldMatch(MatchRegLv, LoadRegTun),
-		ovs.FieldMatch("NXM_OF_ETH_DST[]", "NXM_OF_ETH_SRC[]"),
+		ovs.FieldMatch(MatchRegLv, NxmRegTun),
+		ovs.FieldMatch(NxmRegEthDst, NxmRegEthSrc),
 	}
 	learnActions := []ovs.Action{
-		ovs.Load("NXM_NX_TUN_ID[]", "NXM_NX_TUN_ID[]"),
-		ovs.OutputField("NXM_OF_IN_PORT[]"),
+		ovs.Load(NxmRegTunId, NxmRegTunId),
+		ovs.OutputField(NxmRegInPort),
 	}
 	_ = w.ovs.addFlow(&ovs.Flow{
 		Table:    LearnFromTun,
