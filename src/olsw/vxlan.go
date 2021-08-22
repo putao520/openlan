@@ -146,7 +146,7 @@ func (w *VxLANWorker) ID() string {
 }
 
 func (w *VxLANWorker) GetBridge() network.Bridger {
-	w.out.Warn("VxLANWorker.GetBridge operation notSupport")
+	w.out.Warn("VxLANWorker.GetBridge notSupport")
 	return nil
 }
 
@@ -155,6 +155,6 @@ func (w *VxLANWorker) GetConfig() *co.Network {
 }
 
 func (w *VxLANWorker) GetSubnet() string {
-	w.out.Warn("VxLANWorker.GetSubnet operation notSupport")
+	w.out.Warn("VxLANWorker.GetSubnet notSupport")
 	return ""
 }

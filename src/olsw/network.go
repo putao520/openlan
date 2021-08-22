@@ -23,6 +23,8 @@ func NewNetworker(c *config.Network) Networker {
 		return NewESPWorker(c)
 	case "vxlan":
 		return NewVxLANWorker(c)
+	case "fabric":
+		return NewFabricWorker(c)
 	default:
 		return NewOpenLANWorker(c)
 	}

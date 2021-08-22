@@ -311,7 +311,7 @@ func (w *EspWorker) ID() string {
 }
 
 func (w *EspWorker) GetBridge() network.Bridger {
-	w.out.Warn("EspWorker.GetBridge operation notSupport")
+	w.out.Warn("EspWorker.GetBridge notSupport")
 	return nil
 }
 
@@ -320,7 +320,7 @@ func (w *EspWorker) GetConfig() *config.Network {
 }
 
 func (w *EspWorker) GetSubnet() string {
-	w.out.Warn("EspWorker.GetSubnet operation notSupport")
+	w.out.Warn("EspWorker.GetSubnet notSupport")
 	return ""
 }
 
