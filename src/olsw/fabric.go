@@ -417,9 +417,12 @@ func (w *FabricWorker) DelTunnel(remote string) {
 
 func (w *FabricWorker) Stop() {
 	w.out.Info("FabricWorker.Stop")
-	w.DelNetwork("br-1024", 0x1024)
-	w.DelTunnel("192.168.111.119")
-	w.DelTunnel("192.168.111.220")
+	for _, net := range w.inCfg.Networks {
+		w.DelNetwork(net.Bridge, net.Vni)
+	}
+	for _, tunnel := range w.inCfg.Tunnels {
+		w.DelTunnel(tunnel.Remote)
+	}
 	w.clear()
 }
 
