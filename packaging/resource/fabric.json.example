@@ -16,10 +16,11 @@
                 "remote": "100.64.0.21"
             }
         ],
-        "outputs": [
+        "networks": [
             {
+                "vni": 1024,
                 "bridge": "br-100",
-                "members": [
+                "outputs": [
                     {
                         "vlan": 100,
                         "interface": "eth1"

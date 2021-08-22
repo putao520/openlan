@@ -13,6 +13,7 @@ import (
 	"path"
 	"reflect"
 	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -242,4 +243,16 @@ func ParseNet(addr string) (*net.IPNet, error) {
 		ipNet.IP = ip
 		return ipNet, nil
 	}
+}
+
+func Uint2S(value uint32) string {
+	return strconv.FormatUint(uint64(value), 10)
+}
+
+func IfName(name string) string {
+	size := len(name)
+	if size < 15 {
+		return name
+	}
+	return name[size-15 : size]
 }

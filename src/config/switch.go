@@ -173,6 +173,8 @@ func (s *Switch) LoadNetwork() {
 			obj.Interface = &ESPInterface{}
 		case "vxlan":
 			obj.Interface = &VxLANInterface{}
+		case "fabric":
+			obj.Interface = &FabricInterface{}
 		}
 		if obj.Interface != nil {
 			if err := libol.UnmarshalLoad(obj, k); err != nil {
