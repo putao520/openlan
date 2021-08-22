@@ -1,6 +1,6 @@
 package ctrlc
 
-import "github.com/danieldin95/openlan-go/src/libol"
+import "github.com/danieldin95/openlan/src/libol"
 
 type Storage struct {
 	Point    *libol.SafeStrMap

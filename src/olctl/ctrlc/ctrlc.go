@@ -1,8 +1,8 @@
 package ctrlc
 
 import (
-	"github.com/danieldin95/openlan-go/src/olctl/libctrl"
-	"github.com/danieldin95/openlan-go/src/schema"
+	"github.com/danieldin95/openlan/src/olctl/libctrl"
+	"github.com/danieldin95/openlan/src/schema"
 )
 
 type CtrlC struct {

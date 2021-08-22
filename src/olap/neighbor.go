@@ -2,7 +2,7 @@ package olap
 
 import (
 	"encoding/binary"
-	"github.com/danieldin95/openlan-go/src/libol"
+	"github.com/danieldin95/openlan/src/libol"
 	"sync"
 	"time"
 )

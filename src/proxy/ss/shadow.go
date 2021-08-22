@@ -2,8 +2,8 @@ package ss
 
 import (
 	"encoding/base64"
-	c "github.com/danieldin95/openlan-go/src/config"
-	"github.com/danieldin95/openlan-go/src/libol"
+	c "github.com/danieldin95/openlan/src/config"
+	"github.com/danieldin95/openlan/src/libol"
 	"github.com/shadowsocks/go-shadowsocks2/core"
 	"log"
 )

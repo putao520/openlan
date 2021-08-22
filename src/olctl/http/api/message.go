@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/danieldin95/openlan-go/src/libol"
+	"github.com/danieldin95/openlan/src/libol"
 	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"

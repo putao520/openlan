@@ -1,6 +1,6 @@
 package libctrl
 
-import "github.com/danieldin95/openlan-go/src/libol"
+import "github.com/danieldin95/openlan/src/libol"
 
 type Listener interface {
 	GetCtl(id string, m Message) error

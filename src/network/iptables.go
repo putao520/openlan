@@ -1,7 +1,7 @@
 package network
 
 import (
-	"github.com/danieldin95/openlan-go/src/libol"
+	"github.com/danieldin95/openlan/src/libol"
 	"github.com/moby/libnetwork/iptables"
 	"runtime"
 	"strconv"

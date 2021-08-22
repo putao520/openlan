@@ -2,8 +2,8 @@
 简体中文 | [English](./README_EN.md)
 
 # 概述 
-[![Build Status](https://travis-ci.org/danieldin95/openlan-go.svg?branch=master)](https://travis-ci.org/danieldin95/openlan-go)
-[![Go Report Card](https://goreportcard.com/badge/github.com/danieldin95/openlan-go)](https://goreportcard.com/report/lightstar-dev/openlan-go)
+[![Build Status](https://travis-ci.org/danieldin95/openlan.svg?branch=master)](https://travis-ci.org/danieldin95/openlan)
+[![Go Report Card](https://goreportcard.com/badge/github.com/danieldin95/openlan)](https://goreportcard.com/report/lightstar-dev/openlan-go)
 [![GPL 3.0 License](https://img.shields.io/badge/License-GPL%203.0-blue.svg)](LICENSE)
 
 OpenLAN提供一种局域网数据报文在广域网的传输实现，并能够建立多个用户空间的虚拟以太网络。

@@ -4,8 +4,8 @@ package models
 
 import (
 	"fmt"
-	"github.com/danieldin95/openlan-go/src/libol"
-	"github.com/danieldin95/openlan-go/src/schema"
+	"github.com/danieldin95/openlan/src/libol"
+	"github.com/danieldin95/openlan/src/schema"
 	nl "github.com/vishvananda/netlink"
 	"net"
 	"time"

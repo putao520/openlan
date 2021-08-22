@@ -1,7 +1,7 @@
 package store
 
 import (
-	"github.com/danieldin95/openlan-go/src/config"
+	"github.com/danieldin95/openlan/src/config"
 )
 
 func Init(cfg *config.Perf) {

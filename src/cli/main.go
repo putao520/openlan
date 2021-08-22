@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/danieldin95/openlan-go/src/cli/cmd"
-	"github.com/danieldin95/openlan-go/src/libol"
+	"github.com/danieldin95/openlan/src/cli/cmd"
+	"github.com/danieldin95/openlan/src/libol"
 	"github.com/urfave/cli/v2"
 	"io/ioutil"
 	"log"

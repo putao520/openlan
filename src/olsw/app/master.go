@@ -1,8 +1,8 @@
 package app
 
 import (
-	"github.com/danieldin95/openlan-go/src/libol"
-	"github.com/danieldin95/openlan-go/src/network"
+	"github.com/danieldin95/openlan/src/libol"
+	"github.com/danieldin95/openlan/src/network"
 )
 
 type Master interface {

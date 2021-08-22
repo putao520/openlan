@@ -2,8 +2,8 @@ package olsw
 
 import (
 	"bytes"
-	"github.com/danieldin95/openlan-go/src/config"
-	"github.com/danieldin95/openlan-go/src/libol"
+	"github.com/danieldin95/openlan/src/config"
+	"github.com/danieldin95/openlan/src/libol"
 	"io/ioutil"
 	"os"
 	"os/exec"

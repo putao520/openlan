@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"github.com/danieldin95/openlan-go/src/libol"
+	"github.com/danieldin95/openlan/src/libol"
 	"github.com/xtaci/kcp-go/v5"
 	"io/ioutil"
 	"os"

@@ -1,10 +1,10 @@
 package olan
 
 import (
-	"github.com/danieldin95/openlan-go/src/libol"
-	"github.com/danieldin95/openlan-go/src/olctl/ctrlc"
-	"github.com/danieldin95/openlan-go/src/olctl/http/api"
-	"github.com/danieldin95/openlan-go/src/olctl/libctrl"
+	"github.com/danieldin95/openlan/src/libol"
+	"github.com/danieldin95/openlan/src/olctl/ctrlc"
+	"github.com/danieldin95/openlan/src/olctl/http/api"
+	"github.com/danieldin95/openlan/src/olctl/libctrl"
 	"github.com/gorilla/mux"
 	"golang.org/x/net/websocket"
 )

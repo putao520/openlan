@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/danieldin95/openlan-go/src/libol"
+	"github.com/danieldin95/openlan/src/libol"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/http"

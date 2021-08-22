@@ -1,8 +1,8 @@
 package api
 
 import (
-	"github.com/danieldin95/openlan-go/src/network"
-	"github.com/danieldin95/openlan-go/src/schema"
+	"github.com/danieldin95/openlan/src/network"
+	"github.com/danieldin95/openlan/src/schema"
 	"github.com/gorilla/mux"
 	"net"
 	"net/http"
