@@ -2,11 +2,11 @@ package olsw
 
 import (
 	"fmt"
+	"github.com/danieldin95/go-openvswitch/ovs"
 	"github.com/danieldin95/openlan/src/config"
 	"github.com/danieldin95/openlan/src/libol"
 	"github.com/danieldin95/openlan/src/network"
 	"github.com/danieldin95/openlan/src/olsw/api"
-	"github.com/digitalocean/go-openvswitch/ovs"
 	"github.com/vishvananda/netlink"
 	"math/rand"
 	"strings"
@@ -355,9 +355,10 @@ func (w *FabricWorker) flood2Tunnel(vni uint32) {
 func (w *FabricWorker) AddTunnel(remote string) {
 	name := w.Addr2Port(remote, "vx-")
 	options := ovs.InterfaceOptions{
-		Type:     ovs.InterfaceTypeVXLAN,
-		RemoteIP: remote,
-		Key:      "flow",
+		Type:      ovs.InterfaceTypeVXLAN,
+		RemoteIP:  remote,
+		Key:       "flow",
+		DfDefault: "false",
 	}
 	if err := w.ovs.addPort(name, &options); err != nil {
 		return
