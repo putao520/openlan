@@ -18,6 +18,8 @@ github.com/danieldin95/go-openvswitch v0.0.0-20210610204619-e0e0c7890c6b h1:ZXee
 github.com/danieldin95/go-openvswitch v0.0.0-20210610204619-e0e0c7890c6b/go.mod h1:7Vfh1pAAV0719OkO7bK+Mz78Toq1OD2rlDSYO1ztviE=
 github.com/danieldin95/go-openvswitch v0.0.1 h1:PwJ+tPw71zbBJjIXiXQ+mN/7/TGTE3gULhYgs68t34w=
 github.com/danieldin95/go-openvswitch v0.0.1/go.mod h1:7Vfh1pAAV0719OkO7bK+Mz78Toq1OD2rlDSYO1ztviE=
+github.com/danieldin95/go-openvswitch v0.0.2 h1:/SeGGZtGMtLZm9sflIndPXOrtjIwT96Pf08zXAzkOrI=
+github.com/danieldin95/go-openvswitch v0.0.2/go.mod h1:7Vfh1pAAV0719OkO7bK+Mz78Toq1OD2rlDSYO1ztviE=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/digitalocean/go-openvswitch v0.0.0-20210610204619-e0e0c7890c6b h1:cXK4GT0m69kKQ9s00bOGnID6llnfreCKNKCVuToL+Vw=
@@ -82,7 +84,7 @@ github.com/templexxx/xor v0.0.0-20191217153810-f85b25db303b/go.mod h1:5XA7W9S6mn
 github.com/templexxx/xorsimd v0.4.1 h1:iUZcywbOYDRAZUasAs2eSCUW8eobuZDy0I9FJiORkVg=
 github.com/templexxx/xorsimd v0.4.1/go.mod h1:W+ffZz8jJMH2SXwuKu9WhygqBMbFnp14G2fqEr8qaNo=
 github.com/tjfoc/gmsm v1.0.1/go.mod h1:XxO4hdhhrzAd+G4CjDqaOkd0hUzmtPR/d3EiBBMn/wc=
-github.com/tjfoc/gmsm v1.3.0 h1:qhgkrZru95jFP9NbVPknJvc9vgkMXhOEzkOASKdc0oQ=
+github.com/tjfoc/gmsm v1.3.0 h1:i7c6Za/IlgBvnGxYpfD7L3TGuaS+v6oGcgq+J9/ecEA=
 github.com/tjfoc/gmsm v1.3.0/go.mod h1:HaUcFuY0auTiaHB9MHFGCPx5IaLhTUd2atbCFBQXn9w=
 github.com/urfave/cli v1.21.0/go.mod h1:lxDj6qX9Q6lWQxIrbrT0nwecwUtRnhVZAJjJZrVUZZQ=
 github.com/urfave/cli v1.22.4 h1:u7tSpNPPswAFymm8IehJhy4uJMlUuU/GmqSkvJ1InXA=
