@@ -43,7 +43,7 @@
 {
     "name": "esp",
     "provider": "esp",
-    "interface": {
+    "specifies": {
         "address": "10.10.10.10",
         "state": {
           "auth": "5867f96f31ec",
@@ -78,7 +78,7 @@ EOF
 {
     "name": "vxlan",
     "provider": "vxlan",
-    "interface": {
+    "specifies": {
         "members": [
             {
                 "vni": 101110,
@@ -119,7 +119,7 @@ EOF
 {
     "name": "esp",
     "provider": "esp",
-    "interface": {
+    "specifies": {
         "address": "10.10.10.11",
         "state": {
           "auth": "5867f96f31ec",
@@ -147,7 +147,7 @@ EOF
 {
     "name": "vxlan",
     "provider": "vxlan",
-    "interface": {
+    "specifies": {
         "members": [
             {
                 "vni": 101110,
@@ -181,7 +181,7 @@ EOF
 {
     "name": "esp",
     "provider": "esp",
-    "interface": {
+    "specifies": {
         "address": "10.10.10.12",
         "state": {
           "auth": "5867f96f31ec",
@@ -209,7 +209,7 @@ EOF
 {
     "name": "vxlan",
     "provider": "vxlan",
-    "interface": {
+    "specifies": {
         "members": [
             {
                 "vni": 101210,
