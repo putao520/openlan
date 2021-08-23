@@ -70,3 +70,4 @@ OpenLAN提供一种局域网数据报文在广域网的传输实现，并能够�
 - [分支接入](docs/central.md)
 - [多区域互联](docs/multiarea.md)
 - [基于VxLAN网络](docs/vxlan.md)
+- [IDC互联网络](docs/fabric.md)
