@@ -1,5 +1,6 @@
-
-Underlay: 100.65.0.0/24 Over Internet: 192.168.100.0/24 by ESP: 117118, 117119, 118119.
+# Setup Fabric Network
+We using 192.168.100.0/24 as a internet network.
+And underlay: 100.65.0.0/24 over Internet by ESP: SPI-117118/117119/118119.
 ```       
                                                       192.168.100.117
                                                               |
@@ -13,6 +14,7 @@ Underlay: 100.65.0.0/24 Over Internet: 192.168.100.0/24 by ESP: 117118, 117119, 
                                    ESP/SPI-117118       /           \         ESP/SPI-117119
                                                       /               \
                                                     /                   \
+                                                  /                       \
                                              +---------+              +---------+     
                                              | dev-118 | ------------ | kvm-119 |
                                              +---------+              +---------+
@@ -55,7 +57,7 @@ DCI Subnet 192.168.30-40.0/24 Over ESP network: 100.65.0.0/24
                             
 ```
 
-## 软件安装
+## Install Software
 ```
 [root@dev-117 network]# yum install -y epel-release
 [root@dev-117 network]# yum install -y centos-release-openstack-train
@@ -86,7 +88,7 @@ DCI Subnet 192.168.30-40.0/24 Over ESP network: 100.65.0.0/24
 
 ```
 
-## dev-117节点配置
+## Configuration on Node: dev-117
 ```
 [root@dev-117 network]# cat ./esp.json
 {
@@ -167,7 +169,7 @@ DCI Subnet 192.168.30-40.0/24 Over ESP network: 100.65.0.0/24
 
 ```
 
-## dev-118节点配置
+## Configuration on Node: dev-118
 ```
 [root@dev-118 network]# cat ./fabric.json
 {
@@ -219,7 +221,7 @@ DCI Subnet 192.168.30-40.0/24 Over ESP network: 100.65.0.0/24
 
 ```
 
-## kvm-119节点配置
+## Configuration on Node: kvm-119
 ```
 [root@kvm-119 switch]# cat ./network/esp.json
 {
