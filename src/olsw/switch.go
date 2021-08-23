@@ -794,19 +794,19 @@ func (v *Switch) DelLink(tenant, addr string) {
 	//TODO dynamic configure
 }
 
-func (v *Switch) AddEsp(tenant string, c *config.ESPInterface) {
+func (v *Switch) AddEsp(tenant string, c *config.ESPSpecifies) {
 	//TODO dynamic configure
 }
 
-func (v *Switch) DelEsp(tenant, c *config.ESPInterface) {
+func (v *Switch) DelEsp(tenant, c *config.ESPSpecifies) {
 	//TODO dynamic configure
 }
 
-func (v *Switch) AddVxLAN(tenant string, c *config.VxLANInterface) {
+func (v *Switch) AddVxLAN(tenant string, c *config.VxLANSpecifies) {
 	//TODO dynamic configure
 }
 
-func (v *Switch) DelVxLAN(tenant, c *config.VxLANInterface) {
+func (v *Switch) DelVxLAN(tenant, c *config.VxLANSpecifies) {
 	//TODO dynamic configure
 }
 

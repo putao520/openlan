@@ -170,13 +170,13 @@ func (s *Switch) LoadNetwork() {
 		}
 		switch obj.Provider {
 		case "esp":
-			obj.Interface = &ESPInterface{}
+			obj.Specifies = &ESPSpecifies{}
 		case "vxlan":
-			obj.Interface = &VxLANInterface{}
+			obj.Specifies = &VxLANSpecifies{}
 		case "fabric":
-			obj.Interface = &FabricInterface{}
+			obj.Specifies = &FabricSpecifies{}
 		}
-		if obj.Interface != nil {
+		if obj.Specifies != nil {
 			if err := libol.UnmarshalLoad(obj, k); err != nil {
 				libol.Error("Switch.LoadNetwork %s", err)
 				continue

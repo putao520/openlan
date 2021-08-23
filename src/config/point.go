@@ -83,7 +83,7 @@ func (ap *Point) Flags() {
 	flag.StringVar(&ap.Interface.Name, "if:name", obj.Interface.Name, "Configure interface name")
 	flag.StringVar(&ap.Interface.Address, "if:addr", obj.Interface.Address, "Configure interface address")
 	flag.StringVar(&ap.Interface.Bridge, "if:br", obj.Interface.Bridge, "Configure bridge name")
-	flag.StringVar(&ap.Interface.Provider, "if:provider", obj.Interface.Provider, "Interface provider")
+	flag.StringVar(&ap.Interface.Provider, "if:provider", obj.Interface.Provider, "Specifies provider")
 	flag.StringVar(&ap.SaveFile, "conf", obj.SaveFile, "The configuration file")
 	flag.StringVar(&ap.Crypt.Secret, "crypt:secret", obj.Crypt.Secret, "Crypt secret key")
 	flag.StringVar(&ap.Crypt.Algo, "crypt:algo", obj.Crypt.Algo, "Crypt algorithm, such as: aes-256")

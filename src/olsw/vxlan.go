@@ -10,11 +10,11 @@ import (
 )
 
 type VxLANWorker struct {
-	uuid  string
-	cfg   *co.Network
-	inCfg *co.VxLANInterface
-	out   *libol.SubLogger
-	br    network.Bridger
+	uuid string
+	cfg  *co.Network
+	spec *co.VxLANSpecifies
+	out  *libol.SubLogger
+	br   network.Bridger
 }
 
 func NewVxLANWorker(c *co.Network) *VxLANWorker {
@@ -22,12 +22,12 @@ func NewVxLANWorker(c *co.Network) *VxLANWorker {
 		cfg: c,
 		out: libol.NewSubLogger(c.Name),
 	}
-	w.inCfg, _ = c.Interface.(*co.VxLANInterface)
+	w.spec, _ = c.Specifies.(*co.VxLANSpecifies)
 	return w
 }
 
 func (w *VxLANWorker) Initialize() {
-	if w.inCfg == nil {
+	if w.spec == nil {
 		return
 	}
 	br := w.cfg.Bridge
@@ -96,11 +96,11 @@ func (w *VxLANWorker) UpVxLAN(cfg *co.VxLANMember) error {
 
 func (w *VxLANWorker) Start(v api.Switcher) {
 	w.uuid = v.UUID()
-	if w.inCfg == nil {
-		w.out.Error("VxLANWorker.Start inCfg is nil")
+	if w.spec == nil {
+		w.out.Error("VxLANWorker.Start spec is nil")
 		return
 	}
-	for _, mem := range w.inCfg.Members {
+	for _, mem := range w.spec.Members {
 		if err := w.UpVxLAN(mem); err != nil {
 			w.out.Error("VxLANWorker.Start %s %s", mem.Name, err)
 		}
@@ -126,11 +126,11 @@ func (w *VxLANWorker) DownVxLAN(cfg *co.VxLANMember) error {
 }
 
 func (w *VxLANWorker) Stop() {
-	if w.inCfg == nil {
-		w.out.Error("VxLANWorker.Stop inCfg is nil")
+	if w.spec == nil {
+		w.out.Error("VxLANWorker.Stop spec is nil")
 		return
 	}
-	for _, mem := range w.inCfg.Members {
+	for _, mem := range w.spec.Members {
 		if err := w.DownVxLAN(mem); err != nil {
 			w.out.Error("VxLANWorker.Stop %s %s", mem.Name, err)
 		}
