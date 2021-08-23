@@ -77,9 +77,9 @@ DCI Subnet 192.168.30-40.0/24 Over ESP network: 100.65.0.0/24
             Interface br-tun
                 type: internal
         Port "vx-100650117"
-            Interface "vx-100650117"
+            Interface "vx-100650119"
                 type: vxlan
-                options: {df_default="false", dst_port="4789", key=flow, remote_ip="100.65.0.117"}
+                options: {df_default="false", dst_port="4789", key=flow, remote_ip="100.65.0.119"}
         Port "vnt-400"
             Interface "vnt-400"
     ovs_version: "2.12.0"
