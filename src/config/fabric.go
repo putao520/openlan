@@ -10,6 +10,9 @@ type FabricInterface struct {
 }
 
 func (c *FabricInterface) Correct() {
+	if c.Mss == 0 {
+		c.Mss = 1332
+	}
 	for _, network := range c.Networks {
 		network.Correct()
 	}

@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/danieldin95/openlan/src/config"
 	"github.com/danieldin95/openlan/src/libol"
+	"github.com/danieldin95/openlan/src/network"
 	"github.com/danieldin95/openlan/src/schema"
 )
 
@@ -18,6 +19,7 @@ type Switcher interface {
 	DelEsp(tenant, c *config.ESPInterface)
 	AddVxLAN(tenant string, c *config.VxLANInterface)
 	DelVxLAN(tenant, c *config.VxLANInterface)
+	Firewall() *network.FireWall
 }
 
 func NewWorkerSchema(s Switcher) schema.Worker {

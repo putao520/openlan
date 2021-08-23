@@ -91,7 +91,7 @@ type Switch struct {
 	lock     sync.Mutex
 	cfg      *config.Switch
 	apps     Apps
-	firewall *FireWall
+	firewall *network.FireWall
 	hooks    []Hook
 	http     *Http
 	server   libol.SocketServer
@@ -105,7 +105,7 @@ func NewSwitch(c *config.Switch) *Switch {
 	server := GetSocketServer(c)
 	v := Switch{
 		cfg:      c,
-		firewall: NewFireWall(c.FireWall),
+		firewall: network.NewFireWall(c.FireWall),
 		worker:   make(map[string]Networker, 32),
 		server:   server,
 		newTime:  time.Now().Unix(),
@@ -131,7 +131,7 @@ func (v *Switch) enablePort(protocol, port string) {
 	// allowed forward between source and prefix.
 	v.firewall.AddRule(network.IpRule{
 		Table:   network.TFilter,
-		Chain:   OLCInput,
+		Chain:   network.OLCInput,
 		Proto:   protocol,
 		DstPort: value,
 	})
@@ -142,7 +142,7 @@ func (v *Switch) enableFwd(input, output, source, prefix string) {
 	// allowed forward between source and prefix.
 	v.firewall.AddRule(network.IpRule{
 		Table:  network.TFilter,
-		Chain:  OLCForward,
+		Chain:  network.OLCForward,
 		Input:  input,
 		Output: output,
 		Source: source,
@@ -151,7 +151,7 @@ func (v *Switch) enableFwd(input, output, source, prefix string) {
 	if source != prefix {
 		v.firewall.AddRule(network.IpRule{
 			Table:  network.TFilter,
-			Chain:  OLCForward,
+			Chain:  network.OLCForward,
 			Output: input,
 			Input:  output,
 			Source: prefix,
@@ -167,7 +167,7 @@ func (v *Switch) enableMasq(input, output, source, prefix string) {
 	// enable masquerade from source to prefix.
 	v.firewall.AddRule(network.IpRule{
 		Table:  network.TNat,
-		Chain:  OLCPost,
+		Chain:  network.OLCPost,
 		Source: source,
 		Dest:   prefix,
 		Jump:   network.CMasq,
@@ -181,7 +181,7 @@ func (v *Switch) enableSnat(input, output, source, prefix string) {
 	// enable masquerade from source to prefix.
 	v.firewall.AddRule(network.IpRule{
 		Table:    network.TNat,
-		Chain:    OLCPost,
+		Chain:    network.OLCPost,
 		ToSource: source,
 		Dest:     prefix,
 		Jump:     network.CSnat,
@@ -808,4 +808,8 @@ func (v *Switch) AddVxLAN(tenant string, c *config.VxLANInterface) {
 
 func (v *Switch) DelVxLAN(tenant, c *config.VxLANInterface) {
 	//TODO dynamic configure
+}
+
+func (v *Switch) Firewall() *network.FireWall {
+	return v.firewall
 }
