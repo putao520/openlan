@@ -9,7 +9,7 @@
 SHELL := /bin/bash
 
 .ONESHELL:
-.PHONY: linux linux-rpm darwin darwin-zip windows windows-zip test
+.PHONY: linux linux-rpm darwin darwin-zip windows windows-zip test vendor
 
 ## version
 LSB = $(shell lsb_release -i -s)$(shell lsb_release -r -s)
@@ -51,6 +51,10 @@ clean: ## clean cache
 	rm -rvf ./core/cmake-build-debug
 
 ## prepare environment
+vendor:
+	 go clean -modcache
+	 go mod vendor -v
+
 env:
 	@mkdir -p $(BD)
 	@go version
