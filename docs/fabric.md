@@ -1,6 +1,5 @@
 # Setup Fabric Network
-We using 192.168.100.0/24 as a internet network.
-And underlay: 100.65.0.0/24 over Internet by ESP: SPI-117118/117119/118119.
+We using 192.168.100.0/24 to emulate a internet network. And underlay: 100.65.0.0/24 over Internet by ESP: SPI-117118/117119/118119.
 ```       
                                                       192.168.100.117
                                                               |
@@ -27,7 +26,7 @@ And underlay: 100.65.0.0/24 over Internet by ESP: SPI-117118/117119/118119.
                             
 ```
 
-DCI Subnet 192.168.30-40.0/24 Over ESP network: 100.65.0.0/24
+Data Center Interconnect with Subnet 192.168.30-40.0/24 Over ESP network: 100.65.0.0/24 by VxLAN.
 ```
 
                                                           100.65.0.117
