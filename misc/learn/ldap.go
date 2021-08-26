@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/danieldin95/openlan/src/libol"
+	"github.com/danieldin95/openlan/pkg/libol"
 	"os"
 )
 
