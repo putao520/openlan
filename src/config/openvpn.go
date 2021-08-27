@@ -13,8 +13,8 @@ type OpenVPN struct {
 	Subnet    string     `json:"subnet"`
 	Device    string     `json:"device"`
 	Auth      string     `json:"auth"` // xauth or cert.
-	DhPem     string     `json:"dh"`
-	RootCa    string     `json:"ca"`
+	DhPem     string     `json:"dhPem"`
+	RootCa    string     `json:"rootCa"`
 	ServerCrt string     `json:"cert"`
 	ServerKey string     `json:"key"`
 	TlsAuth   string     `json:"tlsAuth"`

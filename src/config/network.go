@@ -3,19 +3,19 @@ package config
 import "strings"
 
 type Network struct {
-	Alias     string        `json:"-"`
-	Name      string        `json:"name,omitempty"`
-	Provider  string        `json:"provider,omitempty"`
-	Bridge    *Bridge       `json:"bridge,omitempty"`
-	Subnet    *IpSubnet     `json:"subnet,omitempty"`
-	OpenVPN   *OpenVPN      `json:"openvpn,omitempty"`
-	Links     []*Point      `json:"links,omitempty"`
-	Hosts     []HostLease   `json:"hosts,omitempty"`
-	Routes    []PrefixRoute `json:"routes,omitempty"`
-	Password  []Password    `json:"password,omitempty"`
-	Acl       string        `json:"acl,omitempty"`
-	Specifies interface{}   `json:"specifies,omitempty"`
-	Crypt     *Crypt        `json:"crypt,omitempty"`
+	Alias     string        `json:"-" yaml:"-"`
+	Name      string        `json:"name,omitempty" yaml:"name"`
+	Provider  string        `json:"provider,omitempty" yaml:"provider"`
+	Bridge    *Bridge       `json:"bridge,omitempty" yaml:"bridge,omitempty"`
+	Subnet    *IpSubnet     `json:"subnet,omitempty" yaml:"subnet,omitempty"`
+	OpenVPN   *OpenVPN      `json:"openvpn,omitempty" yaml:"openvpn,omitempty"`
+	Links     []*Point      `json:"links,omitempty" yaml:"links,omitempty"`
+	Hosts     []HostLease   `json:"hosts,omitempty" yaml:"hosts,omitempty"`
+	Routes    []PrefixRoute `json:"routes,omitempty" yaml:"routes,omitempty"`
+	Password  []Password    `json:"password,omitempty" yaml:"password,omitempty"`
+	Acl       string        `json:"acl,omitempty" yaml:"acl,omitempty"`
+	Specifies interface{}   `json:"specifies,omitempty" yaml:"specifies,omitempty"`
+	Crypt     *Crypt        `json:"crypt,omitempty" yaml:"crypt,omitempty"`
 }
 
 func (n *Network) Correct() {

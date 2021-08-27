@@ -64,7 +64,7 @@ func (p *Perf) Correct(obj *Perf) {
 
 type Switch struct {
 	Alias     string     `json:"alias"`
-	Perf      Perf       `json:"perf,omitempty"`
+	Perf      Perf       `json:"limit,omitempty" yaml:"limit"`
 	Protocol  string     `json:"protocol"` // tcp, tls, udp, kcp, ws and wss.
 	Listen    string     `json:"listen"`
 	Timeout   int        `json:"timeout"`
@@ -72,16 +72,16 @@ type Switch struct {
 	Log       Log        `json:"log"`
 	Cert      *Cert      `json:"cert,omitempty"`
 	Crypt     *Crypt     `json:"crypt,omitempty"`
-	Network   []*Network `json:"network,omitempty"`
-	Acl       []*ACL     `json:"acl"`
-	FireWall  []FlowRule `json:"firewall,omitempty"`
-	Inspect   []string   `json:"inspect"`
-	Queue     Queue      `json:"queue"`
-	Password  string     `json:"password"`
-	Ldap      *LDAP      `json:"ldap"`
-	ConfDir   string     `json:"-"`
-	TokenFile string     `json:"-"`
-	SaveFile  string     `json:"-"`
+	Network   []*Network `json:"network,omitempty" yaml:"networks"`
+	Acl       []*ACL     `json:"acl,omitempty" yaml:"acl,omitempty"`
+	FireWall  []FlowRule `json:"firewall,omitempty" yaml:"firewall,omitempty"`
+	Inspect   []string   `json:"inspect,omitempty" yaml:"inspect,omitempty"`
+	Queue     Queue      `json:"queue" yaml:"queue"`
+	Password  string     `json:"password" yaml:"passwdfile"`
+	Ldap      *LDAP      `json:"ldap,omitempty" yaml:"ldap,omitempty"`
+	ConfDir   string     `json:"-" yaml:"-"`
+	TokenFile string     `json:"-" yaml:"-"`
+	SaveFile  string     `json:"-" yaml:"-"`
 }
 
 func DefaultSwitch() *Switch {

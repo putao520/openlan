@@ -3,7 +3,7 @@ package config
 import "fmt"
 
 type FabricSpecifies struct {
-	Mss      int              `json:"mss"`
+	Mss      int              `json:"tcpMss"`
 	Name     string           `json:"name"`
 	Tunnels  []*FabricTunnel  `json:"tunnels"`
 	Networks []*FabricNetwork `json:"networks"`
@@ -24,7 +24,7 @@ func (c *FabricSpecifies) Correct() {
 type FabricTunnel struct {
 	DstPort uint32 `json:"dport"`
 	Remote  string `json:"remote"`
-	Local   string `json:"local"`
+	Local   string `json:"local,omitempty" yaml:"local,omitempty"`
 }
 
 func (c *FabricTunnel) Correct() {

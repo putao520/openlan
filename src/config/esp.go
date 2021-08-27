@@ -13,13 +13,13 @@ const (
 )
 
 type EspState struct {
-	Local    string `json:"local,omitempty"`
-	LocalIp  net.IP `json:"-"`
-	Remote   string `json:"remote"`
-	RemoteIp net.IP `json:"-"`
-	Encap    string `json:"encap"`
-	Auth     string `json:"auth,omitempty"`
-	Crypt    string `json:"crypt,omitempty"`
+	Local    string `json:"-" yaml:"-"`
+	LocalIp  net.IP `json:"-"  yaml:"-"`
+	Remote   string `json:"-" yaml:"-"`
+	RemoteIp net.IP `json:"-"  yaml:"-"`
+	Encap    string `json:"encapsulation" yaml:"encapsulation,omitempty"`
+	Auth     string `json:"auth,omitempty" yaml:"auth,omitempty"`
+	Crypt    string `json:"crypt,omitempty" yaml:"crypt,omitempty"`
 }
 
 func (s *EspState) Pad32(value string) string {
@@ -67,13 +67,13 @@ type ESPMember struct {
 	Peer     string       `json:"peer"`
 	Spi      uint32       `json:"spi"`
 	State    EspState     `json:"state"`
-	Policies []*ESPPolicy `json:"policies"`
+	Policies []*ESPPolicy `json:"policies" yaml:"policies,omitempty"`
 }
 
 type ESPSpecifies struct {
 	Name    string       `json:"name"`
 	Address string       `json:"address,omitempty"`
-	State   EspState     `json:"state"`
+	State   EspState     `json:"state" yaml:"state,omitempty"`
 	Members []*ESPMember `json:"members"`
 }
 

@@ -70,11 +70,11 @@ func LogFile(file string) string {
 
 type Http struct {
 	Listen string `json:"listen,omitempty"`
-	Public string `json:"public,omitempty"`
+	Public string `json:"public,omitempty" yaml:"publicDir"`
 }
 
 type Crypt struct {
-	Algo   string `json:"algo,omitempty"`
+	Algo   string `json:"algo,omitempty" yaml:"algorithm"`
 	Secret string `json:"secret,omitempty"`
 }
 
@@ -89,10 +89,10 @@ func (c *Crypt) Default() {
 }
 
 type Cert struct {
-	Dir      string `json:"dir"`
-	CrtFile  string `json:"crt"`
-	KeyFile  string `json:"key"`
-	CaFile   string `json:"ca"`
+	Dir      string `json:"dir" yaml:"directory"`
+	CrtFile  string `json:"crt" yaml:"cert"`
+	KeyFile  string `json:"key" yaml:"key"`
+	CaFile   string `json:"ca" yaml:"rootCa"`
 	Insecure bool   `json:"insecure"`
 }
 
@@ -146,14 +146,14 @@ func (c *Cert) GetCertPool() *x509.CertPool {
 
 type Bridge struct {
 	Network  string `json:"network"`
-	Peer     string `json:"peer"`
-	Name     string `json:"name"`
-	IPMtu    int    `json:"mtu"`
-	Address  string `json:"address,omitempty"`
-	Provider string `json:"provider"`
-	Stp      string `json:"stp"`
-	Delay    int    `json:"delay"`
-	Mss      int    `json:"mss,omitempty"`
+	Peer     string `json:"peer,omitempty" yaml:"peer,omitempty"`
+	Name     string `json:"name,omitempty" yaml:"name,omitempty"`
+	IPMtu    int    `json:"mtu,omitempty" yaml:"mtu,omitempty"`
+	Address  string `json:"address,omitempty" yaml:"address,omitempty"`
+	Provider string `json:"provider,omitempty" yaml:"provider,omitempty"`
+	Stp      string `json:"stp,omitempty" yaml:"stpState,omitempty"`
+	Delay    int    `json:"delay,omitempty" yaml:"forwardDelay,omitempty"`
+	Mss      int    `json:"mss,omitempty" yaml:"tcpMss,omitempty"`
 }
 
 func (br *Bridge) Correct() {
@@ -192,7 +192,7 @@ type PrefixRoute struct {
 	NextHop   string      `json:"nexthop"`
 	MultiPath []MultiPath `json:"multipath"`
 	Metric    int         `json:"metric"`
-	Mode      string      `json:"mode"` // route or snat
+	Mode      string      `json:"mode" yaml:"forwardMode"` // route or snat
 }
 
 type HostLease struct {
@@ -208,16 +208,16 @@ type Password struct {
 }
 
 type FlowRule struct {
-	Table    string `json:"table"`
-	Chain    string `json:"chain"`
-	Input    string `json:"input"`
-	Source   string `json:"source"`
-	ToSource string `json:"to-source"`
-	Dest     string `json:"destination"`
-	ToDest   string `json:"to-destination"`
-	Output   string `json:"output"`
-	Comment  string `json:"comment"`
-	Jump     string `json:"jump"` // SNAT/RETURN/MASQUERADE
+	Table    string `json:"table,omitempty" yaml:"table,omitempty"`
+	Chain    string `json:"chain,omitempty" yaml:"chain,omitempty"`
+	Input    string `json:"input,omitempty" yaml:"input,omitempty"`
+	Source   string `json:"source,omitempty" yaml:"source,omitempty"`
+	ToSource string `json:"to-source,omitempty" yaml:"toSource,omitempty"`
+	Dest     string `json:"destination,omitempty" yaml:"destination,omitempty"`
+	ToDest   string `json:"to-destination" yaml:"toDestination,omitempty"`
+	Output   string `json:"output,omitempty" yaml:"output,omitempty"`
+	Comment  string `json:"comment,omitempty" yaml:"comment,omitempty"`
+	Jump     string `json:"jump,omitempty" yaml:"jump,omitempty"` // SNAT/RETURN/MASQUERADE
 }
 
 type Interface struct {
