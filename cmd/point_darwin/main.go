@@ -1,6 +1,6 @@
 // +build darwin
 
-package point_darwin
+package main
 
 import (
 	"github.com/danieldin95/openlan/pkg/config"

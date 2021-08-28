@@ -1,6 +1,6 @@
 // +build windows
 
-package point_windows
+package main
 
 import (
 	"github.com/danieldin95/openlan/pkg/config"

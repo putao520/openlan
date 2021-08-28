@@ -1,0 +1,18 @@
+2021/08/28 12:49:48 [INFO] [root] MixPoint.Initialize
+2021/08/28 12:49:48 [INFO] [xx.openlan.net:10002:default] Worker.Initialize
+2021/08/28 12:49:48 [INFO] [xx.openlan.net:10002:default] SocketWorker.Initialize
+2021/08/28 12:49:48 [INFO] [xx.openlan.net:10002:default] TapWorker.Initialize
+2021/08/28 12:49:48 [INFO] [xx.openlan.net:10002:default] TapWorker.close
+2021/08/28 12:49:48 [INFO] [xx.openlan.net:10002:default] TapWorker.open: >>> tap2 <<<
+2021/08/28 12:49:48 [INFO] [xx.openlan.net:10002:default] Point.OnTap
+2021/08/28 12:49:48 [INFO] [xx.openlan.net:10002:default] MixPoint.Start linux
+2021/08/28 12:49:48 [INFO] [xx.openlan.net:10002:default] TapWorker.Start
+2021/08/28 12:49:48 [INFO] [xx.openlan.net:10002:default] SocketWorker.Start
+2021/08/28 12:49:48 [WARN] [xx.openlan.net:10002:default] SocketWorker.connect: xx.openlan.net:10002
+2021/08/28 12:49:48 [INFO] [xx.openlan.net:10002] TcpClient.Connect: tcp://xx.openlan.net:10002
+2021/08/28 12:49:50 [ERROR] [xx.openlan.net:10002:default] SocketWorker.connect: xx.openlan.net:10002 dial tcp: lookup xx.openlan.net on 192.168.7.1:53: no such host
+2021/08/28 12:49:51 [INFO] [xx.openlan.net:10002:default] SocketWorker.Stop
+2021/08/28 12:49:51 [INFO] [xx.openlan.net:10002:default] SocketWorker.leave
+2021/08/28 12:49:51 [ERROR] [xx.openlan.net:10002:default] SocketWorker.leave: xx.openlan.net:10002 not okay
+2021/08/28 12:49:51 [INFO] [xx.openlan.net:10002:default] TapWorker.Stop
+2021/08/28 12:49:51 [INFO] [xx.openlan.net:10002:default] TapWorker.close
