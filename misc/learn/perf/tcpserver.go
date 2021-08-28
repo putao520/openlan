@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"flag"
 	"fmt"
-	"github.com/danieldin95/openlan/src/libol"
+	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/songgao/water"
 	"net"
 )
