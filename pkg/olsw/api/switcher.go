@@ -20,6 +20,7 @@ type Switcher interface {
 	AddVxLAN(tenant string, c *config.VxLANSpecifies)
 	DelVxLAN(tenant, c *config.VxLANSpecifies)
 	Firewall() *network.FireWall
+	Reload() error
 }
 
 func NewWorkerSchema(s Switcher) schema.Worker {

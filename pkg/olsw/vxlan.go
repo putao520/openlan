@@ -158,3 +158,7 @@ func (w *VxLANWorker) GetSubnet() string {
 	w.out.Warn("VxLANWorker.GetSubnet notSupport")
 	return ""
 }
+
+func (w *VxLANWorker) Reload(c *co.Network) {
+
+}

@@ -13,7 +13,10 @@ type Config struct {
 }
 
 func (u Config) Url(prefix, name string) string {
-	return prefix + "/api/config"
+	if name == "" {
+		return prefix + "/api/config"
+	}
+	return prefix + "/api/config/" + name
 }
 
 func (u Config) List(c *cli.Context) error {
@@ -88,6 +91,18 @@ func (u Config) Check(c *cli.Context) error {
 	return nil
 }
 
+func (u Config) Reload(c *cli.Context) error {
+	url := u.Url(c.String("url"), "reload")
+	clt := u.NewHttp(c.String("token"))
+	data := "success"
+	if err := clt.PutJSON(url, &data); err == nil {
+		fmt.Println(data)
+		return nil
+	} else {
+		return err
+	}
+}
+
 func (u Config) Commands(app *cli.App) cli.Commands {
 	return append(app.Commands, &cli.Command{
 		Name:    "config",
@@ -108,6 +123,15 @@ func (u Config) Commands(app *cli.App) cli.Commands {
 					&cli.StringFlag{Name: "dir", Value: "/etc/openlan"},
 				},
 				Action: u.Check,
+			},
+			{
+				Name:    "reload",
+				Usage:   "Reload configuration",
+				Aliases: []string{"re"},
+				Flags: []cli.Flag{
+					&cli.StringFlag{Name: "dir", Value: "/etc/openlan"},
+				},
+				Action: u.Reload,
 			},
 		},
 	})

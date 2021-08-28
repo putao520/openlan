@@ -3,7 +3,7 @@ package olsw
 import (
 	"fmt"
 	"github.com/danieldin95/go-openvswitch/ovs"
-	"github.com/danieldin95/openlan/pkg/config"
+	co "github.com/danieldin95/openlan/pkg/config"
 	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/danieldin95/openlan/pkg/network"
 	"github.com/danieldin95/openlan/pkg/olsw/api"
@@ -135,8 +135,8 @@ type OvsNetwork struct {
 
 type FabricWorker struct {
 	uuid     string
-	cfg      *config.Network
-	spec     *config.FabricSpecifies
+	cfg      *co.Network
+	spec     *co.FabricSpecifies
 	out      *libol.SubLogger
 	ovs      *OvsBridge
 	cookie   uint64
@@ -144,7 +144,7 @@ type FabricWorker struct {
 	networks map[uint32]*OvsNetwork
 }
 
-func NewFabricWorker(c *config.Network) *FabricWorker {
+func NewFabricWorker(c *co.Network) *FabricWorker {
 	w := &FabricWorker{
 		cfg:      c,
 		out:      libol.NewSubLogger(c.Name),
@@ -152,7 +152,7 @@ func NewFabricWorker(c *config.Network) *FabricWorker {
 		tunnels:  make(map[string]*OvsPort, 1024),
 		networks: make(map[uint32]*OvsNetwork, 1024),
 	}
-	w.spec, _ = c.Specifies.(*config.FabricSpecifies)
+	w.spec, _ = c.Specifies.(*co.FabricSpecifies)
 	return w
 }
 
@@ -491,11 +491,15 @@ func (w *FabricWorker) GetBridge() network.Bridger {
 	return nil
 }
 
-func (w *FabricWorker) GetConfig() *config.Network {
+func (w *FabricWorker) GetConfig() *co.Network {
 	return w.cfg
 }
 
 func (w *FabricWorker) GetSubnet() string {
 	w.out.Warn("FabricWorker.GetSubnet notSupport")
 	return ""
+}
+
+func (w *FabricWorker) Reload(c *co.Network) {
+
 }

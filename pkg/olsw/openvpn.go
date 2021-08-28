@@ -2,7 +2,7 @@ package olsw
 
 import (
 	"bytes"
-	"github.com/danieldin95/openlan/pkg/config"
+	co "github.com/danieldin95/openlan/pkg/config"
 	"github.com/danieldin95/openlan/pkg/libol"
 	"io/ioutil"
 	"os"
@@ -122,14 +122,14 @@ func NewOpenVpnDataFromConf(obj *OpenVPN) *OpenVPNData {
 }
 
 type OpenVPN struct {
-	Cfg      *config.OpenVPN
+	Cfg      *co.OpenVPN
 	out      *libol.SubLogger
 	Protocol string
 	Local    string
 	Port     string
 }
 
-func NewOpenVPN(cfg *config.OpenVPN) *OpenVPN {
+func NewOpenVPN(cfg *co.OpenVPN) *OpenVPN {
 	obj := &OpenVPN{
 		Cfg:      cfg,
 		out:      libol.NewSubLogger(cfg.Network),

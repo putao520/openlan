@@ -65,7 +65,7 @@ type ESPMember struct {
 	Name     string       `json:"name"`
 	Address  string       `json:"address,omitempty"`
 	Peer     string       `json:"peer"`
-	Spi      uint32       `json:"spi"`
+	Spi      int          `json:"spi"`
 	State    EspState     `json:"state"`
 	Policies []*ESPPolicy `json:"policies" yaml:"policies,omitempty"`
 }
@@ -102,7 +102,7 @@ func (n *ESPSpecifies) Correct() {
 			Dest:   m.Peer,
 		})
 		if m.Spi == 0 {
-			m.Spi = libol.GenUint32()
+			m.Spi = libol.GenInt32()
 		}
 		if m.Name == "" {
 			m.Name = fmt.Sprintf("spi%d", m.Spi)

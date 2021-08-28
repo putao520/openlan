@@ -3,7 +3,7 @@ package olsw
 import (
 	"bufio"
 	"encoding/json"
-	"github.com/danieldin95/openlan/pkg/config"
+	co "github.com/danieldin95/openlan/pkg/config"
 	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/danieldin95/openlan/pkg/models"
 	"github.com/danieldin95/openlan/pkg/network"
@@ -19,17 +19,17 @@ import (
 	"time"
 )
 
-func GetSocketServer(s *config.Switch) libol.SocketServer {
+func GetSocketServer(s *co.Switch) libol.SocketServer {
 	switch s.Protocol {
 	case "kcp":
 		c := &libol.KcpConfig{
-			Block:   config.GetBlock(s.Crypt),
+			Block:   co.GetBlock(s.Crypt),
 			Timeout: time.Duration(s.Timeout) * time.Second,
 		}
 		return libol.NewKcpServer(s.Listen, c)
 	case "tcp":
 		c := &libol.TcpConfig{
-			Block:   config.GetBlock(s.Crypt),
+			Block:   co.GetBlock(s.Crypt),
 			Timeout: time.Duration(s.Timeout) * time.Second,
 			RdQus:   s.Queue.SockRd,
 			WrQus:   s.Queue.SockWr,
@@ -37,13 +37,13 @@ func GetSocketServer(s *config.Switch) libol.SocketServer {
 		return libol.NewTcpServer(s.Listen, c)
 	case "udp":
 		c := &libol.UdpConfig{
-			Block:   config.GetBlock(s.Crypt),
+			Block:   co.GetBlock(s.Crypt),
 			Timeout: time.Duration(s.Timeout) * time.Second,
 		}
 		return libol.NewUdpServer(s.Listen, c)
 	case "ws":
 		c := &libol.WebConfig{
-			Block:   config.GetBlock(s.Crypt),
+			Block:   co.GetBlock(s.Crypt),
 			Timeout: time.Duration(s.Timeout) * time.Second,
 			RdQus:   s.Queue.SockRd,
 			WrQus:   s.Queue.SockWr,
@@ -51,7 +51,7 @@ func GetSocketServer(s *config.Switch) libol.SocketServer {
 		return libol.NewWebServer(s.Listen, c)
 	case "wss":
 		c := &libol.WebConfig{
-			Block:   config.GetBlock(s.Crypt),
+			Block:   co.GetBlock(s.Crypt),
 			Timeout: time.Duration(s.Timeout) * time.Second,
 			RdQus:   s.Queue.SockRd,
 			WrQus:   s.Queue.SockWr,
@@ -65,7 +65,7 @@ func GetSocketServer(s *config.Switch) libol.SocketServer {
 		return libol.NewWebServer(s.Listen, c)
 	default:
 		c := &libol.TcpConfig{
-			Block:   config.GetBlock(s.Crypt),
+			Block:   co.GetBlock(s.Crypt),
 			Timeout: time.Duration(s.Timeout) * time.Second,
 			RdQus:   s.Queue.SockRd,
 			WrQus:   s.Queue.SockWr,
@@ -89,7 +89,7 @@ type Hook func(client libol.SocketClient, frame *libol.FrameMessage) error
 type Switch struct {
 	// private
 	lock     sync.Mutex
-	cfg      *config.Switch
+	cfg      *co.Switch
 	apps     Apps
 	firewall *network.FireWall
 	hooks    []Hook
@@ -101,7 +101,7 @@ type Switch struct {
 	out      *libol.SubLogger
 }
 
-func NewSwitch(c *config.Switch) *Switch {
+func NewSwitch(c *co.Switch) *Switch {
 	server := GetSocketServer(c)
 	v := Switch{
 		cfg:      c,
@@ -188,7 +188,7 @@ func (v *Switch) enableSnat(input, output, source, prefix string) {
 	})
 }
 
-func (v *Switch) preWorkerVPN(w Networker, vCfg *config.OpenVPN) {
+func (v *Switch) preWorkerVPN(w Networker, vCfg *co.OpenVPN) {
 	if w == nil || vCfg == nil {
 		return
 	}
@@ -244,7 +244,7 @@ func (v *Switch) enableAcl(acl, input string) {
 	}
 }
 
-func (v *Switch) preNetworkVPN0(nCfg *config.Network, vCfg *config.OpenVPN) {
+func (v *Switch) preNetworkVPN0(nCfg *co.Network, vCfg *co.OpenVPN) {
 	if nCfg == nil || vCfg == nil {
 		return
 	}
@@ -259,7 +259,7 @@ func (v *Switch) preNetworkVPN0(nCfg *config.Network, vCfg *config.OpenVPN) {
 	}
 }
 
-func (v *Switch) preNetworkVPN1(bridge, prefix string, vCfg *config.OpenVPN) {
+func (v *Switch) preNetworkVPN1(bridge, prefix string, vCfg *co.OpenVPN) {
 	if vCfg == nil {
 		return
 	}
@@ -378,7 +378,7 @@ func (v *Switch) GetPort(listen string) string {
 	return ""
 }
 
-func (v *Switch) preAllowVPN(cfg *config.OpenVPN) {
+func (v *Switch) preAllowVPN(cfg *co.OpenVPN) {
 	if cfg == nil {
 		return
 	}
@@ -415,7 +415,7 @@ func (v *Switch) preAllow() {
 	}
 }
 
-func (v *Switch) SetLdap(ldap *config.LDAP) {
+func (v *Switch) SetLdap(ldap *co.LDAP) {
 	if ldap == nil || ldap.Server == "" {
 		return
 	}
@@ -751,8 +751,8 @@ func (v *Switch) OffClient(client libol.SocketClient) {
 	}
 }
 
-func (v *Switch) Config() *config.Switch {
-	return config.Manager.Switch
+func (v *Switch) Config() *co.Switch {
+	return co.Manager.Switch
 }
 
 func (v *Switch) leftClient(client libol.SocketClient) {
@@ -786,7 +786,7 @@ func (v *Switch) leftClient(client libol.SocketClient) {
 	}
 }
 
-func (v *Switch) AddLink(tenant string, c *config.Point) {
+func (v *Switch) AddLink(tenant string, c *co.Point) {
 	//TODO dynamic configure
 }
 
@@ -794,22 +794,30 @@ func (v *Switch) DelLink(tenant, addr string) {
 	//TODO dynamic configure
 }
 
-func (v *Switch) AddEsp(tenant string, c *config.ESPSpecifies) {
+func (v *Switch) AddEsp(tenant string, c *co.ESPSpecifies) {
 	//TODO dynamic configure
 }
 
-func (v *Switch) DelEsp(tenant, c *config.ESPSpecifies) {
+func (v *Switch) DelEsp(tenant, c *co.ESPSpecifies) {
 	//TODO dynamic configure
 }
 
-func (v *Switch) AddVxLAN(tenant string, c *config.VxLANSpecifies) {
+func (v *Switch) AddVxLAN(tenant string, c *co.VxLANSpecifies) {
 	//TODO dynamic configure
 }
 
-func (v *Switch) DelVxLAN(tenant, c *config.VxLANSpecifies) {
+func (v *Switch) DelVxLAN(tenant, c *co.VxLANSpecifies) {
 	//TODO dynamic configure
 }
 
 func (v *Switch) Firewall() *network.FireWall {
 	return v.firewall
+}
+
+func (v *Switch) Reload() error {
+	for _, w := range v.worker {
+		w.Reload(nil)
+	}
+	libol.Go(v.firewall.Start)
+	return nil
 }

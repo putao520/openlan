@@ -1,7 +1,7 @@
 package olsw
 
 import (
-	"github.com/danieldin95/openlan/pkg/config"
+	co "github.com/danieldin95/openlan/pkg/config"
 	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/danieldin95/openlan/pkg/models"
 	"github.com/danieldin95/openlan/pkg/network"
@@ -34,29 +34,27 @@ func GetStateEncap(mode string) *nl.XfrmStateEncap {
 
 type EspWorker struct {
 	uuid     string
-	cfg      *config.Network
+	cfg      *co.Network
 	states   []*nl.XfrmState
 	policies []*nl.XfrmPolicy
-	spec     *config.ESPSpecifies
+	spec     *co.ESPSpecifies
 	out      *libol.SubLogger
 	proto    nl.Proto
 	mode     nl.Mode
 }
 
-func NewESPWorker(c *config.Network) *EspWorker {
+func NewESPWorker(c *co.Network) *EspWorker {
 	w := &EspWorker{
-		cfg:      c,
-		states:   make([]*nl.XfrmState, 0, 4),
-		policies: make([]*nl.XfrmPolicy, 0, 32),
-		out:      libol.NewSubLogger(c.Name),
-		proto:    nl.XFRM_PROTO_ESP,
-		mode:     nl.XFRM_MODE_TUNNEL,
+		cfg:   c,
+		out:   libol.NewSubLogger(c.Name),
+		proto: nl.XFRM_PROTO_ESP,
+		mode:  nl.XFRM_MODE_TUNNEL,
 	}
-	w.spec, _ = c.Specifies.(*config.ESPSpecifies)
+	w.spec, _ = c.Specifies.(*co.ESPSpecifies)
 	return w
 }
 
-func (w *EspWorker) newState(spi uint32, local, remote net.IP, auth, crypt string) *nl.XfrmState {
+func (w *EspWorker) newState(spi int, local, remote net.IP, auth, crypt string) *nl.XfrmState {
 	state := &nl.XfrmState{
 		Src:   remote,
 		Dst:   local,
@@ -75,7 +73,7 @@ func (w *EspWorker) newState(spi uint32, local, remote net.IP, auth, crypt strin
 	return state
 }
 
-func (w *EspWorker) newPolicy(spi uint32, local, remote net.IP, src, dst *net.IPNet, dir nl.Dir) *nl.XfrmPolicy {
+func (w *EspWorker) newPolicy(spi int, local, remote net.IP, src, dst *net.IPNet, dir nl.Dir) *nl.XfrmPolicy {
 	policy := &nl.XfrmPolicy{
 		Src: src,
 		Dst: dst,
@@ -92,7 +90,7 @@ func (w *EspWorker) newPolicy(spi uint32, local, remote net.IP, src, dst *net.IP
 	return policy
 }
 
-func (w *EspWorker) addState(mem *config.ESPMember) {
+func (w *EspWorker) addState(mem *co.ESPMember) {
 	spi := mem.Spi
 	local := mem.State.LocalIp
 	remote := mem.State.RemoteIp
@@ -112,7 +110,7 @@ func (w *EspWorker) addState(mem *config.ESPMember) {
 	store.EspState.Add(&models.EspState{
 		EspState: &schema.EspState{
 			Name:   w.spec.Name,
-			Spi:    int(spi),
+			Spi:    spi,
 			Source: local.String(),
 			Dest:   remote.String(),
 			Proto:  uint8(w.proto),
@@ -121,7 +119,26 @@ func (w *EspWorker) addState(mem *config.ESPMember) {
 	})
 }
 
-func (w *EspWorker) addPolicy(mem *config.ESPMember, pol *config.ESPPolicy) {
+func (w *EspWorker) delState(mem *co.ESPMember) {
+	spi := mem.Spi
+	local := mem.State.LocalIp
+	remote := mem.State.RemoteIp
+
+	w.out.Info("EspWorker.delState %s %s", local, remote)
+	model := models.EspState{
+		EspState: &schema.EspState{
+			Name:   w.spec.Name,
+			Spi:    spi,
+			Source: local.String(),
+			Dest:   remote.String(),
+			Proto:  uint8(w.proto),
+			Mode:   uint8(w.mode),
+		},
+	}
+	store.EspState.Del(model.ID())
+}
+
+func (w *EspWorker) addPolicy(mem *co.ESPMember, pol *co.ESPPolicy) {
 	spi := mem.Spi
 	local := mem.State.LocalIp
 	remote := mem.State.RemoteIp
@@ -147,6 +164,7 @@ func (w *EspWorker) addPolicy(mem *config.ESPMember, pol *config.ESPPolicy) {
 	}
 	store.EspPolicy.Add(&models.EspPolicy{
 		EspPolicy: &schema.EspPolicy{
+			Spi:    spi,
 			Name:   w.spec.Name,
 			Source: pol.Source,
 			Dest:   pol.Dest,
@@ -154,11 +172,28 @@ func (w *EspWorker) addPolicy(mem *config.ESPMember, pol *config.ESPPolicy) {
 	})
 }
 
-func (w *EspWorker) Initialize() {
-	if w.spec == nil {
-		w.out.Error("EspWorker.Initialize spec is nil")
-		return
+func (w *EspWorker) delPolicy(mem *co.ESPMember, pol *co.ESPPolicy) {
+	spi := mem.Spi
+	local := mem.State.LocalIp
+	remote := mem.State.RemoteIp
+	w.out.Info("EspWorker.delPolicy %s %s %s %s", local, remote, pol.Source, pol.Dest)
+	obj := models.EspPolicy{
+		EspPolicy: &schema.EspPolicy{
+			Spi:    spi,
+			Name:   w.spec.Name,
+			Source: pol.Source,
+			Dest:   pol.Dest,
+		},
 	}
+	store.EspPolicy.Del(obj.ID())
+}
+
+func (w *EspWorker) updateXfrm() {
+	w.states = nil
+	w.policies = nil
+
+	store.EspState.Clear()
+	store.EspState.Clear()
 	for _, mem := range w.spec.Members {
 		if mem == nil {
 			continue
@@ -187,6 +222,14 @@ func (w *EspWorker) Initialize() {
 			w.addPolicy(mem, pol)
 		}
 	}
+}
+
+func (w *EspWorker) Initialize() {
+	if w.spec == nil {
+		w.out.Error("EspWorker.Initialize spec is nil")
+		return
+	}
+	w.updateXfrm()
 }
 
 func (w *EspWorker) UpDummy(name, addr, peer string) error {
@@ -235,12 +278,7 @@ func (w *EspWorker) UpDummy(name, addr, peer string) error {
 	return nil
 }
 
-func (w *EspWorker) Start(v api.Switcher) {
-	if w.spec == nil {
-		w.out.Error("EspWorker.Start spec is nil")
-		return
-	}
-	w.uuid = v.UUID()
+func (w *EspWorker) addXfrm() {
 	for _, state := range w.states {
 		w.out.Debug("EspWorker.Start State %s", state)
 		if err := nl.XfrmStateAdd(state); err != nil {
@@ -252,6 +290,15 @@ func (w *EspWorker) Start(v api.Switcher) {
 			w.out.Error("EspWorker.Start Policy %s", err)
 		}
 	}
+}
+
+func (w *EspWorker) Start(v api.Switcher) {
+	if w.spec == nil {
+		w.out.Error("EspWorker.Start spec is nil")
+		return
+	}
+	w.uuid = v.UUID()
+	w.addXfrm()
 	for _, mem := range w.spec.Members {
 		if err := w.UpDummy(mem.Name, mem.Address, mem.Peer); err != nil {
 			w.out.Error("EspWorker.Start %s %s", mem.Name, err)
@@ -280,16 +327,7 @@ func (w *EspWorker) DownDummy(name string) error {
 	return nil
 }
 
-func (w *EspWorker) Stop() {
-	if w.spec == nil {
-		w.out.Error("EspWorker.Stop spec is nil")
-		return
-	}
-	for _, mem := range w.spec.Members {
-		if err := w.DownDummy(mem.Name); err != nil {
-			w.out.Error("EspWorker.Stop %s %s", mem.Name, err)
-		}
-	}
+func (w *EspWorker) delXfrm() {
 	for _, state := range w.states {
 		if err := nl.XfrmStateDel(state); err != nil {
 			w.out.Error("EspWorker.Stop State %s", err)
@@ -300,6 +338,19 @@ func (w *EspWorker) Stop() {
 			w.out.Error("EspWorker.Stop Policy %s", err)
 		}
 	}
+}
+
+func (w *EspWorker) Stop() {
+	if w.spec == nil {
+		w.out.Error("EspWorker.Stop spec is nil")
+		return
+	}
+	for _, mem := range w.spec.Members {
+		if err := w.DownDummy(mem.Name); err != nil {
+			w.out.Error("EspWorker.Stop %s %s", mem.Name, err)
+		}
+	}
+	w.delXfrm()
 }
 
 func (w *EspWorker) String() string {
@@ -315,13 +366,19 @@ func (w *EspWorker) GetBridge() network.Bridger {
 	return nil
 }
 
-func (w *EspWorker) GetConfig() *config.Network {
+func (w *EspWorker) GetConfig() *co.Network {
 	return w.cfg
 }
 
 func (w *EspWorker) GetSubnet() string {
 	w.out.Warn("EspWorker.GetSubnet notSupport")
 	return ""
+}
+
+func (w *EspWorker) Reload(c *co.Network) {
+	w.delXfrm()
+	w.updateXfrm()
+	w.addXfrm()
 }
 
 func OpenUDP() {

@@ -1,7 +1,7 @@
 package olsw
 
 import (
-	"github.com/danieldin95/openlan/pkg/config"
+	co "github.com/danieldin95/openlan/pkg/config"
 	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/danieldin95/openlan/pkg/models"
 	"github.com/danieldin95/openlan/pkg/network"
@@ -19,18 +19,18 @@ func PeerName(name, prefix string) (string, string) {
 
 type OpenLANWorker struct {
 	alias     string
-	cfg       *config.Network
+	cfg       *co.Network
 	newTime   int64
 	startTime int64
 	links     *Links
 	uuid      string
-	crypt     *config.Crypt
+	crypt     *co.Crypt
 	bridge    network.Bridger
 	out       *libol.SubLogger
 	openVPN   []*OpenVPN
 }
 
-func NewOpenLANWorker(c *config.Network) *OpenLANWorker {
+func NewOpenLANWorker(c *co.Network) *OpenLANWorker {
 	return &OpenLANWorker{
 		alias:     c.Alias,
 		cfg:       c,
@@ -195,7 +195,7 @@ func (w *OpenLANWorker) UnLoadRoutes() {
 	}
 }
 
-func (w *OpenLANWorker) UpBridge(cfg *config.Bridge) {
+func (w *OpenLANWorker) UpBridge(cfg *co.Bridge) {
 	master := w.bridge
 	// new it and configure address
 	master.Open(cfg.Address)
@@ -221,7 +221,7 @@ func (w *OpenLANWorker) UpBridge(cfg *config.Bridge) {
 	}
 }
 
-func (w *OpenLANWorker) connectPeer(cfg *config.Bridge) {
+func (w *OpenLANWorker) connectPeer(cfg *co.Bridge) {
 	if cfg.Peer == "" {
 		return
 	}
@@ -270,12 +270,12 @@ func (w *OpenLANWorker) Start(v api.Switcher) {
 	w.startTime = time.Now().Unix()
 }
 
-func (w *OpenLANWorker) downBridge(cfg *config.Bridge) {
+func (w *OpenLANWorker) downBridge(cfg *co.Bridge) {
 	w.closePeer(cfg)
 	_ = w.bridge.Close()
 }
 
-func (w *OpenLANWorker) closePeer(cfg *config.Bridge) {
+func (w *OpenLANWorker) closePeer(cfg *co.Bridge) {
 	if cfg.Peer == "" {
 		return
 	}
@@ -309,7 +309,7 @@ func (w *OpenLANWorker) UpTime() int64 {
 	return 0
 }
 
-func (w *OpenLANWorker) AddLink(c *config.Point) {
+func (w *OpenLANWorker) AddLink(c *co.Point) {
 	br := w.cfg.Bridge
 	uuid := libol.GenRandom(13)
 
@@ -355,6 +355,10 @@ func (w *OpenLANWorker) GetBridge() network.Bridger {
 	return w.bridge
 }
 
-func (w *OpenLANWorker) GetConfig() *config.Network {
+func (w *OpenLANWorker) GetConfig() *co.Network {
 	return w.cfg
+}
+
+func (w *OpenLANWorker) Reload(c *co.Network) {
+
 }

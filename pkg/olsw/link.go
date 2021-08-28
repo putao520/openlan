@@ -1,7 +1,7 @@
 package olsw
 
 import (
-	"github.com/danieldin95/openlan/pkg/config"
+	co "github.com/danieldin95/openlan/pkg/config"
 	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/danieldin95/openlan/pkg/models"
 	"github.com/danieldin95/openlan/pkg/schema"
@@ -19,13 +19,13 @@ const (
 )
 
 type Link struct {
-	cfg    *config.Point
+	cfg    *co.Point
 	status *schema.Point
 	out    *libol.SubLogger
 	uuid   string
 }
 
-func NewLink(uuid string, cfg *config.Point) *Link {
+func NewLink(uuid string, cfg *co.Point) *Link {
 	return &Link{
 		uuid: uuid,
 		cfg:  cfg,
@@ -50,7 +50,7 @@ func (l *Link) Initialize() {
 	_ = libol.MarshalSave(l.cfg, file, true)
 }
 
-func (l *Link) Conf() *config.Point {
+func (l *Link) Conf() *co.Point {
 	return l.cfg
 }
 

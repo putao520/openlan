@@ -3,7 +3,7 @@ package olsw
 import (
 	"context"
 	"fmt"
-	"github.com/danieldin95/openlan/pkg/config"
+	co "github.com/danieldin95/openlan/pkg/config"
 	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/danieldin95/openlan/pkg/models"
 	"github.com/danieldin95/openlan/pkg/olsw/api"
@@ -34,7 +34,7 @@ type Http struct {
 }
 
 func NewHttp(switcher api.Switcher) (h *Http) {
-	c := config.Manager.Switch
+	c := co.Manager.Switch
 	h = &Http{
 		switcher:  switcher,
 		listen:    c.Http.Listen,
@@ -122,14 +122,6 @@ func (h *Http) LoadRouter() {
 
 	h.PProf(router)
 	router.HandleFunc("/api/index", h.GetIndex).Methods("GET")
-	router.HandleFunc("/api/config", func(w http.ResponseWriter, r *http.Request) {
-		format := api.GetQueryOne(r, "format")
-		if format == "yaml" {
-			api.ResponseYaml(w, h.switcher.Config())
-		} else {
-			api.ResponseJson(w, h.switcher.Config())
-		}
-	})
 	api.Link{Switcher: h.switcher}.Router(router)
 	api.User{}.Router(router)
 	api.Neighbor{}.Router(router)
@@ -146,6 +138,7 @@ func (h *Http) LoadRouter() {
 	api.Esp{}.Router(router)
 	api.EspState{}.Router(router)
 	api.EspPolicy{}.Router(router)
+	api.Config{Switcher: h.switcher}.Router(router)
 }
 
 func (h *Http) LoadToken() error {

@@ -152,6 +152,12 @@ func (sm *SafeStrMap) Del(k string) {
 	}
 }
 
+func (sm *SafeStrMap) Clear() {
+	sm.lock.Lock()
+	defer sm.lock.Unlock()
+	sm.data = make(map[string]interface{}, sm.size)
+}
+
 func (sm *SafeStrMap) Get(k string) interface{} {
 	sm.lock.RLock()
 	defer sm.lock.RUnlock()

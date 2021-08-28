@@ -31,7 +31,7 @@ type EspPolicy struct {
 
 type EspMember struct {
 	Name   string      `json:"name"`
-	Spi    int         `json:"spi"`
+	Spi    uint32      `json:"spi"`
 	Peer   string      `json:"peer"`
 	State  EspState    `json:"state"`
 	Policy []EspPolicy `json:"policy"`

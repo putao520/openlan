@@ -85,6 +85,10 @@ func (p *espState) List(name string) <-chan *models.EspState {
 	return c
 }
 
+func (p *espState) Clear() {
+	p.State.Clear()
+}
+
 var EspState = espState{
 	State: libol.NewSafeStrMap(1024),
 }
@@ -126,6 +130,10 @@ func (p *espPolicy) List(name string) <-chan *models.EspPolicy {
 		c <- nil //Finish channel by nil.
 	}()
 	return c
+}
+
+func (p *espPolicy) Clear() {
+	p.Policy.Clear()
 }
 
 var EspPolicy = espPolicy{

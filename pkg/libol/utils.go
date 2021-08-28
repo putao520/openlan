@@ -49,6 +49,11 @@ func GenUint32() uint32 {
 	return rand.Uint32()
 }
 
+func GenInt32() int {
+	rand.Seed(time.Now().UnixNano())
+	return rand.Int()
+}
+
 func Marshal(v interface{}, pretty bool) ([]byte, error) {
 	str, err := json.Marshal(v)
 	if err != nil {
