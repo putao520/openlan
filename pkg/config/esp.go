@@ -13,9 +13,9 @@ const (
 )
 
 type EspState struct {
-	Local    string `json:"-" yaml:"-"`
+	Local    string `json:"local,omitempty" yaml:"local,omitempty"`
 	LocalIp  net.IP `json:"-"  yaml:"-"`
-	Remote   string `json:"-" yaml:"-"`
+	Remote   string `json:"remote,omitempty" yaml:"remote,omitempty"`
 	RemoteIp net.IP `json:"-"  yaml:"-"`
 	Encap    string `json:"encapsulation" yaml:"encapsulation,omitempty"`
 	Auth     string `json:"auth,omitempty" yaml:"auth,omitempty"`

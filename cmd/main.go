@@ -1,4 +1,4 @@
-package cmd
+package main
 
 import (
 	"github.com/danieldin95/openlan/cmd/api"

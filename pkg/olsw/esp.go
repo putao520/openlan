@@ -100,7 +100,7 @@ func (w *EspWorker) addState(mem *config.ESPMember) {
 	crypt := mem.State.Crypt
 	encap := GetStateEncap(mem.State.Encap)
 
-	w.out.Info("EspWorker.addState %s-%s", local, remote)
+	w.out.Info("EspWorker.addState %s %s", local, remote)
 	if st := w.newState(spi, local, remote, auth, crypt); st != nil {
 		st.Encap = encap
 		w.states = append(w.states, st)
@@ -125,7 +125,7 @@ func (w *EspWorker) addPolicy(mem *config.ESPMember, pol *config.ESPPolicy) {
 	spi := mem.Spi
 	local := mem.State.LocalIp
 	remote := mem.State.RemoteIp
-	w.out.Info("EspWorker.addPolicy %s-%s %s-%s", local, remote, pol.Source, pol.Dest)
+	w.out.Info("EspWorker.addPolicy %s %s %s %s", local, remote, pol.Source, pol.Dest)
 	src, err := libol.ParseNet(pol.Source)
 	if err != nil {
 		w.out.Error("EspWorker.addPolicy %s %s", pol.Source, err)
