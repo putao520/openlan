@@ -280,14 +280,14 @@ func (w *EspWorker) UpDummy(name, addr, peer string) error {
 
 func (w *EspWorker) addXfrm() {
 	for _, state := range w.states {
-		w.out.Debug("EspWorker.Start State %s", state)
+		w.out.Debug("EspWorker.AddXfrm State %s", state)
 		if err := nl.XfrmStateAdd(state); err != nil {
 			w.out.Error("EspWorker.Start State %s", err)
 		}
 	}
 	for _, policy := range w.policies {
 		if err := nl.XfrmPolicyAdd(policy); err != nil {
-			w.out.Error("EspWorker.Start Policy %s", err)
+			w.out.Error("EspWorker.addXfrm Policy %s", err)
 		}
 	}
 }
@@ -330,12 +330,12 @@ func (w *EspWorker) DownDummy(name string) error {
 func (w *EspWorker) delXfrm() {
 	for _, state := range w.states {
 		if err := nl.XfrmStateDel(state); err != nil {
-			w.out.Error("EspWorker.Stop State %s", err)
+			w.out.Warn("EspWorker.delXfrm State %s", err)
 		}
 	}
 	for _, policy := range w.policies {
 		if err := nl.XfrmPolicyDel(policy); err != nil {
-			w.out.Error("EspWorker.Stop Policy %s", err)
+			w.out.Warn("EspWorker.delXfrm Policy %s", err)
 		}
 	}
 }
