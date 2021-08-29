@@ -192,8 +192,6 @@ func (w *EspWorker) updateXfrm() {
 	w.states = nil
 	w.policies = nil
 
-	store.EspState.Clear()
-	store.EspState.Clear()
 	for _, mem := range w.spec.Members {
 		if mem == nil {
 			continue
