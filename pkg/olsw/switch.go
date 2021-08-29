@@ -816,6 +816,7 @@ func (v *Switch) Firewall() *network.FireWall {
 
 func (v *Switch) Reload() error {
 	store.EspState.Clear()
+	store.EspPolicy.Clear()
 	for _, w := range v.worker {
 		w.Reload(nil)
 	}

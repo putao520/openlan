@@ -3,7 +3,7 @@
 #
 
 #
-# git clone https://github.com/danieldin95/freecert packaging/resource/cert
+# git clone git@github.com:danieldin95/freecert.git dist/resource/cert
 #
 
 SHELL := /bin/bash
@@ -37,6 +37,11 @@ help: ## show make targets
 bin: linux windows darwin ## build all platform binary
 
 pkg: linux-rpm windows-zip darwin-zip ## build all plaftorm packages
+
+#
+## docker run --network host --privileged -v /var/run:/var/run -v /etc/openlan/switch:/etc/openlan/switch openlan-switch:5.8.13
+docker: pkg
+	docker build -t openlan-switch:$(VER) --build-arg VERSION=$(VER) -f ./dist/openlan-switch.docker  .
 
 ## upgrade
 upgrade:
