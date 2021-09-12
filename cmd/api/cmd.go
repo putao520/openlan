@@ -47,60 +47,55 @@ func (cl Client) GetBody(url string) ([]byte, error) {
 	return body, nil
 }
 
-func (cl Client) GetJSON(url string, v interface{}) error {
+func (cl Client) JSON(client *libol.HttpClient, i, o interface{}) error {
 	out := cl.Log()
-	client := cl.NewRequest(url)
-	r, err := client.Do()
+	data, err := json.Marshal(i)
 	if err != nil {
 		return err
 	}
-	if r.StatusCode != http.StatusOK {
-		return libol.NewErr(r.Status)
-	}
-	defer r.Body.Close()
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return err
-	}
-	out.Debug("client.GetJSON %s", body)
-	if err := json.Unmarshal(body, v); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (cl Client) SetJSON(client *libol.HttpClient, v interface{}) error {
-	out := cl.Log()
-	data, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-	out.Debug("Client.SetJSON %s %s %s", client.Url, client.Method, string(data))
+	out.Debug("Client.JSON -> %s %s", client.Method, client.Url)
+	out.Debug("Client.JSON -> %s", string(data))
 	client.Payload = bytes.NewReader(data)
 	if r, err := client.Do(); err != nil {
 		return err
 	} else if r.StatusCode != http.StatusOK {
 		return libol.NewErr(r.Status)
+	} else if o != nil {
+		defer r.Body.Close()
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			return err
+		}
+		out.Debug("client.JSON <- %s", string(body))
+		if err := json.Unmarshal(body, o); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-func (cl Client) PostJSON(url string, v interface{}) error {
+func (cl Client) GetJSON(url string, v interface{}) error {
+	client := cl.NewRequest(url)
+	client.Method = "GET"
+	return cl.JSON(client, nil, v)
+}
+
+func (cl Client) PostJSON(url string, i, o interface{}) error {
 	client := cl.NewRequest(url)
 	client.Method = "POST"
-	return cl.SetJSON(client, v)
+	return cl.JSON(client, i, o)
 }
 
-func (cl Client) PutJSON(url string, v interface{}) error {
+func (cl Client) PutJSON(url string, i, o interface{}) error {
 	client := cl.NewRequest(url)
 	client.Method = "PUT"
-	return cl.SetJSON(client, v)
+	return cl.JSON(client, i, o)
 }
 
-func (cl Client) DeleteJSON(url string, v interface{}) error {
+func (cl Client) DeleteJSON(url string, i, o interface{}) error {
 	client := cl.NewRequest(url)
 	client.Method = "DELETE"
-	return cl.SetJSON(client, v)
+	return cl.JSON(client, i, o)
 }
 
 func (cl Client) Log() *libol.SubLogger {

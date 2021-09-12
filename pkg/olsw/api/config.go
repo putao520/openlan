@@ -12,6 +12,7 @@ type Config struct {
 func (c Config) Router(router *mux.Router) {
 	router.HandleFunc("/api/config", c.List).Methods("GET")
 	router.HandleFunc("/api/config/reload", c.Reload).Methods("PUT")
+	router.HandleFunc("/api/config/save", c.Save).Methods("PUT")
 }
 
 func (c Config) List(w http.ResponseWriter, r *http.Request) {
@@ -24,9 +25,11 @@ func (c Config) List(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c Config) Reload(w http.ResponseWriter, r *http.Request) {
-	if err := c.Switcher.Reload(); err == nil {
-		ResponseJson(w, "success")
-	} else {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	c.Switcher.Reload()
+	ResponseMsg(w, 0, "success")
+}
+
+func (c Config) Save(w http.ResponseWriter, r *http.Request) {
+	c.Switcher.Save()
+	ResponseMsg(w, 0, "success")
 }

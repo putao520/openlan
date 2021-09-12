@@ -175,7 +175,7 @@ func (br *Bridge) Correct() {
 }
 
 type IpSubnet struct {
-	Network string `json:"network"`
+	Network string `json:"network,omitempty"`
 	Start   string `json:"start"`
 	End     string `json:"end"`
 	Netmask string `json:"netmask"`
@@ -187,10 +187,10 @@ type MultiPath struct {
 }
 
 type PrefixRoute struct {
-	Network   string      `json:"network"`
+	Network   string      `json:"network,omitempty"`
 	Prefix    string      `json:"prefix"`
 	NextHop   string      `json:"nexthop"`
-	MultiPath []MultiPath `json:"multipath"`
+	MultiPath []MultiPath `json:"multipath,omitempty"`
 	Metric    int         `json:"metric"`
 	Mode      string      `json:"mode" yaml:"forwardMode"` // route or snat
 }
@@ -202,7 +202,7 @@ type HostLease struct {
 }
 
 type Password struct {
-	Network  string `json:"network"`
+	Network  string `json:"network,omitempty"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 }

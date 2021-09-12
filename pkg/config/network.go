@@ -3,6 +3,7 @@ package config
 import "strings"
 
 type Network struct {
+	File      string        `json:"file"`
 	Alias     string        `json:"-" yaml:"-"`
 	Name      string        `json:"name,omitempty" yaml:"name"`
 	Provider  string        `json:"provider,omitempty" yaml:"provider"`

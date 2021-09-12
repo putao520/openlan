@@ -19,11 +19,11 @@ type OpenVPN struct {
 	ServerKey string     `json:"key"`
 	TlsAuth   string     `json:"tlsAuth"`
 	Cipher    string     `json:"cipher"`
-	Routes    []string   `json:"routes"`
+	Routes    []string   `json:"-"`
 	Renego    int        `json:"renego"`
 	Script    string     `json:"-"`
-	Breed     []*OpenVPN `json:"breed"`
-	Push      []string   `json:"push"`
+	Breed     []*OpenVPN `json:"breed,omitempty"`
+	Push      []string   `json:"push,omitempty"`
 }
 
 var index = 1194

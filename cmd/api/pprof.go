@@ -24,7 +24,7 @@ func (u PProf) Add(c *cli.Context) error {
 	}
 	url := u.Url(c.String("url"), "")
 	clt := u.NewHttp(c.String("token"))
-	if err := clt.PostJSON(url, pp); err != nil {
+	if err := clt.PostJSON(url, pp, nil); err != nil {
 		return err
 	}
 	return nil
@@ -33,7 +33,7 @@ func (u PProf) Add(c *cli.Context) error {
 func (u PProf) Del(c *cli.Context) error {
 	url := u.Url(c.String("url"), "")
 	clt := u.NewHttp(c.String("token"))
-	if err := clt.DeleteJSON(url, nil); err != nil {
+	if err := clt.DeleteJSON(url, nil, nil); err != nil {
 		return err
 	}
 	return nil

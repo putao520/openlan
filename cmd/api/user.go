@@ -42,7 +42,7 @@ func (u User) Add(c *cli.Context) error {
 	user.Network = values[1]
 	url := u.Url(c.String("url"), user.Name)
 	clt := u.NewHttp(c.String("token"))
-	if err := clt.PostJSON(url, user); err != nil {
+	if err := clt.PostJSON(url, user, nil); err != nil {
 		return err
 	}
 	return nil
@@ -52,7 +52,7 @@ func (u User) Remove(c *cli.Context) error {
 	username := c.String("name")
 	url := u.Url(c.String("url"), username)
 	clt := u.NewHttp(c.String("token"))
-	if err := clt.DeleteJSON(url, nil); err != nil {
+	if err := clt.DeleteJSON(url, nil, nil); err != nil {
 		return err
 	}
 	return nil
@@ -119,7 +119,7 @@ func (u User) Check(c *cli.Context) error {
 		Password: passFromE,
 		Alias:    alias,
 	}
-	if err := client.PostJSON(url, user); err != nil {
+	if err := client.PostJSON(url, user, nil); err != nil {
 		return err
 	} else {
 		fmt.Printf("success: us=%s\n", nameFromE)

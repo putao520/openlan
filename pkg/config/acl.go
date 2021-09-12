@@ -1,6 +1,7 @@
 package config
 
 type ACL struct {
+	File  string     `json:"file"`
 	Name  string     `json:"name"`
 	Rules []*ACLRule `json:"rules"`
 }
