@@ -10,7 +10,7 @@ import (
 )
 
 func ResponseJson(w http.ResponseWriter, v interface{}) {
-	str, err := json.MarshalIndent(v, "", "")
+	str, err := json.Marshal(v)
 	if err == nil {
 		libol.Debug("ResponseJson: %s", str)
 		w.Header().Set("Content-Type", "application/json")
