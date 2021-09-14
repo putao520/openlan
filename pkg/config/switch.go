@@ -63,6 +63,7 @@ func (p *Perf) Correct(obj *Perf) {
 }
 
 type Switch struct {
+	File      string     `json:"file"`
 	Alias     string     `json:"alias"`
 	Perf      Perf       `json:"limit,omitempty" yaml:"limit"`
 	Protocol  string     `json:"protocol"` // tcp, tls, udp, kcp, ws and wss.
@@ -77,11 +78,10 @@ type Switch struct {
 	FireWall  []FlowRule `json:"firewall,omitempty" yaml:"firewall,omitempty"`
 	Inspect   []string   `json:"inspect,omitempty" yaml:"inspect,omitempty"`
 	Queue     Queue      `json:"queue" yaml:"queue"`
-	Password  string     `json:"password" yaml:"passwdfile"`
+	PassFile  string     `json:"password" yaml:"passwordFile"`
 	Ldap      *LDAP      `json:"ldap,omitempty" yaml:"ldap,omitempty"`
 	ConfDir   string     `json:"-" yaml:"-"`
 	TokenFile string     `json:"-" yaml:"-"`
-	SaveFile  string     `json:"-" yaml:"-"`
 }
 
 func DefaultSwitch() *Switch {
@@ -123,7 +123,7 @@ func (s *Switch) Parse() {
 }
 
 func (s *Switch) Initialize() {
-	s.SaveFile = filepath.Join(s.ConfDir, "switch.json")
+	s.File = s.Dir("switch.json")
 	if err := s.Load(); err != nil {
 		libol.Error("Switch.Initialize %s", err)
 	}
@@ -141,28 +141,34 @@ func (s *Switch) Correct(obj *Switch) {
 	}
 	libol.Debug("Proxy.Correct Http %v", s.Http)
 	s.TokenFile = filepath.Join(s.ConfDir, "token")
-	s.SaveFile = filepath.Join(s.ConfDir, "switch.json")
+	s.File = filepath.Join(s.ConfDir, "switch.json")
 	if s.Cert != nil {
 		s.Cert.Correct()
 	}
 	perf := &s.Perf
 	perf.Correct(DefaultPerf())
-	if s.Password == "" {
-		s.Password = filepath.Join(s.ConfDir, "password")
+	if s.PassFile == "" {
+		s.PassFile = filepath.Join(s.ConfDir, "password")
 	}
 	if s.Protocol == "" {
 		s.Protocol = "tcp"
 	}
 }
 
+func (s *Switch) Dir(elem ...string) string {
+	args := append([]string{s.ConfDir}, elem...)
+	return filepath.Join(args...)
+}
+
 func (s *Switch) LoadNetwork() {
-	files, err := filepath.Glob(filepath.Join(s.ConfDir, "network", "*.json"))
+	files, err := filepath.Glob(s.Dir("network", "*.json"))
 	if err != nil {
 		libol.Error("Switch.LoadNetwork %s", err)
 	}
 	for _, k := range files {
 		obj := &Network{
 			Alias: s.Alias,
+			File:  k,
 		}
 		if err := libol.UnmarshalLoad(obj, k); err != nil {
 			libol.Error("Switch.LoadNetwork %s", err)
@@ -191,16 +197,21 @@ func (s *Switch) LoadNetwork() {
 		obj.Correct()
 		obj.Alias = s.Alias
 		obj.Crypt = s.Crypt
+		if obj.File == "" {
+			obj.File = s.Dir("network", obj.Name+".json")
+		}
 	}
 }
 
 func (s *Switch) LoadAcl() {
-	files, err := filepath.Glob(filepath.Join(s.ConfDir, "acl", "*.json"))
+	files, err := filepath.Glob(s.Dir("acl", "*.json"))
 	if err != nil {
 		libol.Error("Switch.LoadAcl %s", err)
 	}
 	for _, k := range files {
-		obj := &ACL{}
+		obj := &ACL{
+			File: k,
+		}
 		if err := libol.UnmarshalLoad(obj, k); err != nil {
 			libol.Error("Switch.LoadAcl %s", err)
 			continue
@@ -211,15 +222,15 @@ func (s *Switch) LoadAcl() {
 		for _, rule := range obj.Rules {
 			rule.Correct()
 		}
+		if obj.File == "" {
+			obj.File = s.Dir("acl", obj.Name+".json")
+		}
 	}
 }
 
 func (s *Switch) Default() {
 	obj := DefaultSwitch()
 	s.Correct(obj)
-	if s.Network == nil {
-		s.Network = make([]*Network, 0, 32)
-	}
 	if s.Timeout == 0 {
 		s.Timeout = obj.Timeout
 	}
@@ -233,5 +244,32 @@ func (s *Switch) Default() {
 }
 
 func (s *Switch) Load() error {
-	return libol.UnmarshalLoad(s, s.SaveFile)
+	return libol.UnmarshalLoad(s, s.File)
+}
+
+func (s *Switch) Save() {
+	tmp := *s
+	tmp.Network = nil
+	tmp.Acl = nil
+	if err := libol.MarshalSave(&tmp, tmp.File, true); err != nil {
+		libol.Error("Switch.Save %s", err)
+	}
+	s.SaveAcl()
+	s.SaveNets()
+}
+
+func (s *Switch) SaveAcl() {
+	for _, obj := range s.Acl {
+		if err := libol.MarshalSave(obj, obj.File, true); err != nil {
+			libol.Error("Switch.Save.Acl %s %s", obj.Name, err)
+		}
+	}
+}
+
+func (s *Switch) SaveNets() {
+	for _, obj := range s.Network {
+		if err := libol.MarshalSave(obj, obj.File, true); err != nil {
+			libol.Error("Switch.Save.Network %s %s", obj.Name, err)
+		}
+	}
 }

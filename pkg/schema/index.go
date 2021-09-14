@@ -16,3 +16,8 @@ type Ctrl struct {
 	Url   string `json:"url"`
 	Token string `json:"token"`
 }
+
+type Message struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}

@@ -244,7 +244,7 @@ func (v *Switch) enableAcl(acl, input string) {
 	}
 }
 
-func (v *Switch) preNetworkVPN0(nCfg *co.Network, vCfg *co.OpenVPN) {
+func (v *Switch) preNetVPN0(nCfg *co.Network, vCfg *co.OpenVPN) {
 	if nCfg == nil || vCfg == nil {
 		return
 	}
@@ -255,11 +255,11 @@ func (v *Switch) preNetworkVPN0(nCfg *co.Network, vCfg *co.OpenVPN) {
 		v.enableMasq(devName, "", vCfg.Subnet, rt)
 	}
 	for _, _vCfg := range vCfg.Breed {
-		v.preNetworkVPN0(nCfg, _vCfg)
+		v.preNetVPN0(nCfg, _vCfg)
 	}
 }
 
-func (v *Switch) preNetworkVPN1(bridge, prefix string, vCfg *co.OpenVPN) {
+func (v *Switch) preNetVPN1(bridge, prefix string, vCfg *co.OpenVPN) {
 	if vCfg == nil {
 		return
 	}
@@ -267,11 +267,11 @@ func (v *Switch) preNetworkVPN1(bridge, prefix string, vCfg *co.OpenVPN) {
 	v.enableFwd("", bridge, vCfg.Subnet, prefix)
 	v.enableMasq("", bridge, vCfg.Subnet, prefix)
 	for _, _vCfg := range vCfg.Breed {
-		v.preNetworkVPN1(bridge, prefix, _vCfg)
+		v.preNetVPN1(bridge, prefix, _vCfg)
 	}
 }
 
-func (v *Switch) preNetwork() {
+func (v *Switch) preNets() {
 	for _, nCfg := range v.cfg.Network {
 		name := nCfg.Name
 		w := NewNetworker(nCfg)
@@ -291,14 +291,14 @@ func (v *Switch) preNetwork() {
 		ifAddr := strings.SplitN(source, "/", 2)[0]
 		// Enable MASQUERADE for OpenVPN
 		if vCfg != nil {
-			v.preNetworkVPN0(nCfg, vCfg)
+			v.preNetVPN0(nCfg, vCfg)
 		}
 		if ifAddr == "" {
 			continue
 		}
 		// Enable MASQUERADE, and allowed forward.
 		for _, rt := range nCfg.Routes {
-			v.preNetworkVPN1(brName, rt.Prefix, vCfg)
+			v.preNetVPN1(brName, rt.Prefix, vCfg)
 			if rt.NextHop != ifAddr {
 				continue
 			}
@@ -312,7 +312,7 @@ func (v *Switch) preNetwork() {
 	}
 }
 
-func (v *Switch) preApplication() {
+func (v *Switch) preApps() {
 	// Append accessed auth for point
 	v.apps.Auth = app.NewAccess(v)
 	v.hooks = append(v.hooks, v.apps.Auth.OnFrame)
@@ -335,11 +335,11 @@ func (v *Switch) preApplication() {
 		v.hooks = append(v.hooks, v.apps.OnLines.OnFrame)
 	}
 	for i, h := range v.hooks {
-		v.out.Debug("Switch.preApplication: id %d, func %s", i, libol.FunName(h))
+		v.out.Debug("Switch.preApps: id %d, func %s", i, libol.FunName(h))
 	}
 }
 
-func (v *Switch) preController() {
+func (v *Switch) preCtl() {
 	ctrls.Load(filepath.Join(v.cfg.ConfDir, "ctrl.json"))
 	if ctrls.Ctrl.Name == "" {
 		ctrls.Ctrl.Name = v.cfg.Alias
@@ -431,6 +431,10 @@ func (v *Switch) SetLdap(ldap *co.LDAP) {
 	store.User.SetLdap(&cfg)
 }
 
+func (v *Switch) SetPass(file string) {
+	store.User.SetFile(v.cfg.PassFile)
+}
+
 func (v *Switch) LoadPass(file string) {
 	if file == "" {
 		return
@@ -473,24 +477,23 @@ func (v *Switch) Initialize() {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
-	store.User.SetFile(v.cfg.Password)
 	v.preAcl()
 	v.preAllow()
-	v.preApplication()
+	v.preApps()
 	if v.cfg.Http != nil {
 		v.http = NewHttp(v)
 	}
-	v.preNetwork()
+	v.preNets()
 	// Controller
-	v.preController()
+	v.preCtl()
 	// FireWall
 	v.firewall.Initialize()
 	for _, w := range v.worker {
 		w.Initialize()
 	}
 	// Load password for guest access
-
-	v.LoadPass(v.cfg.Password)
+	v.SetPass(v.cfg.PassFile)
+	v.LoadPass(v.cfg.PassFile)
 	v.SetLdap(v.cfg.Ldap)
 }
 
@@ -814,12 +817,15 @@ func (v *Switch) Firewall() *network.FireWall {
 	return v.firewall
 }
 
-func (v *Switch) Reload() error {
+func (v *Switch) Reload() {
 	store.EspState.Clear()
 	store.EspPolicy.Clear()
 	for _, w := range v.worker {
 		w.Reload(nil)
 	}
 	libol.Go(v.firewall.Start)
-	return nil
+}
+
+func (v *Switch) Save() {
+	v.cfg.Save()
 }

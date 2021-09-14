@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"github.com/danieldin95/openlan/pkg/config"
 	"github.com/danieldin95/openlan/pkg/libol"
+	"github.com/danieldin95/openlan/pkg/schema"
 	"github.com/urfave/cli/v2"
+	"gopkg.in/yaml.v2"
 	"path/filepath"
 )
 
@@ -21,9 +23,15 @@ func (u Config) Url(prefix, name string) string {
 
 func (u Config) List(c *cli.Context) error {
 	url := u.Url(c.String("url"), "")
-	url += "?format=" + c.String("format")
 	clt := u.NewHttp(c.String("token"))
-	if data, err := clt.GetBody(url); err == nil {
+	cfg := &config.Switch{}
+	if err := clt.GetJSON(url, cfg); err == nil {
+		var data []byte
+		if c.String("format") == "yaml" {
+			data, _ = yaml.Marshal(cfg)
+		} else {
+			data, _ = libol.Marshal(cfg, true)
+		}
 		fmt.Println(string(data))
 		return nil
 	} else {
@@ -94,9 +102,21 @@ func (u Config) Check(c *cli.Context) error {
 func (u Config) Reload(c *cli.Context) error {
 	url := u.Url(c.String("url"), "reload")
 	clt := u.NewHttp(c.String("token"))
-	data := "success"
-	if err := clt.PutJSON(url, &data); err == nil {
-		fmt.Println(data)
+	data := &schema.Message{}
+	if err := clt.PutJSON(url, nil, data); err == nil {
+		fmt.Println(data.Message)
+		return nil
+	} else {
+		return err
+	}
+}
+
+func (u Config) Save(c *cli.Context) error {
+	url := u.Url(c.String("url"), "save")
+	clt := u.NewHttp(c.String("token"))
+	data := &schema.Message{}
+	if err := clt.PutJSON(url, nil, data); err == nil {
+		fmt.Println(data.Message)
 		return nil
 	} else {
 		return err
@@ -113,7 +133,10 @@ func (u Config) Commands(app *cli.App) cli.Commands {
 				Name:    "list",
 				Usage:   "Display all configuration",
 				Aliases: []string{"ls"},
-				Action:  u.List,
+				Flags: []cli.Flag{
+					&cli.StringFlag{Name: "format", Value: "json"},
+				},
+				Action: u.List,
 			},
 			{
 				Name:    "check",
@@ -132,6 +155,15 @@ func (u Config) Commands(app *cli.App) cli.Commands {
 					&cli.StringFlag{Name: "dir", Value: "/etc/openlan"},
 				},
 				Action: u.Reload,
+			},
+			{
+				Name:    "save",
+				Usage:   "Save configuration",
+				Aliases: []string{"sa"},
+				Flags: []cli.Flag{
+					&cli.StringFlag{Name: "dir", Value: "/etc/openlan"},
+				},
+				Action: u.Save,
 			},
 		},
 	})
