@@ -30,7 +30,10 @@ func (w *user) Save() error {
 		if obj.Role == "ldap" {
 			continue
 		}
-		line := obj.Id() + ":" + obj.Password + ":" + obj.Role
+		line := obj.Id()
+		line += ":" + obj.Password
+		line += ":" + obj.Role
+		line += ":" + obj.Lease.Format(libol.LeaseTime)
 		_, _ = fp.WriteString(line + "\n")
 	}
 	return nil
@@ -47,14 +50,14 @@ func (w *user) Init(size int) {
 func (w *user) Add(user *models.User) {
 	libol.Debug("user.Add %v", user)
 	key := user.Id()
-	older := w.Get(key)
-	if older == nil {
+	if older := w.Get(key); older == nil {
 		_ = w.Users.Set(key, user)
 	} else { // Update pass and role.
 		older.Role = user.Role
 		older.Password = user.Password
 		older.Alias = user.Alias
 		older.UpdateAt = user.UpdateAt
+		older.Lease = user.Lease
 	}
 }
 
@@ -117,11 +120,14 @@ func (w *user) Timeout(user *models.User) bool {
 
 func (w *user) Check(obj *models.User) *models.User {
 	if u := w.Get(obj.Id()); u != nil {
-		if u.Role == "ldap" {
-			// check it by ldap.
-		} else {
+		if u.Role == "" || u.Role == "admin" || u.Role == "guest" {
 			if u.Password == obj.Password {
-				return u
+				t0 := time.Now()
+				t1 := u.Lease
+				if t1.Year() < 2000 || t1.After(t0) {
+					return u
+				}
+				return nil
 			}
 		}
 	}

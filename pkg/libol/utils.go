@@ -19,6 +19,8 @@ import (
 	"time"
 )
 
+const LeaseTime = "2006-01-02,15"
+
 func GenRandom(n int) string {
 	letters := []byte("0123456789abcdefghijklmnopqrstuvwxyz")
 	buffer := make([]byte, n)

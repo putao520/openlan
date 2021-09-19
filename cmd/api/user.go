@@ -7,6 +7,7 @@ import (
 	"github.com/urfave/cli/v2"
 	"os"
 	"strings"
+	"time"
 )
 
 type User struct {
@@ -27,6 +28,7 @@ func (u User) Add(c *cli.Context) error {
 		Name:     username,
 		Password: c.String("password"),
 		Role:     c.String("role"),
+		Lease:    c.String("lease"),
 	}
 	if user.Name == "" {
 		return libol.NewErr("name is empty")
@@ -60,9 +62,9 @@ func (u User) Remove(c *cli.Context) error {
 
 func (u User) Tmpl() string {
 	return `# total {{ len . }}
-{{ps -24 "username"}} {{ps -24 "password"}} {{ps -6 "role"}}
+{{ps -24 "username"}} {{ps -24 "password"}} {{ps -6 "role"}} {{ps -15 "lease"}}
 {{- range . }}
-{{p2 -24 "%s@%s" .Name .Network}} {{ps -24 .Password}} {{ps -6 .Role}}
+{{p2 -24 "%s@%s" .Name .Network}} {{ps -24 .Password}} {{ps -6 .Role}} {{ps -15 .Lease }}
 {{- end }}
 `
 }
@@ -128,6 +130,7 @@ func (u User) Check(c *cli.Context) error {
 }
 
 func (u User) Commands(app *cli.App) cli.Commands {
+	lease := time.Now().AddDate(99, 0, 0)
 	return append(app.Commands, &cli.Command{
 		Name:    "user",
 		Aliases: []string{"us"},
@@ -140,6 +143,7 @@ func (u User) Commands(app *cli.App) cli.Commands {
 					&cli.StringFlag{Name: "name"},
 					&cli.StringFlag{Name: "password", Value: libol.GenRandom(24)},
 					&cli.StringFlag{Name: "role", Value: "guest"},
+					&cli.StringFlag{Name: "lease", Value: lease.Format(libol.LeaseTime)},
 				},
 				Action: u.Add,
 			},

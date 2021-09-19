@@ -6,4 +6,5 @@ type User struct {
 	Name     string `json:"name"`
 	Password string `json:"password"`
 	Network  string `json:"network"`
+	Lease    string `json:"leaseTime"`
 }

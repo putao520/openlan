@@ -457,14 +457,19 @@ func (v *Switch) LoadPass(file string) {
 		user := columns[0]
 		pass := columns[1]
 		role := "guest"
+		lease := ""
 		if len(columns) > 2 {
 			role = columns[2]
+		}
+		if len(columns) > 3 {
+			lease = columns[3]
 		}
 		userObj := &models.User{
 			Name:     user,
 			Password: pass,
 			Role:     role,
 		}
+		userObj.Lease, _ = time.Parse(libol.LeaseTime, lease)
 		userObj.Update()
 		store.User.Add(userObj)
 	}
