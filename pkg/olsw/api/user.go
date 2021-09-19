@@ -93,10 +93,10 @@ func (h User) Check(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	model := models.SchemaToUserModel(user)
-	if obj := store.User.Check(model); obj != nil {
-		ResponseJson(w, models.NewUserSchema(obj))
+	if _, err := store.User.Check(model); err == nil {
+		ResponseMsg(w, 0, "success")
 	} else {
-		http.Error(w, "invalid user", http.StatusUnauthorized)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 }

@@ -3,7 +3,6 @@ package models
 import (
 	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/danieldin95/openlan/pkg/schema"
-	"time"
 )
 
 func NewPointSchema(p *Point) schema.Point {
@@ -81,7 +80,7 @@ func NewUserSchema(u *User) schema.User {
 }
 
 func SchemaToUserModel(user *schema.User) *User {
-	lease, _ := time.Parse(libol.LeaseTime, user.Lease)
+	lease, _ := libol.GetLocalTime(libol.LeaseTime, user.Lease)
 	obj := &User{
 		Alias:    user.Alias,
 		Password: user.Password,

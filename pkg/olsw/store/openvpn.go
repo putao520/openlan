@@ -38,10 +38,6 @@ func (o *vpnClient) GetDevice(name string) string {
 	return ""
 }
 
-func (o *vpnClient) getTime(layout, value string) (time.Time, error) {
-	return time.ParseInLocation(layout, value, time.Local)
-}
-
 func (o *vpnClient) scanStatus(network string, reader io.Reader,
 	clients map[string]*schema.VPNClient) error {
 	readAt := "header"
@@ -83,7 +79,7 @@ func (o *vpnClient) scanStatus(network string, reader io.Reader,
 				if txc, err := ParseInt64(columns[3]); err == nil {
 					client.TxBytes = txc
 				}
-				uptime, err := o.getTime(time.ANSIC, columns[4])
+				uptime, err := libol.GetLocalTime(time.ANSIC, columns[4])
 				if err == nil {
 					client.Uptime = uptime.Unix()
 					client.AliveTime = time.Now().Unix() - client.Uptime

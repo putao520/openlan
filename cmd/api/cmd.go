@@ -58,17 +58,19 @@ func (cl Client) JSON(client *libol.HttpClient, i, o interface{}) error {
 	client.Payload = bytes.NewReader(data)
 	if r, err := client.Do(); err != nil {
 		return err
-	} else if r.StatusCode != http.StatusOK {
-		return libol.NewErr(r.Status)
-	} else if o != nil {
+	} else {
 		defer r.Body.Close()
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			return err
 		}
 		out.Debug("client.JSON <- %s", string(body))
-		if err := json.Unmarshal(body, o); err != nil {
-			return err
+		if r.StatusCode != http.StatusOK {
+			return libol.NewErr("%s %s", r.Status, body)
+		} else if o != nil {
+			if err := json.Unmarshal(body, o); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

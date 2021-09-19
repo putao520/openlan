@@ -65,7 +65,7 @@ func (p *Access) handleLogin(client libol.SocketClient, data []byte) error {
 	}
 	user.Update()
 	out.Info("Access.handleLogin: %s on %s", user.Id(), user.Alias)
-	if now := store.User.Check(user); now != nil {
+	if now, _ := store.User.Check(user); now != nil {
 		if now.Role != "admin" && now.Last != nil {
 			// To offline lastly client if guest.
 			p.master.OffClient(now.Last)

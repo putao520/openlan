@@ -41,7 +41,7 @@ func (w *user) Load() {
 		if len(columns) > 3 {
 			leStr = columns[3]
 		}
-		lease, _ := time.Parse(libol.LeaseTime, leStr)
+		lease, _ := libol.GetLocalTime(libol.LeaseTime, leStr)
 		obj := &models.User{
 			Name:     user,
 			Password: pass,
@@ -159,23 +159,23 @@ func (w *user) Timeout(user *models.User) bool {
 	return true
 }
 
-func (w *user) Check(obj *models.User) *models.User {
+func (w *user) Check(obj *models.User) (*models.User, error) {
 	if u := w.Get(obj.Id()); u != nil {
 		if u.Role == "" || u.Role == "admin" || u.Role == "guest" {
 			if u.Password == obj.Password {
 				t0 := time.Now()
 				t1 := u.Lease
 				if t1.Year() < 2000 || t1.After(t0) {
-					return u
+					return u, nil
 				}
-				return nil
+				return nil, libol.NewErr("out of date")
 			}
 		}
 	}
 	if u := w.CheckLdap(obj); u != nil {
-		return u
+		return u, nil
 	}
-	return nil
+	return nil, libol.NewErr("wrong user or password")
 }
 
 func (w *user) GetLdap() *libol.LDAPService {

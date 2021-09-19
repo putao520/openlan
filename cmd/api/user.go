@@ -116,16 +116,16 @@ func (u User) Check(c *cli.Context) error {
 	url := u.Url(c.String("url"), fullName)
 	url += "/check"
 	client := u.NewHttp(c.String("token"))
-	user := &schema.User{
+	data := &schema.User{
 		Name:     fullName,
 		Password: passFromE,
 		Alias:    alias,
 	}
-	if err := client.PostJSON(url, user, nil); err != nil {
-		return err
-	} else {
+	if err := client.PostJSON(url, data, nil); err == nil {
 		fmt.Printf("success: us=%s\n", nameFromE)
 		return nil
+	} else {
+		return err
 	}
 }
 

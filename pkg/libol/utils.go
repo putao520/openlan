@@ -263,3 +263,7 @@ func IfName(name string) string {
 	}
 	return name[size-15 : size]
 }
+
+func GetLocalTime(layout, value string) (time.Time, error) {
+	return time.ParseInLocation(layout, value, time.Local)
+}
