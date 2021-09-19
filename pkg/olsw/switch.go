@@ -430,10 +430,10 @@ func (v *Switch) SetLdap(ldap *co.LDAP) {
 }
 
 func (v *Switch) SetPass(file string) {
-	store.User.SetFile(v.cfg.PassFile)
+	store.User.SetFile(file)
 }
 
-func (v *Switch) LoadPass(file string) {
+func (v *Switch) LoadPass() {
 	store.User.Load()
 }
 
@@ -457,7 +457,7 @@ func (v *Switch) Initialize() {
 	}
 	// Load password for guest access
 	v.SetPass(v.cfg.PassFile)
-	v.LoadPass(v.cfg.PassFile)
+	v.LoadPass()
 	v.SetLdap(v.cfg.Ldap)
 }
 
