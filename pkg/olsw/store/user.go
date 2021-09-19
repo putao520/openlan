@@ -1,8 +1,10 @@
 package store
 
 import (
+	"bufio"
 	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/danieldin95/openlan/pkg/models"
+	"strings"
 	"sync"
 	"time"
 )
@@ -13,6 +15,45 @@ type user struct {
 	Users   *libol.SafeStrMap
 	LdapCfg *libol.LDAPConfig
 	LdapSvc *libol.LDAPService
+}
+
+func (w *user) Load() {
+	file := w.File
+	reader, err := libol.OpenRead(file)
+	if err != nil {
+		return
+	}
+	defer reader.Close()
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		line := scanner.Text()
+		columns := strings.SplitN(line, ":", 4)
+		if len(columns) < 2 {
+			continue
+		}
+		user := columns[0]
+		pass := columns[1]
+		role := "guest"
+		leStr := ""
+		if len(columns) > 2 {
+			role = columns[2]
+		}
+		if len(columns) > 3 {
+			leStr = columns[3]
+		}
+		lease, _ := time.Parse(libol.LeaseTime, leStr)
+		obj := &models.User{
+			Name:     user,
+			Password: pass,
+			Role:     role,
+			Lease:    lease,
+		}
+		obj.Update()
+		w.Add(obj)
+	}
+	if err := scanner.Err(); err != nil {
+		libol.Warn("User.Load %v", err)
+	}
 }
 
 func (w *user) Save() error {

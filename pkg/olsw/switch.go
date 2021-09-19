@@ -1,7 +1,6 @@
 package olsw
 
 import (
-	"bufio"
 	"encoding/json"
 	co "github.com/danieldin95/openlan/pkg/config"
 	"github.com/danieldin95/openlan/pkg/libol"
@@ -11,7 +10,6 @@ import (
 	"github.com/danieldin95/openlan/pkg/olsw/ctrls"
 	"github.com/danieldin95/openlan/pkg/olsw/store"
 	"net"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -436,46 +434,7 @@ func (v *Switch) SetPass(file string) {
 }
 
 func (v *Switch) LoadPass(file string) {
-	if file == "" {
-		return
-	}
-	reader, err := os.Open(file)
-	if err != nil {
-		if !os.IsNotExist(err) {
-			libol.Warn("Switch.LoadPass %v", err)
-		}
-		return
-	}
-	defer reader.Close()
-	scanner := bufio.NewScanner(reader)
-	for scanner.Scan() {
-		line := scanner.Text()
-		columns := strings.SplitN(line, ":", 4)
-		if len(columns) < 2 {
-			continue
-		}
-		user := columns[0]
-		pass := columns[1]
-		role := "guest"
-		lease := ""
-		if len(columns) > 2 {
-			role = columns[2]
-		}
-		if len(columns) > 3 {
-			lease = columns[3]
-		}
-		userObj := &models.User{
-			Name:     user,
-			Password: pass,
-			Role:     role,
-		}
-		userObj.Lease, _ = time.Parse(libol.LeaseTime, lease)
-		userObj.Update()
-		store.User.Add(userObj)
-	}
-	if err := scanner.Err(); err != nil {
-		v.out.Warn("Switch.LoadPass %v", err)
-	}
+	store.User.Load()
 }
 
 func (v *Switch) Initialize() {
