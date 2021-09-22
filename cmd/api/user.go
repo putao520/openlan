@@ -33,9 +33,6 @@ func (u User) Add(c *cli.Context) error {
 	if user.Name == "" {
 		return libol.NewErr("name is empty")
 	}
-	if user.Password == "" {
-		return libol.NewErr("password is empty")
-	}
 	if !strings.Contains(username, "@") {
 		return libol.NewErr("name not contains network")
 	}
@@ -144,6 +141,17 @@ func (u User) Commands(app *cli.App) cli.Commands {
 					&cli.StringFlag{Name: "password", Value: libol.GenRandom(24)},
 					&cli.StringFlag{Name: "role", Value: "guest"},
 					&cli.StringFlag{Name: "lease", Value: lease.Format(libol.LeaseTime)},
+				},
+				Action: u.Add,
+			},
+			{
+				Name:  "set",
+				Usage: "Update a user",
+				Flags: []cli.Flag{
+					&cli.StringFlag{Name: "name"},
+					&cli.StringFlag{Name: "password"},
+					&cli.StringFlag{Name: "role"},
+					&cli.StringFlag{Name: "lease"},
 				},
 				Action: u.Add,
 			},

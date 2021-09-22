@@ -94,11 +94,19 @@ func (w *user) Add(user *models.User) {
 	if older := w.Get(key); older == nil {
 		_ = w.Users.Set(key, user)
 	} else { // Update pass and role.
-		older.Role = user.Role
-		older.Password = user.Password
-		older.Alias = user.Alias
+		if user.Role != "" {
+			older.Role = user.Role
+		}
+		if user.Password != "" {
+			older.Password = user.Password
+		}
+		if user.Alias != "" {
+			older.Alias = user.Alias
+		}
 		older.UpdateAt = user.UpdateAt
-		older.Lease = user.Lease
+		if !user.Lease.IsZero() {
+			older.Lease = user.Lease
+		}
 	}
 }
 
