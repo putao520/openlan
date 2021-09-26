@@ -20,7 +20,7 @@ type OpenVPN struct {
 	TlsAuth   string     `json:"tlsAuth"`
 	Cipher    string     `json:"cipher"`
 	Routes    []string   `json:"-"`
-	Renego    int        `json:"renego"`
+	Renego    int        `json:"renego,omitempty"`
 	Script    string     `json:"-"`
 	Breed     []*OpenVPN `json:"breed,omitempty"`
 	Push      []string   `json:"push,omitempty"`

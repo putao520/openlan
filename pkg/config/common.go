@@ -176,9 +176,9 @@ func (br *Bridge) Correct() {
 
 type IpSubnet struct {
 	Network string `json:"network,omitempty"`
-	Start   string `json:"start"`
-	End     string `json:"end"`
-	Netmask string `json:"netmask"`
+	Start   string `json:"start,omitempty"`
+	End     string `json:"end,omitempty"`
+	Netmask string `json:"netmask,omitempt"`
 }
 
 type MultiPath struct {
