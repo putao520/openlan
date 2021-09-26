@@ -59,10 +59,9 @@ func (n *Network) Correct() {
 			n.Subnet = &IpSubnet{}
 		}
 		br := n.Bridge
-		ifAddr := ""
 		br.Network = n.Name
 		br.Correct()
-		ifAddr = strings.SplitN(br.Address, "/", 2)[0]
+		ifAddr := strings.SplitN(br.Address, "/", 2)[0]
 		for i := range n.Routes {
 			if n.Routes[i].Metric == 0 {
 				n.Routes[i].Metric = 592

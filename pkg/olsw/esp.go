@@ -84,7 +84,7 @@ func (w *EspWorker) newPolicy(spi int, local, remote net.IP, src, dst *net.IPNet
 		Dst:   remote,
 		Proto: w.proto,
 		Mode:  w.mode,
-		Spi:   int(spi),
+		Spi:   spi,
 	}
 	policy.Tmpls = append(policy.Tmpls, tmpl)
 	return policy
