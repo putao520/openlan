@@ -20,11 +20,11 @@ type Point struct {
 	Http        *Http     `json:"http,omitempty"`
 	Crypt       *Crypt    `json:"crypt,omitempty"`
 	PProf       string    `json:"pprof,omitempty"`
-	RequestAddr bool      `json:"requestAddr"`
+	RequestAddr bool      `json:"requestAddr,omitempty"`
 	SaveFile    string    `json:"-"`
-	Queue       *Queue    `json:"queue"`
+	Queue       *Queue    `json:"queue,omitempty"`
 	Terminal    string    `json:"-"`
-	Cert        *Cert     `json:"cert"`
+	Cert        *Cert     `json:"cert,omitempty"`
 	StatusFile  string    `json:"status,omitempty"`
 	PidFile     string    `json:"pid,omitempty"`
 }
