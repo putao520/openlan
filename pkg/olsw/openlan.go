@@ -125,13 +125,14 @@ func (w *OpenLANWorker) UnLoadLinks() {
 
 func (w *OpenLANWorker) LoadRoutes() {
 	// install routes
-	w.out.Debug("OpenLANWorker.LoadRoute: %v", w.cfg.Routes)
-	ifAddr := strings.SplitN(w.cfg.Bridge.Address, "/", 2)[0]
+	cfg := w.cfg
+	w.out.Debug("OpenLANWorker.LoadRoute: %v", cfg.Routes)
+	ifAddr := strings.SplitN(cfg.Bridge.Address, "/", 2)[0]
 	link, err := netlink.LinkByName(w.bridge.Name())
-	if ifAddr == "" || err != nil {
+	if err != nil {
 		return
 	}
-	for _, rt := range w.cfg.Routes {
+	for _, rt := range cfg.Routes {
 		_, dst, err := net.ParseCIDR(rt.Prefix)
 		if err != nil {
 			continue
@@ -171,23 +172,24 @@ func (w *OpenLANWorker) LoadRoutes() {
 }
 
 func (w *OpenLANWorker) UnLoadRoutes() {
+	cfg := w.cfg
 	link, err := netlink.LinkByName(w.bridge.Name())
-	if w.cfg.Bridge.Address == "" || err != nil {
+	if err != nil {
 		return
 	}
-	for _, rt := range w.cfg.Routes {
+	for _, rt := range cfg.Routes {
 		_, dst, err := net.ParseCIDR(rt.Prefix)
 		if err != nil {
 			continue
 		}
-		nlrt := netlink.Route{Dst: dst}
+		nlRt := netlink.Route{Dst: dst}
 		if rt.MultiPath == nil {
-			nlrt.LinkIndex = link.Attrs().Index
-			nlrt.Gw = net.ParseIP(rt.NextHop)
-			nlrt.Priority = rt.Metric
+			nlRt.LinkIndex = link.Attrs().Index
+			nlRt.Gw = net.ParseIP(rt.NextHop)
+			nlRt.Priority = rt.Metric
 		}
-		w.out.Debug("OpenLANWorker.UnLoadRoute: %s", nlrt)
-		if err := netlink.RouteDel(&nlrt); err != nil {
+		w.out.Debug("OpenLANWorker.UnLoadRoute: %s", nlRt)
+		if err := netlink.RouteDel(&nlRt); err != nil {
 			w.out.Warn("OpenLANWorker.UnLoadRoute: %s", err)
 			continue
 		}
@@ -338,10 +340,11 @@ func (w *OpenLANWorker) DelLink(addr string) {
 
 func (w *OpenLANWorker) GetSubnet() string {
 	addr := ""
-	if w.cfg.Bridge.Address != "" {
-		addr = w.cfg.Bridge.Address
-	} else if w.cfg.Subnet.Start != "" && w.cfg.Subnet.Netmask != "" {
-		addr = w.cfg.Subnet.Start + "/" + w.cfg.Subnet.Netmask
+	cfg := w.cfg
+	if cfg.Bridge.Address != "" {
+		addr = cfg.Bridge.Address
+	} else if cfg.Subnet.Start != "" && cfg.Subnet.Netmask != "" {
+		addr = cfg.Subnet.Start + "/" + cfg.Subnet.Netmask
 	}
 	if addr != "" {
 		if _, inet, err := net.ParseCIDR(addr); err == nil {
