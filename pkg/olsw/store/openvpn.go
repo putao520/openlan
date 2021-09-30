@@ -102,8 +102,13 @@ func (o *vpnClient) scanStatus(network string, reader io.Reader,
 	return nil
 }
 
+func (o *vpnClient) Dir(args ...string) string {
+	values := append([]string{o.Directory}, args...)
+	return filepath.Join(values...)
+}
+
 func (o *vpnClient) statusFile(name string) []string {
-	files, err := filepath.Glob(filepath.Join(o.Directory, name, "*server.status"))
+	files, err := filepath.Glob(o.Dir(name, "*server.status"))
 	if err != nil {
 		libol.Warn("vpnClient.statusFile %v", err)
 	}
@@ -138,6 +143,29 @@ func (o *vpnClient) List(name string) <-chan *schema.VPNClient {
 	}()
 
 	return c
+}
+
+func (o *vpnClient) GetClientProfile(network, client, remote string) (string, error) {
+	file := o.Dir(network, client+"client.ovpn")
+	reader, err := os.Open(file)
+	if err != nil {
+		return "", err
+	}
+	profile := ""
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "remote 0.0.0.0") {
+			profile += strings.Replace(line, "0.0.0.0", remote, 1)
+		} else {
+			profile += line
+		}
+		profile += "\n"
+	}
+	if err := scanner.Err(); err != nil {
+		return profile, err
+	}
+	return profile, nil
 }
 
 var VPNClient = vpnClient{

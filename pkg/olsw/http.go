@@ -81,6 +81,7 @@ func (h *Http) PProf(r *mux.Router) {
 
 func (h *Http) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		libol.Info("Http.Middleware %s %s", r.Method, r.URL.Path)
 		if h.IsAuth(w, r) {
 			next.ServeHTTP(w, r)
 		} else {
@@ -118,6 +119,7 @@ func (h *Http) LoadRouter() {
 	router := h.Router()
 
 	router.HandleFunc("/", h.IndexHtml)
+	router.HandleFunc("/index.html", h.IndexHtml)
 	router.HandleFunc("/favicon.ico", h.PubFile)
 
 	h.PProf(router)
@@ -192,10 +194,7 @@ func (h *Http) Shutdown() {
 func (h *Http) IsAuth(w http.ResponseWriter, r *http.Request) bool {
 	token, pass, ok := r.BasicAuth()
 	libol.Debug("Http.IsAuth token: %s, pass: %s", token, pass)
-
-	if path.Ext(r.URL.Path) == ".ico" {
-		return true
-	} else if len(r.URL.Path) > 4 {
+	if strings.HasPrefix(r.URL.Path, "/api/") {
 		if !ok || token != h.adminToken {
 			return false
 		}
