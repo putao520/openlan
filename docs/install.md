@@ -44,17 +44,17 @@ openlan软件包含下面部分：
        "name": "example",
        "provider": "openlan",
        "bridge": {
-           "address": "172.16.10.10/24"       ## 本地地址
+           "address": "172.32.10.10/24"       ## 本地地址
        },
        "subnet": {                            ## example网络的子网配置
-           "start": "172.16.10.100",          ## 用于动态分配给point的起始地址
-           "end": "172.32.16.150",            ## 截止地址
+           "start": "172.32.10.100",          ## 用于动态分配给point的起始地址
+           "end": "172.32.10.150",            ## 截止地址
            "netmask": "255.255.255.0"         ## 子网掩码
        },
        "hosts": [                             ## 为point添加静态地址分配
            {
                "hostname": "pc-99",           ## point的主机名称
-               "address": "172.16.10.99"      ## 分配的地址
+               "address": "172.32.10.99"      ## 分配的地址
            }
        ],
        "routes": [                            ## 注入给point的路由信息
@@ -64,9 +64,9 @@ openlan软件包含下面部分：
            }
        ],
        "openvpn": {                           ## 配置网络支持OpenVPN接入
-           "protocol": "tcp",
-           "listen": "0.0.0.0:1194",
-           "subnet": "172.16.194.0/24"        ## OpenVPN的子网地址
+           "protocol": "tcp",                 ## 访问的协议类型如tcp或者udp
+           "listen": "0.0.0.0:1194",          ## 对外提供的访问端口
+           "subnet": "172.16.194.0/24"        ## OpenVPN的子网地址，可以是任意的内网地址
        }
    }
    openlan cfg co                             ## 配置预检查
@@ -80,6 +80,10 @@ openlan软件包含下面部分：
    ```
    cd /var/openlan/openvpn/example            ## openvpn的配置信息存放目录
    cat ./client.ovpn                          ## 导出后编辑`remote 0.0.0.0`配置项，填充正确的IP地址
+   ```
+   或者通过http接口获取
+   ```
+   curl -k https://<access-ip>:10000/get/network/example/tcp1194.ovpn
    ```
 7. 添加一个新的接入认证的用户；
    ```
@@ -120,6 +124,6 @@ openlan软件包含下面部分：
    ```
 4. 检测网络是否可达；
    ```
-   ping 172.16.10.10 -c 3
+   ping 172.32.10.10 -c 3
    pint 192.168.10.1 -c 3
    ```
