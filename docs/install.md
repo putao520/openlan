@@ -83,7 +83,8 @@ openlan软件包含下面部分：
    ```
    或者通过http接口获取
    ```
-   curl -k https://<access-ip>:10000/get/network/example/tcp1194.ovpn
+   export token=`cat /etc/openlan/switch/token | md5sum | cut -b 1-12`
+   curl -k https://$token@<access-ip>:10000/get/network/example/tcp1194.ovpn
    ```
 7. 添加一个新的接入认证的用户；
    ```
