@@ -374,6 +374,7 @@ func (w *FabricWorker) AddTunnel(remote string, dport uint32) {
 	name := w.Addr2Port(remote, "vx-")
 	options := ovs.InterfaceOptions{
 		Type:      ovs.InterfaceTypeVXLAN,
+		BfdEnable: true,
 		RemoteIP:  remote,
 		Key:       "flow",
 		DfDefault: "false",
