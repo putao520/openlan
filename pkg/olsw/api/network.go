@@ -44,7 +44,6 @@ func (h Network) Profile(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	data, err := store.VPNClient.GetClientProfile(vars["id"], vars["ie"], server)
 	if err == nil {
-		w.Header().Set("Content-Type", "application/ovpn")
 		_, _ = w.Write([]byte(data))
 	} else {
 		http.Error(w, err.Error(), http.StatusNotFound)

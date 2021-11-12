@@ -2,6 +2,8 @@ package olsw
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	co "github.com/danieldin95/openlan/pkg/config"
 	"github.com/danieldin95/openlan/pkg/libol"
@@ -25,6 +27,7 @@ type Http struct {
 	switcher   api.Switcher
 	listen     string
 	adminToken string
+	guestToken string
 	adminFile  string
 	server     *http.Server
 	crtFile    string
@@ -58,14 +61,8 @@ func (h *Http) Initialize() {
 			WriteTimeout: 10 * time.Minute,
 		}
 	}
-	if h.adminToken == "" {
-		_ = h.LoadToken()
-	}
-	if h.adminToken == "" {
-		h.adminToken = libol.GenRandom(32)
-	}
-
-	_ = h.SaveToken()
+	h.LoadToken()
+	h.SaveToken()
 	h.LoadRouter()
 }
 
@@ -100,19 +97,17 @@ func (h *Http) Router() *mux.Router {
 	return h.router
 }
 
-func (h *Http) SaveToken() error {
-	libol.Info("Http.SaveToken: AdminToken: %s", h.adminToken)
+func (h *Http) SaveToken() {
 	f, err := os.OpenFile(h.adminFile, os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0600)
-	defer f.Close()
 	if err != nil {
 		libol.Error("Http.SaveToken: %s", err)
-		return err
+		return
 	}
+	defer f.Close()
 	if _, err := f.Write([]byte(h.adminToken)); err != nil {
 		libol.Error("Http.SaveToken: %s", err)
-		return err
+		return
 	}
-	return nil
 }
 
 func (h *Http) LoadRouter() {
@@ -143,19 +138,29 @@ func (h *Http) LoadRouter() {
 	api.Config{Switcher: h.switcher}.Router(router)
 }
 
-func (h *Http) LoadToken() error {
+func (h *Http) LoadToken() {
+	token := ""
 	if _, err := os.Stat(h.adminFile); os.IsNotExist(err) {
 		libol.Info("Http.LoadToken: file:%s does not exist", h.adminFile)
-		return nil
+	} else {
+		contents, err := ioutil.ReadFile(h.adminFile)
+		if err != nil {
+			libol.Error("Http.LoadToken: file:%s %s", h.adminFile, err)
+		} else {
+			token = strings.TrimSpace(string(contents))
+		}
 	}
-	contents, err := ioutil.ReadFile(h.adminFile)
-	if err != nil {
-		libol.Error("Http.LoadToken: file:%s %s", h.adminFile, err)
-		return err
+	if token == "" {
+		token = libol.GenRandom(32)
+	}
+	h.SetToken(token)
+	libol.Info("Http.LoadToken: %s %s", h.adminToken, h.guestToken)
+}
 
-	}
-	h.adminToken = strings.TrimSpace(string(contents))
-	return nil
+func (h *Http) SetToken(value string) {
+	sum := md5.Sum([]byte(value))
+	h.adminToken = value
+	h.guestToken = hex.EncodeToString(sum[:16])[:12]
 }
 
 func (h *Http) Start() {
@@ -196,6 +201,10 @@ func (h *Http) IsAuth(w http.ResponseWriter, r *http.Request) bool {
 	libol.Debug("Http.IsAuth token: %s, pass: %s", token, pass)
 	if strings.HasPrefix(r.URL.Path, "/api/") {
 		if !ok || token != h.adminToken {
+			return false
+		}
+	} else if strings.HasPrefix(r.URL.Path, "/get/") {
+		if !ok || token != h.guestToken {
 			return false
 		}
 	}
