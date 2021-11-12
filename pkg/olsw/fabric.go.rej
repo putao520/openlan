@@ -1,0 +1,10 @@
+--- pkg/olsw/fabric.go
++++ pkg/olsw/fabric.go
+@@ -374,6 +374,7 @@
+ 	name := w.Addr2Port(remote, "vx-")
+ 	options := ovs.InterfaceOptions{
+ 		Type:      ovs.InterfaceTypeVXLAN,
++		BfdEnable: true,
+ 		RemoteIP:  remote,
+ 		Key:       "flow",
+ 		DfDefault: "false",

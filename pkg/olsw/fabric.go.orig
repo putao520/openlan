@@ -108,11 +108,11 @@ const (
 const (
 	MatchRegLv   = "reg5"
 	MatchRegTun  = "reg6"
-	NxmRegLv     = "NXM_NX_REG5[0..31]"
-	NxmRegTun    = "NXM_NX_REG6[0..31]"
+	NxmRegLv     = "NXM_NX_REG5[]"
+	NxmRegTun    = "NXM_NX_REG6[]"
 	NxmRegEthDst = "NXM_OF_ETH_DST[]"
 	NxmRegEthSrc = "NXM_OF_ETH_SRC[]"
-	NxmRegTunId  = "NXM_NX_TUN_ID[0..31]"
+	NxmRegTunId  = "NXM_NX_TUN_ID[]"
 	NxmRegInPort = "NXM_OF_IN_PORT[]"
 )
 
@@ -262,7 +262,7 @@ func (w *FabricWorker) AddNetwork(bridge string, vni uint32) {
 			ovs.TunnelID(uint64(vni)),
 		},
 		Actions: []ovs.Action{
-			ovs.Move(NxmRegTunId, NxmRegTun),
+			ovs.Load(libol.Uint2S(vni), NxmRegTun),
 			ovs.Resubmit(0, LearnFromTun),
 		},
 	})
@@ -342,7 +342,7 @@ func (w *FabricWorker) Addr2Port(addr, pre string) string {
 
 func (w *FabricWorker) flood2Tunnel(vni uint32) {
 	actions := []ovs.Action{
-		ovs.Move(NxmRegLv, NxmRegTunId),
+		ovs.SetTunnel(uint64(vni)),
 	}
 	for _, tun := range w.tunnels {
 		actions = append(actions, ovs.Output(tun.portId))
