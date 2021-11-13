@@ -23,6 +23,8 @@ github.com/danieldin95/go-openvswitch v0.0.2 h1:/SeGGZtGMtLZm9sflIndPXOrtjIwT96P
 github.com/danieldin95/go-openvswitch v0.0.2/go.mod h1:7Vfh1pAAV0719OkO7bK+Mz78Toq1OD2rlDSYO1ztviE=
 github.com/danieldin95/go-openvswitch v0.0.4 h1:G+saejR3ruwDACfA5urrjul5WfwR1fiQXVOKQx/Fu8A=
 github.com/danieldin95/go-openvswitch v0.0.4/go.mod h1:e3VRiIjGokniZ4h9q4q3Yi/kcwbxpV5EeoVA7OdKlec=
+github.com/danieldin95/go-openvswitch v0.0.5 h1:Ssd6MO6WPGIuIOGFt5Qp8lk9JDqiQLsvJ6lPeGfV9WY=
+github.com/danieldin95/go-openvswitch v0.0.5/go.mod h1:e3VRiIjGokniZ4h9q4q3Yi/kcwbxpV5EeoVA7OdKlec=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
