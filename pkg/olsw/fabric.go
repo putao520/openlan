@@ -424,6 +424,12 @@ func (w *FabricWorker) Start(v api.Switcher) {
 				SetMss:  mss,
 			})
 		}
+		firewall.AddRule(network.IpRule{
+			Table:  network.TFilter,
+			Chain:  network.OLCForward,
+			Input:  net.Bridge,
+			Output: net.Bridge,
+		})
 		for _, port := range net.Outputs {
 			w.AddOutput(net.Bridge, port.Vlan, port.Interface)
 		}
