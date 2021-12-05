@@ -213,7 +213,7 @@ func (w *FabricWorker) setupTable() {
 }
 
 func (w *FabricWorker) Initialize() {
-	_ = w.ovs.setDown()
+	//_ = w.ovs.setDown()
 	if err := w.ovs.setUp(); err != nil {
 		return
 	}
