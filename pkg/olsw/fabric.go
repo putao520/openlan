@@ -393,8 +393,12 @@ func (w *FabricWorker) AddTunnel(remote string, dport uint32) {
 		BfdEnable: true,
 		RemoteIP:  remote,
 		Key:       "flow",
-		DfDefault: "false",
 		DstPort:   dport,
+	}
+	if w.spec.Fragment {
+		options.DfDefault = "false"
+	} else {
+		options.DfDefault = "true"
 	}
 	if err := w.ovs.addPort(name, &options); err != nil {
 		return

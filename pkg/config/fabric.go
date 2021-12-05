@@ -3,7 +3,8 @@ package config
 import "fmt"
 
 type FabricSpecifies struct {
-	Mss      int              `json:"tcpMss"`
+	Mss      int              `json:"tcpMss,omitempty"`
+	Fragment bool             `json:"fragment"`
 	Driver   string           `json:"driver,omitempty"`
 	Name     string           `json:"name"`
 	Tunnels  []*FabricTunnel  `json:"tunnels"`
@@ -11,9 +12,6 @@ type FabricSpecifies struct {
 }
 
 func (c *FabricSpecifies) Correct() {
-	if c.Mss == 0 {
-		c.Mss = 1332
-	}
 	for _, network := range c.Networks {
 		network.Correct()
 	}
