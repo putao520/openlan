@@ -41,6 +41,14 @@ func (o *OvsBridge) addFlow(flow *ovs.Flow) error {
 	return nil
 }
 
+func (o *OvsBridge) setDown() error {
+	if err := o.cli.VSwitch.DeleteBridge(o.name); err != nil {
+		o.out.Error("OvsBridge.DeleteBridge %s %s", o.name, err)
+		return err
+	}
+	return nil
+}
+
 func (o *OvsBridge) setUp() error {
 	if err := o.cli.VSwitch.AddBridge(o.name); err != nil {
 		o.out.Error("OvsBridge.AddBridge %s %s", o.name, err)
@@ -205,6 +213,7 @@ func (w *FabricWorker) setupTable() {
 }
 
 func (w *FabricWorker) Initialize() {
+	_ = w.ovs.setDown()
 	if err := w.ovs.setUp(); err != nil {
 		return
 	}
