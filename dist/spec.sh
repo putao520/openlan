@@ -16,5 +16,5 @@ sed -e "s/Version:.*/Version:\ ${version}/" ./dist/openlan-proxy.spec.in  > buil
 sed -e "s/Version:.*/Version:\ ${version}/" ./dist/openlan-switch.spec.in > build/openlan-switch.spec
 
 # link source
-rm -rf ~/rpmbuild/SOURCES/openlan-"${version}"
+rm -rf ~/rpmbuild/SOURCES/openlan-*
 ln -s "${curdir}" ~/rpmbuild/SOURCES/openlan-"${version}"

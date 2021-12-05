@@ -370,10 +370,17 @@ func (w *FabricWorker) flood2Tunnel(vni uint32) {
 	}
 }
 
+func (w *FabricWorker) tunnelType() ovs.InterfaceType {
+	if w.spec.Driver == "stt" {
+		return ovs.InterfaceTypeSTT
+	}
+	return ovs.InterfaceTypeVXLAN
+}
+
 func (w *FabricWorker) AddTunnel(remote string, dport uint32) {
 	name := w.Addr2Port(remote, "vx-")
 	options := ovs.InterfaceOptions{
-		Type:      ovs.InterfaceTypeVXLAN,
+		Type:      w.tunnelType(),
 		BfdEnable: true,
 		RemoteIP:  remote,
 		Key:       "flow",

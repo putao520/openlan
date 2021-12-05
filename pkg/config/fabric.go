@@ -4,6 +4,7 @@ import "fmt"
 
 type FabricSpecifies struct {
 	Mss      int              `json:"tcpMss"`
+	Driver   string           `json:"driver,omitempty"`
 	Name     string           `json:"name"`
 	Tunnels  []*FabricTunnel  `json:"tunnels"`
 	Networks []*FabricNetwork `json:"networks"`
@@ -16,8 +17,15 @@ func (c *FabricSpecifies) Correct() {
 	for _, network := range c.Networks {
 		network.Correct()
 	}
-	for _, tunnel := range c.Tunnels {
-		tunnel.Correct()
+	for _, tun := range c.Tunnels {
+		tun.Correct()
+		if tun.DstPort == 0 {
+			if c.Driver == "stt" {
+				tun.DstPort = 7471
+			} else {
+				tun.DstPort = 4789
+			}
+		}
 	}
 }
 
@@ -28,9 +36,6 @@ type FabricTunnel struct {
 }
 
 func (c *FabricTunnel) Correct() {
-	if c.DstPort == 0 {
-		c.DstPort = 4789
-	}
 }
 
 type FabricNetwork struct {
