@@ -46,7 +46,7 @@ type FabricNetwork struct {
 
 func (c *FabricNetwork) Correct() {
 	if c.Bridge == "" {
-		c.Bridge = fmt.Sprintf("br-%x", c.Vni)
+		c.Bridge = fmt.Sprintf("br-%08x", c.Vni)
 	}
 }
 

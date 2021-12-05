@@ -222,8 +222,8 @@ func (w *FabricWorker) Initialize() {
 }
 
 func (w *FabricWorker) getPatchTun(vni uint32) (string, string) {
-	brPort := fmt.Sprintf("vnb-%x", vni)
-	tunPort := fmt.Sprintf("vnt-%x", vni)
+	brPort := fmt.Sprintf("vnb-%08x", vni)
+	tunPort := fmt.Sprintf("vnt-%08x", vni)
 	return brPort, tunPort
 }
 
