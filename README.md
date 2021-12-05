@@ -14,13 +14,14 @@ OpenLAN提供一种局域网数据报文在广域网的传输实现，并能够�
 * OLAP: OpenLAN Access Point，开放局域网接入点
 * NAT: Network Address Translation, 网络地址转换
 * VxLAN: Virtual eXtensible Local Area Network，虚拟扩展局域网
+* STT: Stateless Transport Tunneling，无状态传输隧道
 * IPSec/ESP: Encapsulating Security Payload, IPSec安全封装负载
 
 ## 功能清单
 
 * 支持多个网络空间划分，为不同的业务提供逻辑网络隔离；
 * 支持OLAP或者OpenVPN接入，提供网桥把局域网共享出去；
-* 支持IPSec/ESP隧道，以及基于VxLAN的租户网络划分；
+* 支持IPSec/ESP隧道，以及基于VxLAN/STT的租户网络划分；
 * 支持基于用户名密码的接入认证，使用预共享密约对数据报文进行加密；
 * 支持TCP/TLS，UDP/KCP，WS/WSS等多种传输协议实现，TCP模式具有较高的性能；
 * 支持HTTP/HTTPS，以及SOCKS5等HTTP的正向代理技术，灵活配置代理进行网络穿透；

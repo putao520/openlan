@@ -26,7 +26,7 @@ We using 192.168.100.0/24 to emulate a internet network. And underlay: 100.65.0.
                             
 ```
 
-Data Center Interconnect with Subnet 192.168.30-40.0/24 Over ESP network: 100.65.0.0/24 by VxLAN.
+Data Center Interconnect with Subnet 192.168.30-40.0/24 Over ESP network: 100.65.0.0/24 by VxLAN/STT.
 ```
 
                                                           100.65.0.117
