@@ -138,9 +138,6 @@ func (r *Request) onIpAddr(client libol.SocketClient, data []byte) {
 		} else {
 			resp.IfAddr = "169.254.0.0"
 			resp.Netmask = n.Netmask
-			if resp.Netmask == "" {
-				resp.Netmask = "255.255.0.0"
-			}
 			resp.Routes = n.Routes
 		}
 	}

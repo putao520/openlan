@@ -316,7 +316,6 @@ func (w *OpenLANWorker) AddLink(c *co.Point) {
 	uuid := libol.GenRandom(13)
 
 	c.Alias = w.alias
-	c.RequestAddr = false
 	c.Network = w.cfg.Name
 	c.Interface.Name = network.Taps.GenName()
 	c.Interface.Bridge = br.Name
