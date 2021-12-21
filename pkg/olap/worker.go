@@ -251,6 +251,9 @@ func (w *Worker) FlushStatus() {
 		Alias:     w.cfg.Alias,
 		System:    runtime.GOOS,
 	}
+	if w.network != nil {
+		status.Address = models.NewNetworkSchema(w.network)
+	}
 	_ = libol.MarshalSave(status, file, true)
 }
 

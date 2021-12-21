@@ -18,8 +18,9 @@ type PrefixRoute struct {
 
 type Network struct {
 	Name    string        `json:"name"`
-	IpStart string        `json:"ipStart"`
-	IpEnd   string        `json:"ipEnd"`
+	IfAddr  string        `json:"ifAddr,omitempty"`
+	IpStart string        `json:"ipStart,omitempty"`
+	IpEnd   string        `json:"ipEnd,omitempty"`
 	Netmask string        `json:"netmask"`
 	Routes  []PrefixRoute `json:"routes"`
 }
