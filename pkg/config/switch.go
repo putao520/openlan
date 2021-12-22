@@ -167,13 +167,16 @@ func (s *Switch) LoadNetwork() {
 	}
 	for _, k := range files {
 		obj := &Network{
-			Alias: s.Alias,
-			File:  k,
+			Alias:   s.Alias,
+			File:    k,
+			ConfDir: s.ConfDir,
 		}
 		if err := libol.UnmarshalLoad(obj, k); err != nil {
 			libol.Error("Switch.LoadNetwork %s", err)
 			continue
 		}
+		obj.LoadLink()
+		obj.LoadRoute()
 		switch obj.Provider {
 		case "esp":
 			obj.Specifies = &ESPSpecifies{}
@@ -196,7 +199,6 @@ func (s *Switch) LoadNetwork() {
 		}
 		obj.Correct()
 		obj.Alias = s.Alias
-		obj.Crypt = s.Crypt
 		if obj.File == "" {
 			obj.File = s.Dir("network", obj.Name+".json")
 		}
@@ -249,8 +251,8 @@ func (s *Switch) Load() error {
 
 func (s *Switch) Save() {
 	tmp := *s
-	tmp.Network = nil
 	tmp.Acl = nil
+	tmp.Network = nil
 	if err := libol.MarshalSave(&tmp, tmp.File, true); err != nil {
 		libol.Error("Switch.Save %s", err)
 	}
@@ -259,6 +261,9 @@ func (s *Switch) Save() {
 }
 
 func (s *Switch) SaveAcl() {
+	if s.Acl == nil {
+		return
+	}
 	for _, obj := range s.Acl {
 		if err := libol.MarshalSave(obj, obj.File, true); err != nil {
 			libol.Error("Switch.Save.Acl %s %s", obj.Name, err)
@@ -267,9 +272,10 @@ func (s *Switch) SaveAcl() {
 }
 
 func (s *Switch) SaveNets() {
+	if s.Network == nil {
+		return
+	}
 	for _, obj := range s.Network {
-		if err := libol.MarshalSave(obj, obj.File, true); err != nil {
-			libol.Error("Switch.Save.Network %s %s", obj.Name, err)
-		}
+		obj.Save()
 	}
 }

@@ -8,6 +8,7 @@ import (
 )
 
 type Point struct {
+	File        string    `json:"file,omitempty"`
 	Alias       string    `json:"alias,omitempty"`
 	Connection  string    `json:"connection"`
 	Timeout     int       `json:"timeout"`

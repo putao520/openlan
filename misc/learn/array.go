@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 func InArray(data []int) {
 	data[0] = 0x04
@@ -26,4 +29,10 @@ func main() {
 
 	c[1] = 11
 	fmt.Println(a, c)
+
+	var aa []int
+	str := `[1, 2, 3]`
+	err := json.Unmarshal([]byte(str), &aa)
+	fmt.Println(err)
+	fmt.Println(aa)
 }

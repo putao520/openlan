@@ -153,7 +153,7 @@ type Bridge struct {
 	Provider string `json:"provider,omitempty" yaml:"provider,omitempty"`
 	Stp      string `json:"stp,omitempty" yaml:"stpState,omitempty"`
 	Delay    int    `json:"delay,omitempty" yaml:"forwardDelay,omitempty"`
-	Mss      int    `json:"mss,omitempty" yaml:"tcpMss,omitempty"`
+	Mss      int    `json:"tcpMss,omitempty" yaml:"tcpMss,omitempty"`
 }
 
 func (br *Bridge) Correct() {
@@ -187,6 +187,7 @@ type MultiPath struct {
 }
 
 type PrefixRoute struct {
+	File      string      `json:"file,omitempty"`
 	Network   string      `json:"network,omitempty"`
 	Prefix    string      `json:"prefix"`
 	NextHop   string      `json:"nexthop"`

@@ -24,7 +24,6 @@ type OpenLANWorker struct {
 	startTime int64
 	links     *Links
 	uuid      string
-	crypt     *co.Crypt
 	bridge    network.Bridger
 	out       *libol.SubLogger
 	openVPN   []*OpenVPN
@@ -37,7 +36,6 @@ func NewOpenLANWorker(c *co.Network) *OpenLANWorker {
 		newTime:   time.Now().Unix(),
 		startTime: 0,
 		links:     NewLinks(),
-		crypt:     c.Crypt,
 		out:       libol.NewSubLogger(c.Name),
 	}
 }
@@ -110,7 +108,7 @@ func (w *OpenLANWorker) LoadLinks() {
 	if w.cfg.Links != nil {
 		for _, lin := range w.cfg.Links {
 			lin.Default()
-			w.AddLink(lin)
+			w.AddLink(&lin)
 		}
 	}
 }
