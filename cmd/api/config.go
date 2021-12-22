@@ -43,6 +43,7 @@ func (u Config) Check(c *cli.Context) error {
 	out := u.Log()
 	dir := c.String("dir")
 	// Check proxy configurations.
+	out.Info("%15s: %s", "check", "proxy")
 	file := filepath.Join(dir, "proxy.json")
 	if err := libol.FileExist(file); err == nil {
 		obj := &config.Proxy{}
@@ -53,6 +54,7 @@ func (u Config) Check(c *cli.Context) error {
 		}
 	}
 	// Check OLAP configurations.
+	out.Info("%15s: %s", "check", "point")
 	file = filepath.Join(dir, "point.json")
 	if err := libol.FileExist(file); err == nil {
 		obj := &config.Point{}
@@ -63,6 +65,7 @@ func (u Config) Check(c *cli.Context) error {
 		}
 	}
 	// Check OLSW configurations.
+	out.Info("%15s: %s", "check", "switch")
 	file = filepath.Join(dir, "switch", "switch.json")
 	if err := libol.FileExist(file); err == nil {
 		obj := &config.Switch{}
@@ -73,6 +76,7 @@ func (u Config) Check(c *cli.Context) error {
 		}
 	}
 	// Check network configurations.
+	out.Info("%15s: %s", "check", "network")
 	pattern := filepath.Join(dir, "switch", "network", "*.json")
 	if files, err := filepath.Glob(pattern); err == nil {
 		for _, file := range files {
@@ -85,11 +89,38 @@ func (u Config) Check(c *cli.Context) error {
 		}
 	}
 	// Check ACL configurations.
+	out.Info("%15s: %s", "check", "acl")
 	pattern = filepath.Join(dir, "switch", "acl", "*.json")
 	if files, err := filepath.Glob(pattern); err == nil {
 		for _, file := range files {
 			obj := &config.ACL{}
 			if err := libol.UnmarshalLoad(obj, file); err != nil {
+				out.Warn("%15s: %s", filepath.Base(file), err)
+			} else {
+				out.Info("%15s: %s", filepath.Base(file), "success")
+			}
+		}
+	}
+	// Check links configurations.
+	out.Info("%15s: %s", "check", "link")
+	pattern = filepath.Join(dir, "switch", "link", "*.json")
+	if files, err := filepath.Glob(pattern); err == nil {
+		for _, file := range files {
+			var obj []config.Point
+			if err := libol.UnmarshalLoad(&obj, file); err != nil {
+				out.Warn("%15s: %s", filepath.Base(file), err)
+			} else {
+				out.Info("%15s: %s", filepath.Base(file), "success")
+			}
+		}
+	}
+	// Check routes configurations.
+	out.Info("%15s: %s", "check", "route")
+	pattern = filepath.Join(dir, "switch", "route", "*.json")
+	if files, err := filepath.Glob(pattern); err == nil {
+		for _, file := range files {
+			var obj []config.PrefixRoute
+			if err := libol.UnmarshalLoad(&obj, file); err != nil {
 				out.Warn("%15s: %s", filepath.Base(file), err)
 			} else {
 				out.Info("%15s: %s", filepath.Base(file), "success")
