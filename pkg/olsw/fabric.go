@@ -435,7 +435,7 @@ func (w *FabricWorker) Start(v api.Switcher) {
 		if mss > 0 {
 			firewall.AddRule(network.IpRule{
 				Table:   network.TMangle,
-				Chain:   network.CPostRoute,
+				Chain:   network.OLCPost,
 				Output:  net.Bridge,
 				Proto:   "tcp",
 				Match:   "tcp",

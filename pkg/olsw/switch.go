@@ -217,7 +217,7 @@ func (v *Switch) preWorker(w Networker) {
 	if br.Mss > 0 {
 		v.firewall.AddRule(network.IpRule{
 			Table:   network.TMangle,
-			Chain:   network.CPostRoute,
+			Chain:   network.OLCPost,
 			Output:  br.Name,
 			Proto:   "tcp",
 			Match:   "tcp",
@@ -235,7 +235,7 @@ func (v *Switch) enableAcl(acl, input string) {
 	if acl != "" {
 		v.firewall.AddRule(network.IpRule{
 			Table: network.TRaw,
-			Chain: network.CPreRoute,
+			Chain: network.OLCPre,
 			Input: input,
 			Jump:  acl,
 		})

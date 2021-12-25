@@ -9,18 +9,18 @@ import (
 )
 
 const (
-	TNat       = "nat"
-	TRaw       = "raw"
-	TMangle    = "mangle"
-	TFilter    = "filter"
-	CInput     = "INPUT"
-	CForward   = "FORWARD"
-	COutput    = "OUTPUT"
-	CPostRoute = "POSTROUTING"
-	CPreRoute  = "PREROUTING"
-	CMasq      = "MASQUERADE"
-	CNoTrk     = "NOTRACK"
-	CSnat      = "SNAT"
+	TNat     = "nat"
+	TRaw     = "raw"
+	TMangle  = "mangle"
+	TFilter  = "filter"
+	CInput   = "INPUT"
+	CForward = "FORWARD"
+	COutput  = "OUTPUT"
+	CPost    = "POSTROUTING"
+	CPre     = "PREROUTING"
+	CMasq    = "MASQUERADE"
+	CNoTrk   = "NOTRACK"
+	CSnat    = "SNAT"
 )
 
 type IpRule struct {

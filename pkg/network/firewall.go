@@ -8,11 +8,11 @@ import (
 )
 
 const (
-	OLCInput   = "INPUT_direct"
-	OLCForward = "FORWARD_direct"
-	OLCOutput  = "OUTPUT_direct"
-	OLCPre     = "PREROUTING_direct"
-	OLCPost    = "POSTROUTING_direct"
+	OLCInput   = "OPENLAN-IN"
+	OLCForward = "OPENLAN-FWD"
+	OLCOutput  = "OPENLAN-OUT"
+	OLCPre     = "OPENLAN-PRE"
+	OLCPost    = "OPENLAN-POST"
 )
 
 type FireWall struct {
@@ -44,51 +44,44 @@ func NewFireWall(flows []config.FlowRule) *FireWall {
 	return f
 }
 
+func (f *FireWall) addOLC() {
+	f.AddChain(IpChain{Table: TFilter, Name: OLCInput})
+	f.AddChain(IpChain{Table: TFilter, Name: OLCForward})
+	f.AddChain(IpChain{Table: TFilter, Name: OLCOutput})
+	f.AddChain(IpChain{Table: TNat, Name: OLCPre})
+	f.AddChain(IpChain{Table: TNat, Name: OLCInput})
+	f.AddChain(IpChain{Table: TNat, Name: OLCPost})
+	f.AddChain(IpChain{Table: TNat, Name: OLCOutput})
+	f.AddChain(IpChain{Table: TMangle, Name: OLCPre})
+	f.AddChain(IpChain{Table: TMangle, Name: OLCInput})
+	f.AddChain(IpChain{Table: TMangle, Name: OLCForward})
+	f.AddChain(IpChain{Table: TMangle, Name: OLCPost})
+	f.AddChain(IpChain{Table: TMangle, Name: OLCOutput})
+	f.AddChain(IpChain{Table: TRaw, Name: OLCPre})
+	f.AddChain(IpChain{Table: TRaw, Name: OLCOutput})
+}
+
+func (f *FireWall) jumpOLC() {
+	f.AddRule(IpRule{Order: "-I", Table: TFilter, Chain: CInput, Jump: OLCInput})
+	f.AddRule(IpRule{Order: "-I", Table: TFilter, Chain: CForward, Jump: OLCForward})
+	f.AddRule(IpRule{Order: "-I", Table: TFilter, Chain: COutput, Jump: OLCOutput})
+	f.AddRule(IpRule{Order: "-I", Table: TNat, Chain: CPre, Jump: OLCPre})
+	f.AddRule(IpRule{Order: "-I", Table: TNat, Chain: CInput, Jump: OLCInput})
+	f.AddRule(IpRule{Order: "-I", Table: TNat, Chain: CPost, Jump: OLCPost})
+	f.AddRule(IpRule{Order: "-I", Table: TNat, Chain: COutput, Jump: OLCOutput})
+	f.AddRule(IpRule{Order: "-I", Table: TMangle, Chain: CPre, Jump: OLCPre})
+	f.AddRule(IpRule{Order: "-I", Table: TMangle, Chain: CInput, Jump: OLCInput})
+	f.AddRule(IpRule{Order: "-I", Table: TMangle, Chain: CForward, Jump: OLCForward})
+	f.AddRule(IpRule{Order: "-I", Table: TMangle, Chain: CPost, Jump: OLCPost})
+	f.AddRule(IpRule{Order: "-I", Table: TMangle, Chain: COutput, Jump: OLCOutput})
+	f.AddRule(IpRule{Order: "-I", Table: TRaw, Chain: CPre, Jump: OLCPre})
+	f.AddRule(IpRule{Order: "-I", Table: TRaw, Chain: COutput, Jump: OLCOutput})
+}
+
 func (f *FireWall) Initialize() {
 	// Init chains
-	f.AddChain(IpChain{
-		Table: TFilter,
-		Name:  OLCInput,
-	})
-	f.AddChain(IpChain{
-		Table: TFilter,
-		Name:  OLCForward,
-	})
-	f.AddChain(IpChain{
-		Table: TFilter,
-		Name:  OLCOutput,
-	})
-	f.AddChain(IpChain{
-		Table: TNat,
-		Name:  OLCPost,
-	})
-	libol.Info("FireWall.Initialize %d chains", len(f.chains))
-	// Enable chains
-	f.AddRule(IpRule{
-		Order: "-I",
-		Table: TFilter,
-		Chain: CInput,
-		Jump:  OLCInput,
-	})
-	f.AddRule(IpRule{
-		Order: "-I",
-		Table: TFilter,
-		Chain: CForward,
-		Jump:  OLCForward,
-	})
-	f.AddRule(IpRule{
-		Order: "-I",
-		Table: TFilter,
-		Chain: COutput,
-		Jump:  OLCOutput,
-	})
-	f.AddRule(IpRule{
-		Order: "-I",
-		Table: TNat,
-		Chain: CPostRoute,
-		Jump:  OLCPost,
-	})
-	libol.Info("FireWall.Initialize %d rules", len(f.rules))
+	f.addOLC()
+	f.jumpOLC()
 }
 
 func (f *FireWall) AddChain(chain IpChain) {
