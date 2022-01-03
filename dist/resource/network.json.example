@@ -41,6 +41,13 @@
         "push": [
             "dhcp-option DNS 8.8.8.8"
         ]
+        "fixedIpClient": [
+            {
+                "userName": "hi",
+                "fixedIp": "172.32.195.233",
+                "netmask": "172.32.195.234"
+            }
+        ]
     },
     "acl": "acl-100"
 }
