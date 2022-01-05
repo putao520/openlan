@@ -4,25 +4,27 @@ go 1.12
 
 require (
 	github.com/Sirupsen/logrus v0.11.0 // indirect
-	github.com/akavel/rsrc v0.8.0 // indirect
 	github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5
+	github.com/chzyer/logex v1.2.0 // indirect
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e
+	github.com/chzyer/test v0.0.0-20210722231415-061457976a23 // indirect
 	github.com/coreos/go-systemd/v22 v22.0.0
 	github.com/danieldin95/go-openvswitch v0.0.5
 	github.com/docker/libnetwork v0.5.6 // indirect
 	github.com/go-ldap/ldap v3.0.3+incompatible
 	github.com/godbus/dbus v4.1.0+incompatible // indirect
 	github.com/gorilla/mux v1.7.4
+	github.com/klauspost/cpuid v1.2.3 // indirect
 	github.com/moby/libnetwork v0.5.6
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/shadowsocks/go-shadowsocks2 v0.1.5
 	github.com/songgao/water v0.0.0-20190725173103-fd331bda3f4b
 	github.com/stretchr/testify v1.5.1
-	github.com/urfave/cli v1.22.4 // indirect
+	github.com/tjfoc/gmsm v1.3.0 // indirect
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/vishvananda/netlink v1.0.0
 	github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df // indirect
 	github.com/xtaci/kcp-go/v5 v5.5.12
-	github.com/xtaci/kcptun v0.0.0-20200520151335-912a97993e20 // indirect
 	golang.org/x/crypto v0.0.0 // indirect
 	golang.org/x/net v0.0.0
 	golang.org/x/sys v0.0.0 // indirect

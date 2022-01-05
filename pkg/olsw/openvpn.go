@@ -2,14 +2,17 @@ package olsw
 
 import (
 	"bytes"
-	co "github.com/danieldin95/openlan/pkg/config"
-	"github.com/danieldin95/openlan/pkg/libol"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 	"text/template"
+
+	co "github.com/danieldin95/openlan/pkg/config"
+	"github.com/danieldin95/openlan/pkg/libol"
 )
 
 const (
@@ -18,23 +21,24 @@ const (
 )
 
 type OpenVPNData struct {
-	Local    string
-	Port     string
-	Ca       string
-	Cert     string
-	Key      string
-	DhPem    string
-	TlsAuth  string
-	Cipher   string
-	Server   string
-	Device   string
-	Protocol string
-	Script   string
-	Routes   []string
-	Renego   int
-	Stats    string
-	IpIp     string
-	Push     []string
+	Local           string
+	Port            string
+	Ca              string
+	Cert            string
+	Key             string
+	DhPem           string
+	TlsAuth         string
+	Cipher          string
+	Server          string
+	Device          string
+	Protocol        string
+	Script          string
+	Routes          []string
+	Renego          int
+	Stats           string
+	IpIp            string
+	Push            []string
+	ClientConfigDir string
 }
 
 const (
@@ -66,6 +70,9 @@ verify-client-cert none
 script-security 3
 auth-user-pass-verify "{{ .Script }}" via-env
 username-as-common-name
+{{if .ClientConfigDir}}
+client-config-dir {{ .ClientConfigDir }}
+{{end}}
 verb 3
 `
 	certConfTmpl = `# Generate by OpenLAN
@@ -89,6 +96,9 @@ ifconfig-pool-persist {{ .Protocol }}{{ .Port }}ipp
 tls-auth {{ .TlsAuth }} 0
 cipher {{ .Cipher }}
 status {{ .Protocol }}{{ .Port }}server.status 5
+{{if .ClientConfigDir}}
+client-config-dir {{ .ClientConfigDir }}
+{{end}}
 verb 3
 `
 )
@@ -117,6 +127,9 @@ func NewOpenVpnDataFromConf(obj *OpenVPN) *OpenVPNData {
 			r := strings.ReplaceAll(addr, "/", " ")
 			data.Routes = append(data.Routes, r)
 		}
+	}
+	if cfg.FixedIpClient == nil || len(cfg.FixedIpClient) == 0 {
+		data.ClientConfigDir = obj.DirectoryClientConfig()
 	}
 	return data
 }
@@ -235,6 +248,13 @@ func (o *OpenVPN) FileIpp(full bool) string {
 	return filepath.Join(o.Cfg.Directory, name)
 }
 
+func (o *OpenVPN) DirectoryClientConfig() string {
+	if o.Cfg == nil {
+		return path.Join(DefaultCurDir, "ccd")
+	}
+	return path.Join(o.Cfg.Directory, "ccd")
+}
+
 func (o *OpenVPN) WriteConf(path string) error {
 	fp, err := libol.CreateFile(path)
 	if err != nil || fp == nil {
@@ -243,6 +263,9 @@ func (o *OpenVPN) WriteConf(path string) error {
 	defer fp.Close()
 	data := NewOpenVpnDataFromConf(o)
 	o.out.Debug("OpenVPN.WriteConf %v", data)
+	if data.ClientConfigDir != "" {
+		o.writeClientConfig()
+	}
 	tmplStr := o.ServerTmpl()
 	if tmpl, err := template.New("main").Parse(tmplStr); err != nil {
 		return err
@@ -251,6 +274,25 @@ func (o *OpenVPN) WriteConf(path string) error {
 			return err
 		}
 	}
+	return nil
+}
+
+func (o *OpenVPN) writeClientConfig() error {
+	// make client dir and config file
+	ccd := o.DirectoryClientConfig()
+	if err := os.Mkdir(ccd, 0600); err != nil {
+		return err
+	}
+	for _, fic := range o.Cfg.FixedIpClient {
+		if fic.UserName != "" && fic.FixedIp != "" {
+			ficFile := filepath.Join(ccd, fic.UserName)
+			pushIP := fmt.Sprintf("ifconfig-push %s %s", fic.FixedIp, fic.Netmask)
+			if err := ioutil.WriteFile(ficFile, []byte(pushIP), 0600); err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
