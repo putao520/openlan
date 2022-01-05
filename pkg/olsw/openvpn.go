@@ -70,9 +70,7 @@ verify-client-cert none
 script-security 3
 auth-user-pass-verify "{{ .Script }}" via-env
 username-as-common-name
-{{if .ClientConfigDir}}
 client-config-dir {{ .ClientConfigDir }}
-{{end}}
 verb 3
 `
 	certConfTmpl = `# Generate by OpenLAN
@@ -96,9 +94,7 @@ ifconfig-pool-persist {{ .Protocol }}{{ .Port }}ipp
 tls-auth {{ .TlsAuth }} 0
 cipher {{ .Cipher }}
 status {{ .Protocol }}{{ .Port }}server.status 5
-{{if .ClientConfigDir}}
 client-config-dir {{ .ClientConfigDir }}
-{{end}}
 verb 3
 `
 )
@@ -128,9 +124,7 @@ func NewOpenVpnDataFromConf(obj *OpenVPN) *OpenVPNData {
 			data.Routes = append(data.Routes, r)
 		}
 	}
-	if cfg.FixedIpClient == nil || len(cfg.FixedIpClient) == 0 {
-		data.ClientConfigDir = obj.DirectoryClientConfig()
-	}
+	data.ClientConfigDir = obj.DirectoryClientConfig()
 	return data
 }
 
@@ -281,15 +275,16 @@ func (o *OpenVPN) writeClientConfig() error {
 	// make client dir and config file
 	ccd := o.DirectoryClientConfig()
 	if err := os.Mkdir(ccd, 0600); err != nil {
-		return err
+		o.out.Info("OpenVPN.writeClientConfig %s", err)
 	}
-	for _, fic := range o.Cfg.FixedIpClient {
-		if fic.UserName != "" && fic.FixedIp != "" {
-			ficFile := filepath.Join(ccd, fic.UserName)
-			pushIP := fmt.Sprintf("ifconfig-push %s %s", fic.FixedIp, fic.Netmask)
-			if err := ioutil.WriteFile(ficFile, []byte(pushIP), 0600); err != nil {
-				return err
-			}
+	for _, fic := range o.Cfg.Clients {
+		if fic.Name == "" || fic.Address == "" {
+			continue
+		}
+		ficFile := filepath.Join(ccd, fic.Name)
+		pushIP := fmt.Sprintf("ifconfig-push %s %s", fic.Address, fic.Netmask)
+		if err := ioutil.WriteFile(ficFile, []byte(pushIP), 0600); err != nil {
+			o.out.Warn("OpenVPN.writeClientConfig %s", err)
 		}
 	}
 
@@ -297,6 +292,18 @@ func (o *OpenVPN) writeClientConfig() error {
 }
 
 func (o *OpenVPN) Clean() {
+	ccd := o.DirectoryClientConfig()
+	for _, fic := range o.Cfg.Clients {
+		if fic.Name == "" || fic.Address == "" {
+			continue
+		}
+		file := filepath.Join(ccd, fic.Name)
+		if err := libol.FileExist(file); err == nil {
+			if err := os.Remove(file); err != nil {
+				o.out.Warn("OpenVPN.Clean %s", err)
+			}
+		}
+	}
 	files := []string{o.FileStats(true), o.FileIpp(true)}
 	for _, file := range files {
 		if err := libol.FileExist(file); err == nil {
@@ -313,7 +320,7 @@ func (o *OpenVPN) Initialize() {
 	}
 	o.Clean()
 	if err := os.Mkdir(o.Directory(), 0600); err != nil {
-		o.out.Warn("OpenVPN.Initialize %s", err)
+		o.out.Info("OpenVPN.Initialize %s", err)
 	}
 	if err := o.WriteConf(o.FileCfg(true)); err != nil {
 		o.out.Warn("OpenVPN.Initialize %s", err)

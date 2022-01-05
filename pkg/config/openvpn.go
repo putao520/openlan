@@ -6,31 +6,31 @@ import (
 )
 
 type OpenVPN struct {
-	Network       string                 `json:"network"`
-	Directory     string                 `json:"directory"`
-	Listen        string                 `json:"listen"`
-	Protocol      string                 `json:"protocol"`
-	Subnet        string                 `json:"subnet"`
-	Device        string                 `json:"device"`
-	Auth          string                 `json:"auth"` // xauth or cert.
-	DhPem         string                 `json:"dhPem"`
-	RootCa        string                 `json:"rootCa"`
-	ServerCrt     string                 `json:"cert"`
-	ServerKey     string                 `json:"key"`
-	TlsAuth       string                 `json:"tlsAuth"`
-	Cipher        string                 `json:"cipher"`
-	Routes        []string               `json:"-"`
-	Renego        int                    `json:"renego,omitempty"`
-	Script        string                 `json:"-"`
-	Breed         []*OpenVPN             `json:"breed,omitempty"`
-	Push          []string               `json:"push,omitempty"`
-	FixedIpClient []*FixedClientIpConfig `json:"fixedIpClient,omitempty"`
+	Network   string           `json:"network"`
+	Directory string           `json:"directory"`
+	Listen    string           `json:"listen"`
+	Protocol  string           `json:"protocol"`
+	Subnet    string           `json:"subnet"`
+	Device    string           `json:"device"`
+	Auth      string           `json:"auth"` // xauth or cert.
+	DhPem     string           `json:"dhPem"`
+	RootCa    string           `json:"rootCa"`
+	ServerCrt string           `json:"cert"`
+	ServerKey string           `json:"key"`
+	TlsAuth   string           `json:"tlsAuth"`
+	Cipher    string           `json:"cipher"`
+	Routes    []string         `json:"-"`
+	Renego    int              `json:"renego,omitempty"`
+	Script    string           `json:"-"`
+	Breed     []*OpenVPN       `json:"breed,omitempty"`
+	Push      []string         `json:"push,omitempty"`
+	Clients   []*OpenVPNClient `json:"clients,omitempty"`
 }
 
-type FixedClientIpConfig struct {
-	UserName string `json:"userName" yaml:"user_name"`
-	FixedIp  string `json:"fixedIp" yaml:"fixed_ip"`
-	Netmask  string `json:"netmask" yaml:"netmask"`
+type OpenVPNClient struct {
+	Name    string `json:"name" yaml:"name"`
+	Address string `json:"address" yaml:"address"`
+	Netmask string `json:"netmask" yaml:"netmask"`
 }
 
 var index = 1194
@@ -94,8 +94,8 @@ func (o *OpenVPN) Correct(obj *OpenVPN) {
 			bin := obj.Script + " user check --network " + o.Network
 			o.Script = bin
 		}
-		if o.FixedIpClient == nil || len(o.FixedIpClient) == 0 {
-			o.FixedIpClient = append(o.FixedIpClient, obj.FixedIpClient...)
+		if o.Clients == nil || len(o.Clients) == 0 {
+			o.Clients = append(o.Clients, obj.Clients...)
 		}
 	}
 	if o.Directory == "" {

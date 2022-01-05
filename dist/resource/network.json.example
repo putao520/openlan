@@ -41,10 +41,10 @@
         "push": [
             "dhcp-option DNS 8.8.8.8"
         ]
-        "fixedIpClient": [
+        "clients": [
             {
-                "userName": "hi",
-                "fixedIp": "172.32.195.233",
+                "name": "hi",
+                "address": "172.32.195.233",
                 "netmask": "172.32.195.234"
             }
         ]
