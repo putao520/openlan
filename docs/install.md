@@ -13,7 +13,7 @@ openlan软件包含下面部分：
 您可以在centos7上通过下面步骤部署openlan switch软件：
 1. 使用yum安装openlan switch软件；
    ```
-   yum install -y https://github.com/danieldin95/openlan/releases/download/v5.7.1/openlan-switch-5.7.1-1.el7.x86_64.rpm
+   yum install -y https://github.com/danieldin95/openlan/releases/download/v5.8.22/openlan-switch-5.8.22-1.el7.x86_64.rpm
    ```
 2. 配置openlan switch服务自启动；
    ```
@@ -23,9 +23,9 @@ openlan软件包含下面部分：
 3. 配置预共享密钥以及加密算法；
    ```
    cd /etc/openlan/switch
+   cp ./switch.json.example ./switch.json
    vim ./switch.json               ## 编辑switch.json配置文件
    {
-     ...
      "protocol": "tcp",
      "crypt": {
        "algo": "aes-128",          ## 支持xor,aes-128,aes-192等对称加密算法
@@ -37,9 +37,9 @@ openlan软件包含下面部分：
    
 4. 添加一个新的openlan网络；
    ```
-   cd /etc/openlan/switch/network
-   cp network.json.example example.json
-   vim example.json 
+   cd ./network
+   cp ./network.json.example ./example.json
+   vim ./example.json 
    {
        "name": "example",
        "provider": "openlan",
@@ -79,21 +79,23 @@ openlan软件包含下面部分：
 6. 导出openvpn的客户端配置文件；
    ```
    cd /var/openlan/openvpn/example            ## openvpn的配置信息存放目录
-   cat ./client.ovpn                          ## 导出后编辑`remote 0.0.0.0`配置项，填充正确的IP地址
+   cat ./client.ovpn                          ## 导出后编辑remote配置项，替换0.0.0.0为公网IP地址
    ```
    或者通过http接口获取
    ```
    cat /etc/openlan/switch/token | md5sum | cut -b 1-12
-   a061b7adc90                                ## 获取口令 
-   curl -k https://a061b7adc90@<access-ip>:10000/get/network/example/tcp1194.ovpn
+   a01234abc00                                ## 获取口令
+   curl -k https://a01234abc00@<access-ip>:10000/get/network/example/tcp1194.ovpn
+                                              ## 替换access-ip为公网IP地址
    ```
 7. 添加一个新的接入认证的用户；
    ```
    openlan us add --name hi@example               ## <用户名>@<网络>
-   openlan us ls | grep example
-   hi@example  l6llot97yxulsw1qqbm07vn1 guest     ## <用户名>@<网络> 密码 角色 
-   ```
+   openlan us ls | grep example                   ## 查看随机密码
+   hi@example  l6llot97yxulsw1qqbm07vn1 guest     ## <用户名>@<网络> 密码 角色 租期
    
+   openlan us rm --name hi@example                ## 删除一个用户
+   ```
 ## OpenLAN Point
 
 同样的您也可以在centos7上通过下面步骤部署openlan point软件：
