@@ -7,10 +7,8 @@ import (
 	"github.com/danieldin95/openlan/pkg/models"
 	"github.com/danieldin95/openlan/pkg/network"
 	"github.com/danieldin95/openlan/pkg/olsw/app"
-	"github.com/danieldin95/openlan/pkg/olsw/ctrls"
 	"github.com/danieldin95/openlan/pkg/olsw/store"
 	"net"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -337,14 +335,6 @@ func (v *Switch) preApps() {
 	}
 }
 
-func (v *Switch) preCtl() {
-	ctrls.Load(filepath.Join(v.cfg.ConfDir, "ctrl.json"))
-	if ctrls.Ctrl.Name == "" {
-		ctrls.Ctrl.Name = v.cfg.Alias
-	}
-	ctrls.Ctrl.Switcher = v
-}
-
 func (v *Switch) preAcl() {
 	for _, acl := range v.cfg.Acl {
 		if acl.Name == "" {
@@ -448,8 +438,6 @@ func (v *Switch) Initialize() {
 		v.http = NewHttp(v)
 	}
 	v.preNets()
-	// Controller
-	v.preCtl()
 	// FireWall
 	v.firewall.Initialize()
 	for _, w := range v.worker {
@@ -574,7 +562,6 @@ func (v *Switch) Start() {
 	if v.http != nil {
 		libol.Go(v.http.Start)
 	}
-	libol.Go(ctrls.Ctrl.Start)
 	libol.Go(v.firewall.Start)
 }
 
@@ -583,7 +570,6 @@ func (v *Switch) Stop() {
 	defer v.lock.Unlock()
 
 	v.out.Debug("Switch.Stop")
-	ctrls.Ctrl.Stop()
 	// firstly, notify leave to point.
 	for p := range store.Point.List() {
 		if p == nil {

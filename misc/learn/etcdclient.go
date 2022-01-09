@@ -12,7 +12,7 @@ import (
 //go get -v -x google.golang.org/grpc@v1.26.0
 
 var (
-	dialTimeout = 5 * time.Second
+	dialTimeout    = 5 * time.Second
 	requestTimeout = 5 * time.Second
 )
 
@@ -26,12 +26,14 @@ func main() {
 	}
 	defer cli.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
-	_, err = cli.Put(ctx, "/foo", "bar"); cancel()
+	_, err = cli.Put(ctx, "/foo", "bar")
+	cancel()
 	if err != nil {
 		log.Fatal(err)
 	}
 	ctx, cancel = context.WithTimeout(context.Background(), requestTimeout)
-	resp, err := cli.Get(ctx, "/foo"); cancel()
+	resp, err := cli.Get(ctx, "/foo")
+	cancel()
 	if err != nil {
 		log.Fatal(err)
 	}

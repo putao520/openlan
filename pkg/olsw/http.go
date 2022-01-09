@@ -125,7 +125,6 @@ func (h *Http) LoadRouter() {
 	api.Point{}.Router(router)
 	api.Network{}.Router(router)
 	api.OnLine{}.Router(router)
-	api.Ctrl{Switcher: h.switcher}.Router(router)
 	api.Lease{}.Router(router)
 	api.Server{Switcher: h.switcher}.Router(router)
 	api.Device{}.Router(router)

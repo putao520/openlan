@@ -66,14 +66,10 @@ env:
 	@gofmt -w -s ./pkg ./cmd ./misc
 
 ## linux platform
-linux: linux-proxy linux-point linux-switch linux-ctrl ## build linux binary
+linux: linux-proxy linux-point linux-switch## build linux binary
 
 openudp: env
 	gcc ./core/src/xfrm/udp.c -o  $(BD)/openudp
-
-linux-ctrl: env
-	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-ctrl ./cmd/ctrl
-	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-ctrl ./cmd/ctrl
 
 linux-point: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point ./cmd/point_linux
