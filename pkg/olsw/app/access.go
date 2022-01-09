@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/danieldin95/openlan/pkg/models"
-	"github.com/danieldin95/openlan/pkg/olsw/store"
+	"github.com/danieldin95/openlan/pkg/olsw/cache"
 )
 
 type Access struct {
@@ -65,7 +65,7 @@ func (p *Access) handleLogin(client libol.SocketClient, data []byte) error {
 	}
 	user.Update()
 	out.Info("Access.handleLogin: %s on %s", user.Id(), user.Alias)
-	if now, _ := store.User.Check(user); now != nil {
+	if now, _ := cache.User.Check(user); now != nil {
 		if now.Role != "admin" && now.Last != nil {
 			// To offline lastly client if guest.
 			p.master.OffClient(now.Last)
@@ -97,12 +97,12 @@ func (p *Access) onAuth(client libol.SocketClient, user *models.User) error {
 	m := models.NewPoint(client, dev, proto)
 	m.SetUser(user)
 	// free point has same uuid.
-	if om := store.Point.GetByUUID(m.UUID); om != nil {
+	if om := cache.Point.GetByUUID(m.UUID); om != nil {
 		out.Info("Access.onAuth: OffClient %s", om.Client)
 		p.master.OffClient(om.Client)
 	}
 	client.SetPrivate(m)
-	store.Point.Add(m)
+	cache.Point.Add(m)
 	libol.Go(func() {
 		p.master.ReadTap(dev, func(f *libol.FrameMessage) error {
 			if err := client.WriteMsg(f); err != nil {

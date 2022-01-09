@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/danieldin95/openlan/pkg/models"
-	"github.com/danieldin95/openlan/pkg/olsw/store"
+	"github.com/danieldin95/openlan/pkg/olsw/cache"
 	"github.com/danieldin95/openlan/pkg/schema"
 	"strings"
 )
@@ -53,7 +53,7 @@ func (r *Request) onDefault(client libol.SocketClient, data []byte) {
 
 func (r *Request) onNeighbor(client libol.SocketClient, data []byte) {
 	resp := make([]schema.Neighbor, 0, 32)
-	for obj := range store.Neighbor.List() {
+	for obj := range cache.Neighbor.List() {
 		if obj == nil {
 			break
 		}
@@ -72,10 +72,10 @@ func (r *Request) getLease(ifAddr string, p *models.Point, n *models.Network) *s
 	uuid := p.UUID
 	alias := p.Alias
 	network := n.Name
-	lease := store.Network.GetLeaseByAlias(alias) // try by alias firstly
+	lease := cache.Network.GetLeaseByAlias(alias) // try by alias firstly
 	if ifAddr == "" {
 		if lease == nil { // now to alloc it.
-			lease = store.Network.NewLease(uuid, network)
+			lease = cache.Network.NewLease(uuid, network)
 			if lease != nil {
 				lease.Alias = alias
 			}
@@ -88,7 +88,7 @@ func (r *Request) getLease(ifAddr string, p *models.Point, n *models.Network) *s
 			lease.UUID = uuid
 		}
 		if lease == nil || lease.Address != ipAddr {
-			lease = store.Network.AddLease(uuid, ipAddr)
+			lease = cache.Network.AddLease(uuid, ipAddr)
 			lease.Alias = alias
 		}
 	}
@@ -112,13 +112,13 @@ func (r *Request) onIpAddr(client libol.SocketClient, data []byte) {
 	if recv.Name == "" {
 		recv.Name = "default"
 	}
-	n := store.Network.Get(recv.Name)
+	n := cache.Network.Get(recv.Name)
 	if n == nil {
 		out.Error("Request.onIpAddr: invalid network %s.", recv.Name)
 		return
 	}
 	out.Cmd("Request.onIpAddr: find %s", n)
-	p := store.Point.Get(client.String())
+	p := cache.Point.Get(client.String())
 	if p == nil {
 		out.Error("Request.onIpAddr: point notFound")
 		return
