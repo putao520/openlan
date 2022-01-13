@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+	"github.com/danieldin95/openlan/pkg/libol"
+	"strconv"
 	"strings"
 )
 
@@ -106,6 +108,12 @@ func (o *OpenVPN) Correct(obj *OpenVPN) {
 			o.Listen += ":1194"
 		}
 		o.Device = genTunName()
+	}
+	pool := Manager.Switch.AddrPool
+	if o.Subnet == "" {
+		_, port := libol.GetHostPort(o.Listen)
+		value, _ := strconv.Atoi(port)
+		o.Subnet = fmt.Sprintf("%s.%d.0/24", pool, value&0xff)
 	}
 	for _, ch := range o.Breed {
 		ch.Correct(o)

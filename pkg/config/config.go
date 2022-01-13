@@ -1,9 +1,13 @@
 package config
 
-type _manager struct {
+type manager struct {
 	Point  *Point
 	Switch *Switch
 	Proxy  *Proxy
 }
 
-var Manager = _manager{}
+var Manager = manager{
+	Point:  &Point{},
+	Switch: &Switch{},
+	Proxy:  &Proxy{},
+}
