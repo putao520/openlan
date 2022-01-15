@@ -4,14 +4,14 @@ import (
 	"github.com/danieldin95/openlan/pkg/config"
 	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/danieldin95/openlan/pkg/olsw"
-	"github.com/danieldin95/openlan/pkg/olsw/store"
+	"github.com/danieldin95/openlan/pkg/olsw/cache"
 )
 
 func main() {
 	c := config.NewSwitch()
 	libol.SetLogger(c.Log.File, c.Log.Verbose)
 	libol.Debug("main %s", c)
-	store.Init(&c.Perf)
+	cache.Init(&c.Perf)
 	s := olsw.NewSwitch(c)
 	libol.PreNotify()
 	s.Initialize()

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/danieldin95/openlan/pkg/models"
-	"github.com/danieldin95/openlan/pkg/olsw/store"
+	"github.com/danieldin95/openlan/pkg/olsw/cache"
 	"github.com/danieldin95/openlan/pkg/schema"
 	"github.com/gorilla/mux"
 	"io/ioutil"
@@ -26,7 +26,7 @@ func (h User) Router(router *mux.Router) {
 
 func (h User) List(w http.ResponseWriter, r *http.Request) {
 	users := make([]schema.User, 0, 1024)
-	for u := range store.User.List() {
+	for u := range cache.User.List() {
 		if u == nil {
 			break
 		}
@@ -40,7 +40,7 @@ func (h User) List(w http.ResponseWriter, r *http.Request) {
 
 func (h User) Get(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	user := store.User.Get(vars["id"])
+	user := cache.User.Get(vars["id"])
 	if user != nil {
 		ResponseJson(w, models.NewUserSchema(user))
 	} else {
@@ -62,8 +62,8 @@ func (h User) Add(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	store.User.Add(models.SchemaToUserModel(user))
-	if err := store.User.Save(); err != nil {
+	cache.User.Add(models.SchemaToUserModel(user))
+	if err := cache.User.Save(); err != nil {
 		libol.Warn("AddUser %s", err)
 	}
 	ResponseMsg(w, 0, "")
@@ -73,8 +73,8 @@ func (h User) Del(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	libol.Info("DelUser %s", vars["id"])
 
-	store.User.Del(vars["id"])
-	if err := store.User.Save(); err != nil {
+	cache.User.Del(vars["id"])
+	if err := cache.User.Save(); err != nil {
 		libol.Warn("DelUser %s", err)
 	}
 	ResponseMsg(w, 0, "")
@@ -93,7 +93,7 @@ func (h User) Check(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	model := models.SchemaToUserModel(user)
-	if _, err := store.User.Check(model); err == nil {
+	if _, err := cache.User.Check(model); err == nil {
 		ResponseMsg(w, 0, "success")
 	} else {
 		http.Error(w, err.Error(), http.StatusUnauthorized)

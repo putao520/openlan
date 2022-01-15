@@ -7,7 +7,7 @@ import (
 	"github.com/danieldin95/openlan/pkg/models"
 	"github.com/danieldin95/openlan/pkg/network"
 	"github.com/danieldin95/openlan/pkg/olsw/app"
-	"github.com/danieldin95/openlan/pkg/olsw/store"
+	"github.com/danieldin95/openlan/pkg/olsw/cache"
 	"net"
 	"strconv"
 	"strings"
@@ -414,15 +414,15 @@ func (v *Switch) SetLdap(ldap *co.LDAP) {
 		Filter:    ldap.Filter,
 		EnableTls: ldap.EnableTls,
 	}
-	store.User.SetLdap(&cfg)
+	cache.User.SetLdap(&cfg)
 }
 
 func (v *Switch) SetPass(file string) {
-	store.User.SetFile(file)
+	cache.User.SetFile(file)
 }
 
 func (v *Switch) LoadPass() {
-	store.User.Load()
+	cache.User.Load()
 }
 
 func (v *Switch) Initialize() {
@@ -531,11 +531,11 @@ func (v *Switch) OnClose(client libol.SocketClient) error {
 	addr := client.RemoteAddr()
 	v.out.Info("Switch.OnClose: %s", addr)
 	// already not need support free list for device.
-	uuid := store.Point.GetUUID(addr)
-	if store.Point.GetAddr(uuid) == addr { // not has newer
-		store.Network.DelLease(uuid)
+	uuid := cache.Point.GetUUID(addr)
+	if cache.Point.GetAddr(uuid) == addr { // not has newer
+		cache.Network.DelLease(uuid)
 	}
-	store.Point.Del(addr)
+	cache.Point.Del(addr)
 	return nil
 }
 
@@ -569,7 +569,7 @@ func (v *Switch) Stop() {
 
 	v.out.Debug("Switch.Stop")
 	// firstly, notify leave to point.
-	for p := range store.Point.List() {
+	for p := range cache.Point.List() {
 		if p == nil {
 			break
 		}
@@ -766,8 +766,8 @@ func (v *Switch) Firewall() *network.FireWall {
 }
 
 func (v *Switch) Reload() {
-	store.EspState.Clear()
-	store.EspPolicy.Clear()
+	cache.EspState.Clear()
+	cache.EspPolicy.Clear()
 	for _, w := range v.worker {
 		w.Reload(nil)
 	}

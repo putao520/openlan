@@ -2,7 +2,7 @@ package api
 
 import (
 	"github.com/danieldin95/openlan/pkg/models"
-	"github.com/danieldin95/openlan/pkg/olsw/store"
+	"github.com/danieldin95/openlan/pkg/olsw/cache"
 	"github.com/danieldin95/openlan/pkg/schema"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -19,7 +19,7 @@ func (l Esp) Router(router *mux.Router) {
 
 func (l Esp) List(w http.ResponseWriter, r *http.Request) {
 	data := make([]schema.Esp, 0, 1024)
-	for e := range store.Esp.List() {
+	for e := range cache.Esp.List() {
 		if e == nil {
 			break
 		}
@@ -42,7 +42,7 @@ func (l EspState) List(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["id"]
 	data := make([]schema.EspState, 0, 1024)
-	for e := range store.EspState.List(name) {
+	for e := range cache.EspState.List(name) {
 		if e == nil {
 			break
 		}
@@ -64,7 +64,7 @@ func (l EspPolicy) List(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["id"]
 	data := make([]schema.EspPolicy, 0, 1024)
-	for e := range store.EspPolicy.List(name) {
+	for e := range cache.EspPolicy.List(name) {
 		if e == nil {
 			break
 		}
