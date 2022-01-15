@@ -360,10 +360,8 @@ func (v *Switch) preAcl() {
 }
 
 func (v *Switch) GetPort(listen string) string {
-	if strings.Contains(listen, ":") {
-		return strings.SplitN(listen, ":", 2)[1]
-	}
-	return ""
+	_, port := libol.GetHostPort(listen)
+	return port
 }
 
 func (v *Switch) preAllowVPN(cfg *co.OpenVPN) {

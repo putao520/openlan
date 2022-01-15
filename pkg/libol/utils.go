@@ -211,9 +211,17 @@ func PrettyBytes(b int64) string {
 	g, d := split(m, 1024)
 	return fmt.Sprintf("%d.%02dG", g, d)
 }
-
 func GetIPAddr(addr string) string {
-	return strings.Split(addr, ":")[0]
+	_addr, _ := GetHostPort(addr)
+	return _addr
+}
+
+func GetHostPort(addr string) (string, string) {
+	values := strings.SplitN(addr, ":", 2)
+	if len(values) == 2 {
+		return values[0], values[1]
+	}
+	return values[0], ""
 }
 
 func Wait() {

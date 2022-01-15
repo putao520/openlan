@@ -80,6 +80,7 @@ type Switch struct {
 	Queue     Queue      `json:"queue" yaml:"queue"`
 	PassFile  string     `json:"password" yaml:"passwordFile"`
 	Ldap      *LDAP      `json:"ldap,omitempty" yaml:"ldap,omitempty"`
+	AddrPool  string     `json:"pool,omitempty"`
 	ConfDir   string     `json:"-" yaml:"-"`
 	TokenFile string     `json:"-" yaml:"-"`
 }
@@ -101,13 +102,10 @@ func DefaultSwitch() *Switch {
 }
 
 func NewSwitch() *Switch {
-	s := &Switch{}
+	s := Manager.Switch
 	s.Flags()
 	s.Parse()
 	s.Initialize()
-	if Manager.Switch == nil {
-		Manager.Switch = s
-	}
 	return s
 }
 
@@ -152,6 +150,9 @@ func (s *Switch) Correct(obj *Switch) {
 	}
 	if s.Protocol == "" {
 		s.Protocol = "tcp"
+	}
+	if s.AddrPool == "" {
+		s.AddrPool = "100.44"
 	}
 }
 
