@@ -2,7 +2,7 @@ package api
 
 import (
 	"github.com/danieldin95/openlan/pkg/models"
-	"github.com/danieldin95/openlan/pkg/olsw/store"
+	"github.com/danieldin95/openlan/pkg/olsw/cache"
 	"github.com/danieldin95/openlan/pkg/schema"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -20,7 +20,7 @@ func (h Network) Router(router *mux.Router) {
 
 func (h Network) List(w http.ResponseWriter, r *http.Request) {
 	nets := make([]schema.Network, 0, 1024)
-	for u := range store.Network.List() {
+	for u := range cache.Network.List() {
 		if u == nil {
 			break
 		}
@@ -31,7 +31,7 @@ func (h Network) List(w http.ResponseWriter, r *http.Request) {
 
 func (h Network) Get(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	net := store.Network.Get(vars["id"])
+	net := cache.Network.Get(vars["id"])
 	if net != nil {
 		ResponseJson(w, models.NewNetworkSchema(net))
 	} else {
@@ -42,7 +42,7 @@ func (h Network) Get(w http.ResponseWriter, r *http.Request) {
 func (h Network) Profile(w http.ResponseWriter, r *http.Request) {
 	server := strings.SplitN(r.Host, ":", 2)[0]
 	vars := mux.Vars(r)
-	data, err := store.VPNClient.GetClientProfile(vars["id"], vars["ie"], server)
+	data, err := cache.VPNClient.GetClientProfile(vars["id"], vars["ie"], server)
 	if err == nil {
 		_, _ = w.Write([]byte(data))
 	} else {

@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/danieldin95/openlan/pkg/olsw/store"
+	"github.com/danieldin95/openlan/pkg/olsw/cache"
 	"github.com/danieldin95/openlan/pkg/schema"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -21,11 +21,11 @@ func (h VPNClient) List(w http.ResponseWriter, r *http.Request) {
 
 	clients := make([]schema.VPNClient, 0, 1024)
 	if name == "" {
-		for n := range store.Network.List() {
+		for n := range cache.Network.List() {
 			if n == nil {
 				break
 			}
-			for client := range store.VPNClient.List(n.Name) {
+			for client := range cache.VPNClient.List(n.Name) {
 				if client == nil {
 					break
 				}
@@ -33,7 +33,7 @@ func (h VPNClient) List(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	} else {
-		for client := range store.VPNClient.List(name) {
+		for client := range cache.VPNClient.List(name) {
 			if client == nil {
 				break
 			}

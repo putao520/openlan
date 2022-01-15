@@ -6,7 +6,7 @@ import (
 	"github.com/danieldin95/openlan/pkg/models"
 	"github.com/danieldin95/openlan/pkg/network"
 	"github.com/danieldin95/openlan/pkg/olsw/api"
-	"github.com/danieldin95/openlan/pkg/olsw/store"
+	"github.com/danieldin95/openlan/pkg/olsw/cache"
 	"github.com/vishvananda/netlink"
 	"net"
 	"strings"
@@ -54,7 +54,7 @@ func (w *OpenLANWorker) Initialize() {
 			Role:     "admin",
 		}
 		user.Update()
-		store.User.Add(user)
+		cache.User.Add(user)
 	}
 	n := models.Network{
 		Name:    w.cfg.Name,
@@ -75,9 +75,9 @@ func (w *OpenLANWorker) Initialize() {
 		}
 		n.Routes = append(n.Routes, rte)
 	}
-	store.Network.Add(&n)
+	cache.Network.Add(&n)
 	for _, ht := range w.cfg.Hosts {
-		lease := store.Network.AddLease(ht.Hostname, ht.Address)
+		lease := cache.Network.AddLease(ht.Hostname, ht.Address)
 		if lease != nil {
 			lease.Type = "static"
 			lease.Network = w.cfg.Name
@@ -324,14 +324,14 @@ func (w *OpenLANWorker) AddLink(c *co.Point) {
 
 	l := NewLink(uuid, c)
 	l.Initialize()
-	store.Link.Add(uuid, l.Model())
+	cache.Link.Add(uuid, l.Model())
 	w.links.Add(l)
 	l.Start()
 }
 
 func (w *OpenLANWorker) DelLink(addr string) {
 	if l := w.links.Remove(addr); l != nil {
-		store.Link.Del(l.uuid)
+		cache.Link.Del(l.uuid)
 	}
 }
 

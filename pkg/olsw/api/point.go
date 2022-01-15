@@ -2,7 +2,7 @@ package api
 
 import (
 	"github.com/danieldin95/openlan/pkg/models"
-	"github.com/danieldin95/openlan/pkg/olsw/store"
+	"github.com/danieldin95/openlan/pkg/olsw/cache"
 	"github.com/danieldin95/openlan/pkg/schema"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -18,7 +18,7 @@ func (h Point) Router(router *mux.Router) {
 
 func (h Point) List(w http.ResponseWriter, r *http.Request) {
 	points := make([]schema.Point, 0, 1024)
-	for u := range store.Point.List() {
+	for u := range cache.Point.List() {
 		if u == nil {
 			break
 		}
@@ -29,7 +29,7 @@ func (h Point) List(w http.ResponseWriter, r *http.Request) {
 
 func (h Point) Get(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	point := store.Point.Get(vars["id"])
+	point := cache.Point.Get(vars["id"])
 	if point != nil {
 		ResponseJson(w, models.NewPointSchema(point))
 	} else {

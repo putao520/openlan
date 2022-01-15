@@ -1,4 +1,4 @@
-package store
+package cache
 
 import (
 	"github.com/danieldin95/openlan/pkg/libol"

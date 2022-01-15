@@ -3,7 +3,7 @@ package app
 import (
 	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/danieldin95/openlan/pkg/models"
-	"github.com/danieldin95/openlan/pkg/olsw/store"
+	"github.com/danieldin95/openlan/pkg/olsw/cache"
 	"net"
 	"time"
 )
@@ -42,20 +42,20 @@ func (e *Neighbors) OnFrame(client libol.SocketClient, frame *libol.FrameMessage
 }
 
 func (e *Neighbors) AddNeighbor(new *models.Neighbor, client libol.SocketClient) {
-	if n := store.Neighbor.Get(new.IpAddr.String()); n != nil {
+	if n := cache.Neighbor.Get(new.IpAddr.String()); n != nil {
 		libol.Log("Neighbors.AddNeighbor: update %s.", new)
 		n.Update(client)
 		n.HitTime = time.Now().Unix()
 	} else {
 		libol.Log("Neighbors.AddNeighbor: new %s.", new)
-		store.Neighbor.Add(new)
+		cache.Neighbor.Add(new)
 	}
 }
 
 func (e *Neighbors) DelNeighbor(ipAddr net.IP) {
 	libol.Info("Neighbors.DelNeighbor %s.", ipAddr)
-	if n := store.Neighbor.Get(ipAddr.String()); n != nil {
-		store.Neighbor.Del(ipAddr.String())
+	if n := cache.Neighbor.Get(ipAddr.String()); n != nil {
+		cache.Neighbor.Del(ipAddr.String())
 	}
 }
 

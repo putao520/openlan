@@ -6,7 +6,7 @@ import (
 	"github.com/danieldin95/openlan/pkg/models"
 	"github.com/danieldin95/openlan/pkg/network"
 	"github.com/danieldin95/openlan/pkg/olsw/api"
-	"github.com/danieldin95/openlan/pkg/olsw/store"
+	"github.com/danieldin95/openlan/pkg/olsw/cache"
 	"github.com/danieldin95/openlan/pkg/schema"
 	nl "github.com/vishvananda/netlink"
 	"net"
@@ -107,7 +107,7 @@ func (w *EspWorker) addState(mem *co.ESPMember) {
 		st.Encap = encap
 		w.states = append(w.states, st)
 	}
-	store.EspState.Add(&models.EspState{
+	cache.EspState.Add(&models.EspState{
 		EspState: &schema.EspState{
 			Name:   w.spec.Name,
 			Spi:    spi,
@@ -135,7 +135,7 @@ func (w *EspWorker) delState(mem *co.ESPMember) {
 			Mode:   uint8(w.mode),
 		},
 	}
-	store.EspState.Del(model.ID())
+	cache.EspState.Del(model.ID())
 }
 
 func (w *EspWorker) addPolicy(mem *co.ESPMember, pol *co.ESPPolicy) {
@@ -162,7 +162,7 @@ func (w *EspWorker) addPolicy(mem *co.ESPMember, pol *co.ESPPolicy) {
 	if po := w.newPolicy(spi, remote, local, dst, src, nl.XFRM_DIR_FWD); po != nil {
 		w.policies = append(w.policies, po)
 	}
-	store.EspPolicy.Add(&models.EspPolicy{
+	cache.EspPolicy.Add(&models.EspPolicy{
 		EspPolicy: &schema.EspPolicy{
 			Spi:    spi,
 			Name:   w.spec.Name,
@@ -185,7 +185,7 @@ func (w *EspWorker) delPolicy(mem *co.ESPMember, pol *co.ESPPolicy) {
 			Dest:   pol.Dest,
 		},
 	}
-	store.EspPolicy.Del(obj.ID())
+	cache.EspPolicy.Del(obj.ID())
 }
 
 func (w *EspWorker) updateXfrm() {
@@ -302,7 +302,7 @@ func (w *EspWorker) Start(v api.Switcher) {
 			w.out.Error("EspWorker.Start %s %s", mem.Name, err)
 		}
 	}
-	store.Esp.Add(&models.Esp{
+	cache.Esp.Add(&models.Esp{
 		Name:    w.cfg.Name,
 		Address: w.spec.Address,
 	})
