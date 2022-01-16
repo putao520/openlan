@@ -11,3 +11,6 @@ EnvironmentFile=-/etc/sysconfig/openlan/confd
 
 ExecStart=/var/openlan/script/confd start
 ExecStop=/var/openlan/script/confd stop
+
+[Install]
+WantedBy=multi-user.target
