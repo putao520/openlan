@@ -5,12 +5,7 @@ After=network.target
 [Service]
 Type=notify
 EnvironmentFile=/etc/sysconfig/openlan/switch.cfg
-ExecStartPre=-/usr/sbin/modprobe bridge
-ExecStartPre=-/usr/sbin/modprobe br_netfilter
-ExecStartPre=-/usr/sbin/modprobe xfrm4_mode_tunnel
-ExecStartPre=-/usr/sbin/modprobe vxlan
-ExecStartPre=-/usr/bin/find /var/openlan/point -type f -delete
-ExecStartPre=-/usr/bin/find /var/openlan/openvpn -name '*.status' -delete
+ExecStartPre=-/var/openlan/script/setup.sh
 ExecStart=/usr/bin/openlan-switch $OPTIONS
 LimitNOFILE=102400
 Restart=always
