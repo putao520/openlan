@@ -131,14 +131,18 @@ func (t *KernelTap) Up() {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	libol.Debug("KernelTap.Up %s", t.name)
-	_, _ = libol.IpLinkUp(t.name)
+	if _, err := libol.IpLinkUp(t.name); err != nil {
+		libol.Warn("KernelTap.Up %s: %s", t.name, err)
+	}
 }
 
 func (t *KernelTap) Down() {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	libol.Debug("KernelTap.Down %s", t.name)
-	_, _ = libol.IpLinkDown(t.name)
+	if _, err := libol.IpLinkDown(t.name); err != nil {
+		libol.Warn("KernelTap.Down %s: %s", t.name, err)
+	}
 }
 
 func (t *KernelTap) String() string {
