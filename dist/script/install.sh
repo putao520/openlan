@@ -21,8 +21,8 @@ function download() {
 
 function install() {
    tar -xf $file -C /tmp
-   cp -rf  /tmp/openlan-linux-$version/{etc,usr,var} /
-   cd /tmp/openlan-linux-$version && find ./ -type f > /usr/share/openlan.db
+   cp -rf /tmp/openlan-linux-$version/{etc,usr,var} /
+   /usr/bin/env --chdir /tmp/openlan-linux-$version find ./ -type f > /usr/share/openlan.db
    rm -rf /tmp/openlan-linux-$version
 }
 

@@ -2,18 +2,12 @@
 
 set -x
 
-modprobe="/usr/sbin/modprobe"
-[ -e "$modprobe" ] || {
-    modprobe="/sbin/modprobe"
-}
-
 # probe kernel mod.
-$modprobe bridge
-$modprobe br_netfilter
-$modprobe xfrm4_mode_tunnel
-$modprobe vxlan
+/usr/bin/env modprobe bridge
+/usr/bin/env modprobe br_netfilter
+/usr/bin/env modprobe xfrm4_mode_tunnel
+/usr/bin/env modprobe vxlan
 
 # clean older files.
-find="/usr/bin/find"
-$find /var/openlan/point -type f -delete
-$find /var/openlan/openvpn -name '*.status' -delete
+/usr/bin/env find /var/openlan/point -type f -delete
+/usr/bin/env find /var/openlan/openvpn -name '*.status' -delete
