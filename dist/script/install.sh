@@ -28,5 +28,7 @@ if [ ! -e "/var/openlan/openvpn/dh.pem" ]; then
     openssl dhparam -out /var/openlan/openvpn/dh.pem 2048
 fi
 if [ ! -e "/var/openlan/openvpn/ta.key" ]; then
-    openvpn --genkey --secret /var/openlan/openvpn/ta.key
+    openvpn --genkey --secret /var/openlan/openvpn/ta.key || {
+        echo "please install package for openvpn by yum or apt"
+    }
 fi
