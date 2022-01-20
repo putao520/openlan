@@ -16,7 +16,7 @@ fi
 
 tar -xf $file
 cp -rvf openlan-linux-$version/{etc,usr,var} /
-rm -rf $file
+rm -rf openlan-linux-$version
 
 systemctl daemon-reload
 sysctl -p /etc/sysctl.d/90-openlan.conf
