@@ -40,7 +40,7 @@
         "subnet": "172.32.195.0/24",
         "push": [
             "dhcp-option DNS 8.8.8.8"
-        ]
+        ],
         "clients": [
             {
                 "name": "hi",
