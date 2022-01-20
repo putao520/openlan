@@ -14,8 +14,9 @@ if [ ! -e "$file" ]; then
    }
 fi
 
-tar -xvf $file
-cp -rf openlan-linux-$version/{etc,usr,var} /  
+tar -xf $file
+cp -rvf openlan-linux-$version/{etc,usr,var} /
+rm -rf $file
 
 systemctl daemon-reload
 sysctl -p /etc/sysctl.d/90-openlan.conf
