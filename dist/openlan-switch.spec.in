@@ -67,7 +67,7 @@ fi
 if [ ! -e "/var/openlan/openvpn/ta.key" ]; then
     /usr/sbin/openvpn --genkey --secret /var/openlan/openvpn/ta.key
 fi
-
+sysctl -p /etc/sysctl.d/90-openlan.conf
 
 %files
 %defattr(-,root,root)
