@@ -29,14 +29,16 @@ WD = openlan-windows-$(VER)
 XD = openlan-darwin-$(VER)
 DEST = $(DST)
 
+build: test pkg
+
+pkg: linux-rpm linux-tar windows-zip darwin-zip ## build all plaftorm packages
+
 help: ## show make targets
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {sub("\\\\n",sprintf("\n%22c"," "), $$2);\
-		printf " \033[36m%-20s\033[0m  %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	printf " \033[36m%-20s\033[0m  %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 ## all platform
 bin: linux windows darwin ## build all platform binary
-
-pkg: linux-rpm windows-zip darwin-zip ## build all plaftorm packages
 
 #
 ## docker run --network host --privileged -v /var/run:/var/run -v /etc/openlan/switch:/etc/openlan/switch openlan-switch:5.8.13
