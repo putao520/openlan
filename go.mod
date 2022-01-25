@@ -8,17 +8,11 @@ require (
 	github.com/chzyer/logex v1.2.0 // indirect
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e
 	github.com/chzyer/test v0.0.0-20210722231415-061457976a23 // indirect
-	github.com/coreos/etcd v3.3.27+incompatible
-	github.com/coreos/go-semver v0.3.0 // indirect
-	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf // indirect
-	github.com/coreos/go-systemd/v22 v22.0.0
-	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f // indirect
+	github.com/coreos/go-systemd/v22 v22.3.2
 	github.com/danieldin95/go-openvswitch v0.0.5
 	github.com/docker/libnetwork v0.5.6 // indirect
 	github.com/go-ldap/ldap v3.0.3+incompatible
 	github.com/godbus/dbus v4.1.0+incompatible // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/mux v1.7.4
 	github.com/klauspost/cpuid v1.2.3 // indirect
 	github.com/moby/libnetwork v0.5.6
@@ -31,14 +25,14 @@ require (
 	github.com/vishvananda/netlink v1.0.0
 	github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df // indirect
 	github.com/xtaci/kcp-go/v5 v5.5.12
-	go.uber.org/zap v1.20.0 // indirect
 	golang.org/x/crypto v0.0.0 // indirect
 	golang.org/x/net v0.0.0
 	golang.org/x/sys v0.0.0 // indirect
 	golang.org/x/time v0.0.0
-	google.golang.org/grpc v1.26.0 // indirect
 	gopkg.in/asn1-ber.v1 v1.0.0-20181015200546-f715ec2f112d // indirect
+	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/yaml.v2 v2.2.8
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
 
 replace (
