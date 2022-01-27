@@ -1,0 +1,57 @@
+{
+    "name": "OpenLAN_Switch",
+    "version": "0.0.1",
+    "tables": {
+        "Global_Switch": {
+            "columns": {
+                "protocol": {
+                    "type": "string"
+                },
+                "listen": {
+                    "type": {
+                        "key": {
+                            "type": "integer",
+                            "minInteger": 1024,
+                            "maxInteger": 65535
+                        }
+                    }
+                },
+                "other_config": {
+                    "type": {
+                        "key": "string",
+                        "value": "string",
+                        "min": 0,
+                        "max": "unlimited"
+                    }
+                }
+            },
+            "isRoot": true,
+            "maxRows": 1
+        },
+        "Network": {
+            "columns": {
+                "name": {
+                    "type": "string",
+                    "mutable": false
+                },
+                "other_config": {
+                    "type": {
+                        "key": "string",
+                        "value": "string",
+                        "min": 0,
+                        "max": "unlimited"
+                    }
+                },
+                "bridge": {
+                    "type": "string"
+                },
+                "address": {
+                    "type": "string"
+                }
+            },
+            "indexes": [
+                ["name"]
+            ]
+        }
+    }
+}
