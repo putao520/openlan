@@ -66,6 +66,7 @@ env:
 	@mkdir -p $(BD)
 	@go version
 	@gofmt -w -s ./pkg ./cmd ./misc
+	@go mod tidy
 	@[ -e "$(BD)"/cert ] || ln -s $(SD)/../freecert $(BD)/cert
 
 ## linux platform
