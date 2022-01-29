@@ -1,4 +1,4 @@
-package api
+package apiv5
 
 import (
 	"github.com/danieldin95/openlan/pkg/schema"
