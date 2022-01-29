@@ -58,7 +58,7 @@ func (a App) Flags() []cli.Flag {
 		&cli.BoolFlag{
 			Name:    "verbose",
 			Aliases: []string{"v"},
-			Usage:   "Enable verbose",
+			Usage:   "enable verbose",
 			Value:   false,
 		})
 	if Version == "v6" {
@@ -126,9 +126,10 @@ func main() {
 
 	switch Version {
 	case "v6":
-		if err := apiv6.Open(Server, Database); err == nil {
-			apiv6.List()
+		if err := apiv6.NewOvS(Server, Database); err != nil {
+			log.Fatal(err)
 		}
+		app.Commands = apiv6.Switch{}.Commands(app)
 	default:
 		app.Commands = apiv5.User{}.Commands(app)
 		app.Commands = apiv5.ACL{}.Commands(app)
