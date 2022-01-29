@@ -35,7 +35,7 @@ type Operation struct {
 	Rows      []Row       `json:"rows,omitempty"`
 	Columns   []string    `json:"columns,omitempty"`
 	Mutations []Mutation  `json:"mutations,omitempty"`
-	Timeout   int         `json:"timeout,omitempty"`
+	Timeout   *int        `json:"timeout,omitempty"`
 	Where     []Condition `json:"where,omitempty"`
 	Until     string      `json:"until,omitempty"`
 	Durable   *bool       `json:"durable,omitempty"`
@@ -82,6 +82,7 @@ type MonitorRequests struct {
 // MonitorRequest represents a monitor request according to RFC7047
 type MonitorRequest struct {
 	Columns []string       `json:"columns,omitempty"`
+	Where   []Condition    `json:"where,omitempty"`
 	Select  *MonitorSelect `json:"select,omitempty"`
 }
 

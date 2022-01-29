@@ -126,7 +126,7 @@ func main() {
 
 	switch Version {
 	case "v6":
-		if err := apiv6.NewOvS(Server, Database); err != nil {
+		if err := apiv6.NewConf(Server, Database, false); err != nil {
 			log.Fatal(err)
 		}
 		app.Commands = apiv6.Switch{}.Commands(app)
