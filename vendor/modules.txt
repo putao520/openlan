@@ -4,6 +4,13 @@ github.com/Sirupsen/logrus
 # github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5
 ## explicit
 github.com/armon/go-socks5
+# github.com/cenkalti/backoff/v4 v4.1.1
+github.com/cenkalti/backoff/v4
+# github.com/cenkalti/hub v1.0.1
+github.com/cenkalti/hub
+# github.com/cenkalti/rpc2 v0.0.0-20210220005819-4a29bc83afe1
+github.com/cenkalti/rpc2
+github.com/cenkalti/rpc2/jsonrpc
 # github.com/chzyer/logex v1.2.0
 ## explicit
 # github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e
@@ -29,6 +36,8 @@ github.com/go-ldap/ldap
 # github.com/godbus/dbus v4.1.0+incompatible
 ## explicit
 github.com/godbus/dbus
+# github.com/google/uuid v1.2.0
+github.com/google/uuid
 # github.com/gorilla/mux v1.8.0
 ## explicit
 github.com/gorilla/mux
@@ -53,6 +62,13 @@ github.com/mmcloughlin/avo/x86
 # github.com/moby/libnetwork v0.5.6
 ## explicit
 github.com/moby/libnetwork/iptables
+# github.com/ovn-org/libovsdb v0.6.0
+## explicit
+github.com/ovn-org/libovsdb/cache
+github.com/ovn-org/libovsdb/client
+github.com/ovn-org/libovsdb/mapper
+github.com/ovn-org/libovsdb/model
+github.com/ovn-org/libovsdb/ovsdb
 # github.com/pkg/errors v0.9.1
 github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
@@ -71,8 +87,6 @@ github.com/shadowsocks/go-shadowsocks2/shadowaead
 github.com/shadowsocks/go-shadowsocks2/socks
 # github.com/shurcooL/sanitized_anchor_name v1.0.0
 github.com/shurcooL/sanitized_anchor_name
-# github.com/sirupsen/logrus v1.8.0
-## explicit
 # github.com/songgao/water v0.0.0-20200317203138-2b4b6d7c09d8
 ## explicit
 github.com/songgao/water
@@ -130,7 +144,7 @@ golang.org/x/sys/windows/registry
 # golang.org/x/time v0.0.0-00010101000000-000000000000 => github.com/golang/time v0.0.0-20210220033141-f8bda1e9f3ba
 ## explicit
 golang.org/x/time/rate
-# golang.org/x/tools v0.0.0-20200808161706-5bf02b21f123
+# golang.org/x/tools v0.0.0-20210106214847-113979e3529a
 golang.org/x/tools/go/gcexportdata
 golang.org/x/tools/go/internal/gcimporter
 golang.org/x/tools/go/internal/packagesdriver

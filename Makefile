@@ -59,14 +59,14 @@ clean: ## clean cache
 
 ## prepare environment
 vendor:
-	 go clean -modcache
-	 go mod vendor -v
+	go clean -modcache
+	go mod tidy
+	go mod vendor -v
 
 env:
 	@mkdir -p $(BD)
 	@go version
 	@gofmt -w -s ./pkg ./cmd ./misc
-	@go mod tidy
 	@[ -e "$(BD)"/cert ] || ln -s $(SD)/../freecert $(BD)/cert
 
 ## linux platform
@@ -74,6 +74,11 @@ linux: linux-proxy linux-point linux-switch## build linux binary
 
 openudp: env
 	gcc ./core/src/xfrm/udp.c -o  $(BD)/openudp
+
+## compile command line
+cmd: env
+	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan ./cmd/main.go
+	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan.i386 ./cmd/main.go
 
 linux-point: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point ./cmd/point_linux

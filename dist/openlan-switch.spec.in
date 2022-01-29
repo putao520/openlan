@@ -26,6 +26,7 @@ cp %_source_dir/build/openudp %{buildroot}/usr/bin
 mkdir -p %{buildroot}/etc/openlan/switch
 cp %_source_dir/dist/resource/ctrl.json.example %{buildroot}/etc/openlan/switch
 cp %_source_dir/dist/resource/switch.json*.example %{buildroot}/etc/openlan/switch
+cp %_source_dir/dist/resource/confd.schema.json %{buildroot}/etc/openlan/switch
 mkdir -p %{buildroot}/etc/openlan/switch/acl
 cp %_source_dir/dist/resource/acl-1.json.example %{buildroot}/etc/openlan/switch/acl
 mkdir -p %{buildroot}/etc/openlan/switch/network
@@ -40,6 +41,7 @@ mkdir -p %{buildroot}/etc/sysctl.d
 cp %_source_dir/dist/resource/90-openlan.conf %{buildroot}/etc/sysctl.d
 
 mkdir -p %{buildroot}/usr/lib/systemd/system
+cp %_source_dir/dist/resource/openlan-confd.service %{buildroot}/usr/lib/systemd/system
 cp %_source_dir/dist/resource/openlan-switch.service %{buildroot}/usr/lib/systemd/system
 
 mkdir -p %{buildroot}/var/openlan
@@ -58,16 +60,21 @@ mkdir -p %{buildroot}/var/openlan/point
 
 
 %post
-if [ ! -e "/etc/openlan/switch/switch.json" ]; then
+[ -e "/etc/openlan/switch/switch.json" ] || {
     /usr/bin/cp -rvf /etc/openlan/switch/switch.json.example /etc/openlan/switch/switch.json
-fi
-if [ ! -e "/var/openlan/openvpn/dh.pem" ]; then
+}
+[ -e "/var/openlan/openvpn/dh.pem" ] || {
     /usr/bin/openssl dhparam -out /var/openlan/openvpn/dh.pem 2048
-fi
-if [ ! -e "/var/openlan/openvpn/ta.key" ]; then
+}
+[ -e "/var/openlan/openvpn/ta.key" ] || {
     /usr/sbin/openvpn --genkey --secret /var/openlan/openvpn/ta.key
-fi
-sysctl -p /etc/sysctl.d/90-openlan.conf
+}
+[ -e "/etc/openlan/switch/confd.db" ] || {
+    ovsdb-tool create /etc/openlan/switch/confd.db /etc/openlan/switch/confd.schema.json
+}
+[ -e "/etc/sysctl.d/90-openlan.conf" ] && {
+    sysctl -p /etc/sysctl.d/90-openlan.conf || :
+}
 
 %files
 %defattr(-,root,root)
