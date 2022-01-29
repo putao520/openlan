@@ -25,8 +25,8 @@ require (
 	github.com/godbus/dbus v4.1.0+incompatible // indirect
 	github.com/gorilla/mux v1.8.0
 	github.com/moby/libnetwork v0.5.6
+	github.com/ovn-org/libovsdb v0.6.0
 	github.com/shadowsocks/go-shadowsocks2 v0.1.5
-	github.com/sirupsen/logrus v1.8.0 // indirect
 	github.com/songgao/water v0.0.0-20200317203138-2b4b6d7c09d8
 	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli/v2 v2.3.0

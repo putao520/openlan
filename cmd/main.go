@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/danieldin95/openlan/cmd/api"
+	"github.com/danieldin95/openlan/cmd/conf"
 	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/urfave/cli/v2"
 	"io/ioutil"
@@ -11,12 +12,16 @@ import (
 )
 
 const (
+	confSockFile   = "unix:/var/openlan/confd.sock"
+	confDatabase   = "OpenLAN_Switch"
 	adminTokenFile = "/etc/openlan/switch/token"
 )
 
 type App struct {
-	Token string
-	Url   string
+	Token    string
+	Url      string
+	Conf     string
+	Database string
 }
 
 func (a App) Flags() []cli.Flag {
@@ -44,6 +49,18 @@ func (a App) Flags() []cli.Flag {
 			Aliases: []string{"v"},
 			Usage:   "Enable verbose",
 			Value:   false,
+		},
+		&cli.StringFlag{
+			Name:    "conf",
+			Aliases: []string{"c"},
+			Usage:   "confd server connection",
+			Value:   a.Conf,
+		},
+		&cli.StringFlag{
+			Name:    "database",
+			Aliases: []string{"d"},
+			Usage:   "confd database",
+			Value:   a.Database,
 		},
 	}
 }
@@ -83,7 +100,21 @@ func main() {
 	}
 	token := os.Getenv("OL_TOKEN")
 
-	app := App{Url: url, Token: token}.New()
+	server := os.Getenv("OL_CONF")
+	if server == "" {
+		server = confSockFile
+	}
+	database := os.Getenv("OL_DATABASE")
+	if database == "" {
+		database = confDatabase
+	}
+	app := App{
+		Url:      url,
+		Token:    token,
+		Conf:     server,
+		Database: database,
+	}.New()
+
 	app.Commands = api.User{}.Commands(app)
 	app.Commands = api.ACL{}.Commands(app)
 	app.Commands = api.Device{}.Commands(app)
@@ -100,8 +131,10 @@ func main() {
 	app.Commands = api.State{}.Commands(app)
 	app.Commands = api.Policy{}.Commands(app)
 
-	err := app.Run(os.Args)
-	if err != nil {
+	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
+	}
+	if err := conf.Open(server, database); err == nil {
+		conf.List()
 	}
 }
