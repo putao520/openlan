@@ -1,4 +1,4 @@
-package conf
+package apiv6
 
 import (
 	"context"

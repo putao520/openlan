@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/danieldin95/openlan/cmd/api"
-	"github.com/danieldin95/openlan/cmd/conf"
+	"github.com/danieldin95/openlan/cmd/apiv5"
+	"github.com/danieldin95/openlan/cmd/apiv6"
 	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/urfave/cli/v2"
 	"io/ioutil"
@@ -17,52 +17,67 @@ const (
 	adminTokenFile = "/etc/openlan/switch/token"
 )
 
+var (
+	Version  = "v5"
+	Url      = "https://localhost:10000"
+	Token    = ""
+	Server   = confSockFile
+	Database = confDatabase
+)
+
 type App struct {
-	Token    string
-	Url      string
-	Conf     string
-	Database string
 }
 
 func (a App) Flags() []cli.Flag {
-	return []cli.Flag{
-		&cli.StringFlag{
-			Name:    "token",
-			Aliases: []string{"t"},
-			Usage:   "admin token",
-			Value:   a.Token,
-		},
-		&cli.StringFlag{
-			Name:    "url",
-			Aliases: []string{"l"},
-			Usage:   "server url",
-			Value:   a.Url,
-		},
+	var flags []cli.Flag
+
+	if Version == "v5" {
+		flags = append(flags,
+			&cli.StringFlag{
+				Name:    "token",
+				Aliases: []string{"t"},
+				Usage:   "admin token",
+				Value:   Token,
+			})
+		flags = append(flags,
+			&cli.StringFlag{
+				Name:    "url",
+				Aliases: []string{"l"},
+				Usage:   "server url",
+				Value:   Url,
+			})
+	}
+	flags = append(flags,
 		&cli.StringFlag{
 			Name:    "format",
 			Aliases: []string{"f"},
 			Usage:   "output format: json, yaml",
 			Value:   "table",
-		},
+		})
+	flags = append(flags,
 		&cli.BoolFlag{
 			Name:    "verbose",
 			Aliases: []string{"v"},
 			Usage:   "Enable verbose",
 			Value:   false,
-		},
-		&cli.StringFlag{
-			Name:    "conf",
-			Aliases: []string{"c"},
-			Usage:   "confd server connection",
-			Value:   a.Conf,
-		},
-		&cli.StringFlag{
-			Name:    "database",
-			Aliases: []string{"d"},
-			Usage:   "confd database",
-			Value:   a.Database,
-		},
+		})
+	if Version == "v6" {
+		flags = append(flags,
+			&cli.StringFlag{
+				Name:    "conf",
+				Aliases: []string{"c"},
+				Usage:   "confd server connection",
+				Value:   Server,
+			})
+		flags = append(flags,
+			&cli.StringFlag{
+				Name:    "database",
+				Aliases: []string{"d"},
+				Usage:   "confd database",
+				Value:   Database,
+			})
 	}
+	return flags
 }
 
 func (a App) New() *cli.App {
@@ -93,48 +108,45 @@ func (a App) After(c *cli.Context) error {
 	return nil
 }
 
+func GetEnv(key, value string) string {
+	val := os.Getenv(key)
+	if val == "" {
+		return value
+	}
+	return val
+}
+
 func main() {
-	url := os.Getenv("OL_URL")
-	if url == "" {
-		url = "https://localhost:10000"
-	}
-	token := os.Getenv("OL_TOKEN")
+	Version = GetEnv("OL_VERSION", Version)
+	Url = GetEnv("OL_URL", Url)
+	Token = GetEnv("OL_TOKEN", Token)
+	Server = GetEnv("OL_CONF", Server)
+	Database = GetEnv("OL_DATABASE", Database)
+	app := App{}.New()
 
-	server := os.Getenv("OL_CONF")
-	if server == "" {
-		server = confSockFile
+	switch Version {
+	case "v6":
+		if err := apiv6.Open(Server, Database); err == nil {
+			apiv6.List()
+		}
+	default:
+		app.Commands = apiv5.User{}.Commands(app)
+		app.Commands = apiv5.ACL{}.Commands(app)
+		app.Commands = apiv5.Device{}.Commands(app)
+		app.Commands = apiv5.Lease{}.Commands(app)
+		app.Commands = apiv5.Config{}.Commands(app)
+		app.Commands = apiv5.Point{}.Commands(app)
+		app.Commands = apiv5.VPNClient{}.Commands(app)
+		app.Commands = apiv5.Link{}.Commands(app)
+		app.Commands = apiv5.Server{}.Commands(app)
+		app.Commands = apiv5.Network{}.Commands(app)
+		app.Commands = apiv5.PProf{}.Commands(app)
+		app.Commands = apiv5.Esp{}.Commands(app)
+		app.Commands = apiv5.VxLAN{}.Commands(app)
+		app.Commands = apiv5.State{}.Commands(app)
+		app.Commands = apiv5.Policy{}.Commands(app)
 	}
-	database := os.Getenv("OL_DATABASE")
-	if database == "" {
-		database = confDatabase
-	}
-	app := App{
-		Url:      url,
-		Token:    token,
-		Conf:     server,
-		Database: database,
-	}.New()
-
-	app.Commands = api.User{}.Commands(app)
-	app.Commands = api.ACL{}.Commands(app)
-	app.Commands = api.Device{}.Commands(app)
-	app.Commands = api.Lease{}.Commands(app)
-	app.Commands = api.Config{}.Commands(app)
-	app.Commands = api.Point{}.Commands(app)
-	app.Commands = api.VPNClient{}.Commands(app)
-	app.Commands = api.Link{}.Commands(app)
-	app.Commands = api.Server{}.Commands(app)
-	app.Commands = api.Network{}.Commands(app)
-	app.Commands = api.PProf{}.Commands(app)
-	app.Commands = api.Esp{}.Commands(app)
-	app.Commands = api.VxLAN{}.Commands(app)
-	app.Commands = api.State{}.Commands(app)
-	app.Commands = api.Policy{}.Commands(app)
-
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
-	}
-	if err := conf.Open(server, database); err == nil {
-		conf.List()
 	}
 }
