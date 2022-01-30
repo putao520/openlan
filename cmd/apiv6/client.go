@@ -7,9 +7,15 @@ import (
 	"github.com/ovn-org/libovsdb/model"
 )
 
-var ovs client.Client
+type Client struct {
+	Server   string
+	Database string
+	OvS      client.Client
+}
 
-func Open(server, database string) error {
+func (c *Client) Open() error {
+	server := c.Server
+	database := c.Database
 	dbModel, err := model.NewDBModel(database, map[string]model.Model{
 		"Global_Switch": &GlobalSwitch{},
 	})
@@ -26,26 +32,33 @@ func Open(server, database string) error {
 	if _, err := cli.MonitorAll(); err != nil {
 		return err
 	}
-	ovs = cli
+	c.OvS = cli
 	return nil
 }
 
-func List() {
+func (c *Client) List() {
 	var lsList []GlobalSwitch
-	if err := ovs.List(&lsList); err == nil {
+	if err := c.OvS.List(&lsList); err == nil {
 		for _, ls := range lsList {
-			libol.Debug("%s %d", ls.Protocol, ls.Listen)
+			libol.Debug("ovs.List %s %d", ls.Protocol, ls.Listen)
 		}
 	}
 	if len(lsList) == 0 {
-		ops, _ := ovs.Create(&GlobalSwitch{
+		ops, _ := c.OvS.Create(&GlobalSwitch{
 			Protocol: "tcp",
 			Listen:   10002,
 		})
-		if ret, err := ovs.Transact(ops...); err != nil {
-			libol.Error("%s", err)
+		if ret, err := c.OvS.Transact(ops...); err != nil {
+			libol.Error("ovs.Transact %s", err)
 		} else {
-			libol.Debug("%s", ret)
+			libol.Debug("ovs.Transact %s", ret)
 		}
 	}
+}
+
+var ovs *Client
+
+func NewOvS(server, database string) error {
+	ovs = &Client{Server: server, Database: database}
+	return ovs.Open()
 }
