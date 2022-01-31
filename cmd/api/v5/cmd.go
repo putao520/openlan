@@ -3,14 +3,10 @@ package v5
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
+	"github.com/danieldin95/openlan/cmd/api"
 	"github.com/danieldin95/openlan/pkg/libol"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/http"
-	"os"
-	"strconv"
-	"text/template"
 )
 
 type Client struct {
@@ -124,78 +120,8 @@ func (c Cmd) Tmpl() string {
 	return ""
 }
 
-func (c Cmd) OutJson(data interface{}) error {
-	if out, err := libol.Marshal(data, true); err == nil {
-		fmt.Println(string(out))
-	} else {
-		return err
-	}
-	return nil
-}
-
-func (c Cmd) OutYaml(data interface{}) error {
-	if out, err := yaml.Marshal(data); err == nil {
-		fmt.Println(string(out))
-	} else {
-		return err
-	}
-	return nil
-}
-
-func (c Cmd) OutTable(data interface{}, tmpl string) error {
-	funcMap := template.FuncMap{
-		"ps": func(space int, args ...interface{}) string {
-			format := "%" + strconv.Itoa(space) + "s"
-			if space < 0 {
-				format = "%-" + strconv.Itoa(space) + "s"
-			}
-			return fmt.Sprintf(format, args...)
-		},
-		"pi": func(space int, args ...interface{}) string {
-			format := "%" + strconv.Itoa(space) + "d"
-			if space < 0 {
-				format = "%-" + strconv.Itoa(space) + "d"
-			}
-			return fmt.Sprintf(format, args...)
-		},
-		"pu": func(space int, args ...interface{}) string {
-			format := "%" + strconv.Itoa(space) + "u"
-			if space < 0 {
-				format = "%-" + strconv.Itoa(space) + "u"
-			}
-			return fmt.Sprintf(format, args...)
-		},
-		"pt": func(value int64) string {
-			return libol.PrettyTime(value)
-		},
-		"p2": func(space int, format, key1, key2 string) string {
-			value := fmt.Sprintf(format, key1, key2)
-			format = "%" + strconv.Itoa(space) + "s"
-			if space < 0 {
-				format = "%-" + strconv.Itoa(space) + "s"
-			}
-			return fmt.Sprintf(format, value)
-		},
-	}
-	if tmpl, err := template.New("main").Funcs(funcMap).Parse(tmpl); err != nil {
-		return err
-	} else {
-		if err := tmpl.Execute(os.Stdout, data); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (c Cmd) Out(data interface{}, format string, tmpl string) error {
-	switch format {
-	case "json":
-		return c.OutJson(data)
-	case "yaml":
-		return c.OutYaml(data)
-	default:
-		return c.OutTable(data, tmpl)
-	}
+	return api.Out(data, format, tmpl)
 }
 
 func (c Cmd) Log() *libol.SubLogger {

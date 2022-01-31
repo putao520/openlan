@@ -29,7 +29,37 @@ type App struct {
 func (a *App) Flags() []cli.Flag {
 	var flags []cli.Flag
 
-	if Version == "v5" {
+	switch Version {
+	case "v6":
+		flags = append(flags,
+			&cli.StringFlag{
+				Name:    "format",
+				Aliases: []string{"f"},
+				Usage:   "output format: json, yaml",
+				Value:   "yaml",
+			})
+		flags = append(flags,
+			&cli.StringFlag{
+				Name:    "conf",
+				Aliases: []string{"c"},
+				Usage:   "confd server connection",
+				Value:   Server,
+			})
+		flags = append(flags,
+			&cli.StringFlag{
+				Name:    "database",
+				Aliases: []string{"d"},
+				Usage:   "confd database",
+				Value:   Database,
+			})
+	default:
+		flags = append(flags,
+			&cli.StringFlag{
+				Name:    "format",
+				Aliases: []string{"f"},
+				Usage:   "output format: json, yaml",
+				Value:   "table",
+			})
 		flags = append(flags,
 			&cli.StringFlag{
 				Name:    "token",
@@ -46,35 +76,12 @@ func (a *App) Flags() []cli.Flag {
 			})
 	}
 	flags = append(flags,
-		&cli.StringFlag{
-			Name:    "format",
-			Aliases: []string{"f"},
-			Usage:   "output format: json, yaml",
-			Value:   "table",
-		})
-	flags = append(flags,
 		&cli.BoolFlag{
 			Name:    "verbose",
 			Aliases: []string{"v"},
 			Usage:   "enable verbose",
 			Value:   false,
 		})
-	if Version == "v6" {
-		flags = append(flags,
-			&cli.StringFlag{
-				Name:    "conf",
-				Aliases: []string{"c"},
-				Usage:   "confd server connection",
-				Value:   Server,
-			})
-		flags = append(flags,
-			&cli.StringFlag{
-				Name:    "database",
-				Aliases: []string{"d"},
-				Usage:   "confd database",
-				Value:   Database,
-			})
-	}
 	return flags
 }
 

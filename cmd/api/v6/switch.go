@@ -1,7 +1,6 @@
 package v6
 
 import (
-	"fmt"
 	"github.com/danieldin95/openlan/cmd/api"
 	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/urfave/cli/v2"
@@ -13,9 +12,7 @@ type Switch struct {
 func (u Switch) List(c *cli.Context) error {
 	var lsList []GlobalSwitch
 	if err := conf.OvS.List(doing, &lsList); err == nil {
-		for _, ls := range lsList {
-			fmt.Printf("%+v\n", ls)
-		}
+		return api.Out(lsList, c.String("format"), "")
 	}
 	return nil
 }
@@ -23,15 +20,13 @@ func (u Switch) List(c *cli.Context) error {
 func (u Switch) Add(c *cli.Context) error {
 	protocol := c.String("protocol")
 	listen := c.Int("listen")
-
-	newSw := GlobalSwitch{
-		Protocol: protocol,
-		Listen:   listen,
-	}
-
 	var listSw []GlobalSwitch
 	if err := conf.OvS.List(doing, &listSw); err != nil {
 		return err
+	}
+	newSw := GlobalSwitch{
+		Protocol: protocol,
+		Listen:   listen,
 	}
 	if len(listSw) == 0 {
 		ops, err := conf.OvS.Create(&newSw)
