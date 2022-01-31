@@ -35,7 +35,7 @@ func (a *App) Flags() []cli.Flag {
 			&cli.StringFlag{
 				Name:    "format",
 				Aliases: []string{"f"},
-				Usage:   "output format: json, yaml",
+				Usage:   "output format: <json|yaml>",
 				Value:   "yaml",
 			})
 		flags = append(flags,
@@ -57,7 +57,7 @@ func (a *App) Flags() []cli.Flag {
 			&cli.StringFlag{
 				Name:    "format",
 				Aliases: []string{"f"},
-				Usage:   "output format: json, yaml",
+				Usage:   "output format: <json|yaml>",
 				Value:   "table",
 			})
 		flags = append(flags,
