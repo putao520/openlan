@@ -1,7 +1,8 @@
-package apiv5
+package v5
 
 import (
 	"fmt"
+	"github.com/danieldin95/openlan/cmd/api"
 	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/danieldin95/openlan/pkg/schema"
 	"github.com/urfave/cli/v2"
@@ -50,8 +51,8 @@ func (u PProf) List(c *cli.Context) error {
 	return nil
 }
 
-func (u PProf) Commands(app *cli.App) cli.Commands {
-	return append(app.Commands, &cli.Command{
+func (u PProf) Commands(app *api.App) {
+	app.Command(&cli.Command{
 		Name:    "pprof",
 		Aliases: []string{"pp"},
 		Usage:   "Configure pprof tool",

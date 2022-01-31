@@ -1,6 +1,7 @@
-package apiv5
+package v5
 
 import (
+	"github.com/danieldin95/openlan/cmd/api"
 	"github.com/danieldin95/openlan/pkg/schema"
 	"github.com/urfave/cli/v2"
 )
@@ -36,8 +37,8 @@ func (u Lease) List(c *cli.Context) error {
 	return u.Out(items, c.String("format"), u.Tmpl())
 }
 
-func (u Lease) Commands(app *cli.App) cli.Commands {
-	return append(app.Commands, &cli.Command{
+func (u Lease) Commands(app *api.App) {
+	app.Command(&cli.Command{
 		Name:    "lease",
 		Aliases: []string{"le"},
 		Usage:   "DHCP address lease",

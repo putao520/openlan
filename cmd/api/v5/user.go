@@ -1,7 +1,8 @@
-package apiv5
+package v5
 
 import (
 	"fmt"
+	"github.com/danieldin95/openlan/cmd/api"
 	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/danieldin95/openlan/pkg/schema"
 	"github.com/urfave/cli/v2"
@@ -126,9 +127,9 @@ func (u User) Check(c *cli.Context) error {
 	}
 }
 
-func (u User) Commands(app *cli.App) cli.Commands {
+func (u User) Commands(app *api.App) {
 	lease := time.Now().AddDate(99, 0, 0)
-	return append(app.Commands, &cli.Command{
+	app.Command(&cli.Command{
 		Name:    "user",
 		Aliases: []string{"us"},
 		Usage:   "User authentication",

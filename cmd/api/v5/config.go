@@ -1,7 +1,8 @@
-package apiv5
+package v5
 
 import (
 	"fmt"
+	"github.com/danieldin95/openlan/cmd/api"
 	"github.com/danieldin95/openlan/pkg/config"
 	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/danieldin95/openlan/pkg/schema"
@@ -154,8 +155,8 @@ func (u Config) Save(c *cli.Context) error {
 	}
 }
 
-func (u Config) Commands(app *cli.App) cli.Commands {
-	return append(app.Commands, &cli.Command{
+func (u Config) Commands(app *api.App) {
+	app.Command(&cli.Command{
 		Name:    "config",
 		Aliases: []string{"cfg"},
 		Usage:   "Switch configuration",

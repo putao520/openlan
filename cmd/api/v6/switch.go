@@ -1,8 +1,9 @@
-package apiv6
+package v6
 
 import (
 	"context"
 	"fmt"
+	"github.com/danieldin95/openlan/cmd/api"
 	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/urfave/cli/v2"
 )
@@ -60,8 +61,8 @@ func (u Switch) Add(c *cli.Context) error {
 	return nil
 }
 
-func (u Switch) Commands(app *cli.App) cli.Commands {
-	return append(app.Commands, &cli.Command{
+func (u Switch) Commands(app *api.App) {
+	app.Command(&cli.Command{
 		Name:    "switch",
 		Aliases: []string{"sw"},
 		Usage:   "Global switch",

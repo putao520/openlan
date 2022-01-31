@@ -1,4 +1,4 @@
-package apiv6
+package v6
 
 import (
 	"context"

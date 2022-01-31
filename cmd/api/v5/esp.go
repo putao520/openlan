@@ -1,6 +1,7 @@
-package apiv5
+package v5
 
 import (
+	"github.com/danieldin95/openlan/cmd/api"
 	"github.com/danieldin95/openlan/pkg/schema"
 	"github.com/urfave/cli/v2"
 )
@@ -36,8 +37,8 @@ func (u Esp) List(c *cli.Context) error {
 	return u.Out(items, c.String("format"), u.Tmpl())
 }
 
-func (u Esp) Commands(app *cli.App) cli.Commands {
-	return append(app.Commands, &cli.Command{
+func (u Esp) Commands(app *api.App) {
+	app.Command(&cli.Command{
 		Name:    "esp",
 		Aliases: []string{"esp"},
 		Usage:   "IPSec ESP configuration",

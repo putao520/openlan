@@ -1,4 +1,4 @@
-package apiv5
+package v5
 
 import (
 	"bytes"

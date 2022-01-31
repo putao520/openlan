@@ -1,19 +1,20 @@
-package apiv5
+package v5
 
 import (
 	"fmt"
+	"github.com/danieldin95/openlan/cmd/api"
 	"github.com/urfave/cli/v2"
 )
 
-type Network struct {
+type Server struct {
 	Cmd
 }
 
-func (u Network) Url(prefix, name string) string {
-	return prefix + "/api/network"
+func (u Server) Url(prefix, name string) string {
+	return prefix + "/api/server"
 }
 
-func (u Network) List(c *cli.Context) error {
+func (u Server) List(c *cli.Context) error {
 	url := u.Url(c.String("url"), "")
 	url += "?format=" + c.String("format")
 	clt := u.NewHttp(c.String("token"))
@@ -25,15 +26,15 @@ func (u Network) List(c *cli.Context) error {
 	}
 }
 
-func (u Network) Commands(app *cli.App) cli.Commands {
-	return append(app.Commands, &cli.Command{
-		Name:    "network",
-		Aliases: []string{"net"},
-		Usage:   "Logical network",
+func (u Server) Commands(app *api.App) {
+	app.Command(&cli.Command{
+		Name:    "server",
+		Aliases: []string{"sr"},
+		Usage:   "Socket server status",
 		Subcommands: []*cli.Command{
 			{
 				Name:    "list",
-				Usage:   "Display all network",
+				Usage:   "Display server status",
 				Aliases: []string{"ls"},
 				Action:  u.List,
 			},

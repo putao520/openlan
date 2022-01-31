@@ -1,6 +1,7 @@
-package apiv5
+package v5
 
 import (
+	"github.com/danieldin95/openlan/cmd/api"
 	"github.com/urfave/cli/v2"
 )
 
@@ -32,9 +33,9 @@ func (u ACL) Apply(c *cli.Context) error {
 	return nil
 }
 
-func (u ACL) Commands(app *cli.App) cli.Commands {
+func (u ACL) Commands(app *api.App) {
 	rule := ACLRule{}
-	return append(app.Commands, &cli.Command{
+	app.Command(&cli.Command{
 		Name:  "acl",
 		Usage: "Access control list",
 		Flags: []cli.Flag{

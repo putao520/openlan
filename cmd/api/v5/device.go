@@ -1,6 +1,7 @@
-package apiv5
+package v5
 
 import (
+	"github.com/danieldin95/openlan/cmd/api"
 	"github.com/danieldin95/openlan/pkg/schema"
 	"github.com/urfave/cli/v2"
 )
@@ -36,8 +37,8 @@ func (u Device) List(c *cli.Context) error {
 	return u.Out(items, c.String("format"), u.Tmpl())
 }
 
-func (u Device) Commands(app *cli.App) cli.Commands {
-	return append(app.Commands, &cli.Command{
+func (u Device) Commands(app *api.App) {
+	app.Command(&cli.Command{
 		Name:    "device",
 		Aliases: []string{"dev"},
 		Usage:   "linux network device",

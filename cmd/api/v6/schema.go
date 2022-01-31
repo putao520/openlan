@@ -1,4 +1,4 @@
-package apiv6
+package v6
 
 type GlobalSwitch struct {
 	UUID     string            `ovsdb:"_uuid"`

@@ -1,6 +1,7 @@
-package apiv5
+package v5
 
 import (
+	"github.com/danieldin95/openlan/cmd/api"
 	"github.com/danieldin95/openlan/pkg/schema"
 	"github.com/urfave/cli/v2"
 	"sort"
@@ -42,8 +43,8 @@ func (u Policy) List(c *cli.Context) error {
 	return u.Out(items, c.String("format"), u.Tmpl())
 }
 
-func (u Policy) Commands(app *cli.App) cli.Commands {
-	return append(app.Commands, &cli.Command{
+func (u Policy) Commands(app *api.App) {
+	app.Command(&cli.Command{
 		Name:    "policy",
 		Aliases: []string{"po"},
 		Usage:   "IPSec policy configuration",
