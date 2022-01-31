@@ -3,27 +3,27 @@ package api
 import (
 	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/urfave/cli/v2"
-	"io/ioutil"
-	"strings"
 )
 
 const (
-	confSockFile   = "unix:/var/openlan/confd.sock"
-	confDatabase   = "OpenLAN_Switch"
-	adminTokenFile = "/etc/openlan/switch/token"
+	ConfSockFile   = "unix:/var/openlan/confd.sock"
+	ConfDatabase   = "OpenLAN_Switch"
+	AdminTokenFile = "/etc/openlan/switch/token"
 )
 
 var (
 	Version  = "v5"
 	Url      = "https://localhost:10000"
 	Token    = ""
-	Server   = confSockFile
-	Database = confDatabase
+	Server   = ConfSockFile
+	Database = ConfDatabase
 	Verbose  = false
 )
 
 type App struct {
-	cli *cli.App
+	cli    *cli.App
+	Before func(c *cli.Context) error
+	After  func(c *cli.Context) error
 }
 
 func (a *App) Flags() []cli.Flag {
@@ -83,33 +83,28 @@ func (a *App) New() *cli.App {
 		Usage:    "OpenLAN switch utility",
 		Flags:    a.Flags(),
 		Commands: []*cli.Command{},
-		Before:   a.Before,
-		After:    a.After,
+		Before: func(c *cli.Context) error {
+			if c.Bool("verbose") {
+				Verbose = true
+				libol.SetLogger("", libol.DEBUG)
+			} else {
+				Verbose = false
+				libol.SetLogger("", libol.INFO)
+			}
+			if a.Before == nil {
+				return nil
+			}
+			return a.Before(c)
+		},
+		After: func(c *cli.Context) error {
+			if a.After == nil {
+				return nil
+			}
+			return a.After(c)
+		},
 	}
 	a.cli = app
 	return a.cli
-}
-
-func (a *App) Before(c *cli.Context) error {
-	if c.Bool("verbose") {
-		Verbose = true
-		libol.SetLogger("", libol.DEBUG)
-	} else {
-		Verbose = false
-		libol.SetLogger("", libol.INFO)
-	}
-	token := c.String("token")
-	if token == "" {
-		if data, err := ioutil.ReadFile(adminTokenFile); err == nil {
-			token = strings.TrimSpace(string(data))
-		}
-		_ = c.Set("token", token)
-	}
-	return nil
-}
-
-func (a *App) After(c *cli.Context) error {
-	return nil
 }
 
 func (a *App) Command(cmd *cli.Command) {

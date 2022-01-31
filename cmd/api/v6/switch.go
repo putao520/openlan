@@ -12,9 +12,6 @@ type Switch struct {
 
 func (u Switch) List(c *cli.Context) error {
 	var lsList []GlobalSwitch
-	if _, err := GetConf(); err != nil {
-		return err
-	}
 	if err := conf.OvS.List(doing, &lsList); err == nil {
 		for _, ls := range lsList {
 			fmt.Printf("%+v\n", ls)
