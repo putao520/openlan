@@ -1,7 +1,6 @@
 package v6
 
 import (
-	"context"
 	"fmt"
 	"github.com/danieldin95/openlan/cmd/api"
 	"github.com/danieldin95/openlan/pkg/libol"
@@ -13,7 +12,10 @@ type Switch struct {
 
 func (u Switch) List(c *cli.Context) error {
 	var lsList []GlobalSwitch
-	if err := conf.OvS.List(context.Background(), &lsList); err == nil {
+	if _, err := GetConf(); err != nil {
+		return err
+	}
+	if err := conf.OvS.List(doing, &lsList); err == nil {
 		for _, ls := range lsList {
 			fmt.Printf("%+v\n", ls)
 		}
@@ -31,7 +33,7 @@ func (u Switch) Add(c *cli.Context) error {
 	}
 
 	var listSw []GlobalSwitch
-	if err := conf.OvS.List(context.Background(), &listSw); err != nil {
+	if err := conf.OvS.List(doing, &listSw); err != nil {
 		return err
 	}
 	if len(listSw) == 0 {
@@ -40,7 +42,7 @@ func (u Switch) Add(c *cli.Context) error {
 			return err
 		}
 		libol.Debug("Switch.Add %s", ops)
-		if ret, err := conf.OvS.Transact(context.Background(), ops...); err != nil {
+		if ret, err := conf.OvS.Transact(doing, ops...); err != nil {
 			return err
 		} else {
 			libol.Debug("OvS.Transact %s", ret)
@@ -52,7 +54,7 @@ func (u Switch) Add(c *cli.Context) error {
 			return err
 		}
 		libol.Debug("Switch.Add %s", ops)
-		if ret, err := conf.OvS.Transact(context.Background(), ops...); err != nil {
+		if ret, err := conf.OvS.Transact(doing, ops...); err != nil {
 			return err
 		} else {
 			libol.Debug("OvS.Transact %s", ret)

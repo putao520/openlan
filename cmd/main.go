@@ -27,9 +27,6 @@ func main() {
 
 	switch api.Version {
 	case "v6":
-		if err := v6.NewConf(api.Server, api.Database, false); err != nil {
-			log.Fatal(err)
-		}
 		v6.Switch{}.Commands(app)
 	default:
 		v5.User{}.Commands(app)

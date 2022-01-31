@@ -19,6 +19,7 @@ var (
 	Token    = ""
 	Server   = confSockFile
 	Database = confDatabase
+	Verbose  = false
 )
 
 type App struct {
@@ -91,7 +92,11 @@ func (a *App) New() *cli.App {
 
 func (a *App) Before(c *cli.Context) error {
 	if c.Bool("verbose") {
+		Verbose = true
 		libol.SetLogger("", libol.DEBUG)
+	} else {
+		Verbose = false
+		libol.SetLogger("", libol.INFO)
 	}
 	token := c.String("token")
 	if token == "" {

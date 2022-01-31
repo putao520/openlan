@@ -2,10 +2,16 @@ package v6
 
 import (
 	"context"
+	"github.com/danieldin95/openlan/cmd/api"
+	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/go-logr/stdr"
 	"github.com/ovn-org/libovsdb/client"
 	"github.com/ovn-org/libovsdb/model"
+	"log"
+	"os"
 )
+
+var doing = context.Background()
 
 type Conf struct {
 	Server   string
@@ -17,26 +23,33 @@ type Conf struct {
 func (c *Conf) Open() error {
 	server := c.Server
 	database := c.Database
-	dbModel, err := model.NewClientDBModel(database, map[string]model.Model{
+	models := map[string]model.Model{
 		"Global_Switch": &GlobalSwitch{},
-	})
+	}
+	dbModel, err := model.NewClientDBModel(database, models)
 	if err != nil {
 		return err
 	}
-	stdr.SetVerbosity(0)
-	ovs, err := client.NewOVSDBClient(dbModel,
+	ops := []client.Option{
 		client.WithEndpoint(server),
-		client.WithLogger(nil))
-	if err != nil {
-		return err
 	}
 	if !c.Verbose {
-		stdr.SetVerbosity(0)
+		// create a new logger to log to /dev/null
+		writer, err := libol.OpenWrite(os.DevNull)
+		if err != nil {
+			writer = os.Stderr
+		}
+		l := stdr.NewWithOptions(log.New(writer, "", log.LstdFlags), stdr.Options{LogCaller: stdr.All})
+		ops = append(ops, client.WithLogger(&l))
 	}
-	if err := ovs.Connect(context.Background()); err != nil {
+	ovs, err := client.NewOVSDBClient(dbModel, ops...)
+	if err != nil {
 		return err
 	}
-	if _, err := ovs.MonitorAll(context.Background()); err != nil {
+	if err := ovs.Connect(doing); err != nil {
+		return err
+	}
+	if _, err := ovs.MonitorAll(doing); err != nil {
 		return err
 	}
 	c.OvS = ovs
@@ -45,11 +58,15 @@ func (c *Conf) Open() error {
 
 var conf *Conf
 
-func NewConf(server, database string, Verbose bool) error {
-	conf = &Conf{
-		Server:   server,
-		Database: database,
-		Verbose:  Verbose,
+func GetConf() (*Conf, error) {
+	var err error
+	if conf == nil {
+		conf = &Conf{
+			Server:   api.Server,
+			Database: api.Database,
+			Verbose:  api.Verbose,
+		}
+		err = conf.Open()
 	}
-	return conf.Open()
+	return conf, err
 }
