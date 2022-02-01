@@ -10,7 +10,7 @@ type Switch struct {
 }
 
 func (u Switch) List(c *cli.Context) error {
-	var listSw []GlobalSwitch
+	var listSw []SwitchDB
 	if err := conf.OvS.List(doing, &listSw); err == nil {
 		return api.Out(listSw, c.String("format"), "")
 	}
@@ -20,11 +20,11 @@ func (u Switch) List(c *cli.Context) error {
 func (u Switch) Add(c *cli.Context) error {
 	protocol := c.String("protocol")
 	listen := c.Int("listen")
-	var listSw []GlobalSwitch
+	var listSw []SwitchDB
 	if err := conf.OvS.List(doing, &listSw); err != nil {
 		return err
 	}
-	newSw := GlobalSwitch{
+	newSw := SwitchDB{
 		Protocol: protocol,
 		Listen:   listen,
 	}
@@ -37,7 +37,7 @@ func (u Switch) Add(c *cli.Context) error {
 		if ret, err := conf.OvS.Transact(doing, ops...); err != nil {
 			return err
 		} else {
-			libol.Debug("OvS.Transact %s", ret)
+			libol.Debug("Switch.Transact %s", ret)
 		}
 	} else {
 		ops, err := conf.OvS.Where(&listSw[0]).Update(&newSw)
@@ -73,11 +73,11 @@ func (u Switch) Commands(app *api.App) {
 					&cli.StringFlag{
 						Name:  "protocol",
 						Value: "tcp",
-						Usage: "used protocol: <tcp|udp|http|tls>"},
+						Usage: "used protocol: tcp|udp|http|tls"},
 					&cli.IntFlag{
 						Name:  "listen",
 						Value: 10002,
-						Usage: "listen on port: <1024-65535>",
+						Usage: "listen on port: 1024-65535",
 					},
 				},
 				Action: u.Add,

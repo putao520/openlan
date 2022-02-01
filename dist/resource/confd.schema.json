@@ -51,7 +51,8 @@
             },
             "indexes": [
                 ["name"]
-            ]
+            ],
+            "isRoot": true
         }
     }
 }

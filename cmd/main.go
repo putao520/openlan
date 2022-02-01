@@ -27,9 +27,9 @@ func main() {
 
 	switch api.Version {
 	case "v6":
-		v6.Call(app)
+		v6.Commands(app)
 	default:
-		v5.Call(app)
+		v5.Commands(app)
 	}
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)

@@ -17,8 +17,9 @@ func After(c *cli.Context) error {
 	return nil
 }
 
-func Call(app *api.App) {
+func Commands(app *api.App) {
 	app.After = After
 	app.Before = Before
 	Switch{}.Commands(app)
+	Network{}.Commands(app)
 }

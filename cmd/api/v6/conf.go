@@ -12,6 +12,10 @@ import (
 )
 
 var doing = context.Background()
+var models = map[string]model.Model{
+	"Global_Switch": &SwitchDB{},
+	"Network":       &NetworkDB{},
+}
 
 type Conf struct {
 	Server   string
@@ -23,9 +27,6 @@ type Conf struct {
 func (c *Conf) Open() error {
 	server := c.Server
 	database := c.Database
-	models := map[string]model.Model{
-		"Global_Switch": &GlobalSwitch{},
-	}
 	dbModel, err := model.NewClientDBModel(database, models)
 	if err != nil {
 		return err
