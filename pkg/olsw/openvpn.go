@@ -66,7 +66,7 @@ ifconfig-pool-persist {{ .Protocol }}{{ .Port }}ipp
 tls-auth {{ .TlsAuth }} 0
 cipher {{ .Cipher }}
 status {{ .Protocol }}{{ .Port }}server.status 5
-verify-client-cert none
+client-cert-not-required
 script-security 3
 auth-user-pass-verify "{{ .Script }}" via-env
 username-as-common-name
