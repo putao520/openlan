@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	OpenVPNBin    = "/usr/sbin/openvpn"
+	OpenVPNBin    = "/usr/bin/env openvpn"
 	DefaultCurDir = "/var/openlan/openvpn/default"
 )
 

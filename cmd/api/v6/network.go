@@ -40,7 +40,7 @@ func (u Network) Add(c *cli.Context) error {
 func (u Network) Commands(app *api.App) {
 	app.Command(&cli.Command{
 		Name:    "network",
-		Aliases: []string{"no"},
+		Aliases: []string{"net"},
 		Usage:   "Virtual network",
 		Subcommands: []*cli.Command{
 			{
