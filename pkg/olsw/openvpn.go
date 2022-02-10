@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	OpenVPNBin    = "/usr/bin/env openvpn"
+	OpenVPNBin    = "openvpn"
 	DefaultCurDir = "/var/openlan/openvpn/default"
 )
 
@@ -258,7 +258,7 @@ func (o *OpenVPN) WriteConf(path string) error {
 	data := NewOpenVpnDataFromConf(o)
 	o.out.Debug("OpenVPN.WriteConf %v", data)
 	if data.ClientConfigDir != "" {
-		o.writeClientConfig()
+		_ = o.writeClientConfig()
 	}
 	tmplStr := o.ServerTmpl()
 	if tmpl, err := template.New("main").Parse(tmplStr); err != nil {

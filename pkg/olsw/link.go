@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	OlapBin = "/usr/bin/openlan-point"
+	OlapBin = "openlan-point"
 	OlapDir = "/var/openlan/point"
 )
 

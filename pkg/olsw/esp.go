@@ -17,7 +17,7 @@ import (
 
 const (
 	UDPPort = 4500
-	UDPBin  = "/usr/bin/env openudp"
+	UDPBin  = "openudp"
 )
 
 func GetStateEncap(mode string) *nl.XfrmStateEncap {
