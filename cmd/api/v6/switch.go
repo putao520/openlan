@@ -2,6 +2,7 @@ package v6
 
 import (
 	"github.com/danieldin95/openlan/cmd/api"
+	"github.com/danieldin95/openlan/pkg/database"
 	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/urfave/cli/v2"
 )
@@ -10,8 +11,8 @@ type Switch struct {
 }
 
 func (u Switch) List(c *cli.Context) error {
-	var listSw []SwitchDB
-	if err := conf.OvS.List(doing, &listSw); err == nil {
+	var listSw []database.Switch
+	if err := database.Client.List(&listSw); err == nil {
 		return api.Out(listSw, c.String("format"), "")
 	}
 	return nil
@@ -20,35 +21,32 @@ func (u Switch) List(c *cli.Context) error {
 func (u Switch) Add(c *cli.Context) error {
 	protocol := c.String("protocol")
 	listen := c.Int("listen")
-	var listSw []SwitchDB
-	if err := conf.OvS.List(doing, &listSw); err != nil {
-		return err
-	}
-	newSw := SwitchDB{
+	newSw := database.Switch{
 		Protocol: protocol,
 		Listen:   listen,
 	}
-	if len(listSw) == 0 {
-		ops, err := conf.OvS.Create(&newSw)
+	sw, _ := database.Client.Switch()
+	if sw == nil {
+		ops, err := database.Client.Create(&newSw)
 		if err != nil {
 			return err
 		}
 		libol.Debug("Switch.Add %s", ops)
-		if ret, err := conf.OvS.Transact(doing, ops...); err != nil {
+		if ret, err := database.Client.Transact(ops...); err != nil {
 			return err
 		} else {
-			libol.Debug("Switch.Transact %s", ret)
+			database.PrintError(ret)
 		}
 	} else {
-		ops, err := conf.OvS.Where(&listSw[0]).Update(&newSw)
+		ops, err := database.Client.Where(sw).Update(&newSw)
 		if err != nil {
 			return err
 		}
 		libol.Debug("Switch.Add %s", ops)
-		if ret, err := conf.OvS.Transact(doing, ops...); err != nil {
+		if ret, err := database.Client.Transact(ops...); err != nil {
 			return err
 		} else {
-			libol.Debug("Switch.Add %s", ret)
+			database.PrintError(ret)
 		}
 	}
 	return nil
@@ -62,13 +60,13 @@ func (u Switch) Commands(app *api.App) {
 		Subcommands: []*cli.Command{
 			{
 				Name:    "list",
-				Usage:   "List switch configuration",
+				Usage:   "List global switch",
 				Aliases: []string{"ls"},
 				Action:  u.List,
 			},
 			{
 				Name:  "add",
-				Usage: "Add or update a switch",
+				Usage: "Add or update switch",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:  "protocol",

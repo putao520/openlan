@@ -2,11 +2,12 @@ package v6
 
 import (
 	"github.com/danieldin95/openlan/cmd/api"
+	"github.com/danieldin95/openlan/pkg/database"
 	"github.com/urfave/cli/v2"
 )
 
 func Before(c *cli.Context) error {
-	if _, err := GetConf(); err == nil {
+	if _, err := database.NewDBClient(); err == nil {
 		return nil
 	} else {
 		return err

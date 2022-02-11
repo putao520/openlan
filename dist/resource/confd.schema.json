@@ -58,7 +58,18 @@
                 "address": {
                     "type": "string"
                 },
-                "virtual_links": {
+                "remote_links": {
+                    "type": {
+                        "key": {
+                            "type": "uuid",
+                            "refTable": "Virtual_Link"
+                        },
+                        "min": 0,
+                        "max": "unlimited"
+                    },
+                    "ephemeral": true
+                },
+                "local_links": {
                     "type": {
                         "key": {
                             "type": "uuid",
@@ -68,17 +79,7 @@
                         "max": "unlimited"
                     }
                 },
-                "access_points": {
-                    "type": {
-                        "key": {
-                            "type": "uuid",
-                            "refTable": "Access_Point"
-                        },
-                        "min": 0,
-                        "max": "unlimited"
-                    }
-                },
-                "prefix_route": {
+                "prefix_routes": {
                     "type": {
                         "key": {
                             "type": "uuid",
@@ -88,11 +89,11 @@
                         "max": "unlimited"
                     }
                 },
-                "access_openvpn": {
+                "openvpn": {
                     "type": {
                         "key": {
                             "type": "uuid",
-                            "refTable": "Access_OpenVPN"
+                            "refTable": "OpenVPN"
                         },
                         "min": 0,
                         "max": "unlimited"
@@ -115,56 +116,9 @@
                 "protocol": {
                     "type": "string"
                 },
-                "connect_state": {
-                    "type": "string"
-                },
-                "device": {
-                    "type": "string"
-                },
-                "authentication": {
-                    "type": {
-                        "key": "string",
-                        "value": "string",
-                        "min": 0,
-                        "max": "unlimited"
-                    }
-                },
-                "other_config": {
-                    "type": {
-                        "key": "string",
-                        "value": "string",
-                        "min": 0,
-                        "max": "unlimited"
-                    }
-                },
-                "statistics": {
-                    "type": {
-                        "key": "string",
-                        "value": "integer",
-                        "min": 0,
-                        "max": "unlimited"
-                    }
-                }
-            },
-            "indexes": [
-                ["connection", "network"],
-                ["device"]
-            ]
-        },
-        "Access_Point": {
-            "columns": {
-                "network": {
+                "link_state": {
                     "type": "string",
-                    "mutable": false
-                },
-                "connection": {
-                    "type": "string"
-                },
-                "protocol": {
-                    "type": "string"
-                },
-                "connect_state": {
-                    "type": "string"
+                    "ephemeral": true
                 },
                 "device": {
                     "type": "string"
@@ -221,7 +175,7 @@
                 ["prefix"]
             ]
         },
-        "Access_OpenVPN": {
+        "OpenVPN": {
             "columns": {
                 "protocol": {
                     "type": "string"
