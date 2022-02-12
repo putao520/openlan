@@ -13,6 +13,9 @@ openlan软件包含下面部分：
 您可以在centos7上通过下面步骤部署openlan switch软件：
 1. 使用yum安装openlan switch软件；
    ```
+   yum search centos-release-openstack
+   yum install -y centos-release-openstack-train
+   yum install -y rdma-core libibverbs
    yum install -y https://github.com/danieldin95/openlan/releases/download/v5.8.22/openlan-switch-5.8.22-1.el7.x86_64.rpm
    ```
 2. 配置openlan switch服务自启动；
