@@ -67,7 +67,8 @@ env:
 	@mkdir -p $(BD)
 	@go version
 	@gofmt -w -s ./pkg ./cmd ./misc
-	@[ -e "$(BD)"/cert ] || ln -s $(SD)/../freecert $(BD)/cert
+	@git submodule init
+	@git submodule update
 
 ## linux platform
 linux: linux-proxy linux-point linux-switch## build linux binary
@@ -100,7 +101,6 @@ linux-proxy: env
 linux-rpm: env ## build rpm packages
 	@dist/spec.sh
 	rpmbuild -ba $(BD)/openlan-switch.spec
-	@cp -rf ~/rpmbuild/RPMS/x86_64/openlan-*.rpm $(BD)
 
 linux-tar: env linux-point linux-switch linux-proxy ## build linux packages
 	@pushd $(BD)
@@ -125,9 +125,9 @@ linux-tar: env linux-point linux-switch linux-proxy ## build linux packages
 	@mkdir -p $(LD)/var/openlan
 	@mkdir -p $(LD)/var/openlan/point
 	@mkdir -p $(LD)/var/openlan/openvpn
-	@cp -rvf $(BD)/cert/openlan/cert $(LD)/var/openlan
+	@cp -rvf $(SD)/dist/resource/cert/openlan/cert $(LD)/var/openlan
 	@cp -rvf $(SD)/dist/script $(LD)/var/openlan
-	@cp -rvf $(BD)/cert/openlan/ca/ca.crt $(LD)/var/openlan/cert
+	@cp -rvf $(SD)/dist/resource/cert/openlan/ca/ca.crt $(LD)/var/openlan/cert
 	@mkdir -p $(LD)/etc/sysconfig/openlan
 	@cp -rvf $(SD)/dist/resource/point.cfg $(LD)/etc/sysconfig/openlan
 	@cp -rvf $(SD)/dist/resource/proxy.cfg $(LD)/etc/sysconfig/openlan
