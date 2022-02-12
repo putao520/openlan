@@ -80,6 +80,8 @@ cmd: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan ./cmd/main.go
 	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan.i386 ./cmd/main.go
 
+linux-bin: linux-point linux-switch linux-proxy
+
 linux-point: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point ./cmd/point_linux
 	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point.i386 ./cmd/point_linux
@@ -97,8 +99,6 @@ linux-proxy: env
 
 linux-rpm: env ## build rpm packages
 	@dist/spec.sh
-	rpmbuild -ba $(BD)/openlan-proxy.spec
-	rpmbuild -ba $(BD)/openlan-point.spec
 	rpmbuild -ba $(BD)/openlan-switch.spec
 	@cp -rf ~/rpmbuild/RPMS/x86_64/openlan-*.rpm $(BD)
 
