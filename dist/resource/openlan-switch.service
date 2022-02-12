@@ -6,7 +6,7 @@ After=network.target
 Type=notify
 EnvironmentFile=/etc/sysconfig/openlan/switch.cfg
 ExecStartPre=-/var/openlan/script/setup.sh
-ExecStart=/usr/bin/openlan-switch $OPTIONS
+ExecStart=/usr/bin/env openlan-switch $OPTIONS
 LimitNOFILE=102400
 Restart=always
 
