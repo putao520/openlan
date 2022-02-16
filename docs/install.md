@@ -11,19 +11,23 @@ openlan软件包含下面部分：
 ## OpenLAN Switch
 
 您可以在centos7上通过下面步骤部署openlan switch软件：
-1. 使用yum安装openlan switch软件；
+1. 安装依赖的软件；
    ```
+   yum install -y epel-release
    yum search centos-release-openstack
    yum install -y centos-release-openstack-train
    yum install -y rdma-core libibverbs
+   ```
+2. 使用yum安装openlan switch软件；
+   ```
    yum install -y https://github.com/danieldin95/openlan/releases/download/v5.8.22/openlan-switch-5.8.22-1.el7.x86_64.rpm
    ```
-2. 配置openlan switch服务自启动；
+3. 配置openlan switch服务自启动；
    ```
    systemctl enable openlan-switch
    systemctl start  openlan-switch
    ```
-3. 配置预共享密钥以及加密算法；
+4. 配置预共享密钥以及加密算法；
    ```
    cd /etc/openlan/switch
    cp ./switch.json.example ./switch.json
@@ -38,7 +42,7 @@ openlan软件包含下面部分：
    openlan cfg co                  ## 配置预检查
    ```
    
-4. 添加一个新的openlan网络；
+5. 添加一个新的openlan网络；
    ```
    cd ./network
    cp ./network.json.example ./example.json
@@ -74,12 +78,12 @@ openlan软件包含下面部分：
    }
    openlan cfg co                             ## 配置预检查
    ```
-5. 重启openlan switch服务；
+6. 重启openlan switch服务；
    ```
    systemctl restart openlan-switch
    journalctl -u openlan-switch               ## 查看日志信息
    ```
-6. 导出openvpn的客户端配置文件；
+7. 导出openvpn的客户端配置文件；
    ```
    cd /var/openlan/openvpn/example            ## openvpn的配置信息存放目录
    cat ./client.ovpn                          ## 导出后编辑remote配置项，替换0.0.0.0为公网IP地址
@@ -91,7 +95,7 @@ openlan软件包含下面部分：
    curl -k https://a01234abc00@<access-ip>:10000/get/network/example/tcp1194.ovpn
                                               ## 替换access-ip为公网IP地址
    ```
-7. 添加一个新的接入认证的用户；
+8. 添加一个新的接入认证的用户；
    ```
    openlan us add --name hi@example               ## <用户名>@<网络>
    openlan us ls | grep example                   ## 查看随机密码

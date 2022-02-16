@@ -71,7 +71,7 @@ env:
 	@git submodule update
 
 ## linux platform
-linux: linux-proxy linux-point linux-switch## build linux binary
+linux: linux-proxy linux-point linux-switch
 
 openudp: env
 	gcc ./core/src/xfrm/udp.c -o  $(BD)/openudp
@@ -100,7 +100,7 @@ linux-proxy: env
 
 linux-rpm: env ## build rpm packages
 	@dist/spec.sh
-	rpmbuild -ba $(BD)/openlan-switch.spec
+	rpmbuild -ba $(BD)/openlan.spec
 
 linux-tar: env linux-point linux-switch linux-proxy ## build linux packages
 	@pushd $(BD)
