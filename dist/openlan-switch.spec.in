@@ -4,7 +4,7 @@ Release: 1%{?dist}
 Source: %{name}-%{version}-source.tar
 Summary: OpenLAN's Project Software
 Group: Applications/Communications
-License: Apache 2.0
+License: GPL-3.0
 URL: https://github.com/danieldin95/openlan
 Requires: net-tools, iptables, iputils, openvpn, openssl, openvswitch
 
