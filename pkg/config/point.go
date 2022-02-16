@@ -42,7 +42,7 @@ func DefaultPoint() *Point {
 			Verbose: libol.INFO,
 		},
 		Interface: Interface{
-			IPMtu:    1518,
+			IPMtu:    1500,
 			Provider: "kernel",
 			Name:     "",
 		},

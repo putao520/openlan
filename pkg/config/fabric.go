@@ -21,7 +21,7 @@ func (c *FabricSpecifies) Correct() {
 			if c.Driver == "stt" {
 				tun.DstPort = 7471
 			} else {
-				tun.DstPort = 4789
+				tun.DstPort = 4789 // 8472
 			}
 		}
 	}
@@ -44,7 +44,7 @@ type FabricNetwork struct {
 
 func (c *FabricNetwork) Correct() {
 	if c.Bridge == "" {
-		c.Bridge = fmt.Sprintf("br-%08x", c.Vni)
+		c.Bridge = fmt.Sprintf("br-%08d", c.Vni)
 	}
 }
 
