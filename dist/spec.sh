@@ -15,7 +15,6 @@ sed -e "s/Version:.*/Version:\ ${version}/" dist/openlan.spec.in > build/openlan
 # build dist.tar
 rsync -r --exclude build . build/$package
 cd build && {
-  tar cf ~/rpmbuild/SOURCES/$package-source.tar $package
-  gzip ~/rpmbuild/SOURCES/$package-source.tar
+  tar cf - $package | gzip -c > ~/rpmbuild/SOURCES/$package-source.tar.gz
   cd -
 }
