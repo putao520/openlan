@@ -5,15 +5,23 @@
     version: 0.8.20
 
   tasks:
-  - name: download openlan-switch-{{ version }} 
-    copy: src=/root/rpmbuild/RPMS/x86_64/openlan-switch-{{ version }}-1.el7.x86_64.rpm dest=/tmp
+  - name: download openlan-{{ version }}
+    copy: src=/root/rpmbuild/RPMS/x86_64/openlan-{{ version }}-1.el7.x86_64.rpm dest=/tmp
+
+  - name: remove openlan-point
+    yum: state=absent name=openlan-point
+    ignore_errors: yes
+
+  - name: remove openlan-proxy
+    yum: state=absent name=openlan-proxy
+    ignore_errors: yes
 
   - name: remove openlan-switch
     yum: state=absent name=openlan-switch
     ignore_errors: yes
 
-  - name: upgrade openlan-switch
-    yum: state=present name=/tmp/openlan-switch-{{ version }}-1.el7.x86_64.rpm
+  - name: upgrade openlan
+    yum: state=present name=/tmp/openlan-{{ version }}-1.el7.x86_64.rpm
     notify:
       - restart openlan-switch
 

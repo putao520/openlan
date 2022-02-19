@@ -1,11 +1,3 @@
-#
-# github.com/danieldin95/openlan
-#
-
-#
-# git clone git@github.com:danieldin95/freecert.git dist/resource/cert
-#
-
 SHELL := /bin/bash
 
 .ONESHELL:
@@ -81,7 +73,7 @@ cmd: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan ./cmd/main.go
 	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan.i386 ./cmd/main.go
 
-linux-bin: linux-point linux-switch linux-proxy
+linux-bin: linux-point linux-switch linux-proxy ## build linux binary
 
 linux-point: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point ./cmd/point_linux
