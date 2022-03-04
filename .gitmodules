@@ -1,3 +1,7 @@
 [submodule "dist/resource/cert"]
 	path = dist/resource/cert
 	url = https://github.com/danieldin95/freecert.git
+[submodule "core/ovs"]
+	path = core/ovs
+	url = https://github.com/openvswitch/ovs.git
+	branch = branch-2.12
