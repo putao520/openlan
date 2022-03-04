@@ -66,7 +66,9 @@ env:
 linux: linux-proxy linux-point linux-switch
 
 openudp: env
-	gcc -std=c99 ./core/src/xfrm/udp.c -o  $(BD)/openudp -lpthread
+	mkdir -p $(BD)/core
+	gcc -std=c99 -g -c ./core/udp/src/udp.c -o $(BD)/core/udp.o
+	gcc -std=c99 -lpthread -lopenvswitch $(BD)/core/udp.o -o $(BD)/openudp
 
 ## compile command line
 cmd: env

@@ -8,9 +8,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <pthread.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <linux/udp.h>
@@ -20,15 +22,15 @@
 #include <linux/ipsec.h>
 #include <linux/pfkeyv2.h>
 #include <arpa/inet.h>
-#include <pthread.h>
+
 
 int fd = -1;
-int re = -1;
+bool reply = true;
 
-void *send_ping(void *args) {
+static void *send_ping(void *args) {
     int ret = 0;
     unsigned char buf[1024] = {0, 0, 0, 0, 1, 2, 3, 4};
-    while (1) {
+    while (true) {
         struct sockaddr_in dst_addr = {
             .sin_family = AF_INET,
             .sin_port = htons(4500),
@@ -44,35 +46,33 @@ void *send_ping(void *args) {
     }
 }
 
-void *recv_ping(void *args) {
+static void *recv_ping(void *args) {
     struct sockaddr_in src_addr = {0};
     unsigned char buf[1024] = {0, 0, 0, 0, 1, 2, 3, 4};
     int ret = 0, len = sizeof src_addr;
-    while (1) {
-        if (re > 0) {
-           sleep(2);
-        }
-        fprintf(stdout, "recvfrom: \n");
+    while (true) {
         ret = recvfrom(fd, buf, sizeof buf, 0, (struct sockaddr *)&src_addr, &len);
         if ( ret <= 0 ) {
             fprintf(stderr, "recvfrom: %s\n", strerror(errno));
             break;
         }
-        printf("[%s:%d] %d bytes\n", inet_ntoa(src_addr.sin_addr), ntohs(src_addr.sin_port), ret);
+        printf("recvfrom: [%s:%d] %d bytes\n", inet_ntoa(src_addr.sin_addr), ntohs(src_addr.sin_port), ret);
         for (int i = 0; i < ret; i++ ) {
             fprintf(stdout, "%02x ", buf[i]);
         }
         printf("\n---\n");
-        unsigned char buf[1024] = {0, 0, 0, 0, 2, 3, 4, 5, src_addr.sin_port & 0xff};
-        struct sockaddr_in dst_addr = src_addr;
-        ret = sendto(fd, buf, 9, 0, (struct sockaddr*)&dst_addr, sizeof dst_addr );
-        if (ret <= 0) {
-            fprintf(stderr, "could not send data\n");
+        if (reply) {
+            unsigned char buf[1024] = {0, 0, 0, 0, 2, 3, 4, 5, src_addr.sin_port & 0xff};
+            struct sockaddr_in dst_addr = src_addr;
+            ret = sendto(fd, buf, 9, 0, (struct sockaddr*)&dst_addr, sizeof dst_addr );
+            if (ret <= 0) {
+                fprintf(stderr, "could not send data\n");
+            }
         }
     }
 }
 
-int open_socket(int port) {
+static int open_socket(int port) {
     int op = 1;
     struct sockaddr_in addr = {
         .sin_family = AF_INET,
@@ -96,7 +96,7 @@ int open_socket(int port) {
     return fd;
 }
 
-int configure_socket() {
+static int configure_socket() {
     int encap = UDP_ENCAP_ESPINUDP;
     struct xfrm_userpolicy_info pol;
 
@@ -120,7 +120,8 @@ int configure_socket() {
 
 int main(int argc, char *argv[]) {
     int port = 4500;
-    pthread_t send_t, recv_t;
+    pthread_t send_t;
+    pthread_t recv_t;
 
     if (argc > 1) {
        port = atoi(argv[1]);
@@ -132,14 +133,17 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    if (argc > 2) {
-        re = argc;
-        pthread_create(&send_t, NULL, send_ping, NULL);
-    }
-    pthread_create(&recv_t, NULL, recv_ping, NULL);
+    daemonize_start(true);
 
-    pthread_join(send_t, NULL);
-    pthread_join(recv_t, NULL);
+
+    if (argc > 2) {
+        reply = false;
+        send_t = ovs_thread_create("send_ping", send_ping, NULL);
+    }
+    recv_t = ovs_thread_create("recv_ping", recv_ping, NULL);
+    while(true) {
+        pause();
+    }
 
     return 0;
 }

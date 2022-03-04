@@ -52,6 +52,9 @@ func (s *EspState) Correct(obj *EspState) {
 	if s.Crypt == "" {
 		s.Crypt = EspCrypt
 	}
+	if s.Encap == "" {
+		s.Encap = "udp"
+	}
 	s.Auth = s.Pad32(s.Auth)
 	s.Crypt = s.Pad32(s.Crypt)
 }
