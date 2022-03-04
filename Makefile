@@ -66,9 +66,12 @@ env:
 linux: linux-proxy linux-point linux-switch
 
 openudp: env
-	mkdir -p $(BD)/core
-	gcc -std=c99 -g -c ./core/udp/src/udp.c -o $(BD)/core/udp.o
-	gcc -std=c99 -lpthread -lopenvswitch $(BD)/core/udp.o -o $(BD)/openudp
+	mkdir -p ./build/udp
+	cd ./build/udp && cmake $(SD)/core/udp && make
+
+opentcp: env
+	mkdir -p ./build/tcp
+	cd ./build/tcp && cmake $(SD)/core/tcp && make
 
 ## compile command line
 cmd: env

@@ -12,7 +12,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
-#include <pthread.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <linux/udp.h>
@@ -22,6 +21,7 @@
 #include <linux/ipsec.h>
 #include <linux/pfkeyv2.h>
 #include <arpa/inet.h>
+#include "ovs-thread.h"
 
 
 int fd = -1;
@@ -49,7 +49,8 @@ static void *send_ping(void *args) {
 static void *recv_ping(void *args) {
     struct sockaddr_in src_addr = {0};
     unsigned char buf[1024] = {0, 0, 0, 0, 1, 2, 3, 4};
-    int ret = 0, len = sizeof src_addr;
+    int i, ret = 0, len = sizeof src_addr;
+
     while (true) {
         ret = recvfrom(fd, buf, sizeof buf, 0, (struct sockaddr *)&src_addr, &len);
         if ( ret <= 0 ) {
@@ -57,7 +58,7 @@ static void *recv_ping(void *args) {
             break;
         }
         printf("recvfrom: [%s:%d] %d bytes\n", inet_ntoa(src_addr.sin_addr), ntohs(src_addr.sin_port), ret);
-        for (int i = 0; i < ret; i++ ) {
+        for (i = 0; i < ret; i++ ) {
             fprintf(stdout, "%02x ", buf[i]);
         }
         printf("\n---\n");
@@ -120,8 +121,8 @@ static int configure_socket() {
 
 int main(int argc, char *argv[]) {
     int port = 4500;
-    pthread_t send_t;
-    pthread_t recv_t;
+    pthread_t send_t = 0;
+    pthread_t recv_t = 0;
 
     if (argc > 1) {
        port = atoi(argv[1]);
@@ -133,17 +134,21 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    daemonize_start(true);
-
-
     if (argc > 2) {
         reply = false;
         send_t = ovs_thread_create("send_ping", send_ping, NULL);
     }
     recv_t = ovs_thread_create("recv_ping", recv_ping, NULL);
-    while(true) {
-        pause();
-    }
+ 
+    pause();
 
+    fprintf(stdout, "exit.\n");
+
+    if (send_t > 0) {
+        pthread_cancel(send_t);
+        pthread_join(send_t, NULL);
+    }
+    pthread_cancel(recv_t);
+    pthread_join(recv_t, NULL);
     return 0;
 }

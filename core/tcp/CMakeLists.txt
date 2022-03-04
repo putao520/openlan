@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 project(core C)
 
 set(CMAKE_C_STANDARD 99)
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
 include_directories(include)
 
