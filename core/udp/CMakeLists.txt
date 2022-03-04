@@ -7,6 +7,9 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 include_directories(include)
 include_directories(../ovs/lib)
 
-add_executable(openudp ./src/udp.c)
+file(GLOB SOURCES "src/*.c")
 
-target_link_libraries(openudp pthread openvswitch)
+add_executable(openudp ${SOURCES})
+
+target_link_libraries(openudp pthread)
+target_link_libraries(openudp openvswitch)
