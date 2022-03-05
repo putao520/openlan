@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2021-2022 OpenLAN Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 3 as
+ * published by the Free Software Foundation.
+ *
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -10,44 +19,55 @@
 #include "util.h"
 #include "openvswitch/vconn.h"
 #include "openvswitch/vlog.h"
-
 #include "ovs-thread.h"
-#include "udp.h"
 
+#include "udp.h"
 
 static char *db_remote;
 static char *default_db_;
 static char *udp_remote;
 static int udp_port;
 
-static const char *run_dir() {
+static inline const char *
+run_dir()
+{
     return "/var/openlan";
 }
 
-static const char *unixctl_dir() {
+static inline const char *
+unixctl_dir()
+{
     return xasprintf("%s/%s.ctl", run_dir(), program_name);
 }
 
-static const char *default_db(void) {
+static inline const char *
+default_db(void)
+{
     if (!default_db_) {
         default_db_ = xasprintf("unix:%s/confd.sock", run_dir());
     }
     return default_db_;
 }
 
-static const int default_udp_port() {
+static inline const int
+default_udp_port()
+{
     return 4500;
 }
 
-static void cancal_and_wait(pthread_t pid) {
+static void
+cancal_and_wait(pthread_t pid)
+{
     if (pid > 0) {
         pthread_cancel(pid);
         pthread_join(pid, NULL);
     }
 }
 
-static void usage(void) {
-    fprintf(stdout, "\
+static void
+usage(void)
+{
+    printf("\
 %s: OpenLAN UDP Connection\n\
 usage %s [OPTIONS]\n\
 \n\
@@ -65,7 +85,9 @@ Options:\n\
     exit(EXIT_SUCCESS);
 }
 
-static void parse_options(int argc, char *argv[]) {
+static void
+parse_options(int argc, char *argv[])
+{
     enum {
         VLOG_OPTION_ENUMS,
     };
@@ -126,22 +148,19 @@ static void parse_options(int argc, char *argv[]) {
     }
 }
 
-static void udp_exit(struct unixctl_conn *conn, int argc OVS_UNUSED,
-        const char *argv[] OVS_UNUSED, void *exiting_) {
+static void
+udp_exit(struct unixctl_conn *conn, int argc OVS_UNUSED,
+        const char *argv[] OVS_UNUSED, void *exiting_)
+{
     bool *exiting = exiting_;
     *exiting = true;
 
     unixctl_command_reply(conn, NULL);
 }
 
-int main(int argc, char *argv[]) {
-    struct udp_server srv = {
-        .port = default_udp_port(),
-        .socket = -1,
-    };
-    pthread_t send_t = 0;
-    pthread_t recv_t = 0;
-
+int
+main(int argc, char *argv[])
+{
     struct unixctl_server *unixctl;
     bool exiting = false;
     int retval;
@@ -157,12 +176,18 @@ int main(int argc, char *argv[]) {
     }
     unixctl_command_register("exit", "", 0, 0, udp_exit, &exiting);
 
-    srv.port = udp_port;
+    struct udp_server srv = {
+        .port = udp_port,
+        .socket = -1,
+    };
     open_socket(&srv);
     if (configure_socket(&srv) < 0) {
         fprintf(stderr, "configure_socket: %s\n", strerror(errno));
         return -1;
     }
+
+    pthread_t send_t = 0;
+    pthread_t recv_t = 0;
 
     if (udp_remote) {
         struct udp_connect conn = {

@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2021-2022 OpenLAN Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 3 as
+ * published by the Free Software Foundation.
+ *
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -15,9 +24,18 @@
 #include <linux/pfkeyv2.h>
 #include <arpa/inet.h>
 
+#include "openvswitch/vlog.h"
+
 #include "udp.h"
 
-void *send_ping(void *args) {
+VLOG_DEFINE_THIS_MODULE(udp);
+
+/* Rate limit for error messages. */
+static struct vlog_rate_limit rl = VLOG_RATE_LIMIT_INIT(5, 5);
+
+void *
+send_ping(void *args)
+{
     struct udp_connect *conn = (struct udp_connect *)args;
     int retval = 0;
     unsigned char buf[1024] = {0, 0, 0, 0, 1, 2, 3, 4};
@@ -31,13 +49,15 @@ void *send_ping(void *args) {
         };
         retval = sendto(conn->socket, buf, 8, 0, (struct sockaddr*)&dst_addr, sizeof dst_addr);
         if (retval <= 0) {
-            fprintf(stderr, "could not send data\n");
+            VLOG_WARN_RL(&rl, "%s: could not send data\n", conn->remote_address);
         }
         sleep(1);
     }
 }
 
-void *recv_ping(void *args) {
+void *
+recv_ping(void *args)
+{
     struct udp_server *srv = (struct udp_server *)args;
     struct sockaddr_in src_addr = {0};
     unsigned char buf[1024] = {0, 0, 0, 0, 1, 2, 3, 4};
@@ -49,9 +69,10 @@ void *recv_ping(void *args) {
             fprintf(stderr, "recvfrom: %s\n", strerror(errno));
             break;
         }
-        printf("recvfrom: [%s:%d] %d bytes\n", inet_ntoa(src_addr.sin_addr), ntohs(src_addr.sin_port), retval);
+        const char *remote_addr = inet_ntoa(src_addr.sin_addr);
+        printf("recvfrom: [%s:%d] %d bytes\n", remote_addr, ntohs(src_addr.sin_port), retval);
         for (i = 0; i < retval; i++ ) {
-            fprintf(stdout, "%02x ", buf[i]);
+            printf("%02x ", buf[i]);
         }
         printf("\n---\n");
         if (srv->reply) {
@@ -59,13 +80,15 @@ void *recv_ping(void *args) {
             struct sockaddr_in dst_addr = src_addr;
             retval = sendto(srv->socket, buf, 9, 0, (struct sockaddr*)&dst_addr, sizeof dst_addr );
             if (retval <= 0) {
-                fprintf(stderr, "could not send data\n");
+                VLOG_WARN_RL(&rl, "%s: could not send data\n", remote_addr);
             }
         }
     }
 }
 
-int open_socket(struct udp_server *srv) {
+int
+open_socket(struct udp_server *srv)
+{
     int op = 1;
     struct sockaddr_in addr = {
         .sin_family = AF_INET,
@@ -89,7 +112,9 @@ int open_socket(struct udp_server *srv) {
     return srv->socket;
 }
 
-int configure_socket(struct udp_server *srv) {
+int
+configure_socket(struct udp_server *srv)
+{
     int encap = UDP_ENCAP_ESPINUDP;
     struct xfrm_userpolicy_info pol;
 
