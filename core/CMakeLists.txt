@@ -7,8 +7,8 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 
 include_directories(ovs/lib)
 include_directories(ovs/include)
-include_directories(idlc)
 include_directories(.)
+include_directories(idlc)
 include_directories(tcp)
 include_directories(udp)
 
@@ -17,8 +17,8 @@ file(GLOB UDP_SOURCES "udp/*.c")
 file(GLOB TCP_SOURCES "tcp/*.c")
 
 add_executable(openudp ${UDP_SOURCES} ${IDL_SOURCES})
-target_link_libraries(openudp pthread)
-target_link_libraries(openudp openvswitch)
+target_link_libraries(openudp pthread ssl crypto cap-ng rt m unbound)
+target_link_libraries(openudp ${CMAKE_SOURCE_DIR}/../build/obj/usr/lib/libopenvswitch.a)
 
 add_executable(opentcp ${TCP_SOURCES})
 target_link_libraries(opentcp pthread)

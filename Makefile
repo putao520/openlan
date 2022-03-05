@@ -48,6 +48,7 @@ clean: ## clean cache
 	rm -rvf ./build
 	rm -rvf ./core/build
 	rm -rvf ./core/cmake-build-debug
+	cd ./core/ovs && make clean
 
 ## prepare environment
 vendor:
