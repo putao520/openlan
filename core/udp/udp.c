@@ -24,6 +24,7 @@
 #include <linux/pfkeyv2.h>
 #include <arpa/inet.h>
 
+#include "openvswitch/dynamic-string.h"
 #include "openvswitch/vlog.h"
 
 #include "udp.h"
@@ -33,13 +34,36 @@ VLOG_DEFINE_THIS_MODULE(udp);
 /* Rate limit for error messages. */
 static struct vlog_rate_limit rl = VLOG_RATE_LIMIT_INIT(5, 5);
 
+struct udp_message {
+    u_int32_t padding;
+    u_int32_t spi;
+    u_int32_t seqno;
+};
+
+void *
+print_hex(u_int8_t *data, int len)
+{
+    struct ds s;
+    ds_init(&s);
+    for (int i = 0; i < len; i++ ) {
+        ds_put_format(&s, "%02x ", data[i]);
+    }
+    VLOG_INFO("%s\n", ds_cstr(&s));
+    ds_destroy(&s);
+}
+
+
 void *
 send_ping(void *args)
 {
     struct udp_connect *conn = (struct udp_connect *)args;
     int retval = 0;
-    unsigned char buf[1024] = {0, 0, 0, 0, 1, 2, 3, 4};
+    struct udp_message data = {
+        .padding = 0,
+        .spi = htonl(conn->spi),
+    };
     while (true) {
+        data.seqno = htonl(conn->seqno++);
         struct sockaddr_in dst_addr = {
             .sin_family = AF_INET,
             .sin_port = htons(conn->remote_port),
@@ -47,7 +71,7 @@ send_ping(void *args)
                 .s_addr = inet_addr(conn->remote_address),
             },
         };
-        retval = sendto(conn->socket, buf, 8, 0, (struct sockaddr*)&dst_addr, sizeof dst_addr);
+        retval = sendto(conn->socket, &data, sizeof data, 0, (struct sockaddr *)&dst_addr, sizeof dst_addr);
         if (retval <= 0) {
             VLOG_WARN_RL(&rl, "%s: could not send data\n", conn->remote_address);
         }
@@ -60,8 +84,9 @@ recv_ping(void *args)
 {
     struct udp_server *srv = (struct udp_server *)args;
     struct sockaddr_in src_addr = {0};
-    unsigned char buf[1024] = {0, 0, 0, 0, 1, 2, 3, 4};
-    int i, retval = 0, len = sizeof src_addr;
+    u_int8_t buf[1024] = {0, 0, 0, 0, 1, 2, 3, 4};
+    struct udp_message *data = (struct udp_message *)buf;
+    int retval = 0, len = sizeof src_addr;
 
     while (true) {
         retval = recvfrom(srv->socket, buf, sizeof buf, 0, (struct sockaddr *)&src_addr, &len);
@@ -70,15 +95,15 @@ recv_ping(void *args)
             break;
         }
         const char *remote_addr = inet_ntoa(src_addr.sin_addr);
-        printf("recvfrom: [%s:%d] %d bytes\n", remote_addr, ntohs(src_addr.sin_port), retval);
-        for (i = 0; i < retval; i++ ) {
-            printf("%02x ", buf[i]);
-        }
-        printf("\n---\n");
+        VLOG_INFO("recvfrom: [%s:%d] %d bytes\n", remote_addr, ntohs(src_addr.sin_port), retval);
+        print_hex(buf, retval);
         if (srv->reply) {
-            unsigned char buf[1024] = {0, 0, 0, 0, 2, 3, 4, 5, src_addr.sin_port & 0xff};
             struct sockaddr_in dst_addr = src_addr;
-            retval = sendto(srv->socket, buf, 9, 0, (struct sockaddr*)&dst_addr, sizeof dst_addr );
+            u_int32_t seqno = ntohl(data->seqno) + 1;
+            data->padding = 0;
+            data->seqno = htonl(seqno);
+            data->spi = src_addr.sin_port;
+            retval = sendto(srv->socket, data, sizeof *data, 0, (struct sockaddr *)&dst_addr, sizeof dst_addr);
             if (retval <= 0) {
                 VLOG_WARN_RL(&rl, "%s: could not send data\n", remote_addr);
             }

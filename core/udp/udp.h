@@ -11,6 +11,8 @@ struct udp_connect {
     int socket;
     int remote_port;
     const char *remote_address;
+    u_int32_t spi;
+    u_int32_t seqno;
 };
 
 void *send_ping(void *args);

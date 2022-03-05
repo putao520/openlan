@@ -24,6 +24,8 @@
 
 #include "udp.h"
 
+VLOG_DEFINE_THIS_MODULE(main);
+
 static char *db_remote;
 static char *default_db_;
 static char *udp_remote;
@@ -180,10 +182,11 @@ main(int argc, char *argv[])
     struct udp_server srv = {
         .port = udp_port,
         .socket = -1,
+        .reply = true,
     };
     open_socket(&srv);
     if (configure_socket(&srv) < 0) {
-        fprintf(stderr, "configure_socket: %s\n", strerror(errno));
+        VLOG_ERR("configure_socket: %s\n", strerror(errno));
         return -1;
     }
 
@@ -195,6 +198,7 @@ main(int argc, char *argv[])
             .socket = srv.socket,
             .remote_port = srv.port,
             .remote_address = udp_remote,
+            .spi = 0x11223344,
         };
         srv.reply = false;
         send_t = ovs_thread_create("send_ping", send_ping, (void *)&conn);

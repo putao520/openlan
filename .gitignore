@@ -20,3 +20,7 @@
 /py/dist/
 /core/build/
 /core/cmake-build-debug/
+
+confd-idl.h
+confd-idl.c
+confd-idl.ovsidl
