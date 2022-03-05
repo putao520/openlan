@@ -9,7 +9,7 @@ include_directories(../ovs/lib)
 
 file(GLOB SOURCES "src/*.c")
 
-add_executable(openudp ${SOURCES})
+add_executable(openudp "main.c" ${SOURCES})
 
 target_link_libraries(openudp pthread)
 target_link_libraries(openudp openvswitch)

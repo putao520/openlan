@@ -28,7 +28,7 @@ make linux-bin
 mkdir -p %{buildroot}/usr/bin
 cp build/openlan %{buildroot}/usr/bin
 cp build/openlan-switch %{buildroot}/usr/bin
-cp build/openudp %{buildroot}/usr/bin
+cp build/udp/openudp %{buildroot}/usr/bin
 
 mkdir -p %{buildroot}/etc/openlan/switch
 cp dist/resource/ctrl.json.example %{buildroot}/etc/openlan/switch
