@@ -6,18 +6,19 @@ set(CMAKE_C_FLAGS "-std=gnu99 -g")
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 include_directories(ovs/lib)
+include_directories(ovs/include)
 include_directories(idlc)
 include_directories(.)
 include_directories(tcp)
 include_directories(udp)
 
 file(GLOB IDL_SOURCES "idlc/*.c")
-
 file(GLOB UDP_SOURCES "udp/*.c")
+file(GLOB TCP_SOURCES "tcp/*.c")
+
 add_executable(openudp ${UDP_SOURCES} ${IDL_SOURCES})
 target_link_libraries(openudp pthread)
 target_link_libraries(openudp openvswitch)
 
-file(GLOB TCP_SOURCES "tcp/*.c")
 add_executable(opentcp ${TCP_SOURCES})
 target_link_libraries(opentcp pthread)

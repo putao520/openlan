@@ -12,19 +12,18 @@
 #include <errno.h>
 #include <getopt.h>
 
-#include "command-line.h"
-#include "daemon.h"
 #include "openvswitch/dynamic-string.h"
 #include "openvswitch/poll-loop.h"
-#include "unixctl.h"
-#include "util.h"
 #include "openvswitch/vconn.h"
 #include "openvswitch/vlog.h"
-#include "ovs-thread.h"
 
-#include "udp.h"
+#include "command-line.h"
 #include "confd-idl.h"
+#include "daemon.h"
+#include "udp.h"
 #include "udp-idl.h"
+#include "unixctl.h"
+#include "ovs-thread.h"
 
 VLOG_DEFINE_THIS_MODULE(main);
 
@@ -239,7 +238,6 @@ main(int argc, char *argv[])
             poll_immediate_wake();
         }
         ovsdb_idl_loop_commit_and_wait(&open_idl_loop);
-        poll_block();
         poll_block();
         if (should_service_stop()) {
             exiting = true;
