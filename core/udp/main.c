@@ -23,6 +23,8 @@
 #include "ovs-thread.h"
 
 #include "udp.h"
+#include "confd-idl.h"
+#include "udp-idl.h"
 
 VLOG_DEFINE_THIS_MODULE(main);
 
@@ -161,6 +163,22 @@ udp_exit(struct unixctl_conn *conn, int argc OVS_UNUSED,
     unixctl_command_reply(conn, NULL);
 }
 
+
+void
+udp_run(struct udp_idl *open_idl)
+{
+    if (!open_idl->idl_txn) {
+        return;
+    }
+    const struct openrec_virtual_network *vn;
+
+    /* Collects 'Virtual Network's. */
+    OPENREC_VIRTUAL_NETWORK_FOR_EACH (vn, open_idl->idl) {
+        VLOG_INFO("virtual_network: %s", vn->name);
+    }
+}
+
+
 int
 main(int argc, char *argv[])
 {
@@ -179,6 +197,11 @@ main(int argc, char *argv[])
     }
     unixctl_command_register("exit", "", 0, 0, udp_exit, &exiting);
 
+    /* Connect to OpenLAN database. */
+    struct ovsdb_idl_loop open_idl_loop = OVSDB_IDL_LOOP_INITIALIZER(
+        ovsdb_idl_create(db_remote, &openrec_idl_class, true, true));
+    ovsdb_idl_get_initial_snapshot(open_idl_loop.idl);
+
     struct udp_server srv = {
         .port = udp_port,
         .socket = -1,
@@ -189,10 +212,8 @@ main(int argc, char *argv[])
         VLOG_ERR("configure_socket: %s\n", strerror(errno));
         return -1;
     }
-
     pthread_t send_t = 0;
     pthread_t recv_t = 0;
-
     if (udp_remote) {
         struct udp_connect conn = {
             .socket = srv.socket,
@@ -205,27 +226,36 @@ main(int argc, char *argv[])
     }
     recv_t = ovs_thread_create("recv_ping", recv_ping, (void *)&srv);
 
+
     while(!exiting) {
+        struct udp_idl open_idl = {
+            .idl = open_idl_loop.idl,
+            .idl_txn = ovsdb_idl_loop_run(&open_idl_loop),
+        };
+        udp_run(&open_idl);
         unixctl_server_run(unixctl);
         unixctl_server_wait(unixctl);
         if (exiting) {
             poll_immediate_wake();
         }
+        ovsdb_idl_loop_commit_and_wait(&open_idl_loop);
+        poll_block();
         poll_block();
         if (should_service_stop()) {
             exiting = true;
         }
     }
 
-    cancal_and_wait(send_t);
     cancal_and_wait(recv_t);
+    cancal_and_wait(send_t);
 
     unixctl_server_destroy(unixctl);
+    ovsdb_idl_loop_destroy(&open_idl_loop);
+    service_stop();
 
     free(db_remote);
     free(udp_remote);
     free(default_db_);
-    service_stop();
 
     exit(retval);
 }

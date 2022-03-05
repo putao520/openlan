@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 project(openlan C)
 
 set(CMAKE_C_STANDARD 99)
-set(CMAKE_C_FLAGS "-std=gnu99")
+set(CMAKE_C_FLAGS "-std=gnu99 -g")
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 include_directories(ovs/lib)
