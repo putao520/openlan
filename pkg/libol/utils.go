@@ -24,12 +24,11 @@ const LeaseTime = "2006-01-02T15"
 func GenRandom(n int) string {
 	letters := []byte("0123456789abcdefghijklmnopqrstuvwxyz")
 	buffer := make([]byte, n)
-
-	size := len(letters)
 	rand.Seed(time.Now().UnixNano())
 	for i := range buffer {
-		buffer[i] = letters[rand.Int63()%int64(size)]
+		buffer[i] = letters[rand.Int63()%int64(len(letters))]
 	}
+	buffer[0] = letters[rand.Int63()%26+10]
 	return string(buffer)
 }
 

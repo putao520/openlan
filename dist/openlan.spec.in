@@ -6,6 +6,7 @@ Summary: OpenLAN's Project Software
 Group: Applications/Communications
 License: GPL-3.0
 URL: https://github.com/danieldin95/openlan
+BuildRequires: openvswitch-devel
 Requires: net-tools, iptables, iputils, openvpn, openssl, openvswitch
 
 # binary no-debug by go build
