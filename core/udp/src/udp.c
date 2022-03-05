@@ -19,7 +19,7 @@
 
 void *send_ping(void *args) {
     struct udp_connect *conn = (struct udp_connect *)args;
-    int ret = 0;
+    int retval = 0;
     unsigned char buf[1024] = {0, 0, 0, 0, 1, 2, 3, 4};
     while (true) {
         struct sockaddr_in dst_addr = {
@@ -29,8 +29,8 @@ void *send_ping(void *args) {
                 .s_addr = inet_addr(conn->remote_address),
             },
         };
-        ret = sendto(conn->socket, buf, 8, 0, (struct sockaddr*)&dst_addr, sizeof dst_addr);
-        if (ret <= 0) {
+        retval = sendto(conn->socket, buf, 8, 0, (struct sockaddr*)&dst_addr, sizeof dst_addr);
+        if (retval <= 0) {
             fprintf(stderr, "could not send data\n");
         }
         sleep(1);
@@ -41,24 +41,24 @@ void *recv_ping(void *args) {
     struct udp_server *srv = (struct udp_server *)args;
     struct sockaddr_in src_addr = {0};
     unsigned char buf[1024] = {0, 0, 0, 0, 1, 2, 3, 4};
-    int i, ret = 0, len = sizeof src_addr;
+    int i, retval = 0, len = sizeof src_addr;
 
     while (true) {
-        ret = recvfrom(srv->socket, buf, sizeof buf, 0, (struct sockaddr *)&src_addr, &len);
-        if ( ret <= 0 ) {
+        retval = recvfrom(srv->socket, buf, sizeof buf, 0, (struct sockaddr *)&src_addr, &len);
+        if ( retval <= 0 ) {
             fprintf(stderr, "recvfrom: %s\n", strerror(errno));
             break;
         }
-        printf("recvfrom: [%s:%d] %d bytes\n", inet_ntoa(src_addr.sin_addr), ntohs(src_addr.sin_port), ret);
-        for (i = 0; i < ret; i++ ) {
+        printf("recvfrom: [%s:%d] %d bytes\n", inet_ntoa(src_addr.sin_addr), ntohs(src_addr.sin_port), retval);
+        for (i = 0; i < retval; i++ ) {
             fprintf(stdout, "%02x ", buf[i]);
         }
         printf("\n---\n");
         if (srv->reply) {
             unsigned char buf[1024] = {0, 0, 0, 0, 2, 3, 4, 5, src_addr.sin_port & 0xff};
             struct sockaddr_in dst_addr = src_addr;
-            ret = sendto(srv->socket, buf, 9, 0, (struct sockaddr*)&dst_addr, sizeof dst_addr );
-            if (ret <= 0) {
+            retval = sendto(srv->socket, buf, 9, 0, (struct sockaddr*)&dst_addr, sizeof dst_addr );
+            if (retval <= 0) {
                 fprintf(stderr, "could not send data\n");
             }
         }
