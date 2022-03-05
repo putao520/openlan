@@ -1,6 +1,11 @@
-//
-// Created by daniel on 6/19/2020.
-//
+/*
+ * Copyright (c) 2021-2022 OpenLAN Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 3 as
+ * published by the Free Software Foundation.
+ *
+ */
 
 #include <assert.h>
 #include <fcntl.h>
@@ -10,7 +15,7 @@
 #include <linux/if_tun.h>
 #include <string.h>
 
-#include <tuntap.h>
+#include "tuntap.h"
 
 int create_tap(char *name) {
     struct ifreq ifr;

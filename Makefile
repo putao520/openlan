@@ -65,13 +65,9 @@ env:
 ## linux platform
 linux: linux-proxy linux-point linux-switch
 
-openudp: env
-	mkdir -p ./build/udp
-	cd ./build/udp && cmake $(SD)/core/udp && make
-
-opentcp: env
-	mkdir -p ./build/tcp
-	cd ./build/tcp && cmake $(SD)/core/tcp && make
+core: env
+	./core/auto.sh
+	cd $(BD) && cmake $(SD)/core && make
 
 ## compile command line
 cmd: env
@@ -84,7 +80,7 @@ linux-point: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point ./cmd/point_linux
 	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point.i386 ./cmd/point_linux
 
-linux-switch: env openudp
+linux-switch: env core
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch ./cmd/switch
 	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch.i386 ./cmd/switch
 

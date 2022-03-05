@@ -13,6 +13,7 @@
 #include <getopt.h>
 
 #include "command-line.h"
+#include "daemon.h"
 #include "openvswitch/dynamic-string.h"
 #include "openvswitch/poll-loop.h"
 #include "unixctl.h"

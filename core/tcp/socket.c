@@ -1,8 +1,14 @@
-//
-// Created by daniel on 6/19/2020.
-//
+/*
+ * Copyright (c) 2021-2022 OpenLAN Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 3 as
+ * published by the Free Software Foundation.
+ *
+ */
 
 #include <stdio.h>
+#include <string.h>
 #include <strings.h>
 #include <memory.h>
 #include <fcntl.h>
@@ -11,8 +17,8 @@
 #include <assert.h>
 #include <pthread.h>
 
-#include <tuntap.h>
-#include <socket.h>
+#include "tuntap.h"
+#include "socket.h"
 
 int non_blocking(int fd) {
     int flags = fcntl(fd, F_GETFL, 0);
