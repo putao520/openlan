@@ -48,7 +48,7 @@ clean: ## clean cache
 	rm -rvf ./build
 	rm -rvf ./core/build
 	rm -rvf ./core/cmake-build-debug
-	cd ./core/ovs && make clean
+	./core/auto.sh clean
 
 ## prepare environment
 vendor:
@@ -67,7 +67,7 @@ env:
 linux: linux-proxy linux-point linux-switch
 
 core: env
-	./core/auto.sh
+	./core/auto.sh build
 	cd $(BD) && cmake $(SD)/core && make
 
 ## compile command line

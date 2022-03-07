@@ -21,7 +21,7 @@ file(GLOB UDP_SOURCES "udp/*.c")
 file(GLOB TCP_SOURCES "tcp/*.c")
 
 add_executable(openudp ${UDP_SOURCES} ${IDL_SOURCES})
-target_link_libraries(openudp pthread ssl crypto cap-ng rt m unbound)
+target_link_libraries(openudp pthread ssl crypto rt m unbound)
 target_link_libraries(openudp libopenvswitch.a)
 
 add_executable(opentcp ${TCP_SOURCES})

@@ -2,6 +2,7 @@
 
 set -ex
 
+action=$1
 version=$(cat VERSION)
 cd $(dirname $0)
 
@@ -9,8 +10,18 @@ build_openvswitch() {
   obj_dir=$(pwd)/../build/obj
   cd ovs && {
     [ -e './configure' ] || ./boot.sh
-    [ -e './Makefile' ] || ./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var
+    [ -e './Makefile' ] || ./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var --disable-libcapng
     make -j4 && make install DESTDIR=$obj_dir
+    cd -
+  }
+}
+
+clean_openvswitch() {
+  cd ovs && {
+    if [ -e Makefile ]; then
+      make clean
+      rm ./Makefile
+    fi
     cd -
   }
 }
@@ -30,6 +41,10 @@ update_version() {
   sed -i  "s/#define CORE_PACKAGE_VERSION .*/#define CORE_PACKAGE_VERSION \"$version\"/g" ./version.h
 }
 
-update_version
-build_openvswitch
-build_idlc
+if [ "$action"x == "build"x ] || [ "$action"x == ""x ]; then
+  update_version
+  build_openvswitch
+  build_idlc
+elif [ "$action"x == "clean"x ]; then
+  clean_openvswitch
+fi
