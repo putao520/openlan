@@ -12,6 +12,7 @@ go:
   - 1.16.3
 
 script:
+  - apt-get install -y unbound libunbound-dev
   - make bin
   - make test
 
