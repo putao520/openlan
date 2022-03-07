@@ -13,8 +13,8 @@ mkdir -p ~/rpmbuild/SOURCES
 sed -e "s/Version:.*/Version:\ ${version}/" dist/openlan.spec.in > build/openlan.spec
 
 # build dist.tar
-rsync -r --exclude build . build/$package
-cd build && {
+rsync -r . /tmp/$package
+cd /tmp && {
   tar cf - $package | gzip -c > ~/rpmbuild/SOURCES/$package-source.tar.gz
   cd -
 }

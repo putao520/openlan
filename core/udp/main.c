@@ -7,6 +7,7 @@
  *
  */
 
+#include <config.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -24,6 +25,7 @@
 #include "udp-idl.h"
 #include "unixctl.h"
 #include "ovs-thread.h"
+#include "version.h"
 
 VLOG_DEFINE_THIS_MODULE(main);
 
@@ -186,7 +188,7 @@ main(int argc, char *argv[])
     int retval;
 
     ovs_cmdl_proctitle_init(argc, argv);
-    set_program_name(argv[0]);
+    ovs_set_program_name(argv[0], CORE_PACKAGE_VERSION);
     service_start(&argc, &argv);
     parse_options(argc, argv);
 

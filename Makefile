@@ -23,7 +23,7 @@ DEST = $(DST)
 
 build: test pkg
 
-pkg: linux-rpm linux-tar windows-zip darwin-zip ## build all plaftorm packages
+pkg: clean linux-rpm linux-tar windows-zip darwin-zip ## build all plaftorm packages
 
 help: ## show make targets
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {sub("\\\\n",sprintf("\n%22c"," "), $$2);\

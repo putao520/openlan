@@ -6,4 +6,4 @@
 # it can generate more programmer-friendly data structures.
 
 s["idlPrefix"] = "openrec_"
-s["idlHeader"] = "\"idlc/confd-idl.h\""
+s["idlHeader"] = "\"confd-idl.h\""
