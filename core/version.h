@@ -10,7 +10,7 @@
 #ifndef OPENUDP_VERSION_H
 #define OPENUDP_VERSION_H 1
 
-#define CORE_PACKAGE_STRING  "opencore 5.0.0"
+#define CORE_PACKAGE_STRING  "opencore 5.8.29"
 #define CORE_PACKAGE_VERSION "5.8.29"
 
 #define CORE_LIB_VERSION     0

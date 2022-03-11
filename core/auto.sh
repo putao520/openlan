@@ -38,6 +38,7 @@ build_idlc() {
 }
 
 update_version() {
+  sed -i  "s/#define CORE_PACKAGE_STRING .*/#define CORE_PACKAGE_STRING  \"opencore $version\"/g" ./version.h
   sed -i  "s/#define CORE_PACKAGE_VERSION .*/#define CORE_PACKAGE_VERSION \"$version\"/g" ./version.h
 }
 

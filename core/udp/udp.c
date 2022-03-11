@@ -84,7 +84,7 @@ recv_ping(void *args)
 {
     struct udp_server *srv = (struct udp_server *)args;
     struct sockaddr_in src_addr = {0};
-    u_int8_t buf[1024] = {0, 0, 0, 0, 1, 2, 3, 4};
+    u_int8_t buf[1024] = {0};
     struct udp_message *data = (struct udp_message *)buf;
     int retval = 0, len = sizeof src_addr;
 
