@@ -68,7 +68,7 @@ send_ping_once(struct udp_connect *conn)
 void *
 recv_ping(void *args)
 {
-    struct udp_server *srv = (struct udp_server *)args;
+    struct udp_server *srv = args;
     struct sockaddr_in src_addr = {0};
     u_int8_t buf[1024] = {0};
     struct udp_message *data = (struct udp_message *)buf;

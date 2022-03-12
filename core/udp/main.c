@@ -35,14 +35,14 @@
 VLOG_DEFINE_THIS_MODULE(main);
 
 
-static char *default_db_;
+static char *default_db_ = NULL;
 
-static char *db_remote;
-static char *udp_remote;
-static int udp_port;
+static char *db_remote = NULL;
+static char *udp_remote = NULL;
+static int32_t udp_port = 0;
 
 static struct ovs_mutex local_link_mutex = OVS_MUTEX_INITIALIZER;
-static struct shash local_links =  SHASH_INITIALIZER(&local_links);
+static struct shash local_links = SHASH_INITIALIZER(&local_links);
 
 struct udp_context {
     struct ovsdb_idl *idl;
@@ -70,7 +70,7 @@ default_db(void)
     return default_db_;
 }
 
-static inline const int
+static inline const uint16_t
 default_udp_port()
 {
     return 4500;
@@ -202,7 +202,7 @@ udp_run(struct udp_context *ctx)
 static void *
 send_ping(void *args)
 {
-    struct udp_server *srv = (struct udp_server *)args;
+    struct udp_server *srv = args;
 
     while(true) {
         struct shash_node *node;
@@ -236,7 +236,7 @@ main(int argc, char *argv[])
 {
     struct unixctl_server *unixctl;
     bool exiting = false;
-    int retval;
+    int retval = 0;
 
     ovs_cmdl_proctitle_init(argc, argv);
     ovs_set_program_name(argv[0], CORE_PACKAGE_VERSION);
@@ -297,6 +297,7 @@ main(int argc, char *argv[])
     cancal_and_wait(recv_t);
     cancal_and_wait(send_t);
 
+    shash_destroy(&local_links);
     unixctl_server_destroy(unixctl);
     ovsdb_idl_loop_destroy(&open_idl_loop);
     service_stop();
