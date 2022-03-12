@@ -25,6 +25,7 @@ type VirtualLink struct {
 	UUID           string            `ovsdb:"_uuid"`
 	Network        string            `ovsdb:"network"`
 	Connection     string            `ovsdb:"connection"`
+	Device         string            `ovsdb:"device"`
 	OtherConfig    map[string]string `ovsdb:"other_config" yaml:"other_config"`
 	Authentication map[string]string `ovsdb:"authentication" yaml:"authentication"`
 	LinkState      string            `ovsdb:"link_state" yaml:"link_state"`

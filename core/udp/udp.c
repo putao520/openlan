@@ -24,6 +24,8 @@
 #include "openvswitch/dynamic-string.h"
 #include "openvswitch/vlog.h"
 
+#include "socket-util.h"
+
 #include "udp.h"
 
 VLOG_DEFINE_THIS_MODULE(udp);
@@ -31,9 +33,12 @@ VLOG_DEFINE_THIS_MODULE(udp);
 /* Rate limit for error messages. */
 static struct vlog_rate_limit rl = VLOG_RATE_LIMIT_INIT(5, 5);
 
-void *
+void
 print_hex(u_int8_t *data, int len)
 {
+    if (!VLOG_IS_INFO_ENABLED()) {
+        return;
+    }
     struct ds s;
     ds_init(&s);
     for (int i = 0; i < len; i++ ) {
@@ -48,7 +53,7 @@ send_ping_once(struct udp_connect *conn)
 {
     int retval = 0;
     struct udp_message data = {
-        .padding = 0,
+        .padding = {0, 0},
         .spi = htonl(conn->spi),
     };
     data.seqno = htonl(conn->seqno++);
@@ -66,40 +71,25 @@ send_ping_once(struct udp_connect *conn)
     return retval;
 }
 
-void *
-recv_ping(void *args)
+int
+recv_ping_once(struct udp_server *srv, struct sockaddr_in *addr, u_int8_t *buf, size_t len)
 {
-    struct udp_server *srv = args;
-    struct sockaddr_in src_addr = {0};
-    u_int8_t buf[1024] = {0};
     struct udp_message *data = (struct udp_message *)buf;
-    int retval = 0, len = sizeof src_addr;
+    int retval = 0, addrlen = sizeof *addr;
 
-    while (true) {
-        memset(data, 0, sizeof *data);
-        retval = recvfrom(srv->socket, buf, sizeof buf, 0, (struct sockaddr *)&src_addr, &len);
-        if ( retval <= 0 ) {
-            VLOG_ERR_RL(&rl, "recvfrom: %s\n", strerror(errno));
-            break;
+    memset(data, 0, sizeof *data);
+    retval = recvfrom(srv->socket, buf, len, 0, (struct sockaddr *)addr, &addrlen);
+    if ( retval <= 0 ) {
+        if (errno == EAGAIN) {
+            return 0;
         }
-        const char *remote_addr = inet_ntoa(src_addr.sin_addr);
-        VLOG_INFO("recvfrom: [%s:%d] %d bytes\n", remote_addr, ntohs(src_addr.sin_port), retval);
-        print_hex(buf, retval);
-        if (srv->reply) {
-            struct sockaddr_in dst_addr = src_addr;
-            u_int32_t seqno = ntohl(data->seqno) + 1;
-            data->padding = 0;
-            data->seqno = htonl(seqno);
-            data->spi = src_addr.sin_port;
-            retval = sendto(srv->socket, data, sizeof *data, 0, (struct sockaddr *)&dst_addr, sizeof dst_addr);
-            if (retval <= 0) {
-                VLOG_WARN_RL(&rl, "%s: could not send data\n", remote_addr);
-            }
-        }
-        if (srv->handler_rx) {
-            srv->handler_rx(&src_addr, data);
-        }
+        VLOG_ERR_RL(&rl, "recvfrom: %s\n", strerror(errno));
+        return retval;
     }
+    const char *remote_addr = inet_ntoa(addr->sin_addr);
+    VLOG_DBG("recvfrom: [%s:%d] %d bytes\n", remote_addr, ntohs(addr->sin_port), retval);
+    print_hex(buf, retval);
+    return retval;
 }
 
 int
@@ -124,6 +114,7 @@ open_socket(struct udp_server *srv)
     if (bind(srv->socket, (struct sockaddr *)&addr, sizeof addr) == -1) {
         return -1;
     }
+    set_nonblocking(srv->socket);
 
     return srv->socket;
 }

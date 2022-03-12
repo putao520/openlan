@@ -8,6 +8,7 @@ import (
 	"github.com/ovn-org/libovsdb/ovsdb"
 	"github.com/urfave/cli/v2"
 	"sort"
+	"strings"
 )
 
 type Link struct {
@@ -27,6 +28,14 @@ func (l Link) List(c *cli.Context) error {
 	return api.Out(lsLn, c.String("format"), "")
 }
 
+func GetUserPassword(auth string) (string, string) {
+	auths := strings.SplitN(auth, ":", 2)
+	if len(auths) == 2 {
+		return auths[0], auths[1]
+	}
+	return auth, auth
+}
+
 func (l Link) Add(c *cli.Context) error {
 	name := c.String("network")
 	if name == "" {
@@ -36,10 +45,16 @@ func (l Link) Add(c *cli.Context) error {
 	if err := database.Client.Get(&lsVn); err != nil {
 		return libol.NewErr("find network %s: %s", name, err)
 	}
+	user, pass := GetUserPassword(c.String("auth"))
 	newLn := database.VirtualLink{
 		Network:    name,
 		Connection: c.String("connection"),
 		UUID:       database.GenUUID(),
+		Device:     c.String("device"),
+		Authentication: map[string]string{
+			"username": user,
+			"password": pass,
+		},
 	}
 	ops, err := database.Client.Create(&newLn)
 	if err != nil {
@@ -125,6 +140,14 @@ func (l Link) Commands(app *api.App) {
 					&cli.StringFlag{
 						Name:  "connection",
 						Usage: "connection for remote server",
+					},
+					&cli.StringFlag{
+						Name:  "device",
+						Usage: "the device name",
+					},
+					&cli.StringFlag{
+						Name:  "auth",
+						Usage: "user and password for authentication",
 					},
 				},
 				Action: l.Add,

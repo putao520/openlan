@@ -6,7 +6,7 @@
 #include "openvswitch/shash.h"
 
 struct udp_message {
-    u_int32_t padding;
+    u_int32_t padding[2];
     u_int32_t spi;
     u_int32_t seqno;
 };
@@ -14,9 +14,7 @@ struct udp_message {
 struct udp_server {
     u_int16_t port;
     int32_t socket;
-    bool reply;
-
-    int32_t (*handler_rx)(struct sockaddr_in *, struct udp_message *);
+    long long int send_t;
 };
 
 struct udp_connect {
@@ -28,7 +26,7 @@ struct udp_connect {
 };
 
 int send_ping_once(struct udp_connect *);
-void *recv_ping(void *args);
+int recv_ping_once(struct udp_server *, struct sockaddr_in *, u_int8_t *, size_t);
 
 int open_socket(struct udp_server *);
 int configure_socket(struct udp_server *);
