@@ -2,7 +2,6 @@
 #define __OPENUDP_UDP_H  1
 
 #include <netinet/in.h>
-#include <netinet/ip.h>
 
 #include "openvswitch/shash.h"
 

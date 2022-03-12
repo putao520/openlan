@@ -206,7 +206,7 @@ send_ping(void *args)
 
     while(true) {
         struct shash_node *node;
-        const char address[32] = {0};
+        char address[32] = {0};
         struct udp_connect conn = {
             .socket = srv->socket,
             .remote_port = srv->port,
