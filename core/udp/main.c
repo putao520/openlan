@@ -8,10 +8,12 @@
  */
 
 #include <config.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <errno.h>
 #include <getopt.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 
 #include "openvswitch/dynamic-string.h"
 #include "openvswitch/poll-loop.h"
@@ -32,10 +34,15 @@
 
 VLOG_DEFINE_THIS_MODULE(main);
 
-static char *db_remote;
+
 static char *default_db_;
+
+static char *db_remote;
 static char *udp_remote;
 static int udp_port;
+
+static struct ovs_mutex local_link_mutex = OVS_MUTEX_INITIALIZER;
+static struct shash local_links =  SHASH_INITIALIZER(&local_links);
 
 struct udp_context {
     struct ovsdb_idl *idl;
@@ -172,7 +179,7 @@ udp_exit(struct unixctl_conn *conn, int argc OVS_UNUSED,
     unixctl_command_reply(conn, NULL);
 }
 
-void
+static void
 udp_run(struct udp_context *ctx)
 {
     const struct openrec_virtual_network *vn;
@@ -183,9 +190,45 @@ udp_run(struct udp_context *ctx)
         VLOG_INFO("virtual_network: %s", vn->name);
     }
     /* Collects 'Virtual Link's. */
+    ovs_mutex_lock(&local_link_mutex);
+    shash_empty(&local_links);
     OPENREC_VIRTUAL_LINK_FOR_EACH (vl, ctx->idl) {
         VLOG_INFO("virtual_link: %s %s", vl->network, vl->connection);
+        shash_add(&local_links, vl->connection, vl);
     }
+    ovs_mutex_unlock(&local_link_mutex);
+}
+
+static void *
+send_ping(void *args)
+{
+    struct udp_server *srv = (struct udp_server *)args;
+
+    while(true) {
+        struct shash_node *node;
+        const char address[32] = {0};
+        struct udp_connect conn = {
+            .socket = srv->socket,
+            .remote_port = srv->port,
+            .remote_address = address,
+        };
+        ovs_mutex_lock(&local_link_mutex);
+        SHASH_FOR_EACH (node, &local_links) {
+            struct openrec_virtual_link *vl = node->data;
+            if (!strncmp(vl->connection, "udp:", 4)) {
+                ovs_scan(vl->connection, "udp:%[^:]:%d", address, &conn.remote_port);
+                send_ping_once(&conn);
+            }
+        }
+        ovs_mutex_unlock(&local_link_mutex);
+        xsleep(5); // wait 5 seconds.
+    }
+}
+
+static int
+recv_data(struct sockaddr_in *from, struct udp_message *data)
+{
+    VLOG_INFO("recv_data from %d and spi %x", ntohs(from->sin_port), data->spi);
 }
 
 int
@@ -215,6 +258,7 @@ main(int argc, char *argv[])
         .port = udp_port,
         .socket = -1,
         .reply = true,
+        .handler_rx = recv_data,
     };
     open_socket(&srv);
     if (configure_socket(&srv) < 0) {
@@ -224,14 +268,8 @@ main(int argc, char *argv[])
     pthread_t send_t = 0;
     pthread_t recv_t = 0;
     if (udp_remote) {
-        struct udp_connect conn = {
-            .socket = srv.socket,
-            .remote_port = srv.port,
-            .remote_address = udp_remote,
-            .spi = 0x11223344,
-        };
         srv.reply = false;
-        send_t = ovs_thread_create("send_ping", send_ping, (void *)&conn);
+        send_t = ovs_thread_create("send_ping", send_ping, (void *)&srv);
     }
     recv_t = ovs_thread_create("recv_ping", recv_ping, (void *)&srv);
 

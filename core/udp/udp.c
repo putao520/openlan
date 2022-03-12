@@ -7,18 +7,14 @@
  *
  */
 
-#include <stdio.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
-#include <unistd.h>
-#include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <linux/udp.h>
-#include <netinet/in.h>
-#include <netinet/ip.h>
 #include <linux/xfrm.h>
 #include <linux/ipsec.h>
 #include <linux/pfkeyv2.h>
@@ -34,12 +30,6 @@ VLOG_DEFINE_THIS_MODULE(udp);
 /* Rate limit for error messages. */
 static struct vlog_rate_limit rl = VLOG_RATE_LIMIT_INIT(5, 5);
 
-struct udp_message {
-    u_int32_t padding;
-    u_int32_t spi;
-    u_int32_t seqno;
-};
-
 void *
 print_hex(u_int8_t *data, int len)
 {
@@ -52,31 +42,27 @@ print_hex(u_int8_t *data, int len)
     ds_destroy(&s);
 }
 
-
-void *
-send_ping(void *args)
+int
+send_ping_once(struct udp_connect *conn)
 {
-    struct udp_connect *conn = (struct udp_connect *)args;
     int retval = 0;
     struct udp_message data = {
         .padding = 0,
         .spi = htonl(conn->spi),
     };
-    while (true) {
-        data.seqno = htonl(conn->seqno++);
-        struct sockaddr_in dst_addr = {
-            .sin_family = AF_INET,
-            .sin_port = htons(conn->remote_port),
-            .sin_addr = {
-                .s_addr = inet_addr(conn->remote_address),
-            },
-        };
-        retval = sendto(conn->socket, &data, sizeof data, 0, (struct sockaddr *)&dst_addr, sizeof dst_addr);
-        if (retval <= 0) {
-            VLOG_WARN_RL(&rl, "%s: could not send data\n", conn->remote_address);
-        }
-        sleep(1);
+    data.seqno = htonl(conn->seqno++);
+    struct sockaddr_in dst_addr = {
+        .sin_family = AF_INET,
+        .sin_port = htons(conn->remote_port),
+        .sin_addr = {
+            .s_addr = inet_addr(conn->remote_address),
+        },
+    };
+    retval = sendto(conn->socket, &data, sizeof data, 0, (struct sockaddr *)&dst_addr, sizeof dst_addr);
+    if (retval <= 0) {
+        VLOG_WARN_RL(&rl, "%s: could not send data\n", conn->remote_address);
     }
+    return retval;
 }
 
 void *
@@ -89,9 +75,10 @@ recv_ping(void *args)
     int retval = 0, len = sizeof src_addr;
 
     while (true) {
+        memset(data, 0, sizeof *data);
         retval = recvfrom(srv->socket, buf, sizeof buf, 0, (struct sockaddr *)&src_addr, &len);
         if ( retval <= 0 ) {
-            fprintf(stderr, "recvfrom: %s\n", strerror(errno));
+            VLOG_ERR_RL(&rl, "recvfrom: %s\n", strerror(errno));
             break;
         }
         const char *remote_addr = inet_ntoa(src_addr.sin_addr);
@@ -107,6 +94,9 @@ recv_ping(void *args)
             if (retval <= 0) {
                 VLOG_WARN_RL(&rl, "%s: could not send data\n", remote_addr);
             }
+        }
+        if (srv->handler_rx) {
+            srv->handler_rx(&src_addr, data);
         }
     }
 }
