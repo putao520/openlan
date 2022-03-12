@@ -23,4 +23,5 @@ func Commands(app *api.App) {
 	app.Before = Before
 	Switch{}.Commands(app)
 	Network{}.Commands(app)
+	Link{}.Commands(app)
 }

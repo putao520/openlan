@@ -18,14 +18,17 @@
 #include "openvswitch/vconn.h"
 #include "openvswitch/vlog.h"
 
+#include "ovsdb-data.h"
+#include "ovsdb-idl-provider.h"
+
 #include "command-line.h"
 #include "confd-idl.h"
 #include "daemon.h"
 #include "udp.h"
-#include "udp-idl.h"
 #include "unixctl.h"
 #include "ovs-thread.h"
 #include "version.h"
+
 
 VLOG_DEFINE_THIS_MODULE(main);
 
@@ -33,6 +36,11 @@ static char *db_remote;
 static char *default_db_;
 static char *udp_remote;
 static int udp_port;
+
+struct udp_context {
+    struct ovsdb_idl *idl;
+    struct ovsdb_idl_txn *idl_txn;
+};
 
 static inline const char *
 run_dir()
@@ -164,21 +172,21 @@ udp_exit(struct unixctl_conn *conn, int argc OVS_UNUSED,
     unixctl_command_reply(conn, NULL);
 }
 
-
 void
-udp_run(struct udp_idl *open_idl)
+udp_run(struct udp_context *ctx)
 {
-    if (!open_idl->idl_txn) {
-        return;
-    }
     const struct openrec_virtual_network *vn;
+    const struct openrec_virtual_link *vl;
 
     /* Collects 'Virtual Network's. */
-    OPENREC_VIRTUAL_NETWORK_FOR_EACH (vn, open_idl->idl) {
+    OPENREC_VIRTUAL_NETWORK_FOR_EACH (vn, ctx->idl) {
         VLOG_INFO("virtual_network: %s", vn->name);
     }
+    /* Collects 'Virtual Link's. */
+    OPENREC_VIRTUAL_LINK_FOR_EACH (vl, ctx->idl) {
+        VLOG_INFO("virtual_link: %s %s", vl->network, vl->connection);
+    }
 }
-
 
 int
 main(int argc, char *argv[])
@@ -229,11 +237,13 @@ main(int argc, char *argv[])
 
 
     while(!exiting) {
-        struct udp_idl open_idl = {
+        struct udp_context ctx = {
             .idl = open_idl_loop.idl,
             .idl_txn = ovsdb_idl_loop_run(&open_idl_loop),
         };
-        udp_run(&open_idl);
+        if (ctx.idl_txn) {
+            udp_run(&ctx);
+        }
         unixctl_server_run(unixctl);
         unixctl_server_wait(unixctl);
         if (exiting) {

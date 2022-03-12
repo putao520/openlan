@@ -11,11 +11,28 @@ type Switch struct {
 type VirtualNetwork struct {
 	UUID         string            `ovsdb:"_uuid"`
 	Name         string            `ovsdb:"name"`
+	Provider     string            `ovsdb:"provider"`
 	Bridge       string            `ovsdb:"bridge"`
 	Address      string            `ovsdb:"address"`
 	OtherConfig  map[string]string `ovsdb:"other_config" yaml:"other_config"`
 	RemoteLinks  []string          `ovsdb:"remote_links" yaml:"remote_links"`
 	LocalLinks   []string          `ovsdb:"local_links" yaml:"local_links"`
-	OpenVPN      []string          `ovsdb:"openvpn" yaml:"openvpn"`
+	OpenVPN      *string           `ovsdb:"open_vpn" yaml:"open_vpn"`
 	PrefixRoutes []string          `ovsdb:"prefix_routes" yaml:"prefix_routes"`
+}
+
+type VirtualLink struct {
+	UUID           string            `ovsdb:"_uuid"`
+	Network        string            `ovsdb:"network"`
+	Connection     string            `ovsdb:"connection"`
+	OtherConfig    map[string]string `ovsdb:"other_config" yaml:"other_config"`
+	Authentication map[string]string `ovsdb:"authentication" yaml:"authentication"`
+	LinkState      string            `ovsdb:"link_state" yaml:"link_state"`
+	Status         map[string]string `ovsdb:"status" yaml:"status"`
+}
+
+type OpenVPN struct {
+	UUID     string `ovsdb:"_uuid"`
+	Protocol string `ovsdb:"protocol"`
+	Listen   int    `ovsdb:"listen"`
 }

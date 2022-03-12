@@ -52,6 +52,9 @@
                         "max": "unlimited"
                     }
                 },
+                "provider": {
+                    "type": "string"
+                },
                 "bridge": {
                     "type": "string"
                 },
@@ -89,14 +92,14 @@
                         "max": "unlimited"
                     }
                 },
-                "openvpn": {
+                "open_vpn": {
                     "type": {
                         "key": {
                             "type": "uuid",
-                            "refTable": "OpenVPN"
+                            "refTable": "Open_VPN"
                         },
                         "min": 0,
-                        "max": "unlimited"
+                        "max": 1
                     }
                 }
             },
@@ -111,9 +114,6 @@
                     "mutable": false
                 },
                 "connection": {
-                    "type": "string"
-                },
-                "protocol": {
                     "type": "string"
                 },
                 "link_state": {
@@ -139,6 +139,15 @@
                         "max": "unlimited"
                     }
                 },
+                "status": {
+                    "type": {
+                        "key": "string",
+                        "value": "string",
+                        "min": 0,
+                        "max": "unlimited"
+                    },
+                    "ephemeral": true
+                },
                 "statistics": {
                     "type": {
                         "key": "string",
@@ -149,8 +158,7 @@
                 }
             },
             "indexes": [
-                ["connection", "network"],
-                ["device"]
+                ["connection", "network"]
             ]
         },
         "Prefix_Route": {
@@ -175,7 +183,7 @@
                 ["prefix"]
             ]
         },
-        "OpenVPN": {
+        "Open_VPN": {
             "columns": {
                 "protocol": {
                     "type": "string"

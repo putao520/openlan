@@ -34,14 +34,16 @@ func (u Network) Add(c *cli.Context) error {
 	}
 	oldVn := database.VirtualNetwork{Name: name}
 	if err := database.Client.Get(&oldVn); err == nil {
-		return libol.NewErr("object existed with %s", oldVn.UUID)
+		return libol.NewErr("network %s already existed.", oldVn.Name)
 	}
 	address := c.String("address")
+	provider := c.String("provider")
 	newVn := database.VirtualNetwork{
-		Name:    name,
-		Address: address,
-		Bridge:  "br-" + name,
-		UUID:    database.GenUUID(),
+		Name:     name,
+		Address:  address,
+		Bridge:   "br-" + name,
+		UUID:     database.GenUUID(),
+		Provider: provider,
 	}
 	ops, err := database.Client.Create(&newVn)
 	if err != nil {
@@ -127,10 +129,13 @@ func (u Network) Commands(app *api.App) {
 						Name:  "name",
 						Usage: "unique name with short long"},
 					&cli.StringFlag{
+						Name:  "provider",
+						Value: "openlan",
+						Usage: "provider name"},
+					&cli.StringFlag{
 						Name:  "address",
-						Value: "169.254.169.0/24",
-						Usage: "ip address for this network",
-					},
+						Value: "169.255.169.0/24",
+						Usage: "ip address"},
 				},
 				Action: u.Add,
 			},
