@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	UDPPort = 4500
+	UDPPort = 10008
 	UDPBin  = "openudp"
 )
 
@@ -377,6 +377,38 @@ func (w *EspWorker) Reload(c *co.Network) {
 	w.delXfrm()
 	w.updateXfrm()
 	w.addXfrm()
+}
+
+func (w *EspWorker) AddMember(mem *co.ESPMember) {
+	local, _ := net.LookupIP(mem.State.Local)
+	if local == nil {
+		return
+	}
+	remote, _ := net.LookupIP(mem.State.Remote)
+	if remote == nil {
+		return
+	}
+	w.delXfrm()
+	mem.State.LocalIp = local[0]
+	mem.State.RemoteIp = remote[0]
+	w.addState(mem)
+	for _, pol := range mem.Policies {
+		if pol == nil {
+			continue
+		}
+		if pol.Dest == "" {
+			pol.Dest = mem.Peer
+		}
+		if pol.Source == "" {
+			pol.Source = mem.Address
+		}
+		w.addPolicy(mem, pol)
+	}
+	w.updateXfrm()
+	w.addXfrm()
+	if err := w.UpDummy(mem.Name, mem.Address, mem.Peer); err != nil {
+		w.out.Error("EspWorker.Start %s %s", mem.Name, err)
+	}
 }
 
 func OpenUDP() {

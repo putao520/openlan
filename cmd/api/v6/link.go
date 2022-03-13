@@ -55,6 +55,10 @@ func (l Link) Add(c *cli.Context) error {
 			"username": user,
 			"password": pass,
 		},
+		OtherConfig: map[string]string{
+			"local_address":  lsVn.Address,
+			"remote_address": c.String("address"),
+		},
 	}
 	ops, err := database.Client.Create(&newLn)
 	if err != nil {
@@ -148,6 +152,10 @@ func (l Link) Commands(app *api.App) {
 					&cli.StringFlag{
 						Name:  "auth",
 						Usage: "user and password for authentication",
+					},
+					&cli.StringFlag{
+						Name:  "address",
+						Usage: "remote address in this link",
 					},
 				},
 				Action: l.Add,

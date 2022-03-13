@@ -95,6 +95,7 @@ type Switch struct {
 	uuid     string
 	newTime  int64
 	out      *libol.SubLogger
+	confd    *ConfD
 }
 
 func NewSwitch(c *co.Switch) *Switch {
@@ -107,6 +108,7 @@ func NewSwitch(c *co.Switch) *Switch {
 		newTime:  time.Now().Unix(),
 		hooks:    make([]Hook, 0, 64),
 		out:      libol.NewSubLogger(c.Alias),
+		confd:    NewConfd(),
 	}
 	return &v
 }
@@ -445,6 +447,8 @@ func (v *Switch) Initialize() {
 	v.SetPass(v.cfg.PassFile)
 	v.LoadPass()
 	v.SetLdap(v.cfg.Ldap)
+	// Start confd monitor
+	v.confd.Initialize()
 }
 
 func (v *Switch) onFrame(client libol.SocketClient, frame *libol.FrameMessage) error {
@@ -561,6 +565,7 @@ func (v *Switch) Start() {
 		libol.Go(v.http.Start)
 	}
 	libol.Go(v.firewall.Start)
+	libol.Go(v.confd.Start)
 }
 
 func (v *Switch) Stop() {
@@ -585,6 +590,7 @@ func (v *Switch) Stop() {
 	for _, w := range v.worker {
 		w.Stop()
 	}
+	v.confd.Stop()
 }
 
 func (v *Switch) Alias() string {

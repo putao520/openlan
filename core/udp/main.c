@@ -35,7 +35,7 @@
 #include "version.h"
 
 #define RUN_DIR   "/var/openlan"
-#define UDP_PORT  4500
+#define UDP_PORT  10008
 
 VLOG_DEFINE_THIS_MODULE(main);
 /* Rate limit for error messages. */
@@ -200,7 +200,7 @@ ping_run(struct udp_context *ctx)
        if (strncmp(vl->device, "spi", 3) || strncmp(vl->connection, "udp:", 4)) {
            continue;
        }
-       VLOG_INFO("send_ping to %s on %s\n", vl->connection, vl->device);
+       VLOG_DBG("send_ping to %s on %s\n", vl->connection, vl->device);
        ovs_scan(vl->device, "spi%d", &conn.spi);
        ovs_scan(vl->connection, "udp:%[^:]:%d", address, &conn.remote_port);
        send_ping_once(&conn);
@@ -226,7 +226,7 @@ pong_run(struct udp_context *ctx)
     char *spi_conn = xasprintf("spi:%d", ntohl(data->spi));
     struct shash_node *node = shash_find(&ctx->links, spi_conn);
 
-    VLOG_INFO("pong_run from: %s:%d and spi %d\n", remote_addr, ntohs(from.sin_port), ntohl(data->spi));
+    VLOG_DBG("pong_run from: %s:%d and spi %d\n", remote_addr, ntohs(from.sin_port), ntohl(data->spi));
     if (node) {
         struct openrec_virtual_link *vl = node->data;
         VLOG_DBG("pong_run virtual link: %s %s\n", vl->connection, vl->network);

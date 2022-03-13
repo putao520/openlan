@@ -34,18 +34,17 @@ VLOG_DEFINE_THIS_MODULE(udp);
 static struct vlog_rate_limit rl = VLOG_RATE_LIMIT_INIT(5, 5);
 
 void
-print_hex(u_int8_t *data, int len)
+print_hex(const char *prefix, u_int8_t *data, int len)
 {
-    if (!VLOG_IS_INFO_ENABLED()) {
-        return;
+    if (VLOG_IS_INFO_ENABLED()) {
+        struct ds s;
+        ds_init(&s);
+        for (int i = 0; i < len; i++ ) {
+            ds_put_format(&s, "%02x ", data[i]);
+        }
+        VLOG_DBG("%s%s\n", prefix, ds_cstr(&s));
+        ds_destroy(&s);
     }
-    struct ds s;
-    ds_init(&s);
-    for (int i = 0; i < len; i++ ) {
-        ds_put_format(&s, "%02x ", data[i]);
-    }
-    VLOG_INFO("%s\n", ds_cstr(&s));
-    ds_destroy(&s);
 }
 
 int
@@ -88,7 +87,7 @@ recv_ping_once(struct udp_server *srv, struct sockaddr_in *addr, u_int8_t *buf, 
     }
     const char *remote_addr = inet_ntoa(addr->sin_addr);
     VLOG_DBG("recvfrom: [%s:%d] %d bytes\n", remote_addr, ntohs(addr->sin_port), retval);
-    print_hex(buf, retval);
+    print_hex("recvfrom: ", buf, retval);
     return retval;
 }
 
