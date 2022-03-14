@@ -39,9 +39,10 @@ cp dist/resource/confd.schema.json %{buildroot}/etc/openlan/switch
 mkdir -p %{buildroot}/etc/openlan/switch/acl
 cp dist/resource/acl-1.json.example %{buildroot}/etc/openlan/switch/acl
 mkdir -p %{buildroot}/etc/openlan/switch/network
+cp dist/resource/cmdv6.example %{buildroot}/etc/openlan/switch
 cp dist/resource/network.json.example %{buildroot}/etc/openlan/switch/network
 cp dist/resource/default.json.example %{buildroot}/etc/openlan/switch/network
-cp dist/resource/esp.json.example %{buildroot}/etc/openlan/switch/network
+cp dist/resource/ipsec.json.example %{buildroot}/etc/openlan/switch/network
 cp dist/resource/vxlan.json.example %{buildroot}/etc/openlan/switch/network
 cp dist/resource/fabric.json.example %{buildroot}/etc/openlan/switch/network
 mkdir -p %{buildroot}/etc/sysconfig/openlan
