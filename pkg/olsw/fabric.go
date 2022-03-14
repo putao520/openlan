@@ -142,15 +142,15 @@ type OvsNetwork struct {
 }
 
 type FabricWorker struct {
-	uuid     string
-	cfg      *co.Network
-	spec     *co.FabricSpecifies
-	out      *libol.SubLogger
-	ovs      *OvsBridge
-	cookie   uint64
-	tunnels  map[string]*OvsPort
+	uuid       string
+	cfg        *co.Network
+	spec       *co.FabricSpecifies
+	out        *libol.SubLogger
+	ovs        *OvsBridge
+	cookie     uint64
+	tunnels    map[string]*OvsPort
 	standalone map[string]*OvsPort
-	networks map[uint32]*OvsNetwork
+	networks   map[uint32]*OvsNetwork
 }
 
 func NewFabricWorker(c *co.Network) *FabricWorker {
@@ -223,13 +223,13 @@ func (w *FabricWorker) Initialize() {
 }
 
 func (w *FabricWorker) vni2peer(vni uint32) (string, string) {
-	brPort := fmt.Sprintf("vb%08x", vni)
-	tunPort := fmt.Sprintf("vt%08x", vni)
+	tunPort := fmt.Sprintf("vb-%08x", vni)
+	brPort := fmt.Sprintf("vt-%08x", vni)
 	return brPort, tunPort
 }
 
 func (w *FabricWorker) alone2peer(addr string) (string, string) {
-	return w.Addr2Port(addr, "ab"), w.Addr2Port(addr, "at")
+	return w.Addr2Port(addr, "ab-"), w.Addr2Port(addr, "at-")
 }
 
 func (w *FabricWorker) setupNetwork(bridge string, vni uint32) *OvsNetwork {
@@ -434,7 +434,7 @@ func (w *FabricWorker) Start(v api.Switcher) {
 	mss := w.spec.Mss
 	for _, tunnel := range w.spec.Tunnels {
 		if tunnel.Mode == "standalone" {
-				// TODO add standalone tunnel
+			// TODO add standalone tunnel
 		} else {
 			w.AddTunnel(tunnel.Remote, tunnel.DstPort)
 		}
