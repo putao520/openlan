@@ -1,5 +1,5 @@
 {
-    "name": "esp",
+    "name": "ipsec",
     "provider": "esp",
     "specifies": {
         "address": "100.64.0.10",

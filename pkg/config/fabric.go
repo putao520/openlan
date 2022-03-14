@@ -31,6 +31,7 @@ type FabricTunnel struct {
 	DstPort uint32 `json:"dport"`
 	Remote  string `json:"remote"`
 	Local   string `json:"local,omitempty" yaml:"local,omitempty"`
+	Mode    string `json:"mode,omitempty" yaml:"mode,omitempty"`
 }
 
 func (c *FabricTunnel) Correct() {
