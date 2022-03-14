@@ -13,13 +13,14 @@ const (
 )
 
 type EspState struct {
-	Local    string `json:"local,omitempty" yaml:"local,omitempty"`
-	LocalIp  net.IP `json:"-"  yaml:"-"`
-	Remote   string `json:"remote,omitempty" yaml:"remote,omitempty"`
-	RemoteIp net.IP `json:"-"  yaml:"-"`
-	Encap    string `json:"encap,omitempty" yaml:"encapsulation,omitempty"`
-	Auth     string `json:"auth,omitempty" yaml:"auth,omitempty"`
-	Crypt    string `json:"crypt,omitempty" yaml:"crypt,omitempty"`
+	Local      string `json:"local,omitempty" yaml:"local,omitempty"`
+	LocalIp    net.IP `json:"-"  yaml:"-"`
+	Remote     string `json:"remote,omitempty" yaml:"remote,omitempty"`
+	RemotePort int    `json:"remote_port" yaml:"remote_port"`
+	RemoteIp   net.IP `json:"-"  yaml:"-"`
+	Encap      string `json:"encap,omitempty" yaml:"encapsulation,omitempty"`
+	Auth       string `json:"auth,omitempty" yaml:"auth,omitempty"`
+	Crypt      string `json:"crypt,omitempty" yaml:"crypt,omitempty"`
 }
 
 func (s *EspState) Pad32(value string) string {
@@ -36,6 +37,9 @@ func (s *EspState) Correct(obj *EspState) {
 		}
 		if s.Crypt == "" {
 			s.Crypt = obj.Crypt
+		}
+		if s.RemotePort == 0 {
+			s.RemotePort = obj.RemotePort
 		}
 	}
 	libol.Info("EspState.Correct: %s %s", s.Local, s.Remote)
@@ -54,6 +58,9 @@ func (s *EspState) Correct(obj *EspState) {
 	}
 	if s.Encap == "" {
 		s.Encap = "udp"
+	}
+	if s.RemotePort == 0 {
+		s.RemotePort = 4500
 	}
 	s.Auth = s.Pad32(s.Auth)
 	s.Crypt = s.Pad32(s.Crypt)

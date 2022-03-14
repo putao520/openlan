@@ -11,3 +11,12 @@ var Manager = manager{
 	Switch: &Switch{},
 	Proxy:  &Proxy{},
 }
+
+func GetNetwork(name string) *Network {
+	for _, network := range Manager.Switch.Network {
+		if network.Name == name {
+			return network
+		}
+	}
+	return nil
+}

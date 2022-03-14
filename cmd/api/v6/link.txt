@@ -1,0 +1,15 @@
+client
+------
+
+openlan vn add --name ipsec --protocol esp --address 100.77.77.2
+openlan vl add --network ipsec --connection udp:192.168.7.117 --device-id 1023 --remote-address 100.77.77.1
+openlan vl ls
+
+
+server
+------
+
+openlan vn add --name ipsec --protocol esp --address 100.77.77.1
+openlan vl del --network ipsec --connection spi:1023
+openlan vl add --network ipsec --connection spi:1023 --remote-address 100.77.77.2
+

@@ -36,7 +36,7 @@ static struct vlog_rate_limit rl = VLOG_RATE_LIMIT_INIT(5, 5);
 void
 print_hex(const char *prefix, u_int8_t *data, int len)
 {
-    if (VLOG_IS_INFO_ENABLED()) {
+    if (VLOG_IS_DBG_ENABLED()) {
         struct ds s;
         ds_init(&s);
         for (int i = 0; i < len; i++ ) {

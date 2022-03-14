@@ -36,6 +36,13 @@ func GetUserPassword(auth string) (string, string) {
 	return auth, auth
 }
 
+func DeviceId2Name(provider, index string) string {
+	if provider == "esp" {
+		return "spi" + index
+	}
+	return "vir" + index
+}
+
 func (l Link) Add(c *cli.Context) error {
 	name := c.String("network")
 	if name == "" {
@@ -45,20 +52,25 @@ func (l Link) Add(c *cli.Context) error {
 	if err := database.Client.Get(&lsVn); err != nil {
 		return libol.NewErr("find network %s: %s", name, err)
 	}
-	user, pass := GetUserPassword(c.String("auth"))
+	user, pass := GetUserPassword(c.String("authentication"))
 	newLn := database.VirtualLink{
 		Network:    name,
 		Connection: c.String("connection"),
 		UUID:       database.GenUUID(),
-		Device:     c.String("device"),
+		Device:     "nil",
 		Authentication: map[string]string{
 			"username": user,
 			"password": pass,
 		},
 		OtherConfig: map[string]string{
 			"local_address":  lsVn.Address,
-			"remote_address": c.String("address"),
+			"remote_address": c.String("remote-address"),
 		},
+	}
+	if newLn.Connection[:4] == "spi:" {
+		newLn.Device = strings.Replace(newLn.Connection, ":", "", 1)
+	} else {
+		newLn.Device = DeviceId2Name(lsVn.Provider, c.String("device-id"))
 	}
 	ops, err := database.Client.Create(&newLn)
 	if err != nil {
@@ -146,15 +158,15 @@ func (l Link) Commands(app *api.App) {
 						Usage: "connection for remote server",
 					},
 					&cli.StringFlag{
-						Name:  "device",
-						Usage: "the device name",
+						Name:  "device-id",
+						Usage: "the device index",
 					},
 					&cli.StringFlag{
-						Name:  "auth",
+						Name:  "authentication",
 						Usage: "user and password for authentication",
 					},
 					&cli.StringFlag{
-						Name:  "address",
+						Name:  "remote-address",
 						Usage: "remote address in this link",
 					},
 				},

@@ -16,16 +16,22 @@ import (
 )
 
 const (
-	UDPPort = 10008
+	UDPPort = 4500
 	UDPBin  = "openudp"
 )
 
-func GetStateEncap(mode string) *nl.XfrmStateEncap {
+func GetStateEncap(mode string, sport, dport int) *nl.XfrmStateEncap {
+	if sport == 0 {
+		sport = UDPPort
+	}
+	if dport == 0 {
+		dport = UDPPort
+	}
 	if mode == "udp" {
 		return &nl.XfrmStateEncap{
 			Type:            nl.XFRM_ENCAP_ESPINUDP,
-			SrcPort:         UDPPort,
-			DstPort:         UDPPort,
+			SrcPort:         sport,
+			DstPort:         dport,
 			OriginalAddress: net.ParseIP("0.0.0.0"),
 		}
 	}
@@ -54,37 +60,50 @@ func NewESPWorker(c *co.Network) *EspWorker {
 	return w
 }
 
-func (w *EspWorker) newState(spi int, local, remote net.IP, auth, crypt string) *nl.XfrmState {
+type StateParameters struct {
+	spi           int
+	local, remote net.IP
+	auth, crypt   string
+}
+
+func (w *EspWorker) newState(args StateParameters) *nl.XfrmState {
 	state := &nl.XfrmState{
-		Src:   remote,
-		Dst:   local,
+		Src:   args.local,
+		Dst:   args.remote,
 		Proto: w.proto,
 		Mode:  w.mode,
-		Spi:   int(spi),
+		Spi:   args.spi,
 		Auth: &nl.XfrmStateAlgo{
 			Name: "hmac(sha256)",
-			Key:  []byte(auth),
+			Key:  []byte(args.auth),
 		},
 		Crypt: &nl.XfrmStateAlgo{
 			Name: "cbc(aes)",
-			Key:  []byte(crypt),
+			Key:  []byte(args.crypt),
 		},
 	}
 	return state
 }
 
-func (w *EspWorker) newPolicy(spi int, local, remote net.IP, src, dst *net.IPNet, dir nl.Dir) *nl.XfrmPolicy {
+type PolicyParameter struct {
+	spi           int
+	local, remote net.IP
+	src, dst      *net.IPNet
+	dir           nl.Dir
+}
+
+func (w *EspWorker) newPolicy(args PolicyParameter) *nl.XfrmPolicy {
 	policy := &nl.XfrmPolicy{
-		Src: src,
-		Dst: dst,
-		Dir: dir,
+		Src: args.src,
+		Dst: args.dst,
+		Dir: args.dir,
 	}
 	tmpl := nl.XfrmPolicyTmpl{
-		Src:   local,
-		Dst:   remote,
+		Src:   args.local,
+		Dst:   args.remote,
 		Proto: w.proto,
 		Mode:  w.mode,
-		Spi:   spi,
+		Spi:   args.spi,
 	}
 	policy.Tmpls = append(policy.Tmpls, tmpl)
 	return policy
@@ -92,27 +111,27 @@ func (w *EspWorker) newPolicy(spi int, local, remote net.IP, src, dst *net.IPNet
 
 func (w *EspWorker) addState(mem *co.ESPMember) {
 	spi := mem.Spi
-	local := mem.State.LocalIp
-	remote := mem.State.RemoteIp
-	auth := mem.State.Auth
-	crypt := mem.State.Crypt
-	encap := GetStateEncap(mem.State.Encap)
+	ste := mem.State
 
-	w.out.Info("EspWorker.addState %s %s", local, remote)
-	if st := w.newState(spi, local, remote, auth, crypt); st != nil {
-		st.Encap = encap
+	w.out.Info("EspWorker.addState %s-%s", ste.LocalIp, ste.RemoteIp)
+	if st := w.newState(StateParameters{
+		spi, ste.LocalIp, ste.RemoteIp, ste.Auth, ste.Crypt,
+	}); st != nil {
+		st.Encap = GetStateEncap(ste.Encap, 0, ste.RemotePort)
 		w.states = append(w.states, st)
 	}
-	if st := w.newState(spi, remote, local, auth, crypt); st != nil {
-		st.Encap = encap
+	if st := w.newState(StateParameters{
+		spi, ste.RemoteIp, ste.LocalIp, ste.Auth, ste.Crypt,
+	}); st != nil {
+		st.Encap = GetStateEncap(ste.Encap, ste.RemotePort, 0)
 		w.states = append(w.states, st)
 	}
 	cache.EspState.Add(&models.EspState{
 		EspState: &schema.EspState{
 			Name:   w.spec.Name,
 			Spi:    spi,
-			Source: local.String(),
-			Dest:   remote.String(),
+			Source: ste.LocalIp.String(),
+			Dest:   ste.RemoteIp.String(),
 			Proto:  uint8(w.proto),
 			Mode:   uint8(w.mode),
 		},
@@ -121,16 +140,15 @@ func (w *EspWorker) addState(mem *co.ESPMember) {
 
 func (w *EspWorker) delState(mem *co.ESPMember) {
 	spi := mem.Spi
-	local := mem.State.LocalIp
-	remote := mem.State.RemoteIp
+	ste := mem.State
 
-	w.out.Info("EspWorker.delState %s %s", local, remote)
+	w.out.Info("EspWorker.delState %s-%s", ste.LocalIp, ste.RemoteIp)
 	model := models.EspState{
 		EspState: &schema.EspState{
 			Name:   w.spec.Name,
 			Spi:    spi,
-			Source: local.String(),
-			Dest:   remote.String(),
+			Source: ste.LocalIp.String(),
+			Dest:   ste.RemoteIp.String(),
 			Proto:  uint8(w.proto),
 			Mode:   uint8(w.mode),
 		},
@@ -140,9 +158,8 @@ func (w *EspWorker) delState(mem *co.ESPMember) {
 
 func (w *EspWorker) addPolicy(mem *co.ESPMember, pol *co.ESPPolicy) {
 	spi := mem.Spi
-	local := mem.State.LocalIp
-	remote := mem.State.RemoteIp
-	w.out.Info("EspWorker.addPolicy %s %s %s %s", local, remote, pol.Source, pol.Dest)
+	ste := mem.State
+	w.out.Info("EspWorker.addPolicy %s-%s", pol.Source, pol.Dest)
 	src, err := libol.ParseNet(pol.Source)
 	if err != nil {
 		w.out.Error("EspWorker.addPolicy %s %s", pol.Source, err)
@@ -153,13 +170,19 @@ func (w *EspWorker) addPolicy(mem *co.ESPMember, pol *co.ESPPolicy) {
 		w.out.Error("EspWorker.addPolicy %s %s", pol.Dest, err)
 		return
 	}
-	if po := w.newPolicy(spi, local, remote, src, dst, nl.XFRM_DIR_OUT); po != nil {
+	if po := w.newPolicy(PolicyParameter{
+		spi, ste.LocalIp, ste.RemoteIp, src, dst, nl.XFRM_DIR_OUT,
+	}); po != nil {
 		w.policies = append(w.policies, po)
 	}
-	if po := w.newPolicy(spi, remote, local, dst, src, nl.XFRM_DIR_IN); po != nil {
+	if po := w.newPolicy(PolicyParameter{
+		spi, ste.RemoteIp, ste.LocalIp, dst, src, nl.XFRM_DIR_FWD,
+	}); po != nil {
 		w.policies = append(w.policies, po)
 	}
-	if po := w.newPolicy(spi, remote, local, dst, src, nl.XFRM_DIR_FWD); po != nil {
+	if po := w.newPolicy(PolicyParameter{
+		spi, ste.RemoteIp, ste.LocalIp, dst, src, nl.XFRM_DIR_IN,
+	}); po != nil {
 		w.policies = append(w.policies, po)
 	}
 	cache.EspPolicy.Add(&models.EspPolicy{
@@ -174,9 +197,7 @@ func (w *EspWorker) addPolicy(mem *co.ESPMember, pol *co.ESPPolicy) {
 
 func (w *EspWorker) delPolicy(mem *co.ESPMember, pol *co.ESPPolicy) {
 	spi := mem.Spi
-	local := mem.State.LocalIp
-	remote := mem.State.RemoteIp
-	w.out.Info("EspWorker.delPolicy %s %s %s %s", local, remote, pol.Source, pol.Dest)
+	w.out.Info("EspWorker.delPolicy %s-%s", pol.Source, pol.Dest)
 	obj := models.EspPolicy{
 		EspPolicy: &schema.EspPolicy{
 			Spi:    spi,
@@ -189,9 +210,6 @@ func (w *EspWorker) delPolicy(mem *co.ESPMember, pol *co.ESPPolicy) {
 }
 
 func (w *EspWorker) updateXfrm() {
-	w.states = nil
-	w.policies = nil
-
 	for _, mem := range w.spec.Members {
 		if mem == nil {
 			continue
@@ -278,7 +296,7 @@ func (w *EspWorker) UpDummy(name, addr, peer string) error {
 
 func (w *EspWorker) addXfrm() {
 	for _, state := range w.states {
-		w.out.Debug("EspWorker.AddXfrm State %s", state)
+		w.out.Debug("EspWorker.AddXfrm State %s", state.Spi)
 		if err := nl.XfrmStateAdd(state); err != nil {
 			w.out.Error("EspWorker.Start State %s", err)
 		}
@@ -297,11 +315,7 @@ func (w *EspWorker) Start(v api.Switcher) {
 	}
 	w.uuid = v.UUID()
 	w.addXfrm()
-	for _, mem := range w.spec.Members {
-		if err := w.UpDummy(mem.Name, mem.Address, mem.Peer); err != nil {
-			w.out.Error("EspWorker.Start %s %s", mem.Name, err)
-		}
-	}
+	w.upMember()
 	cache.Esp.Add(&models.Esp{
 		Name:    w.cfg.Name,
 		Address: w.spec.Address,
@@ -326,16 +340,18 @@ func (w *EspWorker) DownDummy(name string) error {
 }
 
 func (w *EspWorker) delXfrm() {
-	for _, state := range w.states {
-		if err := nl.XfrmStateDel(state); err != nil {
-			w.out.Warn("EspWorker.delXfrm State %s", err)
+	for _, pol := range w.policies {
+		if err := nl.XfrmPolicyDel(pol); err != nil {
+			w.out.Warn("EspWorker.delXfrm Policy %s-%s: %s", pol.Src, pol.Dst, err)
 		}
 	}
-	for _, policy := range w.policies {
-		if err := nl.XfrmPolicyDel(policy); err != nil {
-			w.out.Warn("EspWorker.delXfrm Policy %s", err)
+	for _, ste := range w.states {
+		if err := nl.XfrmStateDel(ste); err != nil {
+			w.out.Warn("EspWorker.delXfrm State %s-%s: %s", ste.Src, ste.Dst, err)
 		}
 	}
+	w.states = nil
+	w.policies = nil
 }
 
 func (w *EspWorker) Stop() {
@@ -343,11 +359,7 @@ func (w *EspWorker) Stop() {
 		w.out.Error("EspWorker.Stop spec is nil")
 		return
 	}
-	for _, mem := range w.spec.Members {
-		if err := w.DownDummy(mem.Name); err != nil {
-			w.out.Error("EspWorker.Stop %s %s", mem.Name, err)
-		}
-	}
+	w.downMember()
 	w.delXfrm()
 }
 
@@ -377,37 +389,22 @@ func (w *EspWorker) Reload(c *co.Network) {
 	w.delXfrm()
 	w.updateXfrm()
 	w.addXfrm()
+	w.upMember()
 }
 
-func (w *EspWorker) AddMember(mem *co.ESPMember) {
-	local, _ := net.LookupIP(mem.State.Local)
-	if local == nil {
-		return
-	}
-	remote, _ := net.LookupIP(mem.State.Remote)
-	if remote == nil {
-		return
-	}
-	w.delXfrm()
-	mem.State.LocalIp = local[0]
-	mem.State.RemoteIp = remote[0]
-	w.addState(mem)
-	for _, pol := range mem.Policies {
-		if pol == nil {
-			continue
+func (w *EspWorker) upMember() {
+	for _, mem := range w.spec.Members {
+		if err := w.UpDummy(mem.Name, mem.Address, mem.Peer); err != nil {
+			w.out.Error("EspWorker.upMember %s %s", mem.Name, err)
 		}
-		if pol.Dest == "" {
-			pol.Dest = mem.Peer
-		}
-		if pol.Source == "" {
-			pol.Source = mem.Address
-		}
-		w.addPolicy(mem, pol)
 	}
-	w.updateXfrm()
-	w.addXfrm()
-	if err := w.UpDummy(mem.Name, mem.Address, mem.Peer); err != nil {
-		w.out.Error("EspWorker.Start %s %s", mem.Name, err)
+}
+
+func (w *EspWorker) downMember() {
+	for _, mem := range w.spec.Members {
+		if err := w.DownDummy(mem.Name); err != nil {
+			w.out.Error("EspWorker.downMember %s %s", mem.Name, err)
+		}
 	}
 }
 
