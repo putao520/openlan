@@ -228,7 +228,7 @@ func (w *FabricWorker) vni2peer(vni uint32) (string, string) {
 	return brPort, tunPort
 }
 
-func (w *FabricWorker) alone2peer(addr string) (string, string) {
+func (w *FabricWorker) vni2alone(addr string) (string, string) {
 	return w.Addr2Port(addr, "ab-"), w.Addr2Port(addr, "at-")
 }
 

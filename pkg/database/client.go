@@ -6,6 +6,7 @@ import (
 	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/go-logr/logr"
 	"github.com/go-logr/stdr"
+	"github.com/ovn-org/libovsdb/cache"
 	"github.com/ovn-org/libovsdb/client"
 	"github.com/ovn-org/libovsdb/model"
 	"github.com/ovn-org/libovsdb/ovsdb"
@@ -78,7 +79,7 @@ func (c *DBClient) NilLog() *logr.Logger {
 	return &l
 }
 
-func (c *DBClient) Open() error {
+func (c *DBClient) Open(handler *cache.EventHandlerFuncs) error {
 	server := c.Server
 	database := c.Database
 	dbModel, err := model.NewClientDBModel(database, models)
@@ -98,6 +99,13 @@ func (c *DBClient) Open() error {
 	if err := ovs.Connect(c.Context()); err != nil {
 		return err
 	}
+	if handler != nil {
+		processor := ovs.Cache()
+		if processor == nil {
+			return libol.NewErr("can't get cache.")
+		}
+		processor.AddEventHandler(handler)
+	}
 	if _, err := ovs.MonitorAll(c.Context()); err != nil {
 		return err
 	}
@@ -107,7 +115,7 @@ func (c *DBClient) Open() error {
 
 var Conf *DBClient
 
-func NewDBClient() (*DBClient, error) {
+func NewDBClient(handler *cache.EventHandlerFuncs) (*DBClient, error) {
 	var err error
 	if Conf == nil {
 		Conf = &DBClient{
@@ -115,7 +123,7 @@ func NewDBClient() (*DBClient, error) {
 			Database: api.Database,
 			Verbose:  api.Verbose,
 		}
-		err = Conf.Open()
+		err = Conf.Open(handler)
 	}
 	if Client == nil {
 		Client = Conf.Client

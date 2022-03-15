@@ -27,22 +27,32 @@ func (c *ConfD) Initialize() {
 }
 
 func (c *ConfD) Start() {
-	if _, err := database.NewDBClient(); err != nil {
-		c.out.Error("Confd.Start open db with %s", err)
-		return
-	}
 	handler := &cache.EventHandlerFuncs{
 		AddFunc:    c.Add,
 		DeleteFunc: c.Delete,
 		UpdateFunc: c.Update,
 	}
-	processor := database.Client.Client.Cache()
-	processor.AddEventHandler(handler)
-	processor.Run(c.stop)
+	if _, err := database.NewDBClient(handler); err != nil {
+		c.out.Error("Confd.Start open db with %s", err)
+		return
+	}
 }
 
 func (c *ConfD) Stop() {
-	c.stop <- struct{}{}
+}
+
+func GetPrefix(value string, index int) string {
+	if len(value) >= index {
+		return value[:index]
+	}
+	return ""
+}
+
+func GetSuffix(value string, index int) string {
+	if len(value) >= index {
+		return value[index:]
+	}
+	return ""
 }
 
 func (c *ConfD) Add(table string, model model.Model) {
@@ -57,7 +67,7 @@ func (c *ConfD) Add(table string, model model.Model) {
 	if table == "Virtual_Link" {
 		obj := model.(*database.VirtualLink)
 		c.out.Info("ConfD.Add virtual link %s %s", obj.Network, obj.Connection)
-		proto := obj.Connection[:4]
+		proto := GetPrefix(obj.Connection, 4)
 		if proto == "spi:" || proto == "udp:" {
 			c.AddMember(obj)
 		}
@@ -83,7 +93,7 @@ func (c *ConfD) Update(table string, old model.Model, new model.Model) {
 	if table == "Virtual_Link" {
 		obj := new.(*database.VirtualLink)
 		c.out.Info("ConfD.Update virtual link %s %s", obj.Network, obj.Connection)
-		proto := obj.Connection[:4]
+		proto := GetPrefix(obj.Connection, 4)
 		if proto == "spi:" || proto == "udp:" {
 			c.AddMember(obj)
 		}
@@ -102,16 +112,24 @@ func GetAddrPort(conn string) (string, int) {
 func (c *ConfD) AddMember(obj *database.VirtualLink) {
 	var spi, port int
 	var remote, remoteConn string
-	if obj.Connection[:4] == "spi:" {
+	conn := obj.Connection
+	if GetPrefix(conn, 4) == "spi:" {
 		remoteConn := obj.Status["remote_connection"]
-		spi, _ = strconv.Atoi(obj.Connection[4:])
-		remote, port = GetAddrPort(remoteConn[4:])
-	} else if obj.Connection[:4] == "udp:" {
+		if GetPrefix(remoteConn, 4) == "udp:" {
+			spi, _ = strconv.Atoi(conn[4:])
+			remote, port = GetAddrPort(remoteConn[4:])
+		} else {
+			c.out.Warn("ConfD.AddMember %s remote not found.", conn)
+			return
+		}
+	} else if GetPrefix(conn, 4) == "udp:" {
 		remoteConn := obj.Connection
-		spi, _ = strconv.Atoi(obj.Device[3:])
+		spi, _ = strconv.Atoi(GetSuffix(obj.Device, 3))
 		remote, port = GetAddrPort(remoteConn[4:])
+	} else {
+		return
 	}
-	c.out.Info("ConfD.AddMember remote link %s %s", obj.Connection, remoteConn)
+	c.out.Info("ConfD.AddMember remote link %s %s", conn, remoteConn)
 	memCfg := &config.ESPMember{
 		Name:    obj.Device,
 		Address: obj.OtherConfig["local_address"],

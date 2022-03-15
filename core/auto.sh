@@ -51,8 +51,10 @@ build_idlc() {
 }
 
 update_version() {
-  sed -i  "s/#define CORE_PACKAGE_STRING .*/#define CORE_PACKAGE_STRING  \"opencore $version\"/g" ./version.h
-  sed -i  "s/#define CORE_PACKAGE_VERSION .*/#define CORE_PACKAGE_VERSION \"$version\"/g" ./version.h
+  cp version.h /tmp/version.h
+  sed -i  "s/#define CORE_PACKAGE_STRING .*/#define CORE_PACKAGE_STRING  \"opencore $version\"/g" /tmp/version.h
+  sed -i  "s/#define CORE_PACKAGE_VERSION .*/#define CORE_PACKAGE_VERSION \"$version\"/g" /tmp/version.h
+  check_and_update /tmp/version.h version.h
 }
 
 if [ "$action"x == "build"x ] || [ "$action"x == ""x ]; then
