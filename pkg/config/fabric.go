@@ -40,6 +40,7 @@ func (c *FabricTunnel) Correct() {
 type FabricNetwork struct {
 	Vni     uint32         `json:"vni"`
 	Bridge  string         `json:"bridge"`
+	Address string         `json:"address"`
 	Outputs []FabricOutput `json:"outputs"`
 }
 

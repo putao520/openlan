@@ -5,7 +5,7 @@ import (
 	"github.com/danieldin95/go-openvswitch/ovs"
 	co "github.com/danieldin95/openlan/pkg/config"
 	"github.com/danieldin95/openlan/pkg/libol"
-	"github.com/danieldin95/openlan/pkg/network"
+	cn "github.com/danieldin95/openlan/pkg/network"
 	"github.com/danieldin95/openlan/pkg/olsw/api"
 	"github.com/vishvananda/netlink"
 	"strings"
@@ -151,6 +151,7 @@ type FabricWorker struct {
 	tunnels    map[string]*OvsPort
 	standalone map[string]*OvsPort
 	networks   map[uint32]*OvsNetwork
+	bridges    map[string]*cn.LinuxBridge
 }
 
 func NewFabricWorker(c *co.Network) *FabricWorker {
@@ -160,6 +161,7 @@ func NewFabricWorker(c *co.Network) *FabricWorker {
 		ovs:      NewOvsBridge(c.Bridge.Name),
 		tunnels:  make(map[string]*OvsPort, 1024),
 		networks: make(map[uint32]*OvsNetwork, 1024),
+		bridges:  make(map[string]*cn.LinuxBridge, 1024),
 	}
 	w.spec, _ = c.Specifies.(*co.FabricSpecifies)
 	return w
@@ -223,8 +225,8 @@ func (w *FabricWorker) Initialize() {
 }
 
 func (w *FabricWorker) vni2peer(vni uint32) (string, string) {
-	tunPort := fmt.Sprintf("vb-%08x", vni)
-	brPort := fmt.Sprintf("vt-%08x", vni)
+	tunPort := fmt.Sprintf("vb-%08d", vni)
+	brPort := fmt.Sprintf("vt-%08d", vni)
 	return brPort, tunPort
 }
 
@@ -232,7 +234,7 @@ func (w *FabricWorker) vni2alone(addr string) (string, string) {
 	return w.Addr2Port(addr, "ab-"), w.Addr2Port(addr, "at-")
 }
 
-func (w *FabricWorker) setupNetwork(bridge string, vni uint32) *OvsNetwork {
+func (w *FabricWorker) UpLink(bridge string, vni uint32, addr string) *OvsNetwork {
 	brPort, tunPort := w.vni2peer(vni)
 	link := &netlink.Veth{
 		LinkAttrs: netlink.LinkAttrs{Name: tunPort},
@@ -245,12 +247,13 @@ func (w *FabricWorker) setupNetwork(bridge string, vni uint32) *OvsNetwork {
 		w.out.Warn("FabricWorker.setLinkUp %s", err)
 	}
 	// Setup linux bridge for outputs
-	br := network.NewLinuxBridge(bridge, 0)
-	br.Open("")
+	br := cn.NewLinuxBridge(bridge, 0)
+	br.Open(addr)
 	_ = br.AddSlave(brPort)
 	if err := br.CallIptables(1); err != nil {
 		w.out.Warn("FabricWorker.CallIptables %s", err)
 	}
+	w.bridges[bridge] = br
 	// Add port to Ovs tunnel bridge
 	_ = w.ovs.addPort(tunPort, nil)
 	net := OvsNetwork{
@@ -266,14 +269,14 @@ func (w *FabricWorker) setupNetwork(bridge string, vni uint32) *OvsNetwork {
 	return &net
 }
 
-func (w *FabricWorker) AddNetwork(bridge string, vni uint32) {
-	net := w.setupNetwork(bridge, vni)
+func (w *FabricWorker) AddNetwork(cfg *co.FabricNetwork) {
+	net := w.UpLink(cfg.Bridge, cfg.Vni, cfg.Address)
 	// Flow from tunnel resubmit to LearningFromTun for learning src mac.
 	_ = w.ovs.addFlow(&ovs.Flow{
 		Table:    VxlanTunToLv,
 		Priority: 1,
 		Matches: []ovs.Match{
-			ovs.TunnelID(uint64(vni)),
+			ovs.TunnelID(uint64(cfg.Vni)),
 		},
 		Actions: []ovs.Action{
 			ovs.Move(NxmRegTunId, NxmRegTun),
@@ -286,7 +289,7 @@ func (w *FabricWorker) AddNetwork(bridge string, vni uint32) {
 		InPort:   patchPort,
 		Priority: 1,
 		Actions: []ovs.Action{
-			ovs.Load(libol.Uint2S(vni), NxmRegLv),
+			ovs.Load(libol.Uint2S(cfg.Vni), NxmRegLv),
 			ovs.Resubmit(0, PatchLvToTun),
 		},
 	})
@@ -305,7 +308,7 @@ func (w *FabricWorker) AddNetwork(bridge string, vni uint32) {
 		Table:    LearnFromTun,
 		Priority: 1,
 		Matches: []ovs.Match{
-			ovs.FieldMatch(MatchRegTun, libol.Uint2S(vni)),
+			ovs.FieldMatch(MatchRegTun, libol.Uint2S(cfg.Vni)),
 		},
 		Actions: []ovs.Action{
 			ovs.Learn(&ovs.LearnedFlow{
@@ -318,9 +321,9 @@ func (w *FabricWorker) AddNetwork(bridge string, vni uint32) {
 			ovs.Output(patchPort),
 		},
 	})
-	w.networks[vni] = net
+	w.networks[cfg.Vni] = net
 	// Install flow for flooding to tunnels.
-	w.flood2Tunnel(vni)
+	w.flood2Tunnel(cfg.Vni)
 }
 
 func (w *FabricWorker) AddOutput(bridge string, vlan int, output string) {
@@ -343,7 +346,7 @@ func (w *FabricWorker) AddOutput(bridge string, vlan int, output string) {
 		w.out.Error("FabricWorker.LinkAdd %s", err)
 		return
 	}
-	br := network.NewBrCtl(bridge, 0)
+	br := cn.NewBrCtl(bridge, 0)
 	if err := br.AddPort(subLink.Name); err != nil {
 		w.out.Warn("FabricWorker.AddPort %s", err)
 	}
@@ -440,11 +443,11 @@ func (w *FabricWorker) Start(v api.Switcher) {
 		}
 	}
 	for _, net := range w.spec.Networks {
-		w.AddNetwork(net.Bridge, net.Vni)
+		w.AddNetwork(net)
 		if mss > 0 {
-			firewall.AddRule(network.IpRule{
-				Table:   network.TMangle,
-				Chain:   network.OLCPost,
+			firewall.AddRule(cn.IpRule{
+				Table:   cn.TMangle,
+				Chain:   cn.OLCPost,
 				Output:  net.Bridge,
 				Proto:   "tcp",
 				Match:   "tcp",
@@ -453,9 +456,9 @@ func (w *FabricWorker) Start(v api.Switcher) {
 				SetMss:  mss,
 			})
 		}
-		firewall.AddRule(network.IpRule{
-			Table:  network.TFilter,
-			Chain:  network.OLCForward,
+		firewall.AddRule(cn.IpRule{
+			Table:  cn.TFilter,
+			Chain:  cn.OLCForward,
 			Input:  net.Bridge,
 			Output: net.Bridge,
 		})
@@ -469,9 +472,11 @@ func (w *FabricWorker) clear() {
 	_ = w.ovs.delFlow(nil)
 }
 
-func (w *FabricWorker) cleanNetwork(bridge string, vni uint32) {
+func (w *FabricWorker) downNetwork(bridge string, vni uint32) {
 	brPort, tunPort := w.vni2peer(vni)
-	_ = w.ovs.delPort(tunPort)
+	if err := w.ovs.delPort(tunPort); err != nil {
+		libol.Warn("FabricWorker.downNetwork %s", err)
+	}
 	link := &netlink.Veth{
 		LinkAttrs: netlink.LinkAttrs{Name: tunPort},
 		PeerName:  brPort,
@@ -480,7 +485,7 @@ func (w *FabricWorker) cleanNetwork(bridge string, vni uint32) {
 }
 
 func (w *FabricWorker) DelNetwork(bridge string, vni uint32) {
-	w.cleanNetwork(bridge, vni)
+	w.downNetwork(bridge, vni)
 }
 
 func (w *FabricWorker) DelTunnel(remote string) {
@@ -502,16 +507,19 @@ func (w *FabricWorker) DelOutput(bridge string, vlan int, output string) {
 
 func (w *FabricWorker) Stop() {
 	w.out.Info("FabricWorker.Stop")
+	w.clear()
+	for _, tunnel := range w.spec.Tunnels {
+		w.DelTunnel(tunnel.Remote)
+	}
 	for _, net := range w.spec.Networks {
 		for _, port := range net.Outputs {
 			w.DelOutput(net.Bridge, port.Vlan, port.Interface)
 		}
 		w.DelNetwork(net.Bridge, net.Vni)
 	}
-	for _, tunnel := range w.spec.Tunnels {
-		w.DelTunnel(tunnel.Remote)
+	for _, br := range w.bridges {
+		_ = br.Close()
 	}
-	w.clear()
 }
 
 func (w *FabricWorker) String() string {
@@ -522,7 +530,7 @@ func (w *FabricWorker) ID() string {
 	return w.uuid
 }
 
-func (w *FabricWorker) GetBridge() network.Bridger {
+func (w *FabricWorker) GetBridge() cn.Bridger {
 	w.out.Warn("FabricWorker.GetBridge notSupport")
 	return nil
 }
