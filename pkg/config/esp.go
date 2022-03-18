@@ -107,10 +107,18 @@ func (n *ESPSpecifies) Correct() {
 		if m.Policies == nil {
 			m.Policies = make([]*ESPPolicy, 0, 2)
 		}
-		m.Policies = append(m.Policies, &ESPPolicy{
-			Source: m.Address,
-			Dest:   m.Peer,
-		})
+		existed := false
+		for _, pol := range m.Policies {
+			if pol.Dest == m.Peer {
+				existed = true
+			}
+		}
+		if !existed {
+			m.Policies = append(m.Policies, &ESPPolicy{
+				Source: m.Address,
+				Dest:   m.Peer,
+			})
+		}
 		if m.Spi == 0 {
 			m.Spi = libol.GenInt32()
 		}

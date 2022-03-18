@@ -106,29 +106,25 @@ func (o *OvsBridge) dumpPort(name string) *ovs.PortStats {
 }
 
 const (
-	LsToTun      = 2
-	TunToLs      = 4
-	LearnFromTun = 10
-	LearnFromLs  = 11
-	UcastToTun   = 20
-	FloodToLs    = 21
-	FloodToTun   = 30
+	TLsToTun     = 2
+	TTunToLs     = 4
+	TSourceLearn = 10
+	TUcastToTun  = 20
+	TFloodToTun  = 30
 )
 
 const (
-	MatchRegLs   = "reg5"
-	MatchRegTun  = "reg6"
-	NxmRegLs     = "NXM_NX_REG5[0..31]"
-	NxmRegTun    = "NXM_NX_REG6[0..31]"
+	FFromLs  = 2
+	FFromTun = 4
+)
+
+const (
+	MatchRegFlag = "reg10"
+	NxmRegFlag   = "NXM_NX_REG10[0..31]"
 	NxmRegEthDst = "NXM_OF_ETH_DST[]"
 	NxmRegEthSrc = "NXM_OF_ETH_SRC[]"
 	NxmRegTunId  = "NXM_NX_TUN_ID[0..31]"
 	NxmRegInPort = "NXM_OF_IN_PORT[]"
-)
-
-const (
-	MatchUnicast = "00:00:00:00:00:00/01:00:00:00:00:00"
-	MatchMulcast = "01:00:00:00:00:00/01:00:00:00:00:00"
 )
 
 type OvsPort struct {
@@ -173,50 +169,37 @@ func (w *FabricWorker) upTables() {
 	_ = w.ovs.addFlow(&ovs.Flow{
 		Actions: []ovs.Action{ovs.Drop()},
 	})
+	// Table 2: set flags from logical switch.
 	_ = w.ovs.addFlow(&ovs.Flow{
-		Table:   TunToLs,
-		Actions: []ovs.Action{ovs.Drop()},
-	})
-	_ = w.ovs.addFlow(&ovs.Flow{
-		Table:   FloodToTun,
-		Actions: []ovs.Action{ovs.Drop()},
-	})
-	_ = w.ovs.addFlow(&ovs.Flow{
-		Table:   LsToTun,
-		Actions: []ovs.Action{ovs.Drop()},
-	})
-	// LsToTun table will handle packets coming from patch_int
-	// unicasts go to table UcastToTun where remote addresses are learnt
-	_ = w.ovs.addFlow(&ovs.Flow{
-		Table:    LsToTun,
+		Table:    TLsToTun,
 		Priority: 1,
-		Matches: []ovs.Match{
-			ovs.DataLinkDestination(MatchUnicast),
-		},
 		Actions: []ovs.Action{
-			ovs.Resubmit(0, LearnFromLs),
+			ovs.Load(libol.Uint2S(FFromLs), NxmRegFlag),
+			ovs.Resubmit(0, TSourceLearn),
 		},
 	})
-	// Broadcasts/multicasts go to table FloodToTun that handles flooding
+	// Table 4: set flags from tunnels.
 	_ = w.ovs.addFlow(&ovs.Flow{
-		Table:    LsToTun,
+		Table:    TTunToLs,
 		Priority: 1,
-		Matches: []ovs.Match{
-			ovs.DataLinkDestination(MatchMulcast),
-		},
 		Actions: []ovs.Action{
-			ovs.Resubmit(0, FloodToTun),
+			ovs.Load(libol.Uint2S(FFromTun), NxmRegFlag),
+			ovs.Resubmit(0, TSourceLearn),
 		},
 	})
-	// Egress unicast will be handled in table UcastToTun, where remote
-	// mac addresses will be learned. For now, just add a default flow that
-	// will resubmit unknown unicasts to table FloodToTun to treat them
-	// as broadcasts/multicasts
+	// Table 10: source learning
+	w.addSourceLearn()
+	// Table 20: default to flood 30
 	_ = w.ovs.addFlow(&ovs.Flow{
-		Table: UcastToTun,
+		Table: TUcastToTun,
 		Actions: []ovs.Action{
-			ovs.Resubmit(0, FloodToTun),
+			ovs.Resubmit(0, TFloodToTun),
 		},
+	})
+	// Table 30: default drop.
+	_ = w.ovs.addFlow(&ovs.Flow{
+		Table:   TFloodToTun,
+		Actions: []ovs.Action{ovs.Drop()},
 	})
 }
 
@@ -274,92 +257,43 @@ func (w *FabricWorker) UpLink(bridge string, vni uint32, addr string) *OvsNetwor
 	return &net
 }
 
-func (w *FabricWorker) addLearnFromTun(vni uint32, output int) {
+func (w *FabricWorker) addSourceLearn() {
+	// Table 10: source mac learning
 	learnSpecs := []ovs.Match{
-		ovs.FieldMatch(MatchRegLs, NxmRegTun),
+		ovs.FieldMatch(NxmRegTunId, NxmRegTunId),
 		ovs.FieldMatch(NxmRegEthDst, NxmRegEthSrc),
 	}
 	learnActions := []ovs.Action{
-		ovs.Load(NxmRegTun, NxmRegTunId),
 		ovs.OutputField(NxmRegInPort),
 	}
 	_ = w.ovs.addFlow(&ovs.Flow{
-		Table:    LearnFromTun,
-		Priority: 1,
-		Matches: []ovs.Match{
-			ovs.FieldMatch(MatchRegTun, libol.Uint2S(vni)),
-		},
+		Table: TSourceLearn,
 		Actions: []ovs.Action{
 			ovs.Learn(&ovs.LearnedFlow{
-				Table:       UcastToTun,
+				Table:       TUcastToTun,
 				Matches:     learnSpecs,
 				Priority:    1,
 				HardTimeout: 300,
 				Actions:     learnActions,
 			}),
-			ovs.Output(output),
-		},
-	})
-}
-
-func (w *FabricWorker) addLearnFromLs(vni uint32, output int) {
-	learnSpecs := []ovs.Match{
-		ovs.FieldMatch(MatchRegTun, NxmRegLs),
-		ovs.FieldMatch(NxmRegEthDst, NxmRegEthSrc),
-	}
-	learnActions := []ovs.Action{
-		ovs.Load(NxmRegLs, NxmRegTunId),
-		ovs.OutputField(NxmRegInPort),
-	}
-	_ = w.ovs.addFlow(&ovs.Flow{
-		Table:    LearnFromLs,
-		Priority: 2,
-		Matches: []ovs.Match{
-			ovs.FieldMatch(MatchRegLs, libol.Uint2S(vni)),
-		},
-		Actions: []ovs.Action{
-			ovs.Learn(&ovs.LearnedFlow{
-				Table:       UcastToTun,
-				Matches:     learnSpecs,
-				Priority:    2,
-				HardTimeout: 300,
-				Actions:     learnActions,
-			}),
-			ovs.Output(output),
+			ovs.Resubmit(0, TUcastToTun),
 		},
 	})
 }
 
 func (w *FabricWorker) AddNetwork(cfg *co.FabricNetwork) {
 	net := w.UpLink(cfg.Bridge, cfg.Vni, cfg.Address)
-	// Flow from tunnel resubmit to LearningFromTun for learning src mac.
-	_ = w.ovs.addFlow(&ovs.Flow{
-		Table:    TunToLs,
-		Priority: 1,
-		Matches: []ovs.Match{
-			ovs.TunnelID(uint64(cfg.Vni)),
-		},
-		Actions: []ovs.Action{
-			ovs.Load(libol.Uint2S(cfg.Vni), NxmRegTun),
-			ovs.Resubmit(0, LearnFromTun),
-		},
-	})
 	patchPort := net.patch.portId
 	// Table 0 (default) will sort incoming traffic depending on in_port
 	_ = w.ovs.addFlow(&ovs.Flow{
 		InPort:   patchPort,
 		Priority: 1,
 		Actions: []ovs.Action{
-			ovs.Load(libol.Uint2S(cfg.Vni), NxmRegLs),
 			ovs.Load(libol.Uint2S(cfg.Vni), NxmRegTunId),
-			ovs.Resubmit(0, LsToTun),
+			ovs.Resubmit(0, TLsToTun),
 		},
 	})
-	w.addLearnFromTun(cfg.Vni, patchPort)
-	w.addLearnFromLs(cfg.Vni, patchPort)
 	w.networks[cfg.Vni] = net
-	// Install flow for flooding to tunnels.
-	w.flood2Tunnel(cfg.Vni)
 }
 
 func (w *FabricWorker) AddOutput(bridge string, vlan int, output string) {
@@ -393,34 +327,19 @@ func (w *FabricWorker) Addr2Port(addr, pre string) string {
 	return libol.IfName(name)
 }
 
-func (w *FabricWorker) flood2Tunnel(vni uint32) {
-	actions := []ovs.Action{
-		ovs.Move(NxmRegLs, NxmRegTunId),
-	}
+func (w *FabricWorker) flood2Tunnel() {
+	var actions []ovs.Action
 	for _, tun := range w.tunnels {
 		actions = append(actions, ovs.Output(tun.portId))
 	}
-	if vni == 0 {
-		for vni := range w.networks {
-			_ = w.ovs.addFlow(&ovs.Flow{
-				Table:    FloodToTun,
-				Priority: 1,
-				Matches: []ovs.Match{
-					ovs.FieldMatch(MatchRegLs, libol.Uint2S(vni)),
-				},
-				Actions: actions,
-			})
-		}
-	} else {
-		_ = w.ovs.addFlow(&ovs.Flow{
-			Table:    FloodToTun,
-			Priority: 1,
-			Matches: []ovs.Match{
-				ovs.FieldMatch(MatchRegLs, libol.Uint2S(vni)),
-			},
-			Actions: actions,
-		})
-	}
+	_ = w.ovs.addFlow(&ovs.Flow{
+		Table:    TFloodToTun,
+		Priority: 1,
+		Matches: []ovs.Match{
+			ovs.FieldMatch(MatchRegFlag, libol.Uint2S(FFromLs)),
+		},
+		Actions: actions,
+	})
 }
 
 func (w *FabricWorker) tunnelType() ovs.InterfaceType {
@@ -455,7 +374,7 @@ func (w *FabricWorker) AddTunnel(remote string, dport uint32) {
 		InPort:   port.PortID,
 		Priority: 1,
 		Actions: []ovs.Action{
-			ovs.Resubmit(0, TunToLs),
+			ovs.Resubmit(0, TTunToLs),
 		},
 	})
 	w.tunnels[name] = &OvsPort{
@@ -464,7 +383,7 @@ func (w *FabricWorker) AddTunnel(remote string, dport uint32) {
 		options: options,
 	}
 	// Update flow for flooding to tunnels.
-	w.flood2Tunnel(0)
+	w.flood2Tunnel()
 }
 
 func (w *FabricWorker) Start(v api.Switcher) {
