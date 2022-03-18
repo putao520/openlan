@@ -73,6 +73,9 @@ func (k *UdpServer) Accept() {
 	})
 	defer k.Close()
 	for {
+		if k.listener == nil {
+			return
+		}
 		conn, err := k.listener.Accept()
 		if k.preAccept(conn, err) != nil {
 			continue

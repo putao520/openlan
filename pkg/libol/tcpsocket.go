@@ -76,6 +76,9 @@ func (t *TcpServer) Accept() {
 	})
 	defer t.Close()
 	for {
+		if t.listener == nil {
+			return
+		}
 		conn, err := t.listener.Accept()
 		if t.preAccept(conn, err) != nil {
 			continue
