@@ -3,6 +3,7 @@ package libol
 import (
 	"bufio"
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -273,4 +274,12 @@ func IfName(name string) string {
 
 func GetLocalTime(layout, value string) (time.Time, error) {
 	return time.ParseInLocation(layout, value, time.Local)
+}
+
+func Base64Decode(value string) ([]byte, error) {
+	return base64.StdEncoding.DecodeString(value)
+}
+
+func Base64Encode(value []byte) string {
+	return base64.StdEncoding.EncodeToString(value)
 }

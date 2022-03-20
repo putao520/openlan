@@ -138,6 +138,8 @@ func (c *ConfD) AddMember(obj *database.VirtualLink) {
 		State: config.EspState{
 			Remote:     remote,
 			RemotePort: port,
+			Auth:       obj.Authentication["password"],
+			Crypt:      obj.Authentication["username"],
 		},
 	}
 	c.out.Info("ConfD.AddMember %v", memCfg)
