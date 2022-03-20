@@ -106,18 +106,18 @@ func (o *OvsBridge) dumpPort(name string) *ovs.PortStats {
 }
 
 const (
-	TLsToTun      = 2  // From a switch include alone to tunnels.
-	TTunToLs      = 4  // From tunnels to a switch.
-	TSourceLearn  = 10 // Learning source mac.
-	TUcastToTun   = 20 // Forwarding by fdb.
-	TFloodToTun   = 30 // Flooding to tunnels or patch by flags.
-	TFloodToAlone = 31 // Flooding to single alone in a switch.
-	TFloodLoop    = 32 // Flooding to patch in a switch from alone.
+	TLsToTun     = 2  // From a switch include border to tunnels.
+	TTunToLs     = 4  // From tunnels to a switch.
+	TSourceLearn = 10 // Learning source mac.
+	TUcastToTun  = 20 // Forwarding by fdb.
+	TFloodToTun  = 30 // Flooding to tunnels or patch by flags.
+	TFloodToBor  = 31 // Flooding to border in a switch.
+	TFloodLoop   = 32 // Flooding to patch in a switch from border.
 )
 
 const (
-	FFromLs  = 2 // In switch.
-	FFromTun = 4 // From tunnels.
+	FFromLs  = 2 // In a logical switch.
+	FFromTun = 4 // From peer tunnels.
 )
 
 const (
@@ -149,7 +149,7 @@ type FabricWorker struct {
 	ovs      *OvsBridge
 	cookie   uint64
 	tunnels  map[string]*OvsPort
-	singles  map[string]*OvsPort
+	borders  map[string]*OvsPort
 	networks map[uint32]*OvsNetwork
 	bridges  map[string]*cn.LinuxBridge
 }
@@ -160,7 +160,7 @@ func NewFabricWorker(c *co.Network) *FabricWorker {
 		out:      libol.NewSubLogger(c.Name),
 		ovs:      NewOvsBridge(c.Bridge.Name),
 		tunnels:  make(map[string]*OvsPort, 1024),
-		singles:  make(map[string]*OvsPort, 1024),
+		borders:  make(map[string]*OvsPort, 1024),
 		networks: make(map[uint32]*OvsNetwork, 1024),
 		bridges:  make(map[string]*cn.LinuxBridge, 1024),
 	}
@@ -191,7 +191,7 @@ func (w *FabricWorker) upTables() {
 		},
 	})
 	// Table 10: source learning
-	w.addSourceLearn()
+	w.addLearning()
 	// Table 20: default to flood 30
 	_ = w.ovs.addFlow(&ovs.Flow{
 		Table: TUcastToTun,
@@ -206,13 +206,12 @@ func (w *FabricWorker) upTables() {
 	})
 	// Table 31: default drop.
 	_ = w.ovs.addFlow(&ovs.Flow{
-		Table:   TFloodToAlone,
+		Table:   TFloodToBor,
 		Actions: []ovs.Action{ovs.Drop()},
 	})
 }
 
 func (w *FabricWorker) Initialize() {
-	//_ = w.ovs.setDown()
 	if err := w.ovs.setUp(); err != nil {
 		return
 	}
@@ -246,7 +245,7 @@ func (w *FabricWorker) UpLink(bridge string, vni uint32, addr string) *OvsNetwor
 		w.out.Warn("FabricWorker.IpTables %s", err)
 	}
 	w.bridges[bridge] = br
-	// Add port to Ovs tunnel bridge
+	// Add port to OvS tunnel bridge
 	_ = w.ovs.addPort(tunPort, nil)
 	net := OvsNetwork{
 		bridge: bridge,
@@ -261,7 +260,7 @@ func (w *FabricWorker) UpLink(bridge string, vni uint32, addr string) *OvsNetwor
 	return &net
 }
 
-func (w *FabricWorker) addSourceLearn() {
+func (w *FabricWorker) addLearning() {
 	// Table 10: source mac learning
 	learnSpecs := []ovs.Match{
 		ovs.FieldMatch(NxmRegTunId, NxmRegTunId),
@@ -298,7 +297,7 @@ func (w *FabricWorker) AddNetwork(cfg *co.FabricNetwork) {
 			ovs.Resubmit(0, TLsToTun),
 		},
 	})
-	// Table 30: Flooding to patch from tunnels.
+	// Table 30: flooding to patch from tunnels.
 	w.networks[cfg.Vni] = net
 	_ = w.ovs.addFlow(&ovs.Flow{
 		Table:    TFloodToTun,
@@ -309,10 +308,10 @@ func (w *FabricWorker) AddNetwork(cfg *co.FabricNetwork) {
 		},
 		Actions: []ovs.Action{
 			ovs.Output(patchPort),
-			ovs.Resubmit(0, TFloodToAlone),
+			ovs.Resubmit(0, TFloodToBor),
 		},
 	})
-	// Table 32: Flooding to patch from singles.
+	// Table 32: flooding to patch from border.
 	_ = w.ovs.addFlow(&ovs.Flow{
 		Table:    TFloodLoop,
 		Priority: 2,
@@ -362,7 +361,7 @@ func (w *FabricWorker) flood2Tunnel() {
 	for _, tun := range w.tunnels {
 		actions = append(actions, ovs.Output(tun.portId))
 	}
-	actions = append(actions, ovs.Resubmit(0, TFloodToAlone))
+	actions = append(actions, ovs.Resubmit(0, TFloodToBor))
 	// Table 30: Flooding to tunnels from patch.
 	_ = w.ovs.addFlow(&ovs.Flow{
 		Table:    TFloodToTun,
@@ -374,24 +373,24 @@ func (w *FabricWorker) flood2Tunnel() {
 	})
 }
 
-func (w *FabricWorker) flood2Single() {
+func (w *FabricWorker) flood2Border() {
 	var actions []ovs.Action
-	for _, port := range w.singles {
+	for _, port := range w.borders {
 		actions = append(actions, ovs.Output(port.portId))
 	}
-	// Table 31: Flooding to alone singles from tunnels.
+	// Table 31: flooding to border from tunnels.
 	_ = w.ovs.addFlow(&ovs.Flow{
-		Table:    TFloodToAlone,
+		Table:    TFloodToBor,
 		Priority: 1,
 		Matches: []ovs.Match{
 			ovs.FieldMatch(MatchRegFlag, libol.Uint2S(FFromTun)),
 		},
 		Actions: actions,
 	})
-	// Table 32: Flooding to alone singles from alone.
+	// Table 32: flooding to border from a border.
 	actions = append(actions, ovs.Resubmit(0, TFloodLoop))
 	_ = w.ovs.addFlow(&ovs.Flow{
-		Table:    TFloodToAlone,
+		Table:    TFloodToBor,
 		Priority: 1,
 		Matches: []ovs.Match{
 			ovs.FieldMatch(MatchRegFlag, libol.Uint2S(FFromLs)),
@@ -428,7 +427,7 @@ func (w *FabricWorker) AddTunnel(cfg *co.FabricTunnel) {
 	if port == nil {
 		return
 	}
-	if cfg.Mode == "standalone" {
+	if cfg.Mode == "border" {
 		_ = w.ovs.addFlow(&ovs.Flow{
 			InPort:   port.PortID,
 			Priority: 1,
@@ -436,13 +435,13 @@ func (w *FabricWorker) AddTunnel(cfg *co.FabricTunnel) {
 				ovs.Resubmit(0, TLsToTun),
 			},
 		})
-		w.singles[name] = &OvsPort{
+		w.borders[name] = &OvsPort{
 			name:    name,
 			portId:  port.PortID,
 			options: options,
 		}
-		// update flow for flooding to singles.
-		w.flood2Single()
+		// Update flow for flooding to border.
+		w.flood2Border()
 	} else {
 		_ = w.ovs.addFlow(&ovs.Flow{
 			InPort:   port.PortID,
