@@ -547,7 +547,6 @@ func (v *Switch) Start() {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
-	v.out.Debug("Switch.Start")
 	OpenUDP()
 	// firstly, start network.
 	for _, w := range v.worker {
@@ -573,6 +572,7 @@ func (v *Switch) Stop() {
 	defer v.lock.Unlock()
 
 	v.out.Debug("Switch.Stop")
+	v.confd.Stop()
 	// firstly, notify leave to point.
 	for p := range cache.Point.List() {
 		if p == nil {
@@ -590,7 +590,6 @@ func (v *Switch) Stop() {
 	for _, w := range v.worker {
 		w.Stop()
 	}
-	v.confd.Stop()
 }
 
 func (v *Switch) Alias() string {
