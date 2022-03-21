@@ -214,16 +214,10 @@ func (w *EspWorker) updateXfrm() {
 		if mem == nil {
 			continue
 		}
-		local, _ := net.LookupIP(mem.State.Local)
-		if len(local) > 0 {
+		state := mem.State
+		if state.LocalIp == nil || state.RemoteIp == nil {
 			continue
 		}
-		remote, _ := net.LookupIP(mem.State.Remote)
-		if len(remote) > 0 {
-			continue
-		}
-		mem.State.LocalIp = local[0]
-		mem.State.RemoteIp = remote[0]
 		w.addState(mem)
 		for _, pol := range mem.Policies {
 			if pol == nil {

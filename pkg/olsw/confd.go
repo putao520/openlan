@@ -56,47 +56,52 @@ func GetSuffix(value string, index int) string {
 }
 
 func (c *ConfD) Add(table string, model model.Model) {
-	if table == "Global_Switch" {
-		obj := model.(*database.Switch)
+	if obj, ok := model.(*database.Switch); ok {
 		c.out.Info("ConfD.Add switch %d", obj.Listen)
 	}
-	if table == "Virtual_Network" {
-		obj := model.(*database.VirtualNetwork)
+
+	if obj, ok := model.(*database.VirtualNetwork); ok {
 		c.out.Info("ConfD.Add virtual network %s %s", obj.Name, obj.Address)
 	}
-	if table == "Virtual_Link" {
-		obj := model.(*database.VirtualLink)
+
+	if obj, ok := model.(*database.VirtualLink); ok {
 		c.out.Info("ConfD.Add virtual link %s %s", obj.Network, obj.Connection)
 		proto := GetPrefix(obj.Connection, 4)
 		if proto == "spi:" || proto == "udp:" {
 			c.AddMember(obj)
 		}
 	}
+
+	if obj, ok := model.(*database.NameCache); ok {
+		c.UpdateName(obj)
+	}
 }
 
 func (c *ConfD) Delete(table string, model model.Model) {
-	if table == "Virtual_Network" {
-		obj := model.(*database.VirtualNetwork)
+	if obj, ok := model.(*database.VirtualNetwork); ok {
 		c.out.Info("ConfD.Delete virtual network %s %s", obj.Name, obj.Address)
 	}
-	if table == "Virtual_Link" {
-		obj := model.(*database.VirtualLink)
+
+	if obj, ok := model.(*database.VirtualLink); ok {
 		c.out.Info("ConfD.Delete virtual link %s %s", obj.Network, obj.Connection)
 	}
 }
 
 func (c *ConfD) Update(table string, old model.Model, new model.Model) {
-	if table == "Virtual_Network" {
-		obj := new.(*database.VirtualNetwork)
+	if obj, ok := new.(*database.VirtualNetwork); ok {
 		c.out.Info("ConfD.Update virtual network %s %s", obj.Name, obj.Address)
 	}
-	if table == "Virtual_Link" {
-		obj := new.(*database.VirtualLink)
+
+	if obj, ok := new.(*database.VirtualLink); ok {
 		c.out.Info("ConfD.Update virtual link %s %s", obj.Network, obj.Connection)
 		proto := GetPrefix(obj.Connection, 4)
 		if proto == "spi:" || proto == "udp:" {
 			c.AddMember(obj)
 		}
+	}
+
+	if obj, ok := new.(*database.NameCache); ok {
+		c.UpdateName(obj)
 	}
 }
 
@@ -143,7 +148,7 @@ func (c *ConfD) AddMember(obj *database.VirtualLink) {
 		},
 	}
 	c.out.Info("ConfD.AddMember %v", memCfg)
-	worker := Workers[obj.Network]
+	worker := GetWorker(obj.Network)
 	if worker == nil {
 		c.out.Warn("ConfD.AddMember network %s not found.", obj.Network)
 		return
@@ -168,6 +173,37 @@ func (c *ConfD) AddMember(obj *database.VirtualLink) {
 			}
 			specObj.Correct()
 		}
-		worker.Reload(nil)
+		worker.Reload(netCfg)
 	}
+}
+
+func (c *ConfD) UpdateName(obj *database.NameCache) {
+	if obj.Address == "" {
+		return
+	}
+	c.out.Info("ConfD.UpdateName %s %s", obj.Name, obj.Address)
+	ListWorker(func(w Networker) {
+		cfg := w.GetConfig()
+		if cfg.Provider != "esp" {
+			return
+		}
+		spec := cfg.Specifies
+		found := false
+		if specObj, ok := spec.(*config.ESPSpecifies); ok {
+			for _, mem := range specObj.Members {
+				state := mem.State
+				if state.Remote != obj.Name {
+					continue
+				}
+				if state.RemoteIp.String() == obj.Address {
+					continue
+				}
+				found = true
+			}
+		}
+		if found {
+			cfg.Correct()
+			w.Reload(cfg)
+		}
+	})
 }

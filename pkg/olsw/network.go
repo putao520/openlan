@@ -18,7 +18,7 @@ type Networker interface {
 	Reload(c *co.Network)
 }
 
-var Workers = make(map[string]Networker)
+var workers = make(map[string]Networker)
 
 func NewNetworker(c *co.Network) Networker {
 	var obj Networker
@@ -32,6 +32,16 @@ func NewNetworker(c *co.Network) Networker {
 	default:
 		obj = NewOpenLANWorker(c)
 	}
-	Workers[c.Name] = obj
+	workers[c.Name] = obj
 	return obj
+}
+
+func GetWorker(name string) Networker {
+	return workers[name]
+}
+
+func ListWorker(call func(w Networker)) {
+	for _, worker := range workers {
+		call(worker)
+	}
 }
