@@ -49,8 +49,10 @@ struct udp_context {
     struct udp_server *srv;
     struct ovsdb_idl *idl;
     struct ovsdb_idl_txn *idl_txn;
-    struct shash links;
+    struct shash names;
     struct shash networks;
+    struct shash links;
+
 };
 
 static inline const char *
@@ -161,11 +163,18 @@ udp_exit(struct unixctl_conn *conn, int argc OVS_UNUSED,
 static void
 cache_run(struct udp_context *ctx)
 {
+    const struct openrec_name_cache *nc;
     const struct openrec_virtual_network *vn;
     const struct openrec_virtual_link *vl;
 
+    shash_empty(&ctx->names);
     shash_empty(&ctx->networks);
     shash_empty(&ctx->links);
+
+    OPENREC_NAME_CACHE_FOR_EACH (nc, ctx->idl) {
+        VLOG_DBG("name_cache: %s %s", nc->name, nc->address);
+        shash_add(&ctx->names, nc->name, nc);
+    }
 
     OPENREC_VIRTUAL_NETWORK_FOR_EACH (vn, ctx->idl) {
         VLOG_DBG("virtual_network: %s %s", vn->name, vn->address);
@@ -203,6 +212,13 @@ ping_run(struct udp_context *ctx)
        VLOG_DBG("send_ping to %s on %s\n", vl->connection, vl->device);
        ovs_scan(vl->device, "spi%d", &conn.spi);
        ovs_scan(vl->connection, "udp:%[^:]:%d", address, &conn.remote_port);
+
+       const struct shash_node *nc_node = shash_find(&ctx->names, address);
+       if (nc_node) {
+           const struct openrec_name_cache *nc = nc_node->data;
+           conn.remote_address = nc->address;
+       }
+
        send_ping_once(&conn);
    }
    srv->send_t = time_msec();
@@ -296,8 +312,10 @@ main(int argc, char *argv[])
         .idl = open_idl_loop.idl,
         .srv = &srv,
     };
-    shash_init(&ctx.links);
+
+    shash_init(&ctx.names);
     shash_init(&ctx.networks);
+    shash_init(&ctx.links);
 
     while(!exiting) {
         ctx.idl_txn = ovsdb_idl_loop_run(&open_idl_loop);
