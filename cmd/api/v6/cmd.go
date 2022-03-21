@@ -24,4 +24,5 @@ func Commands(app *api.App) {
 	Switch{}.Commands(app)
 	Network{}.Commands(app)
 	Link{}.Commands(app)
+	Name{}.Commands(app)
 }

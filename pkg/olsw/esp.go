@@ -215,11 +215,11 @@ func (w *EspWorker) updateXfrm() {
 			continue
 		}
 		local, _ := net.LookupIP(mem.State.Local)
-		if local == nil {
+		if len(local) > 0 {
 			continue
 		}
 		remote, _ := net.LookupIP(mem.State.Remote)
-		if remote == nil {
+		if len(remote) > 0 {
 			continue
 		}
 		mem.State.LocalIp = local[0]

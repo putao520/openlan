@@ -16,16 +16,17 @@ type Link struct {
 
 func (l Link) List(c *cli.Context) error {
 	var lsLn []database.VirtualLink
-	err := database.Client.List(&lsLn)
-	if err != nil {
+
+	if err := database.Client.List(&lsLn); err != nil {
 		return err
+	} else {
+		sort.SliceStable(lsLn, func(i, j int) bool {
+			ii := lsLn[i]
+			jj := lsLn[j]
+			return ii.Connection > jj.Connection
+		})
+		return api.Out(lsLn, c.String("format"), "")
 	}
-	sort.SliceStable(lsLn, func(i, j int) bool {
-		ii := lsLn[i]
-		jj := lsLn[j]
-		return ii.Connection > jj.Connection
-	})
-	return api.Out(lsLn, c.String("format"), "")
 }
 
 func GetUserPassword(auth string) (string, string) {
@@ -108,7 +109,7 @@ func (l Link) Remove(c *cli.Context) error {
 		Connection: connection,
 	}
 	if err := database.Client.Get(&lsLn); err != nil {
-		return libol.NewErr("find link %s: %s", connection, err)
+		return err
 	}
 	ops, err := database.Client.Where(&lsLn).Delete()
 	if err != nil {

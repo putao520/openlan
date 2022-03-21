@@ -220,6 +220,20 @@
             "indexes": [
                 ["protocol", "listen"]
             ]
+        },
+        "Name_Cache": {
+            "columns": {
+                "name": {
+                    "type": "string"
+                },
+                "address": {
+                    "type": "string"
+                }
+            },
+            "indexes": [
+                ["name"]
+            ],
+            "isRoot": true
         }
     }
 }

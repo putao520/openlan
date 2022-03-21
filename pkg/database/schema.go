@@ -37,3 +37,9 @@ type OpenVPN struct {
 	Protocol string `ovsdb:"protocol"`
 	Listen   int    `ovsdb:"listen"`
 }
+
+type NameCache struct {
+	UUID    string `ovsdb:"_uuid"`
+	Name    string `ovsdb:"name"`
+	Address string `ovsdb:"address"`
+}

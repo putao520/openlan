@@ -9,4 +9,5 @@ var models = map[string]model.Model{
 	"Virtual_Network": &VirtualNetwork{},
 	"Virtual_Link":    &VirtualLink{},
 	"Open_VPN":        &OpenVPN{},
+	"Name_Cache":      &NameCache{},
 }
