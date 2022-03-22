@@ -55,13 +55,13 @@ struct udp_context {
 
 };
 
-static inline const char *
+static inline char *
 unixctl_dir()
 {
     return xasprintf("%s/%s.ctl", RUN_DIR, program_name);
 }
 
-static inline const char *
+static inline char *
 default_db(void)
 {
     if (!default_db_) {
@@ -281,14 +281,19 @@ main(int argc, char *argv[])
     struct unixctl_server *unixctl;
     bool exiting = false;
     int retval = 0;
+    char *unixdir;
 
     ovs_cmdl_proctitle_init(argc, argv);
     ovs_set_program_name(argv[0], CORE_PACKAGE_VERSION);
+
     service_start(&argc, &argv);
     parse_options(argc, argv);
-    retval = unixctl_server_create(unixctl_dir(), &unixctl);
+
+    unixdir = unixctl_dir();
+    /* Open and register unixctl */
+    retval = unixctl_server_create(unixdir, &unixctl);
     if (retval) {
-        exit(EXIT_FAILURE);
+        goto RET;
     }
     unixctl_command_register("exit", "", 0, 0, udp_exit, &exiting);
 
@@ -305,7 +310,7 @@ main(int argc, char *argv[])
     open_socket(&srv);
     if (configure_socket(&srv) < 0) {
         VLOG_ERR("configure_socket: %s\n", strerror(errno));
-        return -1;
+        goto RET;
     }
 
     struct udp_context ctx = {
@@ -342,17 +347,18 @@ main(int argc, char *argv[])
         }
     }
 
+    shash_destroy(&ctx.names);
     shash_destroy(&ctx.networks);
     shash_destroy(&ctx.links);
+
     unixctl_server_destroy(unixctl);
     ovsdb_idl_loop_destroy(&open_idl_loop);
     service_stop();
 
-    if (db_remote) {
-        free(db_remote);
-    }
-    if (default_db_) {
-        free(default_db_);
-    }
+RET:
+    if (db_remote) free(db_remote);
+    if (default_db_) free(default_db_);
+    if (unixdir) free(unixdir);
+
     exit(retval);
 }
