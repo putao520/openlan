@@ -28,10 +28,12 @@ func (u Name) List(c *cli.Context) error {
 }
 
 func (u Name) Add(c *cli.Context) error {
+	name := c.String("name")
 	lsNa := database.NameCache{
-		Name: c.String("name"),
+		Name: name,
+		UUID: c.String("uuid"),
 	}
-	if lsNa.Name == "" {
+	if lsNa.Name == "" && lsNa.UUID == "" {
 		return libol.NewErr("Name is nil")
 	}
 	address := c.String("address")
@@ -41,13 +43,16 @@ func (u Name) Add(c *cli.Context) error {
 			address = addrIps[0].String()
 		}
 	}
-	newNa := database.NameCache{
-		Name:     lsNa.Name,
-		Address:  address,
-		UpdateAt: time.Now().Format("2006-01-02T15:04"),
+	newNa := lsNa
+	if name != "" {
+		newNa.Name = name
 	}
+	if address != "" {
+		newNa.Address = address
+	}
+	newNa.UpdateAt = time.Now().Format("2006-01-02T15:04")
 	if err := database.Client.Get(&lsNa); err == nil {
-		if len(address) > 0 && lsNa.Address != address {
+		if lsNa.Address != address {
 			ops, err := database.Client.Where(&lsNa).Update(&newNa)
 			if err != nil {
 				return err
@@ -76,6 +81,7 @@ func (u Name) Add(c *cli.Context) error {
 func (u Name) Remove(c *cli.Context) error {
 	lsNa := database.NameCache{
 		Name: c.String("name"),
+		UUID: c.String("uuid"),
 	}
 	if err := database.Client.Get(&lsNa); err != nil {
 		return nil
@@ -111,6 +117,9 @@ func (u Name) Commands(app *api.App) {
 				Usage: "Add or update name cache",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
+						Name: "uuid",
+					},
+					&cli.StringFlag{
 						Name: "name",
 					},
 					&cli.StringFlag{
@@ -123,6 +132,9 @@ func (u Name) Commands(app *api.App) {
 				Name:  "del",
 				Usage: "Delete a name cache",
 				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name: "uuid",
+					},
 					&cli.StringFlag{
 						Name: "name",
 					},

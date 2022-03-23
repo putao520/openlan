@@ -283,3 +283,17 @@ func Base64Decode(value string) ([]byte, error) {
 func Base64Encode(value []byte) string {
 	return base64.StdEncoding.EncodeToString(value)
 }
+
+func GetPrefix(value string, index int) string {
+	if len(value) >= index {
+		return value[:index]
+	}
+	return ""
+}
+
+func GetSuffix(value string, index int) string {
+	if len(value) >= index {
+		return value[index:]
+	}
+	return ""
+}

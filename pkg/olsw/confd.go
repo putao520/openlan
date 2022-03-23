@@ -41,20 +41,6 @@ func (c *ConfD) Start() {
 func (c *ConfD) Stop() {
 }
 
-func GetPrefix(value string, index int) string {
-	if len(value) >= index {
-		return value[:index]
-	}
-	return ""
-}
-
-func GetSuffix(value string, index int) string {
-	if len(value) >= index {
-		return value[index:]
-	}
-	return ""
-}
-
 func (c *ConfD) Add(table string, model model.Model) {
 	if obj, ok := model.(*database.Switch); ok {
 		c.out.Info("ConfD.Add switch %d", obj.Listen)
@@ -66,7 +52,7 @@ func (c *ConfD) Add(table string, model model.Model) {
 
 	if obj, ok := model.(*database.VirtualLink); ok {
 		c.out.Info("ConfD.Add virtual link %s %s", obj.Network, obj.Connection)
-		proto := GetPrefix(obj.Connection, 4)
+		proto := libol.GetPrefix(obj.Connection, 4)
 		if proto == "spi:" || proto == "udp:" {
 			c.AddMember(obj)
 		}
@@ -94,7 +80,7 @@ func (c *ConfD) Update(table string, old model.Model, new model.Model) {
 
 	if obj, ok := new.(*database.VirtualLink); ok {
 		c.out.Info("ConfD.Update virtual link %s %s", obj.Network, obj.Connection)
-		proto := GetPrefix(obj.Connection, 4)
+		proto := libol.GetPrefix(obj.Connection, 4)
 		if proto == "spi:" || proto == "udp:" {
 			c.AddMember(obj)
 		}
@@ -118,18 +104,18 @@ func (c *ConfD) AddMember(obj *database.VirtualLink) {
 	var spi, port int
 	var remote, remoteConn string
 	conn := obj.Connection
-	if GetPrefix(conn, 4) == "spi:" {
+	if libol.GetPrefix(conn, 4) == "spi:" {
 		remoteConn := obj.Status["remote_connection"]
-		if GetPrefix(remoteConn, 4) == "udp:" {
+		if libol.GetPrefix(remoteConn, 4) == "udp:" {
 			spi, _ = strconv.Atoi(conn[4:])
 			remote, port = GetAddrPort(remoteConn[4:])
 		} else {
 			c.out.Warn("ConfD.AddMember %s remote not found.", conn)
 			return
 		}
-	} else if GetPrefix(conn, 4) == "udp:" {
+	} else if libol.GetPrefix(conn, 4) == "udp:" {
 		remoteConn := obj.Connection
-		spi, _ = strconv.Atoi(GetSuffix(obj.Device, 3))
+		spi, _ = strconv.Atoi(libol.GetSuffix(obj.Device, 3))
 		remote, port = GetAddrPort(remoteConn[4:])
 	} else {
 		return

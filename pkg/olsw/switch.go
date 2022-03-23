@@ -383,16 +383,15 @@ func (v *Switch) preAllowVPN(cfg *co.OpenVPN) {
 
 func (v *Switch) preAllow() {
 	port := v.GetPort(v.cfg.Listen)
-	if v.cfg.Protocol == "kcp" || v.cfg.Protocol == "udp" {
-		v.enablePort("udp", port)
-	} else {
-		v.enablePort("tcp", port)
-	}
-	v.enablePort("udp", "4500")
-	v.enablePort("udp", "8472")
-	v.enablePort("udp", "4789")
+	UdpPorts := []string{"4500", "4600", "8472", "4789", port}
+	TcpPorts := []string{"7471", port}
 	if v.cfg.Http != nil {
-		port := v.GetPort(v.cfg.Http.Listen)
+		TcpPorts = append(TcpPorts, v.GetPort(v.cfg.Http.Listen))
+	}
+	for _, port = range UdpPorts {
+		v.enablePort("udp", port)
+	}
+	for _, port = range TcpPorts {
 		v.enablePort("tcp", port)
 	}
 	for _, nCfg := range v.cfg.Network {
