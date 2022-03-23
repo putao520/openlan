@@ -7,6 +7,7 @@ import (
 	"github.com/urfave/cli/v2"
 	"net"
 	"sort"
+	"time"
 )
 
 type Name struct {
@@ -41,8 +42,9 @@ func (u Name) Add(c *cli.Context) error {
 		}
 	}
 	newNa := database.NameCache{
-		Name:    lsNa.Name,
-		Address: address,
+		Name:     lsNa.Name,
+		Address:  address,
+		UpdateAt: time.Now().Format("2006-01-02T15:04"),
 	}
 	if err := database.Client.Get(&lsNa); err == nil {
 		if len(address) > 0 && lsNa.Address != address {

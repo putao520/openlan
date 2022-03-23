@@ -39,7 +39,8 @@ type OpenVPN struct {
 }
 
 type NameCache struct {
-	UUID    string `ovsdb:"_uuid"`
-	Name    string `ovsdb:"name"`
-	Address string `ovsdb:"address"`
+	UUID     string `ovsdb:"_uuid"`
+	Name     string `ovsdb:"name"`
+	Address  string `ovsdb:"address"`
+	UpdateAt string `ovsdb:"update_at" yaml:"update_at"`
 }

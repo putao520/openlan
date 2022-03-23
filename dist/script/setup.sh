@@ -11,3 +11,6 @@ set -x
 # clean older files.
 /usr/bin/env find /var/openlan/point -type f -delete
 /usr/bin/env find /var/openlan/openvpn -name '*.status' -delete
+
+# upgrade database.
+# ovsdb-client convert unix:///var/openlan/confd.sock /etc/openlan/switch/confd.schema.json

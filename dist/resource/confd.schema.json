@@ -228,6 +228,9 @@
                 },
                 "address": {
                     "type": "string"
+                },
+                "update_at": {
+                    "type": "string"
                 }
             },
             "indexes": [
