@@ -59,6 +59,7 @@ func (c *ConfD) Add(table string, model model.Model) {
 	}
 
 	if obj, ok := model.(*database.NameCache); ok {
+		c.out.Info("ConfD.Add name cache %s", obj.Name)
 		c.UpdateName(obj)
 	}
 }
@@ -87,6 +88,7 @@ func (c *ConfD) Update(table string, old model.Model, new model.Model) {
 	}
 
 	if obj, ok := new.(*database.NameCache); ok {
+		c.out.Info("ConfD.Update name cache %s", obj.Name)
 		c.UpdateName(obj)
 	}
 }
