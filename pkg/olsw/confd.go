@@ -42,6 +42,7 @@ func (c *ConfD) Stop() {
 }
 
 func (c *ConfD) Add(table string, model model.Model) {
+	c.out.Cmd("ConfD.Add %s %v", table, model)
 	if obj, ok := model.(*database.Switch); ok {
 		c.out.Info("ConfD.Add switch %d", obj.Listen)
 	}
@@ -65,6 +66,7 @@ func (c *ConfD) Add(table string, model model.Model) {
 }
 
 func (c *ConfD) Delete(table string, model model.Model) {
+	c.out.Cmd("ConfD.Delete %s %v", table, model)
 	if obj, ok := model.(*database.VirtualNetwork); ok {
 		c.out.Info("ConfD.Delete virtual network %s %s", obj.Name, obj.Address)
 	}
@@ -75,6 +77,7 @@ func (c *ConfD) Delete(table string, model model.Model) {
 }
 
 func (c *ConfD) Update(table string, old model.Model, new model.Model) {
+	c.out.Cmd("ConfD.Update %s %v", table, new)
 	if obj, ok := new.(*database.VirtualNetwork); ok {
 		c.out.Info("ConfD.Update virtual network %s %s", obj.Name, obj.Address)
 	}
@@ -135,7 +138,7 @@ func (c *ConfD) AddMember(obj *database.VirtualLink) {
 			Crypt:      obj.Authentication["username"],
 		},
 	}
-	c.out.Info("ConfD.AddMember %v", memCfg)
+	c.out.Cmd("ConfD.AddMember %v", memCfg)
 	worker := GetWorker(obj.Network)
 	if worker == nil {
 		c.out.Warn("ConfD.AddMember network %s not found.", obj.Network)
