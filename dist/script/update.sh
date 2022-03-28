@@ -10,5 +10,6 @@ set -ex
 # 0,5,10,15,20,25,30,35,40,45,50,55 * * * * /var/openlan/script/update.sh
 # [root@centos ~]#
 
-## Add your DDNS
-# OL_VERSION=v6 /usr/bin/openlan name add --name your.ddns.name
+## Update your DDNS
+export OL_VERSION=v6
+/usr/bin/openlan na ls | grep -w 'name:' | sed 's/name://g' | xargs -i /usr/bin/openlan name add --name {}
