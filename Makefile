@@ -73,24 +73,25 @@ core: env
 ## compile command line
 cmd: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan ./cmd/main.go
-	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan.i386 ./cmd/main.go
+	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/386/openlan ./cmd/main.go
+	GOARCH=arm64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/arm64/openlan ./cmd/main.go
 
 linux-bin: linux-point linux-switch linux-proxy ## build linux binary
 
 linux-point: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point ./cmd/point_linux
-	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point.i386 ./cmd/point_linux
+	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/386/openlan-point ./cmd/point_linux
+	GOARCH=arm64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/arm64/openlan-point ./cmd/point_linux
 
 linux-switch: env core
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch ./cmd/switch
-	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch.i386 ./cmd/switch
-
-	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan ./cmd/main.go
-	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan.i386 ./cmd/main.go
+	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/386/openlan-switch ./cmd/switch
+	GOARCH=arm64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/arm64/openlan-switch ./cmd/switch
 
 linux-proxy: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-proxy ./cmd/proxy
-	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-proxy.i386 ./cmd/proxy
+	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/386/openlan-proxy ./cmd/proxy
+	GOARCH=arm64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/arm64/openlan-proxy ./cmd/proxy
 
 linux-rpm: env ## build rpm packages
 	@dist/spec.sh
