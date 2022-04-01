@@ -1,6 +1,7 @@
 package olsw
 
 import (
+	"fmt"
 	co "github.com/danieldin95/openlan/pkg/config"
 	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/danieldin95/openlan/pkg/models"
@@ -336,14 +337,20 @@ func (w *OpenLANWorker) DelLink(addr string) {
 }
 
 func (w *OpenLANWorker) GetSubnet() string {
-	addr := ""
 	cfg := w.cfg
-	if cfg.Bridge.Address != "" {
-		addr = cfg.Bridge.Address
-	} else if cfg.Subnet.Start != "" && cfg.Subnet.Netmask != "" {
-		addr = cfg.Subnet.Start + "/" + cfg.Subnet.Netmask
+
+	ipAddr := cfg.Bridge.Address
+	ipMask := cfg.Subnet.Netmask
+	if ipAddr == "" {
+		ipAddr = cfg.Subnet.Start
 	}
-	if addr != "" {
+	if ipAddr != "" {
+		addr := ipAddr
+		if ipMask != "" {
+			prefix := libol.Netmask2Len(ipMask)
+			ifAddr := strings.SplitN(ipAddr, "/", 2)[0]
+			addr = fmt.Sprintf("%s/%d", ifAddr, prefix)
+		}
 		if _, inet, err := net.ParseCIDR(addr); err == nil {
 			return inet.String()
 		}

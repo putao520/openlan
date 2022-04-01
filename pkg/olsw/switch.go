@@ -194,6 +194,7 @@ func (v *Switch) preWorkerVPN(w Networker, vCfg *co.OpenVPN) {
 	routes := vCfg.Routes
 	routes = append(routes, vCfg.Subnet)
 	if addr := w.GetSubnet(); addr != "" {
+		libol.Info("Switch.preWorkerVPN %s subnet %s", cfg.Name, addr)
 		routes = append(routes, addr)
 	}
 	for _, rt := range cfg.Routes {
@@ -285,8 +286,7 @@ func (v *Switch) preNets() {
 
 		v.enableAcl(nCfg.Acl, brName)
 		v.enableFwd(brName, brName, "", "")
-		source := brCfg.Address
-		ifAddr := strings.SplitN(source, "/", 2)[0]
+		ifAddr := strings.SplitN(brCfg.Address, "/", 2)[0]
 		// Enable MASQUERADE for OpenVPN
 		if vCfg != nil {
 			v.preNetVPN0(nCfg, vCfg)
@@ -294,17 +294,18 @@ func (v *Switch) preNets() {
 		if ifAddr == "" {
 			continue
 		}
+		subnet := w.GetSubnet()
 		// Enable MASQUERADE, and allowed forward.
 		for _, rt := range nCfg.Routes {
 			v.preNetVPN1(brName, rt.Prefix, vCfg)
 			if rt.NextHop != ifAddr {
 				continue
 			}
-			v.enableFwd(brName, "", source, rt.Prefix)
+			v.enableFwd(brName, "", subnet, rt.Prefix)
 			if rt.MultiPath != nil {
 				v.enableSnat(brName, "", ifAddr, rt.Prefix)
 			} else if rt.Mode == "snat" {
-				v.enableMasq(brName, "", source, rt.Prefix)
+				v.enableMasq(brName, "", subnet, rt.Prefix)
 			}
 		}
 	}
