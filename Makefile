@@ -83,7 +83,7 @@ linux-point: env
 	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/386/openlan-point ./cmd/point_linux
 	GOARCH=arm64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/arm64/openlan-point ./cmd/point_linux
 
-linux-switch: env core
+linux-switch: env cmd core
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch ./cmd/switch
 	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/386/openlan-switch ./cmd/switch
 	GOARCH=arm64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/arm64/openlan-switch ./cmd/switch

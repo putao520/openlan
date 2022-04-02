@@ -104,10 +104,13 @@ cp dist/resource/openlan-proxy.service %{buildroot}/usr/lib/systemd/system
     /usr/sbin/openvpn --genkey --secret /var/openlan/openvpn/ta.key
 }
 [ -e "/etc/openlan/switch/confd.db" ] || {
-    ovsdb-tool create /etc/openlan/switch/confd.db /etc/openlan/switch/confd.schema.json
+    /usr/bin/ovsdb-tool create /etc/openlan/switch/confd.db /etc/openlan/switch/confd.schema.json
+}
+[ -e "/var/openlan/confd.sock" ] && {
+    /usr/bin/ovsdb-client convert unix:///var/openlan/confd.sock /etc/openlan/switch/confd.schema.json
 }
 [ -e "/etc/sysctl.d/90-openlan.conf" ] && {
-    sysctl -p /etc/sysctl.d/90-openlan.conf || :
+    /usr/sbin/sysctl -p /etc/sysctl.d/90-openlan.conf || :
 }
 
 %files
