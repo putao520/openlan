@@ -122,6 +122,7 @@ linux-tar: env linux-point linux-switch linux-proxy ## build linux packages
 	@mkdir -p $(LD)/var/openlan/openvpn
 	@cp -rvf $(SD)/dist/resource/cert/openlan/cert $(LD)/var/openlan
 	@cp -rvf $(SD)/dist/script $(LD)/var/openlan
+	@cp -rvf $(SD)/pkg/olsw/public $(LD)/var/openlan
 	@cp -rvf $(SD)/dist/resource/cert/openlan/ca/ca.crt $(LD)/var/openlan/cert
 	@mkdir -p $(LD)/etc/sysconfig/openlan
 	@cp -rvf $(SD)/dist/resource/point.cfg $(LD)/etc/sysconfig/openlan
