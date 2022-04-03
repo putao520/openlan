@@ -199,6 +199,10 @@ func (v *Switch) preWorkerVPN(w Networker, vCfg *co.OpenVPN) {
 	}
 	for _, rt := range cfg.Routes {
 		addr := rt.Prefix
+		if addr == "0.0.0.0/0" {
+			vCfg.Push = append(vCfg.Push, "redirect-gateway def1")
+			continue
+		}
 		if _, inet, err := net.ParseCIDR(addr); err == nil {
 			routes = append(routes, inet.String())
 		}
