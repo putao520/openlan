@@ -37,6 +37,10 @@ func NewFireWall(flows []config.FlowRule) *FireWall {
 			ToSource: rule.ToSource,
 			ToDest:   rule.ToDest,
 			Comment:  rule.Comment,
+			Proto:    rule.Proto,
+			Match:    rule.Match,
+			DstPort:  rule.DstPort,
+			SrcPort:  rule.SrcPort,
 			Input:    rule.Input,
 			Output:   rule.Output,
 		})

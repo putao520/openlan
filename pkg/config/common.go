@@ -218,6 +218,10 @@ type FlowRule struct {
 	ToDest   string `json:"to-destination" yaml:"toDestination,omitempty"`
 	Output   string `json:"output,omitempty" yaml:"output,omitempty"`
 	Comment  string `json:"comment,omitempty" yaml:"comment,omitempty"`
+	Proto    string `json:"protocol,omitempty" yaml:"protocol,omitempty"`
+	Match    string `json:"match,omitempty" yaml:"match,omitempty"`
+	DstPort  int    `json:"dport,omitempty" yaml:"dstPort,omitempty"`
+	SrcPort  int    `json:"sport,omitempty" yaml:"srcPort,omitempty"`
 	Jump     string `json:"jump,omitempty" yaml:"jump,omitempty"` // SNAT/RETURN/MASQUERADE
 }
 
