@@ -18,10 +18,9 @@ import (
 func GetSocketServer(s *co.Switch) libol.SocketServer {
 	switch s.Protocol {
 	case "kcp":
-		c := &libol.KcpConfig{
-			Block:   co.GetBlock(s.Crypt),
-			Timeout: time.Duration(s.Timeout) * time.Second,
-		}
+		c := libol.NewKcpConfig()
+		c.Block = co.GetBlock(s.Crypt)
+		c.Timeout = time.Duration(s.Timeout) * time.Second
 		return libol.NewKcpServer(s.Listen, c)
 	case "tcp":
 		c := &libol.TcpConfig{
