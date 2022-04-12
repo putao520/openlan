@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	UDPPort = 4500
+	UDPPort = co.EspUdp
 	UDPBin  = "openudp"
 )
 

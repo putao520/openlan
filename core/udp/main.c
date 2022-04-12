@@ -35,7 +35,7 @@
 #include "version.h"
 
 #define RUN_DIR   "/var/openlan"
-#define UDP_PORT  4500
+#define UDP_PORT  4600
 
 VLOG_DEFINE_THIS_MODULE(main);
 /* Rate limit for error messages. */

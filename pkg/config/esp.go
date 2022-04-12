@@ -10,6 +10,7 @@ import (
 const (
 	EspAuth  = "8bc736635c0642aebc20ba5420c3e93a"
 	EspCrypt = "4ac161f6635843b8b02c60cc36822515"
+	EspUdp   = 4600
 )
 
 type EspState struct {
@@ -65,7 +66,7 @@ func (s *EspState) Correct(obj *EspState) {
 		s.Encap = "udp"
 	}
 	if s.RemotePort == 0 {
-		s.RemotePort = 4500
+		s.RemotePort = EspUdp
 	}
 	s.Auth = s.Padding(s.Auth, 32)
 	s.Crypt = s.Padding(s.Crypt, 32)

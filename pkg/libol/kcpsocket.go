@@ -38,9 +38,10 @@ func setConn(conn *kcp.UDPSession, cfg *KcpConfig) {
 	Info("setConn %s", conn.RemoteAddr())
 	conn.SetStreamMode(true)
 	conn.SetWriteDelay(false)
-	// normal: 0, 40, 2, 1
-	// fast  : 1, 10, 2, 1
 	Info("setConn %s to fast3", conn.RemoteAddr())
+	// normal: 0, 40, 2, 1
+	// fast  : 0, 30, 2, 1
+	// fast3 : 1, 10, 2, 1
 	conn.SetNoDelay(1, 10, 2, 1)
 	conn.SetWindowSize(cfg.WinSize, cfg.WinSize)
 	conn.SetACKNoDelay(true)

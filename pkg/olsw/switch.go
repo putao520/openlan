@@ -9,7 +9,6 @@ import (
 	"github.com/danieldin95/openlan/pkg/olsw/app"
 	"github.com/danieldin95/openlan/pkg/olsw/cache"
 	"net"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -120,17 +119,14 @@ func (v *Switch) Protocol() string {
 }
 
 func (v *Switch) enablePort(protocol, port string) {
-	value, err := strconv.Atoi(port)
-	if err != nil {
-		v.out.Warn("Switch.enablePort invalid port %s", port)
-	}
-	v.out.Info("Switch.enablePort %s, %s", protocol, port)
+	v.out.Info("Switch.enablePort %s %s", protocol, port)
 	// allowed forward between source and prefix.
 	v.firewall.AddRule(network.IpRule{
 		Table:   network.TFilter,
 		Chain:   network.OLCInput,
 		Proto:   protocol,
-		DstPort: value,
+		Match:   "multiport",
+		DstPort: port,
 	})
 }
 
@@ -392,12 +388,8 @@ func (v *Switch) preAllow() {
 	if v.cfg.Http != nil {
 		TcpPorts = append(TcpPorts, v.GetPort(v.cfg.Http.Listen))
 	}
-	for _, port = range UdpPorts {
-		v.enablePort("udp", port)
-	}
-	for _, port = range TcpPorts {
-		v.enablePort("tcp", port)
-	}
+	v.enablePort("udp", strings.Join(UdpPorts, ","))
+	v.enablePort("tcp", strings.Join(TcpPorts, ","))
 	for _, nCfg := range v.cfg.Network {
 		if nCfg.OpenVPN == nil {
 			continue
