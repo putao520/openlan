@@ -22,6 +22,7 @@ type Point struct {
 	Crypt       *Crypt    `json:"crypt,omitempty"`
 	PProf       string    `json:"pprof,omitempty"`
 	RequestAddr bool      `json:"requestAddr,omitempty"`
+	ByPass      bool      `json:"bypass,omitempty"`
 	SaveFile    string    `json:"-"`
 	Queue       *Queue    `json:"queue,omitempty"`
 	Terminal    string    `json:"-"`
@@ -42,7 +43,7 @@ func DefaultPoint() *Point {
 			Verbose: libol.INFO,
 		},
 		Interface: Interface{
-			IPMtu:    1518,
+			IPMtu:    1500,
 			Provider: "kernel",
 			Name:     "",
 		},

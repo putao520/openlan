@@ -11,8 +11,8 @@ type ACLRule struct {
 	SrcIp   string `json:"src,omitempty" yaml:"source,omitempty"`
 	DstIp   string `json:"dst,omitempty" yaml:"destination,omitempty"`
 	Proto   string `json:"proto,omitempty" yaml:"protocol,omitempty"`
-	SrcPort int    `json:"sport,omitempty" yaml:"destPort,omitempty"`
-	DstPort int    `json:"dport,omitempty" yaml:"sourcePort,omitempty"`
+	SrcPort string `json:"sport,omitempty" yaml:"destPort,omitempty"`
+	DstPort string `json:"dport,omitempty" yaml:"sourcePort,omitempty"`
 	Action  string `json:"action,omitempty" yaml:"action,omitempty"`
 }
 

@@ -82,11 +82,10 @@ type PrefixRule struct {
 func GetSocketClient(p *config.Point) libol.SocketClient {
 	switch p.Protocol {
 	case "kcp":
-		c := &libol.KcpConfig{
-			Block: config.GetBlock(p.Crypt),
-			RdQus: p.Queue.SockRd,
-			WrQus: p.Queue.SockWr,
-		}
+		c := libol.NewKcpConfig()
+		c.Block = config.GetBlock(p.Crypt)
+		c.RdQus = p.Queue.SockRd
+		c.WrQus = p.Queue.SockWr
 		return libol.NewKcpClient(p.Connection, c)
 	case "tcp":
 		c := &libol.TcpConfig{

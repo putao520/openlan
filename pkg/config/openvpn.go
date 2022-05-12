@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+	"github.com/danieldin95/openlan/pkg/libol"
+	"strconv"
 	"strings"
 )
 
@@ -12,6 +14,7 @@ type OpenVPN struct {
 	Protocol  string           `json:"protocol"`
 	Subnet    string           `json:"subnet"`
 	Device    string           `json:"device"`
+	Version   int              `json:"version"`
 	Auth      string           `json:"auth"` // xauth or cert.
 	DhPem     string           `json:"dhPem"`
 	RootCa    string           `json:"rootCa"`
@@ -106,6 +109,12 @@ func (o *OpenVPN) Correct(obj *OpenVPN) {
 			o.Listen += ":1194"
 		}
 		o.Device = genTunName()
+	}
+	pool := Manager.Switch.AddrPool
+	if o.Subnet == "" {
+		_, port := libol.GetHostPort(o.Listen)
+		value, _ := strconv.Atoi(port)
+		o.Subnet = fmt.Sprintf("%s.%d.0/24", pool, value&0xff)
 	}
 	for _, ch := range o.Breed {
 		ch.Correct(o)

@@ -3,6 +3,7 @@ package libol
 import (
 	"bufio"
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -24,12 +25,11 @@ const LeaseTime = "2006-01-02T15"
 func GenRandom(n int) string {
 	letters := []byte("0123456789abcdefghijklmnopqrstuvwxyz")
 	buffer := make([]byte, n)
-
-	size := len(letters)
 	rand.Seed(time.Now().UnixNano())
 	for i := range buffer {
-		buffer[i] = letters[rand.Int63()%int64(size)]
+		buffer[i] = letters[rand.Int63()%int64(len(letters))]
 	}
+	buffer[0] = letters[rand.Int63()%26+10]
 	return string(buffer)
 }
 
@@ -211,9 +211,17 @@ func PrettyBytes(b int64) string {
 	g, d := split(m, 1024)
 	return fmt.Sprintf("%d.%02dG", g, d)
 }
-
 func GetIPAddr(addr string) string {
-	return strings.Split(addr, ":")[0]
+	_addr, _ := GetHostPort(addr)
+	return _addr
+}
+
+func GetHostPort(addr string) (string, string) {
+	values := strings.SplitN(addr, ":", 2)
+	if len(values) == 2 {
+		return values[0], values[1]
+	}
+	return values[0], ""
 }
 
 func Wait() {
@@ -266,4 +274,26 @@ func IfName(name string) string {
 
 func GetLocalTime(layout, value string) (time.Time, error) {
 	return time.ParseInLocation(layout, value, time.Local)
+}
+
+func Base64Decode(value string) ([]byte, error) {
+	return base64.StdEncoding.DecodeString(value)
+}
+
+func Base64Encode(value []byte) string {
+	return base64.StdEncoding.EncodeToString(value)
+}
+
+func GetPrefix(value string, index int) string {
+	if len(value) >= index {
+		return value[:index]
+	}
+	return ""
+}
+
+func GetSuffix(value string, index int) string {
+	if len(value) >= index {
+		return value[index:]
+	}
+	return ""
 }

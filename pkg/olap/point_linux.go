@@ -6,6 +6,7 @@ import (
 	"github.com/danieldin95/openlan/pkg/network"
 	"github.com/vishvananda/netlink"
 	"net"
+	"strings"
 )
 
 type Point struct {
@@ -14,6 +15,7 @@ type Point struct {
 	brName string
 	ipMtu  int
 	addr   string
+	bypass *netlink.Route
 	routes []*models.Route
 	link   netlink.Link
 	uuid   string
@@ -136,10 +138,84 @@ func (p *Point) OnTap(w *TapWorker) error {
 	return nil
 }
 
+func (p *Point) GetRemote() string {
+	conn := p.worker.conWorker
+	if conn == nil {
+		return ""
+	}
+	remote := conn.client.RemoteAddr()
+	remote = strings.SplitN(remote, ":", 2)[0]
+	return remote
+}
+
+func (p *Point) AddBypass(routes []*models.Route) {
+	remote := p.GetRemote()
+	if !p.config.ByPass {
+		return
+	}
+	addr, dest, _ := net.ParseCIDR(remote + "/32")
+	gws, err := netlink.RouteGet(addr)
+	if err != nil || len(gws) == 0 {
+		p.out.Error("Point.AddBypass: RouteGet %s: %s", addr, err)
+		return
+	}
+	rt := &netlink.Route{
+		LinkIndex: gws[0].LinkIndex,
+		Dst:       dest,
+		Gw:        gws[0].Gw,
+		Table:     100,
+	}
+	p.out.Debug("Point.AddBypass: %s")
+	if err := netlink.RouteReplace(rt); err != nil {
+		p.out.Warn("Point.AddBypass: %s %s", rt.Dst, err)
+		return
+	}
+	p.out.Info("Point.AddBypass: route %s via %s", rt.Dst, rt.Gw)
+	ru := netlink.NewRule()
+	ru.Table = 100
+	ru.Priority = 16383
+	if err := netlink.RuleAdd(ru); err != nil {
+		p.out.Warn("Point.AddBypass: %s %s", ru.Dst, err)
+	}
+	p.out.Info("Point.AddBypass: %s", ru)
+	p.bypass = rt
+	for _, rt := range routes {
+		if rt.Prefix != "0.0.0.0/0" {
+			continue
+		}
+		gw := net.ParseIP(rt.NextHop)
+		_, dst0, _ := net.ParseCIDR("0.0.0.0/1")
+		rt0 := netlink.Route{
+			LinkIndex: p.link.Attrs().Index,
+			Dst:       dst0,
+			Gw:        gw,
+			Priority:  rt.Metric,
+		}
+		p.out.Debug("Point.AddBypass: %s", rt0)
+		if err := netlink.RouteAdd(&rt0); err != nil {
+			p.out.Warn("Point.AddBypass: %s %s", rt0.Dst, err)
+		}
+		p.out.Info("Point.AddBypass: route %s via %s", rt0.Dst, rt0.Gw)
+		_, dst1, _ := net.ParseCIDR("128.0.0.0/1")
+		rt1 := netlink.Route{
+			LinkIndex: p.link.Attrs().Index,
+			Dst:       dst1,
+			Gw:        gw,
+			Priority:  rt.Metric,
+		}
+		p.out.Debug("Point.AddBypass: %s", rt1)
+		if err := netlink.RouteAdd(&rt1); err != nil {
+			p.out.Warn("Point.AddBypass: %s %s", rt1.Dst, err)
+		}
+		p.out.Info("Point.AddBypass: route %s via %s", rt1.Dst, rt1.Gw)
+	}
+}
+
 func (p *Point) AddRoutes(routes []*models.Route) error {
 	if routes == nil || p.link == nil {
 		return nil
 	}
+	p.AddBypass(routes)
 	for _, rt := range routes {
 		_, dst, err := net.ParseCIDR(rt.Prefix)
 		if err != nil {
@@ -163,10 +239,54 @@ func (p *Point) AddRoutes(routes []*models.Route) error {
 	return nil
 }
 
+func (p *Point) DelBypass(routes []*models.Route) {
+	if !p.config.ByPass || p.bypass == nil {
+		return
+	}
+	p.out.Debug("Point.DelRoute: %s")
+	rt := p.bypass
+	if err := netlink.RouteAdd(rt); err != nil {
+		p.out.Warn("Point.DelRoute: %s %s", rt.Dst, err)
+	}
+	p.out.Info("Point.DelBypass: route %s via %s", rt.Dst, rt.Gw)
+	p.bypass = nil
+	for _, rt := range routes {
+		if rt.Prefix != "0.0.0.0/0" {
+			continue
+		}
+		gw := net.ParseIP(rt.NextHop)
+		_, dst0, _ := net.ParseCIDR("0.0.0.0/1")
+		rt0 := netlink.Route{
+			LinkIndex: p.link.Attrs().Index,
+			Dst:       dst0,
+			Gw:        gw,
+			Priority:  rt.Metric,
+		}
+		p.out.Debug("Point.DelBypass: %s", rt0)
+		if err := netlink.RouteDel(&rt0); err != nil {
+			p.out.Warn("Point.DelBypass: %s %s", rt0.Dst, err)
+		}
+		p.out.Info("Point.DelBypass: route %s via %s", rt0.Dst, rt0.Gw)
+		_, dst1, _ := net.ParseCIDR("128.0.0.0/1")
+		rt1 := netlink.Route{
+			LinkIndex: p.link.Attrs().Index,
+			Dst:       dst1,
+			Gw:        gw,
+			Priority:  rt.Metric,
+		}
+		p.out.Debug("Point.DelBypass: %s", rt1)
+		if err := netlink.RouteDel(&rt1); err != nil {
+			p.out.Warn("Point.DelBypass: %s %s", rt1.Dst, err)
+		}
+		p.out.Info("Point.DelBypass: route %s via %s", rt1.Dst, rt1.Gw)
+	}
+}
+
 func (p *Point) DelRoutes(routes []*models.Route) error {
 	if routes == nil || p.link == nil {
 		return nil
 	}
+	p.DelBypass(routes)
 	for _, rt := range routes {
 		_, dst, err := net.ParseCIDR(rt.Prefix)
 		if err != nil {

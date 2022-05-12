@@ -7,11 +7,8 @@ import (
 	"github.com/danieldin95/openlan/pkg/models"
 	"github.com/danieldin95/openlan/pkg/network"
 	"github.com/danieldin95/openlan/pkg/olsw/app"
-	"github.com/danieldin95/openlan/pkg/olsw/ctrls"
-	"github.com/danieldin95/openlan/pkg/olsw/store"
+	"github.com/danieldin95/openlan/pkg/olsw/cache"
 	"net"
-	"path/filepath"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -20,10 +17,9 @@ import (
 func GetSocketServer(s *co.Switch) libol.SocketServer {
 	switch s.Protocol {
 	case "kcp":
-		c := &libol.KcpConfig{
-			Block:   co.GetBlock(s.Crypt),
-			Timeout: time.Duration(s.Timeout) * time.Second,
-		}
+		c := libol.NewKcpConfig()
+		c.Block = co.GetBlock(s.Crypt)
+		c.Timeout = time.Duration(s.Timeout) * time.Second
 		return libol.NewKcpServer(s.Listen, c)
 	case "tcp":
 		c := &libol.TcpConfig{
@@ -97,6 +93,7 @@ type Switch struct {
 	uuid     string
 	newTime  int64
 	out      *libol.SubLogger
+	confd    *ConfD
 }
 
 func NewSwitch(c *co.Switch) *Switch {
@@ -109,6 +106,7 @@ func NewSwitch(c *co.Switch) *Switch {
 		newTime:  time.Now().Unix(),
 		hooks:    make([]Hook, 0, 64),
 		out:      libol.NewSubLogger(c.Alias),
+		confd:    NewConfd(),
 	}
 	return &v
 }
@@ -121,17 +119,14 @@ func (v *Switch) Protocol() string {
 }
 
 func (v *Switch) enablePort(protocol, port string) {
-	value, err := strconv.Atoi(port)
-	if err != nil {
-		v.out.Warn("Switch.enablePort invalid port %s", port)
-	}
-	v.out.Info("Switch.enablePort %s, %s", protocol, port)
+	v.out.Info("Switch.enablePort %s %s", protocol, port)
 	// allowed forward between source and prefix.
 	v.firewall.AddRule(network.IpRule{
 		Table:   network.TFilter,
 		Chain:   network.OLCInput,
 		Proto:   protocol,
-		DstPort: value,
+		Match:   "multiport",
+		DstPort: port,
 	})
 }
 
@@ -194,10 +189,15 @@ func (v *Switch) preWorkerVPN(w Networker, vCfg *co.OpenVPN) {
 	routes := vCfg.Routes
 	routes = append(routes, vCfg.Subnet)
 	if addr := w.GetSubnet(); addr != "" {
+		libol.Info("Switch.preWorkerVPN %s subnet %s", cfg.Name, addr)
 		routes = append(routes, addr)
 	}
 	for _, rt := range cfg.Routes {
 		addr := rt.Prefix
+		if addr == "0.0.0.0/0" {
+			vCfg.Push = append(vCfg.Push, "redirect-gateway def1")
+			continue
+		}
 		if _, inet, err := net.ParseCIDR(addr); err == nil {
 			routes = append(routes, inet.String())
 		}
@@ -285,8 +285,7 @@ func (v *Switch) preNets() {
 
 		v.enableAcl(nCfg.Acl, brName)
 		v.enableFwd(brName, brName, "", "")
-		source := brCfg.Address
-		ifAddr := strings.SplitN(source, "/", 2)[0]
+		ifAddr := strings.SplitN(brCfg.Address, "/", 2)[0]
 		// Enable MASQUERADE for OpenVPN
 		if vCfg != nil {
 			v.preNetVPN0(nCfg, vCfg)
@@ -294,17 +293,18 @@ func (v *Switch) preNets() {
 		if ifAddr == "" {
 			continue
 		}
+		subnet := w.GetSubnet()
 		// Enable MASQUERADE, and allowed forward.
 		for _, rt := range nCfg.Routes {
 			v.preNetVPN1(brName, rt.Prefix, vCfg)
 			if rt.NextHop != ifAddr {
 				continue
 			}
-			v.enableFwd(brName, "", source, rt.Prefix)
+			v.enableFwd(brName, "", subnet, rt.Prefix)
 			if rt.MultiPath != nil {
 				v.enableSnat(brName, "", ifAddr, rt.Prefix)
 			} else if rt.Mode == "snat" {
-				v.enableMasq(brName, "", source, rt.Prefix)
+				v.enableMasq(brName, "", subnet, rt.Prefix)
 			}
 		}
 	}
@@ -337,14 +337,6 @@ func (v *Switch) preApps() {
 	}
 }
 
-func (v *Switch) preCtl() {
-	ctrls.Load(filepath.Join(v.cfg.ConfDir, "ctrl.json"))
-	if ctrls.Ctrl.Name == "" {
-		ctrls.Ctrl.Name = v.cfg.Alias
-	}
-	ctrls.Ctrl.Switcher = v
-}
-
 func (v *Switch) preAcl() {
 	for _, acl := range v.cfg.Acl {
 		if acl.Name == "" {
@@ -370,10 +362,8 @@ func (v *Switch) preAcl() {
 }
 
 func (v *Switch) GetPort(listen string) string {
-	if strings.Contains(listen, ":") {
-		return strings.SplitN(listen, ":", 2)[1]
-	}
-	return ""
+	_, port := libol.GetHostPort(listen)
+	return port
 }
 
 func (v *Switch) preAllowVPN(cfg *co.OpenVPN) {
@@ -393,18 +383,13 @@ func (v *Switch) preAllowVPN(cfg *co.OpenVPN) {
 
 func (v *Switch) preAllow() {
 	port := v.GetPort(v.cfg.Listen)
-	if v.cfg.Protocol == "kcp" || v.cfg.Protocol == "udp" {
-		v.enablePort("udp", port)
-	} else {
-		v.enablePort("tcp", port)
-	}
-	v.enablePort("udp", "4500")
-	v.enablePort("udp", "8472")
-	v.enablePort("udp", "4789")
+	UdpPorts := []string{"4500", "4600", "8472", "4789", port}
+	TcpPorts := []string{"7471", port}
 	if v.cfg.Http != nil {
-		port := v.GetPort(v.cfg.Http.Listen)
-		v.enablePort("tcp", port)
+		TcpPorts = append(TcpPorts, v.GetPort(v.cfg.Http.Listen))
 	}
+	v.enablePort("udp", strings.Join(UdpPorts, ","))
+	v.enablePort("tcp", strings.Join(TcpPorts, ","))
 	for _, nCfg := range v.cfg.Network {
 		if nCfg.OpenVPN == nil {
 			continue
@@ -426,15 +411,15 @@ func (v *Switch) SetLdap(ldap *co.LDAP) {
 		Filter:    ldap.Filter,
 		EnableTls: ldap.EnableTls,
 	}
-	store.User.SetLdap(&cfg)
+	cache.User.SetLdap(&cfg)
 }
 
 func (v *Switch) SetPass(file string) {
-	store.User.SetFile(file)
+	cache.User.SetFile(file)
 }
 
 func (v *Switch) LoadPass() {
-	store.User.Load()
+	cache.User.Load()
 }
 
 func (v *Switch) Initialize() {
@@ -448,8 +433,6 @@ func (v *Switch) Initialize() {
 		v.http = NewHttp(v)
 	}
 	v.preNets()
-	// Controller
-	v.preCtl()
 	// FireWall
 	v.firewall.Initialize()
 	for _, w := range v.worker {
@@ -459,6 +442,8 @@ func (v *Switch) Initialize() {
 	v.SetPass(v.cfg.PassFile)
 	v.LoadPass()
 	v.SetLdap(v.cfg.Ldap)
+	// Start confd monitor
+	v.confd.Initialize()
 }
 
 func (v *Switch) onFrame(client libol.SocketClient, frame *libol.FrameMessage) error {
@@ -545,11 +530,11 @@ func (v *Switch) OnClose(client libol.SocketClient) error {
 	addr := client.RemoteAddr()
 	v.out.Info("Switch.OnClose: %s", addr)
 	// already not need support free list for device.
-	uuid := store.Point.GetUUID(addr)
-	if store.Point.GetAddr(uuid) == addr { // not has newer
-		store.Network.DelLease(uuid)
+	uuid := cache.Point.GetUUID(addr)
+	if cache.Point.GetAddr(uuid) == addr { // not has newer
+		cache.Network.DelLease(uuid)
 	}
-	store.Point.Del(addr)
+	cache.Point.Del(addr)
 	return nil
 }
 
@@ -557,7 +542,6 @@ func (v *Switch) Start() {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
-	v.out.Debug("Switch.Start")
 	OpenUDP()
 	// firstly, start network.
 	for _, w := range v.worker {
@@ -574,8 +558,8 @@ func (v *Switch) Start() {
 	if v.http != nil {
 		libol.Go(v.http.Start)
 	}
-	libol.Go(ctrls.Ctrl.Start)
 	libol.Go(v.firewall.Start)
+	libol.Go(v.confd.Start)
 }
 
 func (v *Switch) Stop() {
@@ -583,9 +567,9 @@ func (v *Switch) Stop() {
 	defer v.lock.Unlock()
 
 	v.out.Debug("Switch.Stop")
-	ctrls.Ctrl.Stop()
+	v.confd.Stop()
 	// firstly, notify leave to point.
-	for p := range store.Point.List() {
+	for p := range cache.Point.List() {
 		if p == nil {
 			break
 		}
@@ -782,8 +766,8 @@ func (v *Switch) Firewall() *network.FireWall {
 }
 
 func (v *Switch) Reload() {
-	store.EspState.Clear()
-	store.EspPolicy.Clear()
+	cache.EspState.Clear()
+	cache.EspPolicy.Clear()
 	for _, w := range v.worker {
 		w.Reload(nil)
 	}

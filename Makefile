@@ -1,11 +1,3 @@
-#
-# github.com/danieldin95/openlan
-#
-
-#
-# git clone git@github.com:danieldin95/freecert.git dist/resource/cert
-#
-
 SHELL := /bin/bash
 
 .ONESHELL:
@@ -29,14 +21,16 @@ WD = openlan-windows-$(VER)
 XD = openlan-darwin-$(VER)
 DEST = $(DST)
 
+build: test pkg
+
+pkg: clean linux-rpm linux-tar windows-zip darwin-zip ## build all plaftorm packages
+
 help: ## show make targets
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {sub("\\\\n",sprintf("\n%22c"," "), $$2);\
-		printf " \033[36m%-20s\033[0m  %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	printf " \033[36m%-20s\033[0m  %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 ## all platform
 bin: linux windows darwin ## build all platform binary
-
-pkg: linux-rpm windows-zip darwin-zip ## build all plaftorm packages
 
 #
 ## docker run --network host --privileged -v /var/run:/var/run -v /etc/openlan/switch:/etc/openlan/switch openlan-switch:5.8.13
@@ -54,55 +48,62 @@ clean: ## clean cache
 	rm -rvf ./build
 	rm -rvf ./core/build
 	rm -rvf ./core/cmake-build-debug
+	./core/auto.sh clean
 
 ## prepare environment
 vendor:
-	 go clean -modcache
-	 go mod vendor -v
+	go clean -modcache
+	go mod tidy
+	go mod vendor -v
 
 env:
 	@mkdir -p $(BD)
 	@go version
 	@gofmt -w -s ./pkg ./cmd ./misc
+	@git submodule init
+	@git submodule update
 
 ## linux platform
-linux: linux-proxy linux-point linux-switch linux-ctrl ## build linux binary
+linux: linux-proxy linux-point linux-switch
 
-openudp: env
-	gcc ./core/src/xfrm/udp.c -o  $(BD)/openudp
+core: env
+	./core/auto.sh build
+	cd $(BD) && cmake $(SD)/core && make
 
-linux-ctrl: env
-	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-ctrl ./cmd/ctrl
-	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-ctrl ./cmd/ctrl
+## compile command line
+cmd: env
+	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan ./cmd/main.go
+	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/386/openlan ./cmd/main.go
+	GOARCH=arm64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/arm64/openlan ./cmd/main.go
+
+linux-bin: linux-point linux-switch linux-proxy ## build linux binary
 
 linux-point: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point ./cmd/point_linux
-	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-point.i386 ./cmd/point_linux
+	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/386/openlan-point ./cmd/point_linux
+	GOARCH=arm64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/arm64/openlan-point ./cmd/point_linux
 
-linux-switch: env openudp
+linux-switch: env cmd core
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch ./cmd/switch
-	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-switch.i386 ./cmd/switch
-
-	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan ./cmd/main.go
-	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan.i386 ./cmd/main.go
+	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/386/openlan-switch ./cmd/switch
+	GOARCH=arm64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/arm64/openlan-switch ./cmd/switch
 
 linux-proxy: env
 	go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-proxy ./cmd/proxy
-	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/openlan-proxy.i386 ./cmd/proxy
+	GOARCH=386 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/386/openlan-proxy ./cmd/proxy
+	GOARCH=arm64 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(BD)/arm64/openlan-proxy ./cmd/proxy
 
 linux-rpm: env ## build rpm packages
 	@dist/spec.sh
-	@[ -e "$(BD)"/cert ] || ln -s $(SD)/../freecert $(BD)/cert
-	rpmbuild -ba $(BD)/openlan-proxy.spec
-	rpmbuild -ba $(BD)/openlan-point.spec
-	rpmbuild -ba $(BD)/openlan-switch.spec
-	@cp -rf ~/rpmbuild/RPMS/x86_64/openlan-*.rpm $(BD)
+	rpmbuild -ba $(BD)/openlan.spec
 
-linux-zip: env linux-point linux-switch linux-proxy ## build linux packages
+linux-tar: env linux-point linux-switch linux-proxy ## build linux packages
 	@pushd $(BD)
 	@rm -rf $(LD) && mkdir -p $(LD)
-	@rm -rf $(LD).zip
+	@rm -rf $(LD).tar
 
+	@mkdir -p $(LD)/etc/sysctl.d
+	@cp -rvf $(SD)/dist/resource/90-openlan.conf $(LD)/etc/sysctl.d
 	@mkdir -p $(LD)/etc/openlan
 	@cp -rvf $(SD)/dist/resource/point.json.example $(LD)/etc/openlan
 	@cp -rvf $(SD)/dist/resource/proxy.json.example $(LD)/etc/openlan
@@ -111,22 +112,28 @@ linux-zip: env linux-point linux-switch linux-proxy ## build linux packages
 	@mkdir -p $(LD)/etc/openlan/switch/network
 	@cp -rvf $(SD)/dist/resource/network.json.example $(LD)/etc/openlan/switch/network
 	@mkdir -p $(LD)/usr/bin
+	@cp -rvf $(BD)/openudp $(LD)/usr/bin
+	@cp -rvf $(BD)/openlan $(LD)/usr/bin
 	@cp -rvf $(BD)/openlan-proxy $(LD)/usr/bin
 	@cp -rvf $(BD)/openlan-point $(LD)/usr/bin
 	@cp -rvf $(BD)/openlan-switch $(LD)/usr/bin
 	@mkdir -p $(LD)/var/openlan
-	@cp -rvf $(BD)/cert/openlan/cert $(LD)/var/openlan
-	@cp -rvf $(BD)/cert/openlan/ca/ca.crt $(LD)/var/openlan/cert
+	@mkdir -p $(LD)/var/openlan/point
+	@mkdir -p $(LD)/var/openlan/openvpn
+	@cp -rvf $(SD)/dist/resource/cert/openlan/cert $(LD)/var/openlan
+	@cp -rvf $(SD)/dist/script $(LD)/var/openlan
+	@cp -rvf $(SD)/pkg/olsw/public $(LD)/var/openlan
+	@cp -rvf $(SD)/dist/resource/cert/openlan/ca/ca.crt $(LD)/var/openlan/cert
 	@mkdir -p $(LD)/etc/sysconfig/openlan
 	@cp -rvf $(SD)/dist/resource/point.cfg $(LD)/etc/sysconfig/openlan
 	@cp -rvf $(SD)/dist/resource/proxy.cfg $(LD)/etc/sysconfig/openlan
 	@cp -rvf $(SD)/dist/resource/switch.cfg $(LD)/etc/sysconfig/openlan
 	@mkdir -p $(LD)//usr/lib/systemd/system
-	@cp -rvf $(SD)/dist/resource/openlan-point.service $(LD)/usr/lib/systemd/system
+	@cp -rvf $(SD)/dist/resource/openlan-point@.service $(LD)/usr/lib/systemd/system
 	@cp -rvf $(SD)/dist/resource/openlan-proxy.service $(LD)/usr/lib/systemd/system
 	@cp -rvf $(SD)/dist/resource/openlan-switch.service $(LD)/usr/lib/systemd/system
 
-	zip -r $(LD).zip $(LD) > /dev/null
+	tar -cf $(LD).tar $(LD)
 	@rm -rf $(LD)
 
 ## cross build for windows

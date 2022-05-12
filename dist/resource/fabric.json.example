@@ -5,7 +5,7 @@
         "name": "br-tun"
     },
     "specifies": {
-        "mss": 1332,
+        "tcpMss": 1332,
         "tunnels": [
             {
                 "dport": 4789,
@@ -14,12 +14,18 @@
             {
                 "dport": 4789,
                 "remote": "100.64.0.21"
+            },
+            {
+                "dport": 8472,
+                "remote": "100.64.0.33",
+                "mode": "border"
             }
         ],
         "networks": [
             {
                 "vni": 1024,
                 "bridge": "br-100",
+                "address": "172.16.100.1/24",
                 "outputs": [
                     {
                         "vlan": 100,

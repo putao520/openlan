@@ -1,9 +1,22 @@
 package config
 
-type _manager struct {
+type manager struct {
 	Point  *Point
 	Switch *Switch
 	Proxy  *Proxy
 }
 
-var Manager = _manager{}
+var Manager = manager{
+	Point:  &Point{},
+	Switch: &Switch{},
+	Proxy:  &Proxy{},
+}
+
+func GetNetwork(name string) *Network {
+	for _, network := range Manager.Switch.Network {
+		if network.Name == name {
+			return network
+		}
+	}
+	return nil
+}

@@ -1,12 +1,13 @@
 package olsw
 
 import (
+	"fmt"
 	co "github.com/danieldin95/openlan/pkg/config"
 	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/danieldin95/openlan/pkg/models"
 	"github.com/danieldin95/openlan/pkg/network"
 	"github.com/danieldin95/openlan/pkg/olsw/api"
-	"github.com/danieldin95/openlan/pkg/olsw/store"
+	"github.com/danieldin95/openlan/pkg/olsw/cache"
 	"github.com/vishvananda/netlink"
 	"net"
 	"strings"
@@ -54,7 +55,7 @@ func (w *OpenLANWorker) Initialize() {
 			Role:     "admin",
 		}
 		user.Update()
-		store.User.Add(user)
+		cache.User.Add(user)
 	}
 	n := models.Network{
 		Name:    w.cfg.Name,
@@ -75,9 +76,9 @@ func (w *OpenLANWorker) Initialize() {
 		}
 		n.Routes = append(n.Routes, rte)
 	}
-	store.Network.Add(&n)
+	cache.Network.Add(&n)
 	for _, ht := range w.cfg.Hosts {
-		lease := store.Network.AddLease(ht.Hostname, ht.Address)
+		lease := cache.Network.AddLease(ht.Hostname, ht.Address)
 		if lease != nil {
 			lease.Type = "static"
 			lease.Network = w.cfg.Name
@@ -324,26 +325,32 @@ func (w *OpenLANWorker) AddLink(c *co.Point) {
 
 	l := NewLink(uuid, c)
 	l.Initialize()
-	store.Link.Add(uuid, l.Model())
+	cache.Link.Add(uuid, l.Model())
 	w.links.Add(l)
 	l.Start()
 }
 
 func (w *OpenLANWorker) DelLink(addr string) {
 	if l := w.links.Remove(addr); l != nil {
-		store.Link.Del(l.uuid)
+		cache.Link.Del(l.uuid)
 	}
 }
 
 func (w *OpenLANWorker) GetSubnet() string {
-	addr := ""
 	cfg := w.cfg
-	if cfg.Bridge.Address != "" {
-		addr = cfg.Bridge.Address
-	} else if cfg.Subnet.Start != "" && cfg.Subnet.Netmask != "" {
-		addr = cfg.Subnet.Start + "/" + cfg.Subnet.Netmask
+
+	ipAddr := cfg.Bridge.Address
+	ipMask := cfg.Subnet.Netmask
+	if ipAddr == "" {
+		ipAddr = cfg.Subnet.Start
 	}
-	if addr != "" {
+	if ipAddr != "" {
+		addr := ipAddr
+		if ipMask != "" {
+			prefix := libol.Netmask2Len(ipMask)
+			ifAddr := strings.SplitN(ipAddr, "/", 2)[0]
+			addr = fmt.Sprintf("%s/%d", ifAddr, prefix)
+		}
 		if _, inet, err := net.ParseCIDR(addr); err == nil {
 			return inet.String()
 		}

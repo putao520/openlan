@@ -16,13 +16,14 @@ import (
 )
 
 const (
-	OpenVPNBin    = "/usr/sbin/openvpn"
+	OpenVPNBin    = "openvpn"
 	DefaultCurDir = "/var/openlan/openvpn/default"
 )
 
 type OpenVPNData struct {
 	Local           string
 	Port            string
+	CertNot         bool
 	Ca              string
 	Cert            string
 	Key             string
@@ -66,7 +67,11 @@ ifconfig-pool-persist {{ .Protocol }}{{ .Port }}ipp
 tls-auth {{ .TlsAuth }} 0
 cipher {{ .Cipher }}
 status {{ .Protocol }}{{ .Port }}server.status 5
+{{- if .CertNot }}
+client-cert-not-required
+{{- else }}
 verify-client-cert none
+{{- end }}
 script-security 3
 auth-user-pass-verify "{{ .Script }}" via-env
 username-as-common-name
@@ -104,6 +109,7 @@ func NewOpenVpnDataFromConf(obj *OpenVPN) *OpenVPNData {
 	data := &OpenVPNData{
 		Local:    obj.Local,
 		Port:     obj.Port,
+		CertNot:  true,
 		Ca:       cfg.RootCa,
 		Cert:     cfg.ServerCrt,
 		Key:      cfg.ServerKey,
@@ -115,6 +121,9 @@ func NewOpenVpnDataFromConf(obj *OpenVPN) *OpenVPNData {
 		Script:   cfg.Script,
 		Renego:   cfg.Renego,
 		Push:     cfg.Push,
+	}
+	if cfg.Version > 23 {
+		data.CertNot = false
 	}
 	addr, _ := libol.IPNetwork(cfg.Subnet)
 	data.Server = strings.ReplaceAll(addr, "/", " ")
@@ -258,7 +267,7 @@ func (o *OpenVPN) WriteConf(path string) error {
 	data := NewOpenVpnDataFromConf(o)
 	o.out.Debug("OpenVPN.WriteConf %v", data)
 	if data.ClientConfigDir != "" {
-		o.writeClientConfig()
+		_ = o.writeClientConfig()
 	}
 	tmplStr := o.ServerTmpl()
 	if tmpl, err := template.New("main").Parse(tmplStr); err != nil {

@@ -9,7 +9,7 @@ import (
 	"github.com/danieldin95/openlan/pkg/libol"
 	"github.com/danieldin95/openlan/pkg/models"
 	"github.com/danieldin95/openlan/pkg/olsw/api"
-	"github.com/danieldin95/openlan/pkg/olsw/store"
+	"github.com/danieldin95/openlan/pkg/olsw/cache"
 	"github.com/danieldin95/openlan/pkg/schema"
 	"github.com/gorilla/mux"
 	"io/ioutil"
@@ -125,7 +125,6 @@ func (h *Http) LoadRouter() {
 	api.Point{}.Router(router)
 	api.Network{}.Router(router)
 	api.OnLine{}.Router(router)
-	api.Ctrl{Switcher: h.switcher}.Router(router)
 	api.Lease{}.Router(router)
 	api.Server{Switcher: h.switcher}.Router(router)
 	api.Device{}.Router(router)
@@ -230,7 +229,7 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 	body.Worker = api.NewWorkerSchema(h.switcher)
 
 	// display accessed point.
-	for p := range store.Point.List() {
+	for p := range cache.Point.List() {
 		if p == nil {
 			break
 		}
@@ -242,7 +241,7 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 		return ii.Network+ii.Remote > jj.Network+jj.Remote
 	})
 	// display neighbor.
-	for n := range store.Neighbor.List() {
+	for n := range cache.Neighbor.List() {
 		if n == nil {
 			break
 		}
@@ -252,7 +251,7 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 		return body.Neighbors[i].IpAddr > body.Neighbors[j].IpAddr
 	})
 	// display links.
-	for l := range store.Link.List() {
+	for l := range cache.Link.List() {
 		if l == nil {
 			break
 		}
@@ -264,7 +263,7 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 		return ii.Network+ii.Server > jj.Network+jj.Server
 	})
 	// display online flow.
-	for l := range store.Online.List() {
+	for l := range cache.Online.List() {
 		if l == nil {
 			break
 		}
@@ -274,11 +273,11 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 		return body.OnLines[i].HitTime < body.OnLines[j].HitTime
 	})
 	// display OpenVPN Clients.
-	for n := range store.Network.List() {
+	for n := range cache.Network.List() {
 		if n == nil {
 			break
 		}
-		for c := range store.VPNClient.List(n.Name) {
+		for c := range cache.VPNClient.List(n.Name) {
 			if c == nil {
 				break
 			}
@@ -289,7 +288,7 @@ func (h *Http) getIndex(body *schema.Index) *schema.Index {
 		})
 	}
 	// display esp state
-	for s := range store.EspState.List("") {
+	for s := range cache.EspState.List("") {
 		if s == nil {
 			break
 		}

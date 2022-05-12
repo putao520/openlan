@@ -21,7 +21,7 @@ func (c *FabricSpecifies) Correct() {
 			if c.Driver == "stt" {
 				tun.DstPort = 7471
 			} else {
-				tun.DstPort = 4789
+				tun.DstPort = 4789 // 8472
 			}
 		}
 	}
@@ -31,6 +31,7 @@ type FabricTunnel struct {
 	DstPort uint32 `json:"dport"`
 	Remote  string `json:"remote"`
 	Local   string `json:"local,omitempty" yaml:"local,omitempty"`
+	Mode    string `json:"mode,omitempty" yaml:"mode,omitempty"`
 }
 
 func (c *FabricTunnel) Correct() {
@@ -39,12 +40,13 @@ func (c *FabricTunnel) Correct() {
 type FabricNetwork struct {
 	Vni     uint32         `json:"vni"`
 	Bridge  string         `json:"bridge"`
+	Address string         `json:"address"`
 	Outputs []FabricOutput `json:"outputs"`
 }
 
 func (c *FabricNetwork) Correct() {
 	if c.Bridge == "" {
-		c.Bridge = fmt.Sprintf("br-%08x", c.Vni)
+		c.Bridge = fmt.Sprintf("br-%08d", c.Vni)
 	}
 }
 

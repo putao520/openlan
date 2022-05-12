@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=notify
 EnvironmentFile=/etc/sysconfig/openlan/proxy.cfg
-ExecStart=/usr/bin/openlan-proxy $OPTIONS
+ExecStart=/usr/bin/env openlan-proxy $OPTIONS
 LimitNOFILE=102400
 Restart=always
 

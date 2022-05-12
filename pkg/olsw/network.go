@@ -18,15 +18,30 @@ type Networker interface {
 	Reload(c *co.Network)
 }
 
+var workers = make(map[string]Networker)
+
 func NewNetworker(c *co.Network) Networker {
+	var obj Networker
 	switch c.Provider {
 	case "esp":
-		return NewESPWorker(c)
+		obj = NewESPWorker(c)
 	case "vxlan":
-		return NewVxLANWorker(c)
+		obj = NewVxLANWorker(c)
 	case "fabric":
-		return NewFabricWorker(c)
+		obj = NewFabricWorker(c)
 	default:
-		return NewOpenLANWorker(c)
+		obj = NewOpenLANWorker(c)
+	}
+	workers[c.Name] = obj
+	return obj
+}
+
+func GetWorker(name string) Networker {
+	return workers[name]
+}
+
+func ListWorker(call func(w Networker)) {
+	for _, worker := range workers {
+		call(worker)
 	}
 }

@@ -12,7 +12,7 @@ func IpLinkUp(name string) ([]byte, error) {
 		args := []string{
 			"link", "set", "dev", name, "up",
 		}
-		return exec.Command("/usr/sbin/ip", args...).CombinedOutput()
+		return exec.Command("ip", args...).CombinedOutput()
 	case "windows":
 		args := []string{
 			"interface", "set", "interface",
@@ -30,7 +30,7 @@ func IpLinkDown(name string) ([]byte, error) {
 		args := []string{
 			"link", "set", "dev", name, "down",
 		}
-		return exec.Command("/usr/sbin/ip", args...).CombinedOutput()
+		return exec.Command("ip", args...).CombinedOutput()
 	case "windows":
 		args := []string{
 			"interface", "set", "interface",
@@ -48,7 +48,7 @@ func IpAddrAdd(name, addr string, opts ...string) ([]byte, error) {
 		args := append([]string{
 			"address", "add", addr, "dev", name,
 		}, opts...)
-		return exec.Command("/usr/sbin/ip", args...).CombinedOutput()
+		return exec.Command("ip", args...).CombinedOutput()
 	case "windows":
 		args := append([]string{
 			"interface", "ipv4", "add", "address",
@@ -59,7 +59,7 @@ func IpAddrAdd(name, addr string, opts ...string) ([]byte, error) {
 		args := append([]string{
 			name, addr,
 		}, opts...)
-		return exec.Command("/sbin/ifconfig", args...).CombinedOutput()
+		return exec.Command("ifconfig", args...).CombinedOutput()
 	default:
 		return nil, NewErr("IpAddrAdd %s notSupport", runtime.GOOS)
 	}
@@ -71,7 +71,7 @@ func IpAddrDel(name, addr string) ([]byte, error) {
 		args := []string{
 			"address", "del", addr, "dev", name,
 		}
-		return exec.Command("/usr/sbin/ip", args...).CombinedOutput()
+		return exec.Command("ip", args...).CombinedOutput()
 	case "windows":
 		ipAddr := strings.SplitN(addr, "/", 1)[0]
 		args := []string{
@@ -83,7 +83,7 @@ func IpAddrDel(name, addr string) ([]byte, error) {
 		args := []string{
 			name, addr, "delete",
 		}
-		return exec.Command("/sbin/ifconfig", args...).CombinedOutput()
+		return exec.Command("ifconfig", args...).CombinedOutput()
 	default:
 		return nil, NewErr("IpAddrDel %s notSupport", runtime.GOOS)
 	}
@@ -123,7 +123,7 @@ func IpRouteAdd(name, prefix, nexthop string, opts ...string) ([]byte, error) {
 		args := []string{
 			"route", "address", prefix, "via", nexthop,
 		}
-		return exec.Command("/usr/sbin/ip", args...).CombinedOutput()
+		return exec.Command("ip", args...).CombinedOutput()
 	case "windows":
 		args := []string{
 			"interface", "ipv4", "add", "route",
@@ -141,7 +141,7 @@ func IpRouteAdd(name, prefix, nexthop string, opts ...string) ([]byte, error) {
 			args = append(args, nexthop)
 		}
 		args = append(args, opts...)
-		return exec.Command("/sbin/route", args...).CombinedOutput()
+		return exec.Command("route", args...).CombinedOutput()
 	default:
 		return nil, NewErr("IpRouteAdd %s notSupport", runtime.GOOS)
 	}
@@ -153,7 +153,7 @@ func IpRouteDel(name, prefix, nexthop string, opts ...string) ([]byte, error) {
 		args := []string{
 			"route", "del", prefix, "via", nexthop,
 		}
-		return exec.Command("/usr/sbin/ip", args...).CombinedOutput()
+		return exec.Command("ip", args...).CombinedOutput()
 	case "windows":
 		args := []string{
 			"interface", "ipv4", "delete", "route",
@@ -171,7 +171,7 @@ func IpRouteDel(name, prefix, nexthop string, opts ...string) ([]byte, error) {
 			args = append(args, nexthop)
 		}
 		args = append(args, opts...)
-		return exec.Command("/sbin/route", args...).CombinedOutput()
+		return exec.Command("route", args...).CombinedOutput()
 	default:
 		return nil, NewErr("IpRouteDel %s notSupport", runtime.GOOS)
 	}

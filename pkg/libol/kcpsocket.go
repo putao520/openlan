@@ -8,7 +8,8 @@ import (
 
 type KcpConfig struct {
 	Block        kcp.BlockCrypt
-	DataShards   int           // default 1024
+	WinSize      int           // default 1024
+	DataShards   int           // default 10
 	ParityShards int           // default 3
 	Timeout      time.Duration // ns
 	RdQus        int           // per frames
@@ -17,15 +18,33 @@ type KcpConfig struct {
 
 var defaultKcpConfig = KcpConfig{
 	Block:        nil,
-	DataShards:   1024,
+	WinSize:      1024,
+	DataShards:   10,
 	ParityShards: 3,
 	Timeout:      120 * time.Second,
+}
+
+func NewKcpConfig() *KcpConfig {
+	return &defaultKcpConfig
 }
 
 type KcpServer struct {
 	*SocketServerImpl
 	kcpCfg   *KcpConfig
 	listener *kcp.Listener
+}
+
+func setConn(conn *kcp.UDPSession, cfg *KcpConfig) {
+	Info("setConn %s", conn.RemoteAddr())
+	conn.SetStreamMode(true)
+	conn.SetWriteDelay(false)
+	Info("setConn %s to fast3", conn.RemoteAddr())
+	// normal: 0, 40, 2, 1
+	// fast  : 0, 30, 2, 1
+	// fast3 : 1, 10, 2, 1
+	conn.SetNoDelay(1, 10, 2, 1)
+	conn.SetWindowSize(cfg.WinSize, cfg.WinSize)
+	conn.SetACKNoDelay(true)
 }
 
 func NewKcpServer(listen string, cfg *KcpConfig) *KcpServer {
@@ -49,6 +68,9 @@ func (k *KcpServer) Listen() (err error) {
 	if err != nil {
 		k.listener = nil
 		return err
+	}
+	if err := k.listener.SetDSCP(46); err != nil {
+		Warn("KcpServer.SetDSCP %s", err)
 	}
 	Info("KcpServer.Listen: kcp://%s", k.address)
 	return nil
@@ -78,13 +100,14 @@ func (k *KcpServer) Accept() {
 	})
 	defer k.Close()
 	for {
+		if k.listener == nil {
+			return
+		}
 		conn, err := k.listener.AcceptKCP()
 		if k.preAccept(conn, err) != nil {
 			continue
 		}
-		conn.SetStreamMode(true)
-		conn.SetWriteDelay(false)
-		conn.SetACKNoDelay(false)
+		setConn(conn, k.kcpCfg)
 		k.onClients <- NewKcpClientFromConn(conn, k.kcpCfg)
 	}
 }
@@ -138,9 +161,10 @@ func (c *KcpClient) Connect() error {
 	if err != nil {
 		return err
 	}
-	conn.SetStreamMode(true)
-	conn.SetWriteDelay(false)
-	conn.SetACKNoDelay(false)
+	if err := conn.SetDSCP(46); err != nil {
+		c.out.Warn("KcpClient.SetDSCP: ", err)
+	}
+	setConn(conn, c.kcpCfg)
 	c.SetConnection(conn)
 	if c.listener.OnConnected != nil {
 		_ = c.listener.OnConnected(c)

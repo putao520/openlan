@@ -31,8 +31,8 @@ type IpRule struct {
 	Dest     string
 	ToDest   string
 	Proto    string
-	DstPort  int
-	SrcPort  int
+	DstPort  string
+	SrcPort  string
 	Input    string
 	Output   string
 	Comment  string
@@ -67,11 +67,15 @@ func (ru IpRule) Args() []string {
 	if len(ru.TcpFlag) > 0 {
 		args = append(args, "--tcp-flags", ru.TcpFlag[0], ru.TcpFlag[1])
 	}
-	if ru.SrcPort > 0 {
-		args = append(args, "--sport", ru.Itoa(ru.SrcPort))
+	if len(ru.SrcPort) > 0 {
+		args = append(args, "--sport", ru.SrcPort)
 	}
-	if ru.DstPort > 0 {
-		args = append(args, "--dport", ru.Itoa(ru.DstPort))
+	if len(ru.DstPort) > 0 {
+		if ru.Match == "multiport" {
+			args = append(args, "--dports", ru.DstPort)
+		} else {
+			args = append(args, "--dport", ru.DstPort)
+		}
 	}
 	if ru.Input != "" {
 		args = append(args, "-i", ru.Input)

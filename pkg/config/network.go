@@ -2,8 +2,8 @@ package config
 
 import (
 	"github.com/danieldin95/openlan/pkg/libol"
+	"net"
 	"path/filepath"
-	"strings"
 )
 
 type Network struct {
@@ -65,13 +65,21 @@ func (n *Network) Correct() {
 		br := n.Bridge
 		br.Network = n.Name
 		br.Correct()
-		ifAddr := strings.SplitN(br.Address, "/", 2)[0]
+		ipAddr := ""
+		ipMask := ""
+		if _i, _n, err := net.ParseCIDR(br.Address); err == nil {
+			ipAddr = _i.String()
+			ipMask = net.IP(_n.Mask).String()
+		}
+		if n.Subnet.Netmask == "" {
+			n.Subnet.Netmask = ipMask
+		}
 		for i := range n.Routes {
 			if n.Routes[i].Metric == 0 {
-				n.Routes[i].Metric = 592
+				n.Routes[i].Metric = 660
 			}
 			if n.Routes[i].NextHop == "" {
-				n.Routes[i].NextHop = ifAddr
+				n.Routes[i].NextHop = ipAddr
 			}
 			if n.Routes[i].Mode == "" {
 				n.Routes[i].Mode = "snat"

@@ -1,20 +1,20 @@
 #!/bin/bash
 
-set -e
+set -ex
 
 mkdir -p build
 
-curdir=$(pwd)
 version=$(cat VERSION)
+package=openlan-$version
 
 mkdir -p ~/rpmbuild/SOURCES
 
 # update version
-sed -e "s/Version:.*/Version:\ ${version}/" ./dist/openlan-ctrl.spec.in   > build/openlan-ctrl.spec
-sed -e "s/Version:.*/Version:\ ${version}/" ./dist/openlan-point.spec.in  > build/openlan-point.spec
-sed -e "s/Version:.*/Version:\ ${version}/" ./dist/openlan-proxy.spec.in  > build/openlan-proxy.spec
-sed -e "s/Version:.*/Version:\ ${version}/" ./dist/openlan-switch.spec.in > build/openlan-switch.spec
+sed -e "s/Version:.*/Version:\ ${version}/" dist/openlan.spec.in > build/openlan.spec
 
-# link source
-rm -rf ~/rpmbuild/SOURCES/openlan-*
-ln -s "${curdir}" ~/rpmbuild/SOURCES/openlan-"${version}"
+# build dist.tar
+rsync -r . /tmp/$package
+cd /tmp && {
+  tar cf - $package | gzip -c > ~/rpmbuild/SOURCES/$package-source.tar.gz
+  cd -
+}
